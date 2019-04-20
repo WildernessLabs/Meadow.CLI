@@ -53,8 +53,6 @@ namespace MeadowCLI
                     }
                     else
                     {
-                        
-
                         if (!string.IsNullOrEmpty(opts.DfuOsPath))
                         {
                             if (!File.Exists(opts.DfuOsPath))

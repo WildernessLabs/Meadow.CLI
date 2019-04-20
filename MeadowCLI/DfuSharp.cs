@@ -26,12 +26,7 @@ namespace DfuSharp
 
     class NativeMethods
     {
-#if WINDOWS_UWP
         const string LIBUSB_LIBRARY = "libusb-1.0.dll";
-#else
-        const string LIBUSB_LIBRARY = "libusb-1.0";
-#endif
-
 
         [DllImport(LIBUSB_LIBRARY)]
         internal static extern int libusb_init(ref IntPtr ctx);
