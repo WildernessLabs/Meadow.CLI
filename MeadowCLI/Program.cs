@@ -55,10 +55,13 @@ namespace MeadowCLI
                     {
                         
 
-                        if (!string.IsNullOrEmpty(opts.DfuOsPath) && !File.Exists(opts.DfuOsPath))
+                        if (!string.IsNullOrEmpty(opts.DfuOsPath))
                         {
-                            Console.WriteLine($"Cannot find {opts.DfuOsPath} file.");
-                            return;
+                            if (!File.Exists(opts.DfuOsPath))
+                            {
+                                Console.WriteLine($"Cannot find {opts.DfuOsPath} file.");
+                                return;
+                            }
                         }
                         else if (!File.Exists($"{Environment.CurrentDirectory}\\{os}"))
                         {
@@ -66,10 +69,13 @@ namespace MeadowCLI
                             return;
                         }
 
-                        if (!string.IsNullOrEmpty(opts.DfuUserPath) && !File.Exists(opts.DfuUserPath))
+                        if (!string.IsNullOrEmpty(opts.DfuUserPath) )
                         {
-                            Console.WriteLine($"Cannot find {opts.DfuUserPath} file.");
-                            return;
+                            if (!File.Exists(opts.DfuUserPath))
+                            {
+                                Console.WriteLine($"Cannot find {opts.DfuUserPath} file.");
+                                return;
+                            }
                         }
                         else if (!File.Exists($"{Environment.CurrentDirectory}\\{user}"))
                         {
@@ -79,9 +85,8 @@ namespace MeadowCLI
 
                         devices[0].Uploading += Program_Uploading;
 
-                        Upload(devices[0], $"{Environment.CurrentDirectory}\\{opts.DfuOsPath ?? os}", os_address);
-                        Upload(devices[0], $"{Environment.CurrentDirectory}\\{opts.DfuUserPath ?? user}", user_address);
-
+                        Upload(devices[0], $"{opts.DfuOsPath ?? Environment.CurrentDirectory + "\\" + os}", os_address);
+                        Upload(devices[0], $"{opts.DfuUserPath ?? Environment.CurrentDirectory + "\\" + user}", user_address);
                     }
                 }
             });
