@@ -45,8 +45,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DfuContext.cs" />
-    <Compile Include="DfuSharp.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Hcom\InitializeApp.cs" />
@@ -55,6 +53,9 @@
     <Compile Include="Hcom\SendF7Data.cs" />
     <Compile Include="Hcom\TargetParsedArguments.cs" />
     <Compile Include="Hcom\enums.cs" />
+    <Compile Include="Dfu\DfuContext.cs" />
+    <Compile Include="Dfu\DfuSharp.cs" />
+    <Compile Include="Dfu\DfuUpload.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -70,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Hcom\" />
+    <Folder Include="Dfu\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
