@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO.Ports;
-using System.Linq;
 using System.Text;
-using System.Threading;
 
-namespace HcomTestApplication
+namespace MeadowCLI.Hcom
 {
 	public class SendTargetData
 	{
-		SerialPort _serialPort;
+        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 4;
+        public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
+
+        SerialPort _serialPort;
 		ReceiveTargetData _receiveTargetData;
-		Misc _misc;
 		uint _packetCrc32;
 
 		// Note: '256' is the size of the s25fl QSPI flash chip's "Page" (i.e. the smallest size it
@@ -22,11 +22,10 @@ namespace HcomTestApplication
 
 		//==========================================================================
 		// Constructor
-		public SendTargetData(SerialPort serialPort, ReceiveTargetData receiveTargetData, Misc misc)
+		public SendTargetData(SerialPort serialPort, ReceiveTargetData receiveTargetData)
 		{
 			_serialPort = serialPort;
 			_receiveTargetData = receiveTargetData;
-			_misc = misc;
 		}
 
 		//==========================================================================
@@ -121,10 +120,10 @@ namespace HcomTestApplication
 		// Build and send a basic command
 		internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
 		{
-			byte[] messageBytes = new byte[Misc.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
+			byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 			int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
 
-			EncodeAndSendPacket(messageBytes, 0, Misc.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
+			EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 		}
 
 		//==========================================================================
@@ -136,7 +135,7 @@ namespace HcomTestApplication
 			int offset = 0;
 
 			// Two byte seq numb
-			Array.Copy(BitConverter.GetBytes((UInt16)Misc.HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0, 
+			Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0, 
 				messageBytes, offset, sizeof(UInt16));
 			offset += sizeof(UInt16);
 
@@ -160,7 +159,7 @@ namespace HcomTestApplication
 			// Allocate the correctly size message buffer
 			byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);			// Using UTF-8 works for ASCII but should be Unicode in nuttx
 			int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + targetFileName.Length;
-			byte[] messageBytes = new byte[Misc.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
+			byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
 			// Add the required part
 			int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
@@ -177,7 +176,7 @@ namespace HcomTestApplication
 			Array.Copy(targetFileName, 0, messageBytes, offset, targetFileName.Length);
 			offset += targetFileName.Length;
 
-			Debug.Assert(offset == optionalDataLength + Misc.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
+			Debug.Assert(offset == optionalDataLength + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 			EncodeAndSendPacket(messageBytes, 0, offset);
 		}
 
@@ -188,10 +187,10 @@ namespace HcomTestApplication
 			try
 			{
 				// For testing calculate the crc including the sequence number
-				_packetCrc32 = _misc.crc32part(messageBytes, messageSize, 0, _packetCrc32);
+				_packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
 				byte[] encodedBytes = new byte[maxSizeOfXmitPacket];
-				int encodedToSend = _misc.Cobs_encoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
+				int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
 
 				// Verify COBS - any delimiters left?
 				for (int i = 0; i < encodedToSend; i++)

@@ -1,15 +1,16 @@
 ﻿using System;
 using System.IO;
 using System.IO.Ports;
-using MeadowCLI.Hcom;
 
-namespace HcomTestApplication
+namespace MeadowCLI.Hcom
 {
 	public class InitializeApp
 	{
-		// WARNING - Don't reuse the following in production code. It thrown together and
-		// is poorly designed.
-		public void parseCommandLine(string[] args, ref TargetParsedArguments targetParsedArgs)
+        public const int MaxTargetFileNameLength = 32;
+
+        // WARNING - Don't reuse the following in production code. It thrown together and
+        // is poorly designed.
+        public void parseCommandLine(string[] args, ref TargetParsedArguments targetParsedArgs)
 		{
 			for (int i = 0; i < args.Length; i++)
 			{
@@ -38,7 +39,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 						break;
 
 					case "--deletefilebyname":
@@ -58,7 +59,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
 						break;
 
 					case "--bulkeraseflash":
@@ -68,7 +69,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
 						break;
 
 					case "--verifyerasedflash":
@@ -78,7 +79,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
 						break;
 
 					case "--partitionflashfilesys":
@@ -93,7 +94,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS;
 						break;
 						
 					case "--mountflashfilesys":
@@ -108,7 +109,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
 						break;
 
 					case "--initializeflashfilesys":
@@ -123,7 +124,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
 						break;
 
 					case "--createentireflashfilesys":
@@ -138,7 +139,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
 						break;
 
 					case "--formatflashfilesys":
@@ -153,7 +154,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
 						break;
 
 					// This is kind of ugly providing a numeric (0 = none, 1 = info and 2 = debug)
@@ -169,7 +170,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
 						break;
 
 					case "--resettargetmcu":
@@ -179,7 +180,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
 						break;
 
 					case "--enterdfumode":
@@ -189,7 +190,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE;
 						break;
 
 					case "--enabledisablensh":
@@ -204,7 +205,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH;
 						break;
 
 					case "--rqstlistoffiles":
@@ -219,7 +220,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
 						break;
 
 					case "--rqstlistoffilescrc":
@@ -234,7 +235,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
 						break;
 
 					case "--developer1":
@@ -249,7 +250,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
 						break;
 
 					case "--developer2":
@@ -264,7 +265,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2;
 						break;
 						
 					case "--developer3":
@@ -279,7 +280,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3;
 						break;
 
 					case "--developer4":
@@ -294,7 +295,7 @@ namespace HcomTestApplication
 							ShowUsage();
 							return;
 						}
-						targetParsedArgs._meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4;
+						targetParsedArgs.MeadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4;
 						break;
 
 					default:		// Ignonre all other tokens
@@ -312,13 +313,13 @@ namespace HcomTestApplication
 		// Verify we have everything needed
 		bool CheckRequiredArguments(TargetParsedArguments targetParsedArgs)
 		{
-			if (targetParsedArgs._serialPort == null)
+			if (targetParsedArgs.SerialPort == null)
 			{
 				Console.WriteLine("To communicate with the target MCU, a serial port must be provided (e.g. Com1");
 				return false;
 			}
 
-			switch (targetParsedArgs._meadowRequestType)
+			switch (targetParsedArgs.MeadowRequestType)
 			{
 				// Nothing to test
 				case HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE:
@@ -339,8 +340,8 @@ namespace HcomTestApplication
 					break;
 
 				case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER:
-					if (string.IsNullOrEmpty(targetParsedArgs._fileName) ||
-						string.IsNullOrEmpty(targetParsedArgs._targetFileName) || targetParsedArgs.IsUserDataSet)
+					if (string.IsNullOrEmpty(targetParsedArgs.FileName) ||
+						string.IsNullOrEmpty(targetParsedArgs.TargetFileName) || targetParsedArgs.IsUserDataSet)
 					{
 						Console.WriteLine("To add a file to the targets flash, a valid file, path and partition must be provided (e.g. c:/myfile.dll");
 						return false;
@@ -384,7 +385,7 @@ namespace HcomTestApplication
 					break;
 
 				case HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME:
-					if (string.IsNullOrEmpty(targetParsedArgs._targetFileName))
+					if (string.IsNullOrEmpty(targetParsedArgs.TargetFileName))
 					{
 						Console.WriteLine("To delete a file to the target's flash, a valid file and path must be provided (e.g. c:/myfile.dll");
 						return false;
@@ -428,7 +429,7 @@ namespace HcomTestApplication
 
 				default:
 					{
-						throw new InvalidOperationException(string.Format("Unknown request: {0}", targetParsedArgs._meadowRequestType));
+						throw new InvalidOperationException(string.Format("Unknown request: {0}", targetParsedArgs.MeadowRequestType));
 					}
 			}
 			return true;
@@ -445,7 +446,7 @@ namespace HcomTestApplication
 		bool FindPartition(string[] args, ref TargetParsedArguments targetParsedArgs)
 		{
 			if (!FindUserData(args, ref targetParsedArgs, true, "--partition"))
-				targetParsedArgs._userData = 0;
+				targetParsedArgs.UserData = 0;
 
 			return true;
 		}
@@ -464,9 +465,9 @@ namespace HcomTestApplication
 				if (argsLower == argKey)
 				{
 					if(isNumber)
-						targetParsedArgs._userData = Convert.ToUInt32(args[i + 1]);
+						targetParsedArgs.UserData = Convert.ToUInt32(args[i + 1]);
 					else
-						targetParsedArgs._userData = args[i + 1][0];
+						targetParsedArgs.UserData = args[i + 1][0];
 
 					return true;
 				}
@@ -478,7 +479,7 @@ namespace HcomTestApplication
 		// returns false if not found
 		bool FindFileName(string[] args, ref TargetParsedArguments targetParsedArgs)
 		{
-			if (!string.IsNullOrEmpty(targetParsedArgs._fileName))
+			if (!string.IsNullOrEmpty(targetParsedArgs.FileName))
 				return true;
 
 			string filename = string.Empty;
@@ -493,7 +494,7 @@ namespace HcomTestApplication
 					filename = args[i + 1];
 					if (File.Exists(filename))
 					{
-						targetParsedArgs._fileName = filename;	// save
+						targetParsedArgs.FileName = filename;	// save
 						return true;
 					}
 					else
@@ -510,7 +511,7 @@ namespace HcomTestApplication
 		// returns false if not found
 		bool FindTargetFileName(string[] args, ref TargetParsedArguments targetParsedArgs)
 		{
-			if (!string.IsNullOrEmpty(targetParsedArgs._targetFileName))
+			if (!string.IsNullOrEmpty(targetParsedArgs.TargetFileName))
 				return true;
 
 			string targetFileName = string.Empty;
@@ -524,11 +525,11 @@ namespace HcomTestApplication
 					targetFileName = args[i + 1];
 					if (targetFileName.IndexOf("-") == -1)
 					{
-						targetParsedArgs._targetFileName = targetFileName; // save
-						if(targetFileName.Length > Misc.MaxTargetFileNameLength)
+						targetParsedArgs.TargetFileName = targetFileName; // save
+						if(targetFileName.Length > MaxTargetFileNameLength)
 						{
 							Console.WriteLine("The length {0} of '{1}' cannot exceed {2} characters.",
-								targetFileName.Length, targetFileName, Misc.MaxTargetFileNameLength);
+								targetFileName.Length, targetFileName, MaxTargetFileNameLength);
 							return false;
 						}
 						return true;
@@ -541,49 +542,51 @@ namespace HcomTestApplication
 				}
 			}
 
-			if (!string.IsNullOrEmpty(targetParsedArgs._fileName))
+			if (!string.IsNullOrEmpty(targetParsedArgs.FileName))
 			{
-				targetParsedArgs._targetFileName = Path.GetFileName(targetParsedArgs._fileName);
+				targetParsedArgs.TargetFileName = Path.GetFileName(targetParsedArgs.FileName);
 				return true;
 			}
 
 			return false;
 		}
 
-		//----------------------------------------------------------------
-		// returns false if not found
-		bool OpenRequiredPort(string[] args, ref TargetParsedArguments targetParsedArgs)
-		{
-			if (targetParsedArgs._serialPort != null)
-				return true;
+        //----------------------------------------------------------------
+        // returns false if not found
+        bool OpenRequiredPort(string[] args, ref TargetParsedArguments targetParsedArgs)
+        {
+            if (targetParsedArgs.SerialPort != null)
+                return true;
 
-			// -port <commPort>
-			for (int i = 0; i < args.Length; i++)
-			{
-				string argsLower = args[i].ToLower();
-				if (argsLower == "-port")
-				{
-					// Assumes port defn has no spaces (e.g. Com19 or ttymodem3453454)
-					targetParsedArgs._serialPortName = args[i + 1];
-				}
-			}
+            // -port <commPort>
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].ToLower() == "-port")
+                {
+                    // Assumes port defn has no spaces (e.g. Com19 or ttymodem3453454)
+                    targetParsedArgs.SerialPortName = args[i + 1];
+                }
+            }
 
-			if (string.IsNullOrWhiteSpace(targetParsedArgs._serialPortName))
-				targetParsedArgs._serialPortName = "/dev/tty.usbmodem01";
+            if (string.IsNullOrWhiteSpace(targetParsedArgs.SerialPortName))
+            {
+                targetParsedArgs.SerialPortName = "/dev/tty.usbmodem01";
+            }
 
-			SerialPort serialPort = null;
-			if (OpenSerialPort(targetParsedArgs._serialPortName, out serialPort))
-			{
-				targetParsedArgs._serialPort = serialPort;
-				return true;
-			}
+            SerialPort serialPort;
 
-			return false;	// port not found
-		}
+            if (OpenSerialPort(targetParsedArgs.SerialPortName, out serialPort))
+            {
+                targetParsedArgs.SerialPort = serialPort;
+                return true;
+            }
 
-		//----------------------------------------------------------------
-		// returns false if fails to open port
-		bool OpenSerialPort(string portName, out SerialPort serialPort)
+            return false;   // port not found
+        }
+
+        //----------------------------------------------------------------
+        // returns false if fails to open port
+        bool OpenSerialPort(string portName, out SerialPort serialPort)
 		{
 			serialPort = null;
 			try

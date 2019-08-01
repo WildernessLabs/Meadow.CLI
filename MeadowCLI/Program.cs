@@ -16,6 +16,7 @@ namespace MeadowCLI
             public string DfuOsPath { get; set; }
             [Option(longName: "userFile", Default = null, Required = false, HelpText = "File path to user file. Usage: --userFile mypath")]
             public string DfuUserPath { get; set; }
+            
 
         }
 
@@ -30,6 +31,7 @@ namespace MeadowCLI
             {
                 if (opts.Dfu)
                 {
+                    //ToDo update to use command line args for os and user
                     DfuUpload.FlashNuttx(opts.DfuOsPath, opts.DfuUserPath);
                 }
             });

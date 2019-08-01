@@ -48,14 +48,19 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Hcom\InitializeApp.cs" />
-    <Compile Include="Hcom\Misc.cs" />
+    <Compile Include="Hcom\HostComBuffer.cs" />
     <Compile Include="Hcom\ReceiveF7Data.cs" />
     <Compile Include="Hcom\SendF7Data.cs" />
     <Compile Include="Hcom\TargetParsedArguments.cs" />
-    <Compile Include="Hcom\enums.cs" />
+    <Compile Include="Hcom\HcomEnums.cs" />
     <Compile Include="Dfu\DfuContext.cs" />
     <Compile Include="Dfu\DfuSharp.cs" />
     <Compile Include="Dfu\DfuUpload.cs" />
+    <Compile Include="Hcom\AppUploader.cs" />
+    <Compile Include="Hcom\CrcTools.cs" />
+    <Compile Include="Hcom\CobsTools.cs" />
+    <Compile Include="Hcom\MeadowFlashManager.cs" />
+    <Compile Include="Hcom\Meadow.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

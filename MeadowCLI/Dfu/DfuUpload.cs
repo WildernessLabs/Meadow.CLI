@@ -73,7 +73,7 @@ namespace MeadowCLI
             Console.WriteLine("\rdone                    ");
         }
 
-        private static void Program_Uploading(object sender, DfuSharp.UploadingEventArgs e)
+        private static void Program_Uploading(object sender, UploadingEventArgs e)
         {
             uploadedByteCount += e.BytesUploaded;
 
