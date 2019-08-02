@@ -47,20 +47,17 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Hcom\InitializeApp.cs" />
     <Compile Include="Hcom\HostComBuffer.cs" />
-    <Compile Include="Hcom\ReceiveF7Data.cs" />
-    <Compile Include="Hcom\SendF7Data.cs" />
-    <Compile Include="Hcom\TargetParsedArguments.cs" />
+    <Compile Include="Hcom\ReceiveTargetData.cs" />
+    <Compile Include="Hcom\SendTargetData.cs" />
     <Compile Include="Hcom\HcomEnums.cs" />
     <Compile Include="Dfu\DfuContext.cs" />
     <Compile Include="Dfu\DfuSharp.cs" />
     <Compile Include="Dfu\DfuUpload.cs" />
-    <Compile Include="Hcom\AppUploader.cs" />
-    <Compile Include="Hcom\CrcTools.cs" />
-    <Compile Include="Hcom\CobsTools.cs" />
     <Compile Include="Hcom\MeadowFlashManager.cs" />
     <Compile Include="Hcom\Meadow.cs" />
+    <Compile Include="Tools\CobsTools.cs" />
+    <Compile Include="Tools\CrcTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -77,6 +74,7 @@
   <ItemGroup>
     <Folder Include="Hcom\" />
     <Folder Include="Dfu\" />
+    <Folder Include="Tools\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

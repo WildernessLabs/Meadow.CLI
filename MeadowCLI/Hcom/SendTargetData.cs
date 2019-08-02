@@ -10,9 +10,10 @@ namespace MeadowCLI.Hcom
         public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 4;
         public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
 
-        SerialPort _serialPort;
-		ReceiveTargetData _receiveTargetData;
-		uint _packetCrc32;
+        //questioning if this class should send or just create the message
+        SerialPort _serialPort; //refactor this .... 
+
+        uint _packetCrc32;
 
 		// Note: '256' is the size of the s25fl QSPI flash chip's "Page" (i.e. the smallest size it
 		// can program). By using '256' as our data block size we insure that each packet received can
@@ -22,16 +23,9 @@ namespace MeadowCLI.Hcom
 
 		//==========================================================================
 		// Constructor
-		public SendTargetData(SerialPort serialPort, ReceiveTargetData receiveTargetData)
+		public SendTargetData(SerialPort serialPort)
 		{
 			_serialPort = serialPort;
-			_receiveTargetData = receiveTargetData;
-		}
-
-		//==========================================================================
-		public void Shutdown()
-		{
-
 		}
 
 		//==========================================================================
@@ -83,12 +77,10 @@ namespace MeadowCLI.Hcom
 			}
 		}
 
-
 		//==========================================================================
-		internal void RequestToSendSimpleCommand(HcomMeadowRequestType protocolRqstType, uint userData)
+		internal void SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0)
 		{
-			BuildAndSendSimpleCommand(protocolRqstType,
-				userData);
+			BuildAndSendSimpleCommand(requestType, userData);
 		}
 
 		//==========================================================================
@@ -120,8 +112,9 @@ namespace MeadowCLI.Hcom
 		// Build and send a basic command
 		internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
 		{
-			byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
-			int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
+			var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
+
+            BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
 
 			EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 		}
