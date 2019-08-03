@@ -25,6 +25,9 @@ namespace MeadowCLI.Hcom
 		// Constructor
 		public SendTargetData(SerialPort serialPort)
 		{
+            if (serialPort == null)
+                throw new ArgumentException("SerialPort cannot be null");
+
 			_serialPort = serialPort;
 		}
 
