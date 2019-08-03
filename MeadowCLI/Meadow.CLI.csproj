@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{794C970F-2E77-4CE0-85F8-E6F06B69A23D}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>MeadowCLI</RootNamespace>
+    <RootNamespace>Meadow.CLI</RootNamespace>
     <AssemblyName>MeadowCLI</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -47,17 +47,19 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Hcom\HostComBuffer.cs" />
-    <Compile Include="Hcom\ReceiveTargetData.cs" />
-    <Compile Include="Hcom\SendTargetData.cs" />
-    <Compile Include="Hcom\HcomEnums.cs" />
-    <Compile Include="Dfu\DfuContext.cs" />
-    <Compile Include="Dfu\DfuSharp.cs" />
-    <Compile Include="Dfu\DfuUpload.cs" />
-    <Compile Include="Hcom\MeadowFlashManager.cs" />
-    <Compile Include="Hcom\Meadow.cs" />
-    <Compile Include="Tools\CobsTools.cs" />
-    <Compile Include="Tools\CrcTools.cs" />
+    <Compile Include="DeviceManagement\MeadowDevice.cs" />
+    <Compile Include="DeviceManagement\DeviceManager.cs" />
+    <Compile Include="DeviceManagement\DeploymentManager.cs" />
+    <Compile Include="DeviceManagement\MeadowFileManager.cs" />
+    <Compile Include="Internals\Dfu\DfuContext.cs" />
+    <Compile Include="Internals\Dfu\DfuSharp.cs" />
+    <Compile Include="Internals\Dfu\DfuUpload.cs" />
+    <Compile Include="Internals\Tools\CobsTools.cs" />
+    <Compile Include="Internals\Tools\CrcTools.cs" />
+    <Compile Include="Internals\MeadowComms\ReceiveTargetData.cs" />
+    <Compile Include="Internals\MeadowComms\SendTargetData.cs" />
+    <Compile Include="Internals\MeadowComms\HostComBuffer.cs" />
+    <Compile Include="Internals\MeadowComms\MeadowFlashManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -72,9 +74,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Hcom\" />
-    <Folder Include="Dfu\" />
-    <Folder Include="Tools\" />
+    <Folder Include="DeviceManagement\" />
+    <Folder Include="Internals\" />
+    <Folder Include="Internals\Dfu\" />
+    <Folder Include="Internals\Tools\" />
+    <Folder Include="Internals\MeadowComms\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

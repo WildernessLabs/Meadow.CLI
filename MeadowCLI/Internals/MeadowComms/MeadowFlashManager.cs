@@ -18,33 +18,33 @@ namespace MeadowCLI.Hcom
         {
         }
 
-        public void WriteFileToFlash(Meadow meadow, string fileName, string targetFileName, int partition)
+        public void WriteFileToFlash(MeadowDevice meadow, string fileName, string targetFileName, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 
         }
 
-        public void DeleteFile(Meadow meadow, string targetFileName, int partition)
+        public void DeleteFile(MeadowDevice meadow, string targetFileName, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
 
         }
 
-        public void Erase(Meadow meadow)
+        public void Erase(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void EraseAndVerify(Meadow meadow)
+        public void EraseAndVerify(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void PartitionFileSystem(Meadow meadow, int numberOfPartitions)
+        public void PartitionFileSystem(MeadowDevice meadow, int numberOfPartitions)
         {
             if (numberOfPartitions > 1 || numberOfPartitions > 8)
                 throw new IndexOutOfRangeException("Number of partitions must be between 1 & 8 inclusive");
@@ -54,53 +54,53 @@ namespace MeadowCLI.Hcom
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)numberOfPartitions);
         }
 
-        public void MountFileSystem(Meadow meadow, int partition)
+        public void MountFileSystem(MeadowDevice meadow, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
-        public void InitializeFileSystem(Meadow meadow, int partition)
+        public void InitializeFileSystem(MeadowDevice meadow, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
-        public void CreateFileSystem(Meadow meadow)
+        public void CreateFileSystem(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void FormatFileSystem(Meadow meadow, int partition)
+        public void FormatFileSystem(MeadowDevice meadow, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
         //providing a numeric (0 = none, 1 = info and 2 = debug)
-        public void ChangeTraceLevel(Meadow meadow, uint level)
+        public void ChangeTraceLevel(MeadowDevice meadow, uint level)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, level);
         }
 
-        public void ResetTargetMcu(Meadow meadow)
+        public void ResetTargetMcu(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void EnterDfuMode(Meadow meadow)
+        public void EnterDfuMode(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void ToggleNsh(Meadow meadow)
+        public void ToggleNsh(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH;
 
@@ -108,41 +108,41 @@ namespace MeadowCLI.Hcom
         }
 
         //ToDo - find the output 
-        public void ListFiles(Meadow meadow, int partition)
-        { 
+        public void ListFiles(MeadowDevice meadow, int partition)
+        {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
         //ToDo - find the output 
-        public void ListFilesAndCrcs(Meadow meadow, int partition)
+        public void ListFilesAndCrcs(MeadowDevice meadow, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
         //ToDo - look these up - I assume their developer modes? Should be SetDev1, etc. ?
-        public void Developer1(Meadow meadow)
+        public void Developer1(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void Developer2(Meadow meadow)
+        public void Developer2(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void Developer3(Meadow meadow)
+        public void Developer3(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public void Developer4(Meadow meadow)
+        public void Developer4(MeadowDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4;
 
@@ -167,8 +167,8 @@ namespace MeadowCLI.Hcom
                 _meadowRequestType));
         }
 
-        
-        private static void TransmitFileInfoToExtFlash(Meadow meadow,
+
+        private static void TransmitFileInfoToExtFlash(MeadowDevice meadow,
                             HcomMeadowRequestType requestType,
                             string sourceFileName, string targetFileName, int partition,
                             bool deleteFile)
@@ -177,11 +177,9 @@ namespace MeadowCLI.Hcom
 
             var sendTargetData = new SendTargetData(meadow.SerialPort);
 
-            try
-            {
+            try {
                 //----------------------------------------------
-                if (!deleteFile)
-                {
+                if (!deleteFile) {
                     // No data packets and no end-of-file message
                     sendTargetData.BuildAndSendFileRelatedCommand(requestType,
                         (UInt32)partition, 0, 0, targetFileName);
@@ -203,9 +201,7 @@ namespace MeadowCLI.Hcom
 
                 Console.WriteLine("It took {0:N0} millisec to send {1} bytes. FileCrc:{2:x08}",
                     sw.ElapsedMilliseconds, fileLength, fileCrc32);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Console.WriteLine($"Unknown exception:{ex}");
             }
         }

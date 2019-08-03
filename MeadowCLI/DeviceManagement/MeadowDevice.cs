@@ -2,16 +2,17 @@
 using System.IO;
 using System.IO.Ports;
 
+// TODO: change namespace. 
 namespace MeadowCLI.Hcom
 {
     //a simple model object that represents meadow
-    public class Meadow
+    public class MeadowDevice
     {
         public SerialPort SerialPort { get; set; }
         
         public int Id { get; set; } //guessing we'll need this
 
-        public Meadow(SerialPort serialPort)
+        public MeadowDevice(SerialPort serialPort)
         {
             SerialPort = serialPort;
         }
