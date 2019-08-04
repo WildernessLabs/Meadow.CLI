@@ -21,11 +21,14 @@ namespace Meadow.CLI.DeviceManagement
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 
+            TransmitFileInfoToExtFlash(meadow, _meadowRequestType, fileName, targetFileName, partition, false);
         }
 
         public static void DeleteFile(MeadowDevice meadow, string targetFileName, int partition)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
+
+            TransmitFileInfoToExtFlash(meadow, _meadowRequestType, string.Empty, targetFileName, partition, true);
 
         }
 

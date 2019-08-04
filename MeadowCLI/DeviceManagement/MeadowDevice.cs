@@ -11,9 +11,9 @@ namespace MeadowCLI.DeviceManagement
         
         public int Id { get; set; } //guessing we'll need this
 
-        public MeadowDevice(SerialPort serialPort)
+        public MeadowDevice(string serialPortName)
         {
-            SerialPort = serialPort;
+            OpenSerialPort(serialPortName);
         }
 
         //putting this here for now .....

@@ -13,6 +13,8 @@ namespace Meadow.CLI.DeviceManagement
         // TODO: should probably be an ObservableList<>
         public static List<MeadowDevice> AttachedDevices = new List<MeadowDevice>();
 
+        public static MeadowDevice CurrentDevice {get; set; } //short cut for now but may be useful
+
         static HcomMeadowRequestType _meadowRequestType;
 
         static DeviceManager()
