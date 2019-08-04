@@ -36,7 +36,7 @@ namespace MeadowCLI
             [Option(longName: "FormatFileSystem", Required = false, HelpText = "Format file system in Meadow's internal flash")]
             public bool FormatFileSystem { get; set; }
 
-            [Option(longName: "ChangeTraceLevel", Required = false, HelpText = "Change the debug trace level")]
+			[Option(longName: "ChangeTraceLevel", Required = false, HelpText = "Change the debug trace level")]
             public bool ChangeTraceLevel { get; set; }
             [Option(longName: "ResetTargetMcu", Required = false, HelpText = "Reset the MCU on Meadow")]
             public bool ResetTargetMcu { get; set; }
@@ -48,10 +48,11 @@ namespace MeadowCLI
             public bool ListFiles { get; set; }
             [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
             public bool ListFilesAndCrcs { get; set; }
-            //Developer 1,2,3,4
+			//Developer 1,2,3,4
 
-
-            [Option(longName: "localFile", Default = null, Required = false, HelpText = "Local file to send to Meadow")]
+			[Option(longName: "SerialPort", Default = "/dev/tty.usbmodem01", Required = false, HelpText = "Specify the serial port used by Meadow")]
+            public string SerialPort { get; set; }
+			[Option(longName: "localFile", Default = null, Required = false, HelpText = "Local file to send to Meadow")]
             public string ExtFileName { get; set; }
             [Option(longName: "targetFileName", Default = null, Required = false, HelpText = "Filename to be written to Meadow (can be different from source name")]
             public string TargetFileName { get; set; }
@@ -77,6 +78,9 @@ namespace MeadowCLI
                     //ToDo update to use command line args for os and user
                     DfuUpload.FlashNuttx(opts.DfuOsPath, opts.DfuUserPath);
                 }
+
+
+
             });
 
             Console.ReadKey();

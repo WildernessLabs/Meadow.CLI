@@ -59,7 +59,6 @@
     <Compile Include="Internals\MeadowComms\ReceiveTargetData.cs" />
     <Compile Include="Internals\MeadowComms\SendTargetData.cs" />
     <Compile Include="Internals\MeadowComms\HostComBuffer.cs" />
-    <Compile Include="Internals\MeadowComms\MeadowFlashManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

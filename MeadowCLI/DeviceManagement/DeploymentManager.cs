@@ -1,5 +1,5 @@
 ﻿using System;
-using MeadowCLI.Hcom;
+using MeadowCLI.DeviceManagement;
 
 namespace Meadow.CLI.DeviceManagement
 {

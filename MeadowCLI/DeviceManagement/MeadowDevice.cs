@@ -2,8 +2,7 @@
 using System.IO;
 using System.IO.Ports;
 
-// TODO: change namespace. 
-namespace MeadowCLI.Hcom
+namespace MeadowCLI.DeviceManagement
 {
     //a simple model object that represents meadow
     public class MeadowDevice
@@ -18,25 +17,24 @@ namespace MeadowCLI.Hcom
         }
 
         //putting this here for now .....
-        public bool OpenSerialPort(string portName, out SerialPort serialPort)
+        public bool OpenSerialPort(string portName)
         {
-            serialPort = null;
             try
             {
                 // Create a new SerialPort object with default settings.
-                serialPort = new SerialPort();
-                serialPort.PortName = portName;
-                serialPort.BaudRate = 115200;       // This value is ignored when using ACM
-                serialPort.Parity = Parity.None;
-                serialPort.DataBits = 8;
-                serialPort.StopBits = StopBits.One;
-                serialPort.Handshake = Handshake.None;
+                SerialPort = new SerialPort();
+                SerialPort.PortName = portName;
+                SerialPort.BaudRate = 115200;       // This value is ignored when using ACM
+                SerialPort.Parity = Parity.None;
+                SerialPort.DataBits = 8;
+                SerialPort.StopBits = StopBits.One;
+                SerialPort.Handshake = Handshake.None;
 
                 // Set the read/write timeouts
-                serialPort.ReadTimeout = 500;
-                serialPort.WriteTimeout = 500;
+                SerialPort.ReadTimeout = 500;
+                SerialPort.WriteTimeout = 500;
 
-                serialPort.Open();
+                SerialPort.Open();
                 Console.WriteLine("Port: {0} opened", portName);
                 return true;
             }

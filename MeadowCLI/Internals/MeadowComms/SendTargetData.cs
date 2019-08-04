@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Text;
+using static Meadow.CLI.DeviceManagement.MeadowFileManager;
 
 namespace MeadowCLI.Hcom
 {
