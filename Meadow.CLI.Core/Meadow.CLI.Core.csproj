@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{00F05278-9F3F-40B0-B377-64E26B028888}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Meadow.CLI</RootNamespace>
+    <AssemblyName>Meadow.CLI.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="LibUsbDotNet.LibUsbDotNet">
+      <HintPath>..\packages\LibUsbDotNet.2.2.29\lib\net45\LibUsbDotNet.LibUsbDotNet.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DeviceManagement\MeadowDeviceInfo.cs" />
+    <Compile Include="DeviceManagement\MeadowSerialDevice.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="DeviceManagement\DeploymentManager.cs" />
+    <Compile Include="DeviceManagement\MeadowDeviceManager.cs" />
+    <Compile Include="DeviceManagement\MeadowDevice.cs" />
+    <Compile Include="DeviceManagement\MeadowFileManager.cs" />
+    <Compile Include="Internals\MeadowComms\HostComBuffer.cs" />
+    <Compile Include="Internals\MeadowComms\MeadowSerialDataProcessor.cs" />
+    <Compile Include="Internals\MeadowComms\SendTargetData.cs" />
+    <Compile Include="Internals\Tools\CobsTools.cs" />
+    <Compile Include="Internals\Tools\CrcTools.cs" />
+    <Compile Include="DeviceManagement\MeadowUsbDevice.cs" />
+    <Compile Include="DeviceManagement\UsbDeviceManager.cs" />
+    <Compile Include="Internals\Dfu\DfuContext.cs" />
+    <Compile Include="Internals\Dfu\DfuSharp.cs" />
+    <Compile Include="Internals\Dfu\DfuUpload.cs" />
+    <Compile Include="Internals\Dfu\NativeMethods.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="libusb-1.0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="libusb-1.0.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
