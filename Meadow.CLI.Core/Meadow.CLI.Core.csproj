@@ -26,6 +26,12 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>WildernessLabsAssemblySigningKey.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="LibUsbDotNet.LibUsbDotNet">
@@ -57,6 +63,7 @@
   <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="WildernessLabsAssemblySigningKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="libusb-1.0.dll">
