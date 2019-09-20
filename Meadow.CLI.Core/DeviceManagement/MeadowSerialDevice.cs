@@ -259,7 +259,7 @@ namespace MeadowCLI.DeviceManagement
             foreach (var path in fileList)
             {
                 var file = path.Substring(path.LastIndexOf('/') + 1);
-                filesOnDevice.Add(file);
+                filesOnDevice.Add(file.Trim());
             }
         }
 

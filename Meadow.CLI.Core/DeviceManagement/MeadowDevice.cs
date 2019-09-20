@@ -24,7 +24,7 @@ namespace MeadowCLI.DeviceManagement
         public const string MSCORLIB = "mscorlib.dll";
         public const string SYSTEM = "System.dll";
         public const string SYSTEM_CORE = "System.Core.dll";
-        public const string MEADOW_CORE = "Meadow.Core.dll";
+        public const string MEADOW_CORE = "Meadow.dll";
         public const string APP_EXE = "App.exe";
 
         protected readonly List<string> filesOnDevice = new List<string>();
