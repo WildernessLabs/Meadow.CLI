@@ -27,10 +27,10 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>WildernessLabsAssemblySigningKey.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -62,8 +62,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <None Include="MeadowCLIKey.snk" />
     <None Include="packages.config" />
-    <None Include="WildernessLabsAssemblySigningKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="libusb-1.0.dll">
