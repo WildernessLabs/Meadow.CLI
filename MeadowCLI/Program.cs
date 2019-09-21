@@ -67,6 +67,11 @@ namespace MeadowCLI
                 }
             });
 
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                behavior = CompletionBehavior.KeepConsoleOpen;
+            }
+
             if ((behavior & CompletionBehavior.KeepConsoleOpen) == CompletionBehavior.KeepConsoleOpen)
             {
                 Console.ReadKey();
@@ -123,15 +128,36 @@ namespace MeadowCLI
 
             if (options.WriteFile)
             {
-                Console.WriteLine($"Writing {options.FileName} to partition {options.Partition}");
-                MeadowFileManager.WriteFileToFlash(MeadowDeviceManager.CurrentDevice,
-                    options.FileName, options.TargetFileName, options.Partition);
+                if (string.IsNullOrEmpty(options.FileName))
+                {
+                    Console.WriteLine($"option --WriteFile also requires option --File (the local file you wish to write)");
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(options.TargetFileName))
+                    {
+                        Console.WriteLine($"Writing {options.FileName} to partition {options.Partition}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName} to partition {options.Partition}");
+                    }
+                    MeadowFileManager.WriteFileToFlash(MeadowDeviceManager.CurrentDevice,
+                        options.FileName, options.TargetFileName, options.Partition);
+                }
             }
             else if (options.DeleteFile)
             {
-                Console.WriteLine($"Deleting {options.FileName} from partion {options.Partition}");
-                MeadowFileManager.DeleteFile(MeadowDeviceManager.CurrentDevice,
-                    options.TargetFileName, options.Partition);
+                if (string.IsNullOrEmpty(options.TargetFileName))
+                {
+                    Console.WriteLine($"option --DeleteFile also requires option --TargetFileName (the file you wish to delete)");
+                }
+                else
+                {
+                    Console.WriteLine($"Deleting {options.FileName} from partion {options.Partition}");
+                    MeadowFileManager.DeleteFile(MeadowDeviceManager.CurrentDevice,
+                        options.TargetFileName, options.Partition);
+                }
             }
             else if (options.EraseFlash)
             {
