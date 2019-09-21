@@ -37,6 +37,24 @@ namespace MeadowCLI
             Parser.Default.ParseArguments<Options>(args)
             .WithParsed<Options>(options =>
             {
+                if (options.ListPorts)
+                {
+                    Console.WriteLine("Available serial ports\n----------------------");
+
+                    var ports = MeadowSerialDevice.GetAvailableSerialPorts();
+                    if (ports == null || ports.Length == 0)
+                    {
+                        Console.WriteLine("\t <no ports found>");
+                    }
+                    else
+                    {
+                        foreach (var p in ports)
+                        {
+                            Console.WriteLine($"\t{p}");
+                        }
+                    }
+                }
+
                 if (options.Dfu)
                 {
                     //ToDo update to use command line args for os and user

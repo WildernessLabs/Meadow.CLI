@@ -62,6 +62,8 @@ namespace MeadowCLI
         [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
         public bool ListFilesAndCrcs { get; set; }
 
+        [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
+        public bool ListPorts { get; set; }
         [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
         public string SerialPort { get; set; }
         [Option('f', longName: "File", Default = null, Required = false, HelpText = "Local file to send to Meadow")]

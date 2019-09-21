@@ -24,6 +24,11 @@ namespace MeadowCLI.DeviceManagement
             this._serialPortName = serialPortName;   
         }
 
+        public static string[] GetAvailableSerialPorts()
+        {
+            return SerialPort.GetPortNames();
+        }
+
         public bool Initialize(bool listen = true)
         {
             if (SerialPort != null)
