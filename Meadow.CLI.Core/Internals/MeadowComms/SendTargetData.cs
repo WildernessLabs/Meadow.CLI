@@ -8,18 +8,22 @@ namespace MeadowCLI.Hcom
 {
     public class SendTargetData
     {
-        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 4;
+        //                                                             seq+ver+ctl+cmd+user
+        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 2 + 2 + 4;
         public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
+        public const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0002;
+        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_FUTURE = 0x0000;
 
         //questioning if this class should send or just create the message
         SerialPort _serialPort; //refactor this .... 
 
         uint _packetCrc32;
 
-        // Note: '256' is the size of the s25fl QSPI flash chip's "Page" (i.e. the smallest size it
-        // can program). By using '256' as our data block size we insure that each packet received can
-        // be immediately writen to the s25fl QSPI flash chip.
-        const int maxAllowableDataBlock = 256;
+        // Note: While not truly important, it can be noted that, size of the s25fl QSPI flash
+        // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
+        // maxmimum data block size an even multiple of 256 we insure that each packet received
+        // can be immediately written to the s25fl QSPI flash chip.
+        const int maxAllowableDataBlock = 512;
         const int maxSizeOfXmitPacket = (maxAllowableDataBlock + 4) + (maxAllowableDataBlock / 254);
 
         //==========================================================================
@@ -135,6 +139,15 @@ namespace MeadowCLI.Hcom
             Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
                 messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
+
+            // Protocol version
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
+            offset += sizeof(UInt16);
+
+            // Protocol control (future)
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CONTROL_VALUE_FUTURE), 0, messageBytes, offset, sizeof(UInt16));
+            offset += sizeof(UInt16);
+
 
             // Command type (2 bytes)
             Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
