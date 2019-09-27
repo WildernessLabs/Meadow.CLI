@@ -74,7 +74,7 @@ namespace MeadowCLI
 
             if ((behavior & CompletionBehavior.KeepConsoleOpen) == CompletionBehavior.KeepConsoleOpen)
             {
-                Console.ReadKey();
+                Console.Read();
             }
             else
             {
