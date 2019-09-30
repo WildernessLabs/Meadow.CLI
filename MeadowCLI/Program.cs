@@ -53,17 +53,20 @@ namespace MeadowCLI
                             Console.WriteLine($"\t{p}");
                         }
                     }
-                }
-
-                if (options.Dfu)
-                {
-                    //ToDo update to use command line args for os and user
-                    DfuUpload.FlashNuttx(options.DfuOsPath, options.DfuUserPath);
+                    Console.WriteLine($"\n");
                 }
                 else
                 {
-                    SyncArgsCache(options);
-                    behavior = ProcessHcom(options);
+                    if (options.Dfu)
+                    {
+                        //ToDo update to use command line args for os and user
+                        DfuUpload.FlashNuttx(options.DfuOsPath, options.DfuUserPath);
+                    }
+                    else
+                    {
+                        SyncArgsCache(options);
+                        behavior = ProcessHcom(options);
+                    }
                 }
             });
 
@@ -86,7 +89,6 @@ namespace MeadowCLI
         {
             if (serialPort == null)
             {
-                Console.WriteLine($"A serial port has not been selected or the serial port isn't available (--SerialPort option)");
                 return false;
             }
 
@@ -121,10 +123,21 @@ namespace MeadowCLI
 
         static CompletionBehavior ProcessHcom(Options options)
         {
-            ConnectToMeadowDevice(options.SerialPort);
-
-            if(IsSerialPortValid(MeadowDeviceManager.CurrentDevice.SerialPort) == false)
+            Console.Write($"Opening port '{options.SerialPort}'...");
+            if (ConnectToMeadowDevice(options.SerialPort))
+            {
+                // verify that the port was actually connected
+                if (!IsSerialPortValid(MeadowDeviceManager.CurrentDevice.SerialPort))
+                {
+                    Console.WriteLine($"port not available");
+                    return CompletionBehavior.RequestFailed;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"failed to open port");
                 return CompletionBehavior.RequestFailed;
+            }
 
             if (options.WriteFile)
             {
@@ -275,20 +288,21 @@ namespace MeadowCLI
         }
 
         //temp code until we get the device manager logic in place 
-        static void ConnectToMeadowDevice (string commPort)
+        static bool ConnectToMeadowDevice (string commPort)
 		{
             var device = new MeadowSerialDevice(commPort);
             try
             {
                 device.Initialize();
-                Console.WriteLine($"Port {commPort} opened");
             }
             catch (MeadowDeviceException ex)
             {
                 Console.WriteLine(ex.Message);
+                return false;
             }
 
             MeadowDeviceManager.CurrentDevice = device;
+            return true;
         }
     }
 }
