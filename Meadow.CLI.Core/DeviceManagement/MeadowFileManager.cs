@@ -171,7 +171,8 @@ namespace MeadowCLI.DeviceManagement
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unknown exception:{ex}");
+                Debug.WriteLine($"TransmitFileInfoToExtFlash threw :{ex}");
+                throw;
             }
         }
 

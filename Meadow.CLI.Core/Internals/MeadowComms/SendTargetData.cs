@@ -45,48 +45,41 @@ namespace MeadowCLI.Hcom
         {
             _packetCrc32 = 0;
 
-            try
+            // Build and send the header
+            BuildAndSendFileRelatedCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
+                partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
+
+            //--------------------------------------------------------------
+            // Build all the data packets
+            int fileBufOffset = 0;
+            int numbToSend;
+            UInt16 sequenceNumber = 1;
+
+            while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
             {
-                // Build and send the header
-                BuildAndSendFileRelatedCommand(
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                    partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
+                if ((fileBufOffset + maxAllowableDataBlock) > (fileBytes.Length - 1))
+                    numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
+                else
+                    numbToSend = maxAllowableDataBlock;
 
-                //--------------------------------------------------------------
-                // Build all the data packets
-                int fileBufOffset = 0;
-                int numbToSend;
-                UInt16 sequenceNumber = 1;
+                BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
+                fileBufOffset += numbToSend;
 
-                while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
-                {
-                    if ((fileBufOffset + maxAllowableDataBlock) > (fileBytes.Length - 1))
-                        numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
-                    else
-                        numbToSend = maxAllowableDataBlock;
-
-                    BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
-                    fileBufOffset += numbToSend;
-
-                    sequenceNumber++;
-                    //if (sequenceNumber % 1000 == 0)
-                    //	Console.WriteLine("Have sent {0:N0} bytes out of {1:N0} in {2:N0} packets",
-                    //		fileBufOffset, fileBytes.Length, sequenceNumber);
-                }
-
-                //--------------------------------------------------------------
-                // Build and send the trailer
-                BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER, 0);
-
-                // bufferOffset should point to the byte after the last byte
-                Debug.Assert(fileBufOffset == fileBytes.Length);
-                if (Verbose) Console.WriteLine("Total bytes sent {0:N0} in {1:N0} packets. PacketCRC:{2:x08} MaxPacket:{3}",
-                     fileBufOffset, sequenceNumber, _packetCrc32, maxSizeOfXmitPacket);
+                sequenceNumber++;
+                //if (sequenceNumber % 1000 == 0)
+                //	Console.WriteLine("Have sent {0:N0} bytes out of {1:N0} in {2:N0} packets",
+                //		fileBufOffset, fileBytes.Length, sequenceNumber);
             }
-            catch (Exception except)
-            {
-                Console.WriteLine("Exception sending:{0}", except);
-            }
+
+            //--------------------------------------------------------------
+            // Build and send the trailer
+            BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER, 0);
+
+            // bufferOffset should point to the byte after the last byte
+            Debug.Assert(fileBufOffset == fileBytes.Length);
+            if (Verbose) Console.WriteLine("Total bytes sent {0:N0} in {1:N0} packets. PacketCRC:{2:x08} MaxPacket:{3}",
+                    fileBufOffset, sequenceNumber, _packetCrc32, maxSizeOfXmitPacket);
         }
 
         //==========================================================================
@@ -247,7 +240,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception except)
             {
-                Console.WriteLine($"An exception was caught: {except}");
+                Debug.WriteLine($"EncodeAndSendPacket threw: {except}");
                 throw;
             }
         }
