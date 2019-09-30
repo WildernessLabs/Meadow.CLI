@@ -1,0 +1,12 @@
+# Meadow.Foundation pipeline
+# Reference: https://aka.ms/yaml
+
+trigger:
+- master
+
+pool: "Default"
+
+steps:
+- task: ShellScript@2
+  inputs:
+    scriptPath: build.sh
