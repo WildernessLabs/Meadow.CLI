@@ -141,7 +141,7 @@ namespace MeadowCLI.DeviceManagement
         {
             var sw = new Stopwatch();
 
-            var sendTargetData = new SendTargetData(meadow.SerialPort);
+            var sendTargetData = new SendTargetData(meadow.SerialPort, false);
 
             try
             {
@@ -167,8 +167,7 @@ namespace MeadowCLI.DeviceManagement
 
                 sw.Stop();
 
-                Console.WriteLine("It took {0:N0} millisec to send {1} bytes. FileCrc:{2:x08}",
-                    sw.ElapsedMilliseconds, fileLength, fileCrc32);
+                if (sendTargetData.Verbose) Console.WriteLine("It took {0:N0} millisec to send {1} bytes. FileCrc:{2:x08}", sw.ElapsedMilliseconds, fileLength, fileCrc32);
             }
             catch (Exception ex)
             {
