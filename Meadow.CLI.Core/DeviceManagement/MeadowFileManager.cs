@@ -12,7 +12,6 @@ namespace MeadowCLI.DeviceManagement
         const UInt16 REQUEST_HEADER_MASK = 0xff00;
         const UInt32 UNKNOWN_USER_DATA = 0xffffffff;
 
-
         const string APP = "App.exe";
 
         static MeadowFileManager()
@@ -133,15 +132,13 @@ namespace MeadowCLI.DeviceManagement
                 _meadowRequestType));
         }
 
-
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType,
                             string sourceFileName, string targetFileName, int partition,
                             bool deleteFile)
         {
             var sw = new Stopwatch();
-
-            var sendTargetData = new SendTargetData(meadow.SerialPort, false);
+            var sendTargetData = new SendTargetData(meadow.SerialPort);
 
             try
             {
@@ -167,16 +164,19 @@ namespace MeadowCLI.DeviceManagement
 
                 sw.Stop();
 
-                if (sendTargetData.Verbose) Console.WriteLine("It took {0:N0} millisec to send {1} bytes. FileCrc:{2:x08}", sw.ElapsedMilliseconds, fileLength, fileCrc32);
+#if DEBUG
+                Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");
+#else
+                Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes.");
+#endif
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"TransmitFileInfoToExtFlash threw :{ex}");
-                throw;
+                Console.WriteLine($"Unknown exception:{ex}");
             }
         }
 
-        enum HcomProtocolHeaderTypes : UInt16
+        public enum HcomProtocolHeaderTypes : UInt16
         {
             HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED = 0x0000,
             // Simple request types, include 4-byte user data
@@ -185,6 +185,18 @@ namespace MeadowCLI.DeviceManagement
             // destination partition id), 4-byte file size, 4-byte checksum and
             // variable length destition file name.
             HCOM_PROTOCOL_HEADER_TYPE_FILE = 0x0200,
+            // Simple text. The text fits in the header extension
+            HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT = 0x0300,
+        }
+
+        public enum HcomProtocolHeaderOffsets
+        {
+            HCOM_PROTOCOL_REQUEST_HEADER_SEQ_OFFSET = 0,
+            HCOM_PROTOCOL_REQUEST_HEADER_VERSION_OFFSET = 2,
+            HCOM_PROTOCOL_REQUEST_HEADER_CONTROL_OFFSET = 4,
+            HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET = 6,
+            HCOM_PROTOCOL_REQUEST_HEADER_USER_DATA_OFFSET = 8,
+            HCOM_PROTOCOL_REQUEST_HEADER_TOTAL_LENGTH = 12,
         }
 
         // Messages to be sent to Meadow board
@@ -210,12 +222,19 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_ENABLE = 0x10 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_RUN_STATE = 0x11 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION = 0x12 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS = 0x13 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST = 0x14 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_SEND_DIAG_TO_HOST = 0x15 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_2 = 0xf1 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_3 = 0xf2 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_4 = 0xf3 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+
+            HCOM_MDOW_REQUEST_S25FL_QSPI_INIT = 0xf4 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE = 0xf5 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_READ = 0xf6 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
             HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,

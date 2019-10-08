@@ -19,6 +19,53 @@ namespace MeadowCLI
         public bool EraseFlash { get; set; }
         [Option(longName: "VerifyErasedFlash", Required = false, HelpText = "Verify the contents of the flash were deleted")]
         public bool VerifyErasedFlash { get; set; }
+        [Option(longName: "ClearCache", Required = false, HelpText = "Clears the CLI's state cache")]
+        public bool ClearCache { get; set; }
+
+        [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
+        public bool ListPorts { get; set; }
+
+        [Option('r', longName: "ResetTargetMcu", Required = false, HelpText = "Reset the MCU on Meadow")]
+        public bool ResetTargetMcu { get; set; }
+        [Option(longName: "MonoDisable", Required = false, HelpText = "Disable mono from running")]
+        public bool MonoDisable { get; set; }
+        [Option(longName: "MonoEnable", Required = false, HelpText = "Enable mono so it can run")]
+        public bool MonoEnable { get; set; }
+        [Option(longName: "MonoRunState", Required = false, HelpText = "Reads mono startup state")]
+        public bool MonoRunState { get; set; }
+        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Enable mono so it can run")]
+        public bool GetDeviceInfo { get; set; }
+        [Option(longName: "ListFiles", Required = false, HelpText = "List all files in Meadow partition")]
+        public bool ListFiles { get; set; }
+        [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
+        public bool ListFilesAndCrcs { get; set; }
+        [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
+        public string SerialPort { get; set; }
+        [Option('f', longName: "File", Default = null, Required = false, HelpText = "Local file to send to Meadow")]
+        public string FileName { get; set; }
+        [Option(longName: "TargetFileName", Default = null, Required = false, HelpText = "Filename to be written to Meadow (can be different from source name")]
+        public string TargetFileName { get; set; }
+        [Option(longName: "SetTraceLevel", Required = false, HelpText = "Change the debug trace level (0 - 3)")]
+        public bool SetTraceLevel { get; set; }
+        [Option('t', "TraceLevel", Default = 1, Required = false, HelpText = "Change the amount of debug information provided by the OS")]
+        public int TraceLevel { get; set; }
+        [Option(longName: "RenewFileSys", Required = false, HelpText = "Recreate the Meadow File System")]
+        public bool RenewFileSys { get; set; }
+        [Option(longName: "NoDiagMsg", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
+        public bool NoDiagMsg { get; set; }
+        [Option(longName: "SendDiagMsg", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
+        public bool SendDiagMsg { get; set; }
+
+
+#if DEBUG
+        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Put Meadow in DFU mode - Not implemented")]
+        public bool EnterDfuMode { get; set; }
+        [Option(longName: "NshEnable", Required = false, HelpText = "Enable NSH")]
+        public bool NshEnable { get; set; }
+        [Option('p', "Partition", Default = 0, Required = false, HelpText = "Destination partition on Meadow")]
+        public int Partition { get; set; }
+        [Option('n', "NumberOfPartitions", Default = 1, Required = false, HelpText = "The number of partitions to create on Meadow")]
+        public int NumberOfPartitions { get; set; }
         [Option(longName: "PartitionFileSystem", Required = false, HelpText = "Partition Meadow's internal flash")]
         public bool PartitionFileSystem { get; set; }
         [Option(longName: "MountFileSystem", Required = false, HelpText = "Mount file system in Meadow's internal flash")]
@@ -29,8 +76,6 @@ namespace MeadowCLI
         public bool CreateFileSystem { get; set; }
         [Option(longName: "FormatFileSystem", Required = false, HelpText = "Format file system in Meadow's internal flash")]
         public bool FormatFileSystem { get; set; }
-        [Option(longName: "ClearCache", Required = false, HelpText = "Clears the CLI's state cache")]
-        public bool ClearCache { get; set; }
 
         [Option(longName: "SetDeveloper1", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool SetDeveloper1 { get; set; }
@@ -40,43 +85,16 @@ namespace MeadowCLI
         public bool SetDeveloper3 { get; set; }
         [Option(longName: "SetDeveloper4", Required = false, HelpText = "Set developer4 (0 to 4,294,967,295)")]
         public bool SetDeveloper4 { get; set; }
-        [Option(longName: "SetTraceLevel", Required = false, HelpText = "Change the debug trace level (0 - 3)")]
-        public bool SetTraceLevel { get; set; }
-        [Option('r', longName: "ResetTargetMcu", Required = false, HelpText = "Reset the MCU on Meadow")]
-        public bool ResetTargetMcu { get; set; }
-        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Set Meadow in DFU mode")]
-        public bool EnterDfuMode { get; set; }
-        [Option(longName: "NshEnable", Required = false, HelpText = "Enable NSH")]
-        public bool NshEnable { get; set; }
-        [Option(longName: "MonoDisable", Required = false, HelpText = "Disable mono from running")]
-        public bool MonoDisable { get; set; }
-        [Option(longName: "MonoEnable", Required = false, HelpText = "Enable mono so it can run")]
-        public bool MonoEnable { get; set; }
-        [Option(longName: "MonoRunState", Required = false, HelpText = "Reads mono startup state")]
-        public bool MonoRunState { get; set; }
-        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Enable mono so it can run")]
-        public bool GetDeviceInfo { get; set; }
 
-        [Option(longName: "ListFiles", Required = false, HelpText = "List all files in Meadow partition")]
-        public bool ListFiles { get; set; }
-        [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
-        public bool ListFilesAndCrcs { get; set; }
+        [Option(longName: "QspiWrite", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
+        public bool QspiWrite { get; set; }
+        [Option(longName: "QspiRead", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
+        public bool QspiRead { get; set; }
+        [Option(longName: "QspiInit", Required = false, HelpText = "Set developer3 (0 to 4,294,967,295)")]
+        public bool QspiInit { get; set; }
 
-        [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
-        public bool ListPorts { get; set; }
-        [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
-        public string SerialPort { get; set; }
-        [Option('f', longName: "File", Default = null, Required = false, HelpText = "Local file to send to Meadow")]
-        public string FileName { get; set; }
-        [Option(longName: "TargetFileName", Default = null, Required = false, HelpText = "Filename to be written to Meadow (can be different from source name")]
-        public string TargetFileName { get; set; }
-        [Option('p', "Partition", Default = 0, Required = false, HelpText = "Destination partition on Meadow")]
-        public int Partition { get; set; }
-        [Option('n', "NumberOfPartitions", Default = 1, Required = false, HelpText = "The number of partitions to create on Meadow")]
-        public int NumberOfPartitions { get; set; }
-        [Option('t', "TraceLevel", Default = 1, Required = false, HelpText = "Change the amount of debug information provided by the OS")]
-        public int TraceLevel { get; set; }
         [Option(longName: "DeveloperValue", Default = 0, Required = false, HelpText = "Change the developer numeric user data value")]
         public int DeveloperValue { get; set; }
+#endif
     }
 }

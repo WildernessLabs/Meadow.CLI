@@ -35,7 +35,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="LibUsbDotNet.LibUsbDotNet">
-      <HintPath>$(SolutionDir)\packages\LibUsbDotNet.2.2.29\lib\net45\LibUsbDotNet.LibUsbDotNet.dll</HintPath>
+      <HintPath>..\packages\LibUsbDotNet.2.2.29\lib\net45\LibUsbDotNet.LibUsbDotNet.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Windows.Forms" />
@@ -43,6 +43,10 @@
   <ItemGroup>
     <Compile Include="DeviceManagement\MeadowDeviceInfo.cs" />
     <Compile Include="DeviceManagement\MeadowSerialDevice.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\RecvFactory.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\RecvHeader.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\RecvSimpleMsg.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\RecvSimpleText.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DeviceManagement\DeploymentManager.cs" />
     <Compile Include="DeviceManagement\MeadowDeviceManager.cs" />

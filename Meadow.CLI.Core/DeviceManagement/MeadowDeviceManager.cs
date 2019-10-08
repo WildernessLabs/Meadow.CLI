@@ -13,7 +13,19 @@ namespace MeadowCLI.DeviceManagement
     /// </summary>
     public static class MeadowDeviceManager
     {
-    //    public static ObservableCollection<MeadowDevice> AttachedDevices = new ObservableCollection<MeadowDevice>();
+        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 2 + 2 + 4;
+        public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
+        public const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0003;
+        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_FUTURE = 0x0000;
+
+        // Note: While not truly important, it can be noted that, size of the s25fl QSPI flash
+        // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
+        // maxmimum data block size an even multiple of 256 we insure that each packet received
+        // can be immediately written to the s25fl QSPI flash chip.
+        public const int maxAllowableDataBlock = 512;
+        public const int maxSizeOfXmitPacket = (maxAllowableDataBlock + 4) + (maxAllowableDataBlock / 254);
+
+        //    public static ObservableCollection<MeadowDevice> AttachedDevices = new ObservableCollection<MeadowDevice>();
 
         public static MeadowSerialDevice CurrentDevice { get; set; } //short cut for now but may be useful
 
@@ -27,9 +39,9 @@ namespace MeadowCLI.DeviceManagement
         }
 
         //returns null if we can't detect a Meadow board
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort, bool verbose = true)
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort)
         {
-            var meadow = CurrentDevice = new MeadowSerialDevice(serialPort, verbose);
+            var meadow = CurrentDevice = new MeadowSerialDevice(serialPort);
 
             try
             {
@@ -130,6 +142,27 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
+        public static void NoDiagMsg(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static void SendDiagMsg(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_DIAG_TO_HOST;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static void RenewFileSys(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+        }
+
         public static void SetDeveloper1(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
@@ -155,6 +188,28 @@ namespace MeadowCLI.DeviceManagement
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
+
+        public static void QspiWrite(MeadowSerialDevice meadow, int userData)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+        }
+
+        public static void QspiRead(MeadowSerialDevice meadow, int userData)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+        }
+
+        public static void QspiInit(MeadowSerialDevice meadow, int userData)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT;
+
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+        }
+
 
         public static void EnterEchoMode(MeadowSerialDevice meadow)
         {

@@ -19,13 +19,10 @@ namespace MeadowCLI.DeviceManagement
 
         private MeadowSerialDataProcessor dataProcessor;
 
-        public MeadowSerialDevice(string serialPortName, bool verbose = true)
+        public MeadowSerialDevice(string serialPortName)
         {
-            this._serialPortName = serialPortName;
-            this.Verbose = verbose;
+            this._serialPortName = serialPortName;   
         }
-
-        public bool Verbose { get; protected set; }
 
         public static string[] GetAvailableSerialPorts()
         {
@@ -144,7 +141,7 @@ namespace MeadowCLI.DeviceManagement
 
                 handler = (s, e) =>
                 {
-                    if (e.MessageType == MeadowMessageType.FileList)
+                    if (e.MessageType == MeadowMessageType.FileListMember)
                     {
                         SetFilesOnDeviceFromMessage(e.Message);
                         tcs.SetResult(true);
@@ -240,23 +237,21 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    if (Verbose) Console.Write("Data: " + args.Message);
+                    if(!String.IsNullOrEmpty(args.Message))
+                        Console.WriteLine("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    if (Verbose) Console.Write("App: " + args.Message);
+                    Console.WriteLine("App: " + args.Message);
                     break;
-                case MeadowMessageType.FileList:
-                    SetFilesOnDeviceFromMessage(args.Message);
-                    if (Verbose)
-                    {
-                        Console.WriteLine();
-                        foreach (var f in filesOnDevice)
-                            Console.WriteLine(f);
-                    }
+                case MeadowMessageType.FileListTitle:
+                    Console.WriteLine("File List: ");
+                    break;
+                case MeadowMessageType.FileListMember:
+                    Console.WriteLine(args.Message);
                     break;
                 case MeadowMessageType.DeviceInfo:
                     SetDeviceIdFromMessage(args.Message);
-                    if (Verbose) Console.WriteLine("ID: " + args.Message);
+                    Console.WriteLine("ID: " + args.Message);
                     break;
             }
         }
@@ -264,7 +259,7 @@ namespace MeadowCLI.DeviceManagement
         void SetFilesOnDeviceFromMessage(string message)
         {
             var fileList = message.Split(',');
-
+            
             filesOnDevice.Clear();
 
             foreach (var path in fileList)
