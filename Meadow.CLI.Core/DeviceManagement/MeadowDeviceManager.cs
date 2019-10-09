@@ -13,10 +13,10 @@ namespace MeadowCLI.DeviceManagement
     /// </summary>
     public static class MeadowDeviceManager
     {
-        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 2 + 2 + 4;
+        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
         public const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0003;
-        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_FUTURE = 0x0000;
+        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
 
         // Note: While not truly important, it can be noted that, size of the s25fl QSPI flash
         // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the

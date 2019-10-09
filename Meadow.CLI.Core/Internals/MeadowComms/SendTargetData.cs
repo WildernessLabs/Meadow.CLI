@@ -133,10 +133,9 @@ namespace MeadowCLI.Hcom
             Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
-            // Protocol control (future)
-            Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_CONTROL_VALUE_FUTURE), 0, messageBytes, offset, sizeof(UInt16));
+            // Protocol control
+            Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
-
 
             // Command type (2 bytes)
             Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
