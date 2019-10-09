@@ -27,9 +27,9 @@ namespace MeadowCLI.DeviceManagement
         }
 
         //returns null if we can't detect a Meadow board
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort, bool verbose = true)
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort) //, bool verbose = true)
         {
-            var meadow = CurrentDevice = new MeadowSerialDevice(serialPort, verbose);
+            var meadow = CurrentDevice = new MeadowSerialDevice(serialPort);
 
             try
             {

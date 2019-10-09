@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Ports;
 using System.Threading.Tasks;
 using MeadowCLI.Hcom;
-using System.Linq;
 
 namespace MeadowCLI.DeviceManagement
 {
@@ -13,19 +12,19 @@ namespace MeadowCLI.DeviceManagement
     {
         public EventHandler<MeadowMessageEventArgs> OnMeadowMessage;
 
+        public bool Verbose { get; protected set; }
+
         public SerialPort SerialPort { get; private set; }
-        private string _serialPortName;
-        public string PortName => SerialPort == null ? _serialPortName : SerialPort.PortName;
+        private string serialPortName;
+        public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
         private MeadowSerialDataProcessor dataProcessor;
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
-            this._serialPortName = serialPortName;
-            this.Verbose = verbose;
+            this.serialPortName = serialPortName;
+            Verbose = verbose;
         }
-
-        public bool Verbose { get; protected set; }
 
         public static string[] GetAvailableSerialPorts()
         {
@@ -40,7 +39,7 @@ namespace MeadowCLI.DeviceManagement
                 SerialPort = null;
             }
 
-            if (OpenSerialPort(_serialPortName) == false)
+            if (OpenSerialPort(serialPortName) == false)
                 return false;
 
             if (listen == true)
@@ -50,6 +49,7 @@ namespace MeadowCLI.DeviceManagement
             return true;
         }
 
+        [ObsoleteAttribute("use logic to check Crcs instead")]
         public async Task DeployRequiredLibs(string path, bool forceUpdate = false)
         {
             if (forceUpdate || await IsFileOnDevice(SYSTEM).ConfigureAwait(false) == false)
@@ -73,6 +73,7 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
+        [ObsoleteAttribute("will be removed in the future")]
         public async Task<bool> DeployApp(string path)
         {
             await WriteFile(APP_EXE, path);
@@ -92,6 +93,39 @@ namespace MeadowCLI.DeviceManagement
             }
 
             return true; //can probably remove bool return type
+        }
+
+        public async Task<bool> DeleteFile(string filename, int timeoutInMs = 5000)
+        {
+            if (SerialPort == null)
+            {
+                throw new Exception("SerialPort not intialized");
+            }
+
+            bool result = false;
+
+            var timeOutTask = Task.Delay(timeoutInMs);
+
+            EventHandler<MeadowMessageEventArgs> handler = null;
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            handler = (s, e) =>
+            {
+                if (e.Message.Contains("deleted. No errors reported"))
+                {
+                    result = true;
+                    tcs.SetResult(true);
+                }
+            };
+            dataProcessor.OnReceiveData += handler;
+
+            MeadowFileManager.DeleteFile(this, filename);
+
+            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
+            dataProcessor.OnReceiveData -= handler;
+
+            return result;
         }
 
         public override async Task<bool> WriteFile(string filename, string path, int timeoutInMs = 200000) //200s 
@@ -127,14 +161,45 @@ namespace MeadowCLI.DeviceManagement
             return result;
         }
 
-        public override async Task<List<string>> GetFilesOnDevice(bool refresh = false, int timeoutInMs = 10000)
+        public override async Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 10000)
         {
             if (SerialPort == null)
             {
                 throw new Exception("SerialPort not intialized");
             }
 
-            if (filesOnDevice.Count == 0 || refresh == true)
+            var timeOutTask = Task.Delay(timeoutInMs);
+
+            EventHandler<MeadowMessageEventArgs> handler = null;
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.FileList)
+                {
+                    SetFilesAndCrcsFromMessage(e.Message);
+                    tcs.SetResult(true);
+                }
+            };
+            dataProcessor.OnReceiveData += handler;
+
+            MeadowFileManager.ListFilesAndCrcs(this);
+
+            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
+            dataProcessor.OnReceiveData -= handler;
+
+            return (FilesOnDevice, FileCrcs);
+        }
+
+        public override async Task<List<string>> GetFilesOnDevice(bool refresh = true, int timeoutInMs = 10000)
+        {
+            if (SerialPort == null)
+            {
+                throw new Exception("SerialPort not intialized");
+            }
+
+            if (FilesOnDevice.Count == 0 || refresh == true)
             {
                 var timeOutTask = Task.Delay(timeoutInMs);
 
@@ -158,7 +223,7 @@ namespace MeadowCLI.DeviceManagement
                 dataProcessor.OnReceiveData -= handler;
             }
 
-            return filesOnDevice;
+            return FilesOnDevice;
         }
 
         //device Id information is processed when the message is received
@@ -250,7 +315,7 @@ namespace MeadowCLI.DeviceManagement
                     if (Verbose)
                     {
                         Console.WriteLine();
-                        foreach (var f in filesOnDevice)
+                        foreach (var f in FilesOnDevice)
                             Console.WriteLine(f);
                     }
                     break;
@@ -261,16 +326,38 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
+        void SetFilesAndCrcsFromMessage(string message)
+        {
+            var data = message.Split(',');
+
+            FilesOnDevice.Clear();
+            FileCrcs.Clear();
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                int fileNameStart = data[i].LastIndexOf('/') + 1;
+                int crcStart = data[i].IndexOf('[') + 1;
+
+                var file = data[i].Substring(fileNameStart, crcStart - fileNameStart - 2);
+                FilesOnDevice.Add(file.Trim());
+
+                var crc = Convert.ToUInt32(data[i].Substring(crcStart, 10), 16);
+
+                FileCrcs.Add(crc);
+            }
+
+        }
+
         void SetFilesOnDeviceFromMessage(string message)
         {
             var fileList = message.Split(',');
 
-            filesOnDevice.Clear();
+            FilesOnDevice.Clear();
 
             foreach (var path in fileList)
             {
                 var file = path.Substring(path.LastIndexOf('/') + 1);
-                filesOnDevice.Add(file.Trim());
+                FilesOnDevice.Add(file.Trim());
             }
         }
 

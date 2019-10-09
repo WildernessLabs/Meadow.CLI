@@ -85,7 +85,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {ex} may mean the target connection dropped");
+                 Console.WriteLine($"Exception: {ex} may mean the target connection dropped");
             }
         }
 
