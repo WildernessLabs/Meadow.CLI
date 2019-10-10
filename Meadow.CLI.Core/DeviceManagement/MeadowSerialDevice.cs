@@ -237,8 +237,7 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    if(!String.IsNullOrEmpty(args.Message))
-                        Console.WriteLine("Data: " + args.Message);
+                    Console.WriteLine("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
                     Console.WriteLine("App: " + args.Message);

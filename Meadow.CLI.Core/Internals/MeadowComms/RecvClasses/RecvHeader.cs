@@ -10,7 +10,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
     public interface IReceivedMessage
     {
         // Each derived class needs these
-        bool Execute(byte[] recvdMsg);
+        bool Execute(byte[] recvdMsg, int receivedMsgLen);
         string ToString();
 
         // These are in RecvHeader
@@ -56,7 +56,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             return base.ToString();
         }
 
-        public virtual bool Execute(byte[] recvdMsg)
+        public virtual bool Execute(byte[] recvdMsg, int receivedMsgLen)
         {
             return true;
         }

@@ -11,6 +11,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
 
     public enum RequestTypeFromMeadow
     {
+        Unknown = 0x00 | MeadowFileManager.HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
         SimpleMsg = 0x01 | MeadowFileManager.HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
         SimpleText = 0x01 | MeadowFileManager.HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
     }
@@ -36,15 +37,17 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
 
         public IReceivedMessage CreateProcessor(byte[] recvdMsg)
         {
+            RequestTypeFromMeadow rqstType = RequestTypeFromMeadow.Unknown;
             try
             {
-                RequestTypeFromMeadow rqstType = FindRequestTypeValue(recvdMsg);
+                rqstType = FindRequestTypeValue(recvdMsg);
                 RecvMessageFactory factory = _factories[rqstType];
                 return factory.Create(recvdMsg);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {ex.Message}");
+                //p-m
+                Console.WriteLine($"Request type was:{rqstType}. Exception: {ex.Message}");
                 throw;
             }
         }

@@ -19,7 +19,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         {
         }
 
-        public override bool Execute(byte[] recvdMsg)
+        public override bool Execute(byte[] recvdMsg, int recvdMsgLen)
         {
             try
             {

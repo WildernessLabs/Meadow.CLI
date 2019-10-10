@@ -20,17 +20,18 @@ namespace MeadowCLI.Hcom
 
     public enum HcomProtocolCtrl
     {
-        HcomProtoCtrlRequestUndefined,
-        HcomProtoCtrlRequestRejected,
-        HcomProtoCtrlRequestAccepted,
-        HcomProtoCtrlRequestEnded,
-        HcomProtoCtrlRequestError,
-        HcomProtoCtrlRequestInformation,
-        HcomProtoCtrlRequestFileListHeader,
-        HcomProtoCtrlRequestFileListMember,
-        HcomProtoCtrlRequestMonoMessage,
-        HcomProtoCtrlRequestDeviceInfo,
-        HcomProtoCtrlRequestDeviceDiag,
+        // Must match set in MeadowOS
+        HcomProtoCtrlRequestUndefined = 0,
+        HcomProtoCtrlRequestRejected = 1,
+        HcomProtoCtrlRequestAccepted = 2,
+        HcomProtoCtrlRequestEnded = 3,
+        HcomProtoCtrlRequestError = 4,
+        HcomProtoCtrlRequestInformation = 5,
+        HcomProtoCtrlRequestFileListHeader = 6,
+        HcomProtoCtrlRequestFileListMember = 7,
+        HcomProtoCtrlRequestMonoMessage = 8,
+        HcomProtoCtrlRequestDeviceInfo = 9,
+        HcomProtoCtrlRequestDeviceDiag = 10,
     }
 
     public class MeadowMessageEventArgs : EventArgs
@@ -124,7 +125,7 @@ namespace MeadowCLI.Hcom
                 {
                     // Wasn't possible to put these bytes in the buffer. We need to
                     // process a few packets and then retry to add this data
-                    result = PullAllPacketsFromBuffer();
+                    result = PullAndProcessAllPackets();
                     if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG)
                         continue;   // There should be room now for the failed add
 
@@ -147,14 +148,14 @@ namespace MeadowCLI.Hcom
                 }
             }
 
-            result = PullAllPacketsFromBuffer();
+            result = PullAndProcessAllPackets();
             Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
 
             return 0;
         }
 
-        HcomBufferReturn PullAllPacketsFromBuffer()
+        HcomBufferReturn PullAndProcessAllPackets()
         {
             byte[] packetBuffer = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.maxAllowableDataBlock];
@@ -176,21 +177,25 @@ namespace MeadowCLI.Hcom
                 // Only other possible outcome is success
                 Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG);
 
-                // It's possible that we may find a series of 0x00 values int the buffer.
-                // This is because when blocked the sender will attempt to send 0x00
-                // before the full message. So when the connection is unblocked 0x00
-                // is sent and put into the buffer.
+                // It's possible that we may find a series of 0x00 values in the buffer.
+                // This is because when the sender is blocked (because this code isn't
+                // running) it will attempt to send single 0x00 before the full message.
+                // This allows it to test for a connection. So when the connection is
+                // unblocked this 0x00 is sent and gets put into the buffer.
                 if (packetLength == 1)
+                {
+                    //p-m
+                    Console.WriteLine($"Throwing away a packet whose length is 1. value:{packetBuffer[0]}");
                     continue;
+                }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
+                Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
 
                 // Process the received packet
                 if(decodedSize > 0)
                 {
-                    byte[] receivedMsg = new byte[decodedSize];
-                    Array.Copy(decodedBuffer, 0, receivedMsg, 0, decodedSize);
-                    bool procResult = ParseAndProcessDecodedPacket(receivedMsg);
+                    bool procResult = ParseAndProcessDecodedPacket(decodedBuffer, decodedSize);
                     if (procResult)
                         continue;   // See if there's another packet ready
                 }
@@ -201,12 +206,12 @@ namespace MeadowCLI.Hcom
             return result;
         }
 
-        bool ParseAndProcessDecodedPacket(byte[] receivedMsg)
+        bool ParseAndProcessDecodedPacket(byte[] receivedMsg, int receivedMsgLen)
         {
             try
             {
                 IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg);
-                if (processor.Execute(receivedMsg))
+                if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
                     ProcessRecvdMessage(processor.ToString(), processor.ProtocolCtrl);
                     return true;
@@ -228,22 +233,31 @@ namespace MeadowCLI.Hcom
             switch ((HcomProtocolCtrl)protocolCtrl)
             {
                 case HcomProtocolCtrl.HcomProtoCtrlRequestUndefined:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, "Request undefined"));
+                    Console.WriteLine("new-Request Undefined received"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestRejected:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
+                    Console.WriteLine("new-Request Rejected received"); // TESTING
+                    if (!String.IsNullOrEmpty(meadowMessage))
+                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestAccepted:
+                    Console.WriteLine("new-Request Accepted received"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestEnded:
+                    Console.WriteLine("new-Request Ended received"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestError:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
+                    Console.WriteLine("new-Request Error received"); // TESTING
+                    if (!String.IsNullOrEmpty(meadowMessage))
+                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestInformation:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
+                    Console.WriteLine("new-Request Information received"); // TESTING
+                    if (!String.IsNullOrEmpty(meadowMessage))
+                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListHeader:
+                    Console.WriteLine("new-Request File List Header received"); // TESTING
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, meadowMessage));
                   break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListMember:
@@ -256,7 +270,9 @@ namespace MeadowCLI.Hcom
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestDeviceDiag:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
+                    // Console.WriteLine("new-Request Device Diag received"); // TESTING
+                    if (!String.IsNullOrEmpty(meadowMessage))
+                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 default:
                     Console.WriteLine("Received: default ");

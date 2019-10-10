@@ -21,14 +21,14 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         {
         }
 
-        public override bool Execute(byte[] recvdMsg)
+        public override bool Execute(byte[] recvdMsg, int recvdMsgLen)
         {
             try
             {
                 if (recvdMsg.Length == HeaderLength)
                     throw new ArgumentException("Received RecvSimpleText with no text data");
 
-                _msgString = Encoding.UTF8.GetString(recvdMsg, HeaderLength, recvdMsg.Length - HeaderLength);
+                _msgString = Encoding.UTF8.GetString(recvdMsg, HeaderLength, recvdMsgLen - HeaderLength);
                 return true;
             }
             catch (Exception ex)
