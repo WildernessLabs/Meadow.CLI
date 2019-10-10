@@ -46,7 +46,9 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             }
             catch (Exception ex)
             {
-                //p-m
+                // I saw a few time, under extreme conditions that this exception could behit. 
+                // It was caused by corrupted data being processed. At the time I was repeatedly 
+                // sending large text message from Meadow to CLI as fast as possible.
                 Console.WriteLine($"Request type was:{rqstType}. Exception: {ex.Message}");
                 throw;
             }
