@@ -183,11 +183,7 @@ namespace MeadowCLI.Hcom
                 // This allows it to test for a connection. So when the connection is
                 // unblocked this 0x00 is sent and gets put into the buffer.
                 if (packetLength == 1)
-                {
-                    //p-m
-                    Console.WriteLine($"Throwing away a packet whose length is 1. value:{packetBuffer[0]}");
                     continue;
-                }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
                 Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
