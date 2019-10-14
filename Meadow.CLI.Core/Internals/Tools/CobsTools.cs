@@ -54,9 +54,9 @@ namespace MeadowCLI.Hcom
         //---------------------------------------------------------------------------
         public static int CobsDecoding(byte[] encoded, int length, ref byte[] decoded)
         {
-            int encodedOffset = 0;     // Offset into original (encoded) buffer 
-            int decodedOffset = 0;     // Offset into destination (decoded) buffer 
-            byte replacement = 0;     // Value that will be inserted to indicate replaced value
+            int encodedOffset = 0;      // Offset into original (encoded) buffer 
+            int decodedOffset = 0;      // Offset into destination (decoded) buffer 
+            byte replacement = 0;       // Value that will be inserted to indicate replaced value
 
             while (encodedOffset < length)
             {

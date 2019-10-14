@@ -164,11 +164,7 @@ namespace MeadowCLI.DeviceManagement
 
                 sw.Stop();
 
-#if DEBUG
                 Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");
-#else
-                Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes.");
-#endif
             }
             catch (Exception ex)
             {

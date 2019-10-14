@@ -16,6 +16,7 @@ namespace MeadowCLI.Hcom
         FileListTitle,
         FileListMember,
         Data,
+        DiagOutput,
     }
 
     public enum HcomProtocolCtrl
@@ -53,8 +54,6 @@ namespace MeadowCLI.Hcom
         RecvFactoryManager _recvFactoryManager;
         readonly SerialPort serialPort;
 
-        const int MAX_RECEIVED_BYTES = 2048;
-
         // It seems that the .Net SerialPort class is not all it could be.
         // To acheive reliable operation some SerialPort class methods must
         // not be used. When receiving, the BaseStream must be used.
@@ -67,7 +66,7 @@ namespace MeadowCLI.Hcom
             this.serialPort = serialPort;
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.maxAllowableDataBlock * 4);    // room for 4 messages
+            _hostCommBuffer.Init(MeadowDeviceManager.maxSizeOfXmitPacket * 4);
 
             ReadPortAsync(); 
         }
@@ -77,7 +76,7 @@ namespace MeadowCLI.Hcom
         private async Task ReadPortAsync()
         {
             int offset = 0;
-            byte[] buffer = new byte[MAX_RECEIVED_BYTES];
+            byte[] buffer = new byte[MeadowDeviceManager.maxAllowableDataBlock];
 
             try
             {
@@ -115,7 +114,7 @@ namespace MeadowCLI.Hcom
 
             while (true)
             {
-                // add these bytes to the circular buffer
+                // Add these bytes to the circular buffer
                 result = _hostCommBuffer.AddBytes(buffer, 0, availableBytes);
                 if(result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
                 {
@@ -126,13 +125,14 @@ namespace MeadowCLI.Hcom
                     // Wasn't possible to put these bytes in the buffer. We need to
                     // process a few packets and then retry to add this data
                     result = PullAndProcessAllPackets();
-                    if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG)
+                    if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
+                        result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                         continue;   // There should be room now for the failed add
 
-                    if(result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND ||
-                        result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
+                    if(result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
                     {
-                        // This should never happen
+                        // The buffer to receive the message is too small? Probably 
+                        // corrupted data in buffer.
                         Debug.Assert(false);
                     }
                 }
@@ -149,6 +149,8 @@ namespace MeadowCLI.Hcom
             }
 
             result = PullAndProcessAllPackets();
+
+            // Any other response is an error
             Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
 
@@ -157,6 +159,7 @@ namespace MeadowCLI.Hcom
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
+
             byte[] packetBuffer = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.maxAllowableDataBlock];
             int packetLength;
@@ -166,11 +169,12 @@ namespace MeadowCLI.Hcom
             {
                 result = _hostCommBuffer.GetNextPacket(packetBuffer, MeadowDeviceManager.maxAllowableDataBlock, out packetLength);
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
-                    return result;
+                    break;      // We've emptied buffer of all messages
 
-                if(result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
+                if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
                 {
-                    // Implementation problem the packetBuffer is too small
+                    // The buffer to receive the message is too small? Probably 
+                    // corrupted data in buffer.
                     Debug.Assert(false);
                 }
 
@@ -183,21 +187,48 @@ namespace MeadowCLI.Hcom
                 // This allows it to test for a connection. So when the connection is
                 // unblocked this 0x00 is sent and gets put into the buffer.
                 if (packetLength == 1)
+                {
+                    Console.WriteLine("+++++ Throwing out 0x00 from buffer +++++");
                     continue;
+                }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
+                if (decodedSize == 0)
+                    continue;
+
                 Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
+                Debug.Assert(decodedSize >= MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
+
+                // The protocol requires the first 2 bytes to be 0x00, the next 10 to be header
+                // and the rest ASCII text. We'll test the message and if it fails it's trashed.
+                if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
+                {
+                    Console.WriteLine("+++++ Corrupted message, first 2 bytes not 0x00 +++++\a");
+                    continue;
+                }
+
+                int buffOffset;
+                for(buffOffset = MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH; buffOffset < decodedSize; buffOffset++)
+                {
+                    if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
+                    {
+                        Console.WriteLine($"+++++ Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]} +++++\a");
+                        break;
+                    }
+                }
+
+                // Throw away if we failed the above test?
+                if (buffOffset < decodedSize)
+                    continue;
 
                 // Process the received packet
-                if(decodedSize > 0)
+                if (decodedSize > 0)
                 {
                     bool procResult = ParseAndProcessDecodedPacket(decodedBuffer, decodedSize);
                     if (procResult)
                         continue;   // See if there's another packet ready
                 }
-
-                // All errors just leave
-                break;
+                break;   // All processing errors exit
             }
             return result;
         }
@@ -207,9 +238,12 @@ namespace MeadowCLI.Hcom
             try
             {
                 IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg);
+                if (processor == null)
+                    return false;
+
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
-                    ProcessRecvdMessage(processor.ToString(), processor.ProtocolCtrl);
+                    ProcessRecvdMessage(processor.ToString(), processor.ProtocolCtrl, processor.UserData);
                     return true;
                 }
                 else
@@ -224,7 +258,7 @@ namespace MeadowCLI.Hcom
             }
         }
 
-        void ProcessRecvdMessage(string meadowMessage, ushort protocolCtrl)
+        void ProcessRecvdMessage(string meadowMessage, ushort protocolCtrl, uint userData)
         {
             switch ((HcomProtocolCtrl)protocolCtrl)
             {
@@ -243,17 +277,17 @@ namespace MeadowCLI.Hcom
                     Console.WriteLine("new-Request Ended received"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestError:
-                    Console.WriteLine("new-Request Error received"); // TESTING
+                    //Console.WriteLine("new-Request Error received"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestInformation:
-                    Console.WriteLine("new-Request Information received"); // TESTING
+                    //Console.WriteLine("new-Request Information received"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListHeader:
-                    Console.WriteLine("new-Request File List Header received"); // TESTING
+                    //Console.WriteLine("new-Request File List Header received"); // TESTING
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, meadowMessage));
                   break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListMember:
@@ -266,9 +300,8 @@ namespace MeadowCLI.Hcom
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestDeviceDiag:
-                    // Console.WriteLine("new-Request Device Diag received"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
-                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
+                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DiagOutput, meadowMessage));
                     break;
                 default:
                     Console.WriteLine("Received: default ");

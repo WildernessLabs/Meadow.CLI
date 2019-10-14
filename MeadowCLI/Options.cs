@@ -10,6 +10,8 @@ namespace MeadowCLI
         public string DfuOsPath { get; set; }
         [Option(longName: "UserFile", Default = null, Required = false, HelpText = "File path to user file. Usage: --UserFile mypath")]
         public string DfuUserPath { get; set; }
+        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Put Meadow in DFU mode - Not implemented")]
+        public bool EnterDfuMode { get; set; }
 
         [Option(longName: "WriteFile", Required = false, HelpText = "Write an external file to Meadow's internal flash")]
         public bool WriteFile { get; set; }
@@ -25,8 +27,8 @@ namespace MeadowCLI
         [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
         public bool ListPorts { get; set; }
 
-        [Option('r', longName: "ResetTargetMcu", Required = false, HelpText = "Reset the MCU on Meadow")]
-        public bool ResetTargetMcu { get; set; }
+        [Option('r', longName: "ResetMeadow", Required = false, HelpText = "Reset the MCU on Meadow")]
+        public bool ResetMeadow { get; set; }
         [Option(longName: "MonoDisable", Required = false, HelpText = "Disable mono from running")]
         public bool MonoDisable { get; set; }
         [Option(longName: "MonoEnable", Required = false, HelpText = "Enable mono so it can run")]
@@ -51,15 +53,14 @@ namespace MeadowCLI
         public int TraceLevel { get; set; }
         [Option(longName: "RenewFileSys", Required = false, HelpText = "Recreate the Meadow File System")]
         public bool RenewFileSys { get; set; }
-        [Option(longName: "NoDiagMsg", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
-        public bool NoDiagMsg { get; set; }
-        [Option(longName: "SendDiagMsg", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
-        public bool SendDiagMsg { get; set; }
-
+        [Option(longName: "DiagDisable", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
+        public bool DiagDisable { get; set; }
+        [Option(longName: "DiagEnable", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
+        public bool DiagEnable { get; set; }
+        [Option(longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
+        public bool KeepAlive { get; set; }
 
 #if DEBUG
-        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Put Meadow in DFU mode - Not implemented")]
-        public bool EnterDfuMode { get; set; }
         [Option(longName: "NshEnable", Required = false, HelpText = "Enable NSH")]
         public bool NshEnable { get; set; }
         [Option('p', "Partition", Default = 0, Required = false, HelpText = "Destination partition on Meadow")]

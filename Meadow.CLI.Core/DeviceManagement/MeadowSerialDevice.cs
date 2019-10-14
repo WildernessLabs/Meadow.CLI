@@ -242,6 +242,9 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.AppOutput:
                     Console.WriteLine("App: " + args.Message);
                     break;
+                case MeadowMessageType.DiagOutput:
+                    Console.WriteLine("Diag: " + args.Message);
+                    break;
                 case MeadowMessageType.FileListTitle:
                     Console.WriteLine("File List: ");
                     break;

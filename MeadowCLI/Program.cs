@@ -18,6 +18,7 @@ namespace MeadowCLI
         }
 
         static bool _quit = false;
+        static bool _dontTerminate = false;
 
         static void Main(string[] args)
         {
@@ -65,9 +66,14 @@ namespace MeadowCLI
                     SyncArgsCache(options);
                     behavior = ProcessHcom(options);
                 }
+
+                if(options.KeepAlive)
+                {
+                    _dontTerminate = true;
+                }
             });
 
-            if (System.Diagnostics.Debugger.IsAttached)
+            if (System.Diagnostics.Debugger.IsAttached || _dontTerminate)
             {
                 behavior = CompletionBehavior.KeepConsoleOpen;
             }
@@ -235,25 +241,28 @@ namespace MeadowCLI
             {
                 MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
             }
-            else if (options.ResetTargetMcu)
+            else if (options.ResetMeadow)
             {
                 Console.WriteLine("Resetting Mcu");
-                MeadowDeviceManager.ResetTargetMcu(MeadowDeviceManager.CurrentDevice);
+                MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.EnterDfuMode)
             {
                 Console.WriteLine("Entering Dfu mode");
                 MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
             }
-            else if (options.NoDiagMsg)
+            else if (options.DiagDisable)
             {
                 Console.WriteLine("Disabling displaying diagnostic messages");
-                MeadowDeviceManager.NoDiagMsg(MeadowDeviceManager.CurrentDevice);
+                MeadowDeviceManager.DiagDisable(MeadowDeviceManager.CurrentDevice);
             }
-            else if (options.SendDiagMsg)
+            else if (options.DiagEnable)
             {
                 Console.WriteLine("Enabling displaying diagnostic messages");
-                MeadowDeviceManager.SendDiagMsg(MeadowDeviceManager.CurrentDevice);
+                MeadowDeviceManager.DiagEnable(MeadowDeviceManager.CurrentDevice);
+
+                // just enter port echo mode until the user cancels
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
 
             else if (options.RenewFileSys)
@@ -303,36 +312,43 @@ namespace MeadowCLI
             {
                 Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                 MeadowDeviceManager.SetDeveloper1(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.SetDeveloper2)
             {
                 Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                 MeadowDeviceManager.SetDeveloper2(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.SetDeveloper3)
             {
                 Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                 MeadowDeviceManager.SetDeveloper3(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.SetDeveloper4)
             {
                 Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                 MeadowDeviceManager.SetDeveloper4(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.QspiWrite)
             {
                 Console.WriteLine($"Executing QSPI Flash Write using {options.DeveloperValue}");
                 MeadowDeviceManager.QspiWrite(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.QspiRead)
             {
                 Console.WriteLine($"Executing QSPI Flash Read using {options.DeveloperValue}");
                 MeadowDeviceManager.QspiRead(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
             else if (options.QspiInit)
             {
                 Console.WriteLine($"Executing QSPI Flash Initialization using {options.DeveloperValue}");
                 MeadowDeviceManager.QspiInit(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
             }
 #endif
             return CompletionBehavior.Success | CompletionBehavior.ExitConsole;

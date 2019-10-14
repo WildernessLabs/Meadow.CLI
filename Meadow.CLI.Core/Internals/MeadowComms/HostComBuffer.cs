@@ -53,7 +53,7 @@ namespace MeadowCLI.Hcom
         }
 
         //------------------------------------------------------------------------------
-        private int GetAvailableSpace()
+        public int GetAvailableSpace()
         {
             // We leave one free byte so the head and tail are equal only if
             // empty not when full. Full means 1 unused byte.
@@ -86,11 +86,14 @@ namespace MeadowCLI.Hcom
                 else
                 {
                     // Wrap around - fill up head-top space and use bottom space too
-                    int spaceAvailOnTop = top - head;
-                    Array.Copy(newBytes, bytesOffset, hcomCircularBuffer, head, spaceAvailOnTop);
-                    Array.Copy(newBytes, spaceAvailOnTop + bytesOffset, hcomCircularBuffer,
-                        bytesToAdd - spaceAvailOnTop, bytesToAdd);
-                    head = bottom + bytesToAdd - spaceAvailOnTop;
+                    int spaceFreeOnTop = top - head;
+                    // Fill top
+                    Array.Copy(newBytes, bytesOffset, hcomCircularBuffer, head, spaceFreeOnTop);
+                    // Fill bottom
+                    Array.Copy(newBytes, spaceFreeOnTop + bytesOffset, hcomCircularBuffer,
+                        0, bytesToAdd - spaceFreeOnTop);
+
+                    head = bottom + bytesToAdd - spaceFreeOnTop;
                 }
                 return HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS;
             }

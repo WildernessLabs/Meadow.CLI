@@ -93,7 +93,7 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)level);
         }
 
-        public static void ResetTargetMcu(MeadowSerialDevice meadow)
+        public static void ResetMeadow(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
 
@@ -142,14 +142,14 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public static void NoDiagMsg(MeadowSerialDevice meadow)
+        public static void DiagDisable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST;
 
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
         }
 
-        public static void SendDiagMsg(MeadowSerialDevice meadow)
+        public static void DiagEnable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_DIAG_TO_HOST;
 
