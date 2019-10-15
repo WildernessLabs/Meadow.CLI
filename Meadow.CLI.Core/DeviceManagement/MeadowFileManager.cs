@@ -196,7 +196,6 @@ namespace MeadowCLI.DeviceManagement
             HCOM_PROTOCOL_REQUEST_HEADER_CONTROL_OFFSET = 4,
             HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET = 6,
             HCOM_PROTOCOL_REQUEST_HEADER_USER_DATA_OFFSET = 8,
-            HCOM_PROTOCOL_REQUEST_HEADER_TOTAL_LENGTH = 12,
         }
 
         // Messages to be sent to Meadow board
