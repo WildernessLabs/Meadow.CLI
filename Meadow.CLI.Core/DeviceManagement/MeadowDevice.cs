@@ -21,13 +21,20 @@ namespace MeadowCLI.DeviceManagement
         public MeadowDeviceInfo DeviceInfo { get; protected set; } = new MeadowDeviceInfo();
 
         //these should move to MeadowDeviceManager 
+        [Obsolete]
         public const string MSCORLIB = "mscorlib.dll";
+        [Obsolete]
         public const string SYSTEM = "System.dll";
+        [Obsolete]
         public const string SYSTEM_CORE = "System.Core.dll";
+        [Obsolete]
         public const string MEADOW_CORE = "Meadow.dll";
+        [Obsolete]
         public const string APP_EXE = "App.exe";
 
-        protected readonly List<string> filesOnDevice = new List<string>();
+        public List<string> FilesOnDevice { get; protected set; } = new List<string>();
+        public List<UInt32> FileCrcs { get; protected set; } = new List<UInt32>();
+
 
         public async Task DeployRequiredLibs(string path, bool forceUpdate = false)
         {
@@ -52,36 +59,17 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        public async Task<bool> DeployApp(string path)
-        {
-            await WriteFile(APP_EXE, path);
-
-            //get list of files in folder
-            var files = Directory.GetFiles(path, "*.dll");
-
-            //currently deploys all included dlls, update to use CRCs to only deploy new files
-            //will likely need to update to deploy other files types (txt, jpg, etc.)
-            foreach(var f in files)
-            {
-                var file = Path.GetFileName(f);
-                if (file == MSCORLIB || file == SYSTEM || file == SYSTEM_CORE || file == MEADOW_CORE)
-                    continue;
-
-                await WriteFile(file, path);
-            }
-
-            return true; //can probably remove bool return type
-        }
-
         public abstract Task<bool> WriteFile(string filename, string path, int timeoutInMs = 200000);
 
         public abstract Task<List<string>> GetFilesOnDevice(bool refresh = false, int timeoutInMs = 10000);
+
+        public abstract Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 10000);
 
         public abstract Task<bool> SetDeviceInfo(int timeoutInMs = 500);
 
         public Task<bool> IsFileOnDevice (string filename)
         {
-            return Task.FromResult(filesOnDevice.Contains(filename));
+            return Task.FromResult(FilesOnDevice.Contains(filename));
         }
 
         

@@ -55,7 +55,7 @@ namespace MeadowCLI
                             Console.WriteLine($"\t{p}");
                         }
                     }
-                    Console.WriteLine("\n");
+                    Console.WriteLine($"\n");
                 }
                 else
                 {

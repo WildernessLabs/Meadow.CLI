@@ -68,11 +68,12 @@ namespace MeadowCLI.Hcom
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
-                // if(Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
+                if(Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
             }
             catch (Exception except)
             {
-                Console.WriteLine("Exception sending to Meadow:{0}", except);
+                Debug.WriteLine("Exception sending to Meadow:{0}", except);
+                throw;
             }
         }
 
