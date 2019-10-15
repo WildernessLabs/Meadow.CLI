@@ -19,10 +19,13 @@ namespace MeadowCLI.DeviceManagement
 
         private MeadowSerialDataProcessor dataProcessor;
 
-        public MeadowSerialDevice(string serialPortName)
+        public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
-            this._serialPortName = serialPortName;   
+            this._serialPortName = serialPortName;
+            this.Verbose = verbose;
         }
+
+        public bool Verbose { get; protected set; }
 
         public static string[] GetAvailableSerialPorts()
         {
@@ -237,23 +240,23 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    Console.WriteLine("Data: " + args.Message);
+                    if (Verbose) Console.WriteLine("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    Console.WriteLine("App: " + args.Message);
+                    if (Verbose) Console.WriteLine("App: " + args.Message);
                     break;
                 case MeadowMessageType.DiagOutput:
-                    Console.WriteLine("Diag: " + args.Message);
+                    if (Verbose) Console.WriteLine("Diag: " + args.Message);
                     break;
                 case MeadowMessageType.FileListTitle:
-                    Console.WriteLine("File List: ");
+                    if (Verbose) Console.WriteLine("File List: ");
                     break;
                 case MeadowMessageType.FileListMember:
-                    Console.WriteLine(args.Message);
+                    if (Verbose) Console.WriteLine(args.Message);
                     break;
                 case MeadowMessageType.DeviceInfo:
                     SetDeviceIdFromMessage(args.Message);
-                    Console.WriteLine("ID: " + args.Message);
+                    if (Verbose) Console.WriteLine("ID: " + args.Message);
                     break;
             }
         }

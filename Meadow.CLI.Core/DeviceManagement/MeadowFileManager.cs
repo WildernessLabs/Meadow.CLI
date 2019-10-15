@@ -12,6 +12,7 @@ namespace MeadowCLI.DeviceManagement
         const UInt16 REQUEST_HEADER_MASK = 0xff00;
         const UInt32 UNKNOWN_USER_DATA = 0xffffffff;
 
+
         const string APP = "App.exe";
 
         static MeadowFileManager()
@@ -132,13 +133,15 @@ namespace MeadowCLI.DeviceManagement
                 _meadowRequestType));
         }
 
+
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType,
                             string sourceFileName, string targetFileName, int partition,
                             bool deleteFile)
         {
             var sw = new Stopwatch();
-            var sendTargetData = new SendTargetData(meadow.SerialPort);
+            
+            var sendTargetData = new SendTargetData(meadow.SerialPort, false);
 
             try
             {
@@ -164,11 +167,12 @@ namespace MeadowCLI.DeviceManagement
 
                 sw.Stop();
 
-                Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");
+                if (sendTargetData.Verbose) Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unknown exception:{ex}");
+                Debug.WriteLine($"TransmitFileInfoToExtFlash threw :{ex}");
+                throw;
             }
         }
 

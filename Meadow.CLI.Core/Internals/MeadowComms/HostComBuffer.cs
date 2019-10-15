@@ -53,7 +53,7 @@ namespace MeadowCLI.Hcom
         }
 
         //------------------------------------------------------------------------------
-        public int GetAvailableSpace()
+        private int GetAvailableSpace()
         {
             // We leave one free byte so the head and tail are equal only if
             // empty not when full. Full means 1 unused byte.

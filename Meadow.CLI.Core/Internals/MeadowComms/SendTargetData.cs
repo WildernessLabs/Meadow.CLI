@@ -16,15 +16,19 @@ namespace MeadowCLI.Hcom
 
         //==========================================================================
         // Constructor
-        public SendTargetData(SerialPort serialPort)
+        public SendTargetData(SerialPort serialPort, bool verbose = true)
         {
             if (serialPort == null)
                 throw new ArgumentException("SerialPort cannot be null");
 
             _serialPort = serialPort;
+            this.Verbose = verbose;
         }
 
         //==========================================================================
+
+        public bool Verbose { get; protected set; }
+
         public void SendTheEntireFile(string destFileName, uint partitionId, byte[] fileBytes, UInt32 payloadCrc32)
         {
             _packetCrc32 = 0;
@@ -64,12 +68,11 @@ namespace MeadowCLI.Hcom
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
-                // Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
-
+                // if(Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
             }
             catch (Exception except)
             {
-                Console.WriteLine("Exception sending:{0}", except);
+                Console.WriteLine("Exception sending to Meadow:{0}", except);
             }
         }
 
@@ -230,7 +233,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception except)
             {
-                Console.WriteLine($"An exception was caught: {except}");
+                Debug.WriteLine($"EncodeAndSendPacket threw: {except}");
                 throw;
             }
         }
