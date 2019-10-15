@@ -76,7 +76,7 @@ namespace MeadowCLI.Hcom
         private async Task ReadPortAsync()
         {
             int offset = 0;
-            byte[] buffer = new byte[MeadowDeviceManager.maxAllowableDataBlock];
+            byte[] buffer = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
 
             try
             {
@@ -173,7 +173,7 @@ namespace MeadowCLI.Hcom
 
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
                 {
-                    // The buffer to receive the message is too small? Probably 
+                    // The buffer to receive the message is too small! Perhaps 
                     // corrupted data in buffer.
                     Debug.Assert(false);
                 }
@@ -188,7 +188,7 @@ namespace MeadowCLI.Hcom
                 // unblocked this 0x00 is sent and gets put into the buffer.
                 if (packetLength == 1)
                 {
-                    Console.WriteLine("+++++ Throwing out 0x00 from buffer +++++");
+                    //Console.WriteLine("+++++ Throwing out 0x00 from buffer +++++");
                     continue;
                 }
 
@@ -199,8 +199,10 @@ namespace MeadowCLI.Hcom
                 Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
                 Debug.Assert(decodedSize >= MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 
-                // The protocol requires the first 2 bytes to be 0x00, the next 10 to be header
-                // and the rest ASCII text. We'll test the message and if it fails it's trashed.
+                /*  Save in case we suspect data corruption
+                // The protocol requires the first 12 bytes to be the header. The first 2 are 0x00,
+                // the next 10 are binary. After this the rest are ASCII text.
+                // Test the message and if it fails it's trashed.
                 if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
                 {
                     Console.WriteLine("+++++ Corrupted message, first 2 bytes not 0x00 +++++\a");
@@ -208,7 +210,9 @@ namespace MeadowCLI.Hcom
                 }
 
                 int buffOffset;
-                for(buffOffset = MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH; buffOffset < decodedSize; buffOffset++)
+                for(buffOffset = MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
+                    buffOffset < decodedSize;
+                    buffOffset++)
                 {
                     if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
                     {
@@ -217,9 +221,10 @@ namespace MeadowCLI.Hcom
                     }
                 }
 
-                // Throw away if we failed the above test?
+                // Throw away if we found non ASCII where only text should be
                 if (buffOffset < decodedSize)
                     continue;
+                */
 
                 // Process the received packet
                 if (decodedSize > 0)
@@ -228,7 +233,7 @@ namespace MeadowCLI.Hcom
                     if (procResult)
                         continue;   // See if there's another packet ready
                 }
-                break;   // All processing errors exit
+                break;   // processing errors exit
             }
             return result;
         }
@@ -263,31 +268,31 @@ namespace MeadowCLI.Hcom
             switch ((HcomProtocolCtrl)protocolCtrl)
             {
                 case HcomProtocolCtrl.HcomProtoCtrlRequestUndefined:
-                    Console.WriteLine("new-Request Undefined received"); // TESTING
+                    Console.WriteLine("protocol-Request Undefined"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestRejected:
-                    Console.WriteLine("new-Request Rejected received"); // TESTING
+                    Console.WriteLine("protocol-Request Rejected"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestAccepted:
-                    Console.WriteLine("new-Request Accepted received"); // TESTING
+                    Console.WriteLine("protocol-Request Accepted"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestEnded:
-                    Console.WriteLine("new-Request Ended received"); // TESTING
+                    Console.WriteLine("protocol-Request Ended"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestError:
-                    //Console.WriteLine("new-Request Error received"); // TESTING
+                    //Console.WriteLine("protocol-Request Error"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestInformation:
-                    //Console.WriteLine("new-Request Information received"); // TESTING
+                    //Console.WriteLine("protocol-Request Information"); // TESTING
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListHeader:
-                    //Console.WriteLine("new-Request File List Header received"); // TESTING
+                    //Console.WriteLine("protocol-Request File List Header received"); // TESTING
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, meadowMessage));
                   break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListMember:
@@ -308,6 +313,5 @@ namespace MeadowCLI.Hcom
                     throw new ArgumentException("Unknown protocol control type");
             }
         }
-
     }
 }

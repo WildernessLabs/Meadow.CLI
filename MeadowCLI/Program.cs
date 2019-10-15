@@ -19,7 +19,6 @@ namespace MeadowCLI
         }
 
         static bool _quit = false;
-        static bool _dontTerminate = false;
 
         static void Main(string[] args)
         {
@@ -69,15 +68,10 @@ namespace MeadowCLI
                       SyncArgsCache(options);
                       behavior = ProcessHcom(options);
                   }
-
-                  if(options.KeepAlive)
-                  {
-                      _dontTerminate = true;
-                  }
                 }
             });
 
-            if (System.Diagnostics.Debugger.IsAttached || _dontTerminate)
+            if (System.Diagnostics.Debugger.IsAttached)
             {
                 behavior = CompletionBehavior.KeepConsoleOpen;
             }
@@ -368,26 +362,29 @@ namespace MeadowCLI
                   MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
 #endif
-          }
-          catch (IOException ex)
-          {
-              if (ex.Message.Contains("semaphore"))
-              {
-                  Console.WriteLine("Timeout communicating with Meadow");
-              }
-              else
-              {
-                  Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
-              }
-              return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
-          }
-          catch (Exception ex)
-          {
-            Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
-            return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
-          }
+            }
+            catch (IOException ex)
+            {
+                if (ex.Message.Contains("semaphore"))
+                {
+                    Console.WriteLine("Timeout communicating with Meadow");
+                }
+                else
+                {
+                    Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
+                }
+                return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
+                return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+            }
 
-            return CompletionBehavior.Success | CompletionBehavior.ExitConsole;
+            if (options.KeepAlive)
+                return CompletionBehavior.Success | CompletionBehavior.KeepConsoleOpen;
+            else
+                return CompletionBehavior.Success | CompletionBehavior.ExitConsole;
         }
         
         //temp code until we get the device manager logic in place 
