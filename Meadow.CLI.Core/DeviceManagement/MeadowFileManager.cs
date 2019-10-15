@@ -115,25 +115,6 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
         }
 
-        //I don't think this is needed
-        //it was used in the original code to determine if the request type alligned to a simple command
-        //but simple commands are just commands that only require 0 or 1 numerical args 
-        static HcomRqstHeaderType GetRequestHeaderType(HcomMeadowRequestType request)
-        {
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED)
-                return HcomRqstHeaderType.Undefined;
-
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE)
-                return HcomRqstHeaderType.Simple;
-
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE)
-                return HcomRqstHeaderType.FileType;
-
-            throw new InvalidOperationException(string.Format("Unknown request header type: {0}",
-                _meadowRequestType));
-        }
-
-
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType,
                             string sourceFileName, string targetFileName, int partition,
@@ -237,13 +218,6 @@ namespace MeadowCLI.DeviceManagement
 
             HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
             HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
-        }
-
-        public enum HcomRqstHeaderType
-        {
-            Undefined = 0x0000,
-            Simple = 0x0000,
-            FileType = 0xff0000,
         }
     }
 }
