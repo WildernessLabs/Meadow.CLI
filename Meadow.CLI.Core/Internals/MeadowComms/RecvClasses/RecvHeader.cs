@@ -48,7 +48,6 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
 
             UserData = Convert.ToUInt32(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8) +
                     (recvdMsg[HeaderLength + 2] << 16) + (recvdMsg[HeaderLength + 3] << 24));
-            HeaderLength += sizeof(uint);
         }
 
         public override string ToString()

@@ -34,8 +34,7 @@ namespace MeadowCLI.DeviceManagement
 
         public List<string> FilesOnDevice { get; protected set; } = new List<string>();
         public List<UInt32> FileCrcs { get; protected set; } = new List<UInt32>();
-
-
+        
         public async Task DeployRequiredLibs(string path, bool forceUpdate = false)
         {
             if(forceUpdate || await IsFileOnDevice(SYSTEM).ConfigureAwait(false) == false)

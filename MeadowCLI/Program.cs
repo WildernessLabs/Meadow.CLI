@@ -198,90 +198,6 @@ namespace MeadowCLI
                   Console.WriteLine("Verifying flash is erased");
                   MeadowFileManager.VerifyErasedFlash(MeadowDeviceManager.CurrentDevice);
               }
-              else if (options.ListFiles)
-              {
-#if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of a files on partition {options.Partition}");
-#else
-                  Console.WriteLine($"Getting list of a files");
-#endif
-                  MeadowFileManager.ListFiles(MeadowDeviceManager.CurrentDevice, options.Partition);
-              }
-              else if (options.ListFilesAndCrcs)
-              {
-#if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of a files and Crcs on partition {options.Partition}");
-#else
-                  Console.WriteLine("Getting list of a files and Crcs");
-#endif
-                  MeadowFileManager.ListFilesAndCrcs(MeadowDeviceManager.CurrentDevice, options.Partition);
-              }
-              //Device manager
-              else if(options.SetTraceLevel)
-              {
-                  Console.WriteLine($"Setting trace level to {options.TraceLevel}");
-                  MeadowDeviceManager.SetTraceLevel(MeadowDeviceManager.CurrentDevice, options.TraceLevel);
-              }
-              else if (options.NshEnable)
-              {
-                  Console.WriteLine($"Enable Nsh");
-                  MeadowDeviceManager.NshEnable(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.MonoDisable)
-              {
-                  MeadowDeviceManager.MonoDisable(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.MonoEnable)
-              {
-                  MeadowDeviceManager.MonoEnable(MeadowDeviceManager.CurrentDevice);
-
-                  // the device is going to reset, so we need to wait for it to reconnect
-                  Console.WriteLine($"Reconnecting...");
-                  System.Threading.Thread.Sleep(5000);
-
-                  // just enter port echo mode until the user cancels
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
-
-                  return CompletionBehavior.Success | CompletionBehavior.KeepConsoleOpen;
-              }
-              else if (options.MonoRunState)
-              {
-                  MeadowDeviceManager.MonoRunState(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.GetDeviceInfo)
-              {
-                  MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.ResetMeadow)
-              {
-                  Console.WriteLine("Resetting Mcu");
-                  MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.EnterDfuMode)
-              {
-                  Console.WriteLine("Entering Dfu mode");
-                  MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.DiagDisable)
-              {
-                  Console.WriteLine("Disabling displaying diagnostic messages");
-                  MeadowDeviceManager.DiagDisable(MeadowDeviceManager.CurrentDevice);
-              }
-              else if (options.DiagEnable)
-              {
-                  Console.WriteLine("Enabling displaying diagnostic messages");
-                  MeadowDeviceManager.DiagEnable(MeadowDeviceManager.CurrentDevice);
-
-                  // just enter port echo mode until the user cancels
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
-              }
-
-              else if (options.RenewFileSys)
-              {
-                  Console.WriteLine("Recreate a new file system on Meadow");
-                  MeadowDeviceManager.RenewFileSys(MeadowDeviceManager.CurrentDevice);
-              }
-#if DEBUG
               else if (options.PartitionFileSystem)
               {
                   Console.WriteLine($"Partioning file system into {options.NumberOfPartitions} partition(s)");
@@ -319,49 +235,120 @@ namespace MeadowCLI
 #endif
                   MeadowFileManager.FormatFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
+              else if (options.ListFiles)
+              {
+#if USE_PARTITIONS
+                  Console.WriteLine($"Getting list of a files on partition {options.Partition}");
+#else
+                  Console.WriteLine($"Getting list of a files");
+#endif
+                  MeadowFileManager.ListFiles(MeadowDeviceManager.CurrentDevice, options.Partition);
+              }
+              else if (options.ListFilesAndCrcs)
+              {
+#if USE_PARTITIONS
+                  Console.WriteLine($"Getting list of a files and Crcs on partition {options.Partition}");
+#else
+                  Console.WriteLine("Getting list of a files and Crcs");
+#endif
+                  MeadowFileManager.ListFilesAndCrcs(MeadowDeviceManager.CurrentDevice, options.Partition);
+              }
+              //Device manager
+              else if (options.SetTraceLevel)
+              {
+                  Console.WriteLine($"Setting trace level to {options.TraceLevel}");
+                  MeadowDeviceManager.SetTraceLevel(MeadowDeviceManager.CurrentDevice, options.TraceLevel);
+              }
               else if (options.SetDeveloper1)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                   MeadowDeviceManager.SetDeveloper1(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.SetDeveloper2)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                   MeadowDeviceManager.SetDeveloper2(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.SetDeveloper3)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                   MeadowDeviceManager.SetDeveloper3(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.SetDeveloper4)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
                   MeadowDeviceManager.SetDeveloper4(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+              }
+              else if (options.NshEnable)
+              {
+                  Console.WriteLine($"Enable Nsh");
+                  MeadowDeviceManager.NshEnable(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.MonoDisable)
+              {
+                  MeadowDeviceManager.MonoDisable(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.MonoEnable)
+              {
+                  MeadowDeviceManager.MonoEnable(MeadowDeviceManager.CurrentDevice);
+
+                  // the device is going to reset, so we need to wait for it to reconnect
+                  Console.WriteLine($"Reconnecting...");
+                  System.Threading.Thread.Sleep(5000);
+
+                  // just enter port echo mode until the user cancels
                   MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
+
+                  return CompletionBehavior.Success | CompletionBehavior.KeepConsoleOpen;
+              }
+              else if (options.MonoRunState)
+              {
+                  MeadowDeviceManager.MonoRunState(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.GetDeviceInfo)
+              {
+                  MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.ResetMeadow)
+              {
+                  Console.WriteLine("Resetting Meadow");
+                  MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+              }
+              else if (options.EnterDfuMode)
+              {
+                  Console.WriteLine("Entering Dfu mode");
+                  MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.DiagDisable)
+              {
+                  Console.WriteLine("Disabling displaying diagnostic messages");
+                  MeadowDeviceManager.DiagDisable(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.DiagEnable)
+              {
+                  Console.WriteLine("Enabling displaying diagnostic messages");
+                  MeadowDeviceManager.DiagEnable(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.RenewFileSys)
+              {
+                  Console.WriteLine("Recreate a new file system on Meadow");
+                  MeadowDeviceManager.RenewFileSys(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.QspiWrite)
               {
                   Console.WriteLine($"Executing QSPI Flash Write using {options.DeveloperValue}");
                   MeadowDeviceManager.QspiWrite(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.QspiRead)
               {
                   Console.WriteLine($"Executing QSPI Flash Read using {options.DeveloperValue}");
                   MeadowDeviceManager.QspiRead(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.QspiInit)
               {
                   Console.WriteLine($"Executing QSPI Flash Initialization using {options.DeveloperValue}");
                   MeadowDeviceManager.QspiInit(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
               }
-#endif
             }
             catch (IOException ex)
             {

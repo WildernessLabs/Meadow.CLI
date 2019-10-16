@@ -15,8 +15,10 @@ namespace MeadowCLI.Hcom
         DeviceInfo,
         FileListTitle,
         FileListMember,
+        FileListCrcMember,
         Data,
         DiagOutput,
+        SerialReconnect,
     }
 
     public enum HcomProtocolCtrl
@@ -25,14 +27,16 @@ namespace MeadowCLI.Hcom
         HcomProtoCtrlRequestUndefined = 0,
         HcomProtoCtrlRequestRejected = 1,
         HcomProtoCtrlRequestAccepted = 2,
-        HcomProtoCtrlRequestEnded = 3,
+        HcomProtoCtrlRequestConcluded = 3,
         HcomProtoCtrlRequestError = 4,
         HcomProtoCtrlRequestInformation = 5,
         HcomProtoCtrlRequestFileListHeader = 6,
         HcomProtoCtrlRequestFileListMember = 7,
-        HcomProtoCtrlRequestMonoMessage = 8,
-        HcomProtoCtrlRequestDeviceInfo = 9,
-        HcomProtoCtrlRequestDeviceDiag = 10,
+        HcomProtoCtrlRequestFileCrcListMember = 8,
+        HcomProtoCtrlRequestMonoMessage = 9,
+        HcomProtoCtrlRequestDeviceInfo = 10,
+        HcomProtoCtrlRequestDeviceDiag = 11,
+        HcomProtoCtrlHostSerialReconnect = 12
     }
 
     public class MeadowMessageEventArgs : EventArgs
@@ -68,14 +72,13 @@ namespace MeadowCLI.Hcom
             _hostCommBuffer = new HostCommBuffer();
             _hostCommBuffer.Init(MeadowDeviceManager.maxSizeOfXmitPacket * 4);
 
-            ReadPortAsync(); 
+            var t = ReadPortAsync();
         }
 
         //-------------------------------------------------------------
         // All received data handled here
         private async Task ReadPortAsync()
         {
-            int offset = 0;
             byte[] buffer = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
 
             try
@@ -86,9 +89,8 @@ namespace MeadowCLI.Hcom
 
                     if (byteCount > 0)
                     {
-                        var receivedLength = await serialPort.BaseStream.ReadAsync(buffer, offset, byteCount).ConfigureAwait(false);
-                        offset = AddAndProcessData(buffer, receivedLength + offset);
-                        Debug.Assert(offset > -1);
+                        var receivedLength = await serialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
+                        AddAndProcessData(buffer, receivedLength);
                     }
                     await Task.Delay(50).ConfigureAwait(false);
                 }
@@ -100,7 +102,7 @@ namespace MeadowCLI.Hcom
             }
             catch (InvalidOperationException)
             {
-                // common if the port is reset (e.g. mono enable/disable) - don't spew confusing info
+                // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
             }
             catch (Exception ex)
             {
@@ -108,7 +110,7 @@ namespace MeadowCLI.Hcom
             }
         }
 
-        int AddAndProcessData(byte[] buffer, int availableBytes)
+        void AddAndProcessData(byte[] buffer, int availableBytes)
         {
             HcomBufferReturn result;
 
@@ -153,13 +155,10 @@ namespace MeadowCLI.Hcom
             // Any other response is an error
             Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
-
-            return 0;
         }
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
-
             byte[] packetBuffer = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.maxAllowableDataBlock];
             int packetLength;
@@ -183,9 +182,10 @@ namespace MeadowCLI.Hcom
 
                 // It's possible that we may find a series of 0x00 values in the buffer.
                 // This is because when the sender is blocked (because this code isn't
-                // running) it will attempt to send single 0x00 before the full message.
-                // This allows it to test for a connection. So when the connection is
-                // unblocked this 0x00 is sent and gets put into the buffer.
+                // running) it will attempt to send a single 0x00 before the full message.
+                // This allows it to test for a connection. When the connection is
+                // unblocked this 0x00 is sent and gets put into the buffer along with
+                // any others that were queued along the usb serial pipe line.
                 if (packetLength == 1)
                 {
                     //Console.WriteLine("+++++ Throwing out 0x00 from buffer +++++");
@@ -199,7 +199,7 @@ namespace MeadowCLI.Hcom
                 Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
                 Debug.Assert(decodedSize >= MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 
-                /*  Save in case we suspect data corruption
+                /* Save for testing in case we suspect data corruption
                 // The protocol requires the first 12 bytes to be the header. The first 2 are 0x00,
                 // the next 10 are binary. After this the rest are ASCII text.
                 // Test the message and if it fails it's trashed.
@@ -276,10 +276,10 @@ namespace MeadowCLI.Hcom
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestAccepted:
-                    Console.WriteLine("protocol-Request Accepted"); // TESTING
+                    Console.WriteLine($"protocol-Request Accepted"); // TESTING
                     break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestEnded:
-                    Console.WriteLine("protocol-Request Ended"); // TESTING
+                case HcomProtocolCtrl.HcomProtoCtrlRequestConcluded:
+                    Console.WriteLine($"protocol-Request Concluded"); // TESTING
                     break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestError:
                     //Console.WriteLine("protocol-Request Error"); // TESTING
@@ -298,6 +298,9 @@ namespace MeadowCLI.Hcom
                 case HcomProtocolCtrl.HcomProtoCtrlRequestFileListMember:
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, meadowMessage));
                     break;
+                case HcomProtocolCtrl.HcomProtoCtrlRequestFileCrcListMember:
+                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, meadowMessage));
+                    break;
                 case HcomProtocolCtrl.HcomProtoCtrlRequestMonoMessage:
                     OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, meadowMessage));
                     break;
@@ -307,6 +310,10 @@ namespace MeadowCLI.Hcom
                 case HcomProtocolCtrl.HcomProtoCtrlRequestDeviceDiag:
                     if (!String.IsNullOrEmpty(meadowMessage))
                         OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DiagOutput, meadowMessage));
+                    break;
+                case HcomProtocolCtrl.HcomProtoCtrlHostSerialReconnect:
+                    Console.WriteLine($"protocol-Host Serial Reconnect"); // TESTING
+                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                     break;
                 default:
                     Console.WriteLine("Received: default ");

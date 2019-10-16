@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Threading.Tasks;
@@ -15,14 +16,14 @@ namespace MeadowCLI.DeviceManagement
         public bool Verbose { get; protected set; }
 
         public SerialPort SerialPort { get; private set; }
-        private string _serialPortName;
-        public string PortName => SerialPort == null ? _serialPortName : SerialPort.PortName;
+        private string serialPortName;
+        public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
         private MeadowSerialDataProcessor dataProcessor;
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
-            this._serialPortName = serialPortName;
+            this.serialPortName = serialPortName;
             this.Verbose = verbose;
         }
 
@@ -35,11 +36,11 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort != null)
             {
-                SerialPort.Close();
+                SerialPort.Close();  // note: exception in ReadAsync
                 SerialPort = null;
             }
 
-            if (OpenSerialPort(_serialPortName) == false)
+            if (OpenSerialPort(serialPortName) == false)
                 return false;
 
             if (listen == true)
@@ -176,7 +177,7 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                if (e.MessageType == MeadowMessageType.FileListMember) //.FileList)
+                if (e.MessageType == MeadowMessageType.FileListMember)
                 {
                     SetFilesAndCrcsFromMessage(e.Message);
                     tcs.SetResult(true);
@@ -209,7 +210,7 @@ namespace MeadowCLI.DeviceManagement
 
                 handler = (s, e) =>
                 {
-                    if (e.MessageType == MeadowMessageType.FileListMember) //.FileList)
+                    if (e.MessageType == MeadowMessageType.FileListMember)
                     {
                         SetFilesOnDeviceFromMessage(e.Message);
                         tcs.SetResult(true);
@@ -319,6 +320,10 @@ namespace MeadowCLI.DeviceManagement
                     if (Verbose) Console.WriteLine("File List: ");
                     break;
                 case MeadowMessageType.FileListMember:
+                    SetFileFromEachMessage(args.Message);
+                    if (Verbose) Console.WriteLine(args.Message);
+                    break;
+                case MeadowMessageType.FileListCrcMember:
                     SetFileAndCrcsFromEachMessage(args.Message);
                     if (Verbose) Console.WriteLine(args.Message);
                     break;
@@ -326,6 +331,28 @@ namespace MeadowCLI.DeviceManagement
                     SetDeviceIdFromMessage(args.Message);
                     if (Verbose) Console.WriteLine("ID: " + args.Message);
                     break;
+                case MeadowMessageType.SerialReconnect:
+                    if(AttemptToReconnectToMeadow())
+                        Console.WriteLine("Successfully reconnected");
+                    else
+                        Console.WriteLine("Failed to reconnect");
+                    break;
+            }
+        }
+
+        bool AttemptToReconnectToMeadow()
+        {
+            int delayCount = 20;    // 10 seconds (usually take one second)
+            while (true)
+            {
+                System.Threading.Thread.Sleep(500);
+
+                bool portOpened = Initialize(true);
+                if (portOpened)
+                    return true;
+
+                if (delayCount-- == 0)
+                    return false;
             }
         }
 
@@ -333,34 +360,45 @@ namespace MeadowCLI.DeviceManagement
         {
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
+            Debug.Assert(crcStart > fileNameStart);
 
             var file = fileListMember.Substring(fileNameStart, crcStart - fileNameStart - 2);
             FilesOnDevice.Add(file.Trim());
 
             var crc = Convert.ToUInt32(fileListMember.Substring(crcStart, 10), 16);
-
             FileCrcs.Add(crc);
+        }
+
+        void SetFileFromEachMessage(string fileListMember)
+        {
+            int fileNameStart = fileListMember.LastIndexOf('/') + 1;
+            int crcStart = fileListMember.IndexOf('[') + 1;
+            Debug.Assert(crcStart == 0);
+
+            var file = fileListMember.Substring(fileNameStart, fileListMember.Length - fileNameStart);
+            FilesOnDevice.Add(file.Trim());
         }
 
         void SetFilesAndCrcsFromMessage(string message)
         {
-            var fileInfo = message.Split(',');
+            var data = message.Split(',');
 
             FilesOnDevice.Clear();
             FileCrcs.Clear();
 
-            for (int i = 0; i < fileInfo[i].Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
-                int fileNameStart = fileInfo[i].LastIndexOf('/') + 1;
-                int crcStart = fileInfo[i].IndexOf('[') + 1;
+                int fileNameStart = data[i].LastIndexOf('/') + 1;
+                int crcStart = data[i].IndexOf('[') + 1;
 
-                var file = fileInfo[i].Substring(fileNameStart, crcStart - fileNameStart - 2);
+                var file = data[i].Substring(fileNameStart, crcStart - fileNameStart - 2);
                 FilesOnDevice.Add(file.Trim());
 
-                var crc = Convert.ToUInt32(fileInfo[i].Substring(crcStart, 10), 16);
+                var crc = Convert.ToUInt32(data[i].Substring(crcStart, 10), 16);
 
                 FileCrcs.Add(crc);
             }
+
         }
 
         void SetFilesOnDeviceFromMessage(string message)
