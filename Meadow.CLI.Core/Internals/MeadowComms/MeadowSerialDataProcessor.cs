@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO.Ports;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using MeadowCLI.DeviceManagement;
+using static MeadowCLI.DeviceManagement.MeadowFileManager;
 
 namespace MeadowCLI.Hcom
 {
+    // For data received due to a CLI request these provide a secondary
+    // type of identification. The primary being the protocol request value
     public enum MeadowMessageType
     {
         AppOutput,
@@ -17,26 +19,8 @@ namespace MeadowCLI.Hcom
         FileListMember,
         FileListCrcMember,
         Data,
-        DiagOutput,
+        MeadowDiag,
         SerialReconnect,
-    }
-
-    public enum HcomProtocolCtrl
-    {
-        // Must match set in MeadowOS
-        HcomProtoCtrlRequestUndefined = 0,
-        HcomProtoCtrlRequestRejected = 1,
-        HcomProtoCtrlRequestAccepted = 2,
-        HcomProtoCtrlRequestConcluded = 3,
-        HcomProtoCtrlRequestError = 4,
-        HcomProtoCtrlRequestInformation = 5,
-        HcomProtoCtrlRequestFileListHeader = 6,
-        HcomProtoCtrlRequestFileListMember = 7,
-        HcomProtoCtrlRequestFileCrcListMember = 8,
-        HcomProtoCtrlRequestMonoMessage = 9,
-        HcomProtoCtrlRequestDeviceInfo = 10,
-        HcomProtoCtrlRequestDeviceDiag = 11,
-        HcomProtoCtrlHostSerialReconnect = 12
     }
 
     public class MeadowMessageEventArgs : EventArgs
@@ -52,7 +36,8 @@ namespace MeadowCLI.Hcom
     }
 
     public class MeadowSerialDataProcessor
-    {   //collapse to one and use enum
+    {   
+        //collapse to one and use enum
         public EventHandler<MeadowMessageEventArgs> OnReceiveData;
         HostCommBuffer _hostCommBuffer;
         RecvFactoryManager _recvFactoryManager;
@@ -188,7 +173,7 @@ namespace MeadowCLI.Hcom
                 // any others that were queued along the usb serial pipe line.
                 if (packetLength == 1)
                 {
-                    //Console.WriteLine("+++++ Throwing out 0x00 from buffer +++++");
+                    //Console.WriteLine("Throwing out 0x00 from buffer");
                     continue;
                 }
 
@@ -199,37 +184,10 @@ namespace MeadowCLI.Hcom
                 Debug.Assert(decodedSize <= MeadowDeviceManager.maxAllowableDataBlock);
                 Debug.Assert(decodedSize >= MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 
-                /* Save for testing in case we suspect data corruption
-                // The protocol requires the first 12 bytes to be the header. The first 2 are 0x00,
-                // the next 10 are binary. After this the rest are ASCII text.
-                // Test the message and if it fails it's trashed.
-                if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
-                {
-                    Console.WriteLine("+++++ Corrupted message, first 2 bytes not 0x00 +++++\a");
-                    continue;
-                }
-
-                int buffOffset;
-                for(buffOffset = MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
-                    buffOffset < decodedSize;
-                    buffOffset++)
-                {
-                    if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
-                    {
-                        Console.WriteLine($"+++++ Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]} +++++\a");
-                        break;
-                    }
-                }
-
-                // Throw away if we found non ASCII where only text should be
-                if (buffOffset < decodedSize)
-                    continue;
-                */
-
                 // Process the received packet
                 if (decodedSize > 0)
                 {
-                    bool procResult = ParseAndProcessDecodedPacket(decodedBuffer, decodedSize);
+                    bool procResult = ParseAndProcessReceivedPacket(decodedBuffer, decodedSize);
                     if (procResult)
                         continue;   // See if there's another packet ready
                 }
@@ -238,17 +196,75 @@ namespace MeadowCLI.Hcom
             return result;
         }
 
-        bool ParseAndProcessDecodedPacket(byte[] receivedMsg, int receivedMsgLen)
+        bool ParseAndProcessReceivedPacket(byte[] receivedMsg, int receivedMsgLen)
         {
             try
             {
-                IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg);
+                IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg, receivedMsgLen);
                 if (processor == null)
                     return false;
 
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
-                    ProcessRecvdMessage(processor.ToString(), processor.ProtocolCtrl, processor.UserData);
+                    switch(processor.RequestType)
+                    {
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
+                            Console.WriteLine("protocol-Request Undefined"); // TESTING
+                            break;
+
+                            // This set are responses to request issued by this application
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
+                            Console.WriteLine("protocol-Request Rejected"); // TESTING
+                            if (!String.IsNullOrEmpty(processor.ToString()))
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
+                            Console.WriteLine($"protocol-Request Accepted"); // TESTING
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
+                            Console.WriteLine($"protocol-Request Concluded"); // TESTING
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
+                            //Console.WriteLine("protocol-Request Error"); // TESTING
+                            if (!String.IsNullOrEmpty(processor.ToString()))
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
+                            //Console.WriteLine("protocol-Request Information"); // TESTING
+                            if (!String.IsNullOrEmpty(processor.ToString()))
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
+                            //Console.WriteLine("protocol-Request File List Header received"); // TESTING
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG:
+                            if (!String.IsNullOrEmpty(processor.ToString()))
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowDiag, processor.ToString()));
+                            break;
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
+                            Console.WriteLine($"protocol-Host Serial Reconnect"); // TESTING
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
+                            break;
+
+                        // Debug message from Meadow for Visual Studio
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG:
+                            Console.WriteLine($"protocol-Debugging message from Meadow for Visual Studio"); // TESTING
+                            MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
+                            break;
+                    }
                     return true;
                 }
                 else
@@ -263,62 +279,32 @@ namespace MeadowCLI.Hcom
             }
         }
 
-        void ProcessRecvdMessage(string meadowMessage, ushort protocolCtrl, uint userData)
+        /*
+        // Save for testing in case we suspect data corruption of text
+        // The protocol requires the first 12 bytes to be the header. The first 2 are 0x00,
+        // the next 10 are binary. After this the rest are ASCII text or binary.
+        // Test the message and if it fails it's trashed.
+        if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
         {
-            switch ((HcomProtocolCtrl)protocolCtrl)
+            Console.WriteLine("Corrupted message, first 2 bytes not 0x00");
+            continue;
+        }
+
+        int buffOffset;
+        for(buffOffset = MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
+            buffOffset < decodedSize;
+            buffOffset++)
+        {
+            if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
             {
-                case HcomProtocolCtrl.HcomProtoCtrlRequestUndefined:
-                    Console.WriteLine("protocol-Request Undefined"); // TESTING
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestRejected:
-                    Console.WriteLine("protocol-Request Rejected"); // TESTING
-                    if (!String.IsNullOrEmpty(meadowMessage))
-                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestAccepted:
-                    Console.WriteLine($"protocol-Request Accepted"); // TESTING
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestConcluded:
-                    Console.WriteLine($"protocol-Request Concluded"); // TESTING
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestError:
-                    //Console.WriteLine("protocol-Request Error"); // TESTING
-                    if (!String.IsNullOrEmpty(meadowMessage))
-                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestInformation:
-                    //Console.WriteLine("protocol-Request Information"); // TESTING
-                    if (!String.IsNullOrEmpty(meadowMessage))
-                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestFileListHeader:
-                    //Console.WriteLine("protocol-Request File List Header received"); // TESTING
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, meadowMessage));
-                  break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestFileListMember:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestFileCrcListMember:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestMonoMessage:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestDeviceInfo:
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlRequestDeviceDiag:
-                    if (!String.IsNullOrEmpty(meadowMessage))
-                        OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DiagOutput, meadowMessage));
-                    break;
-                case HcomProtocolCtrl.HcomProtoCtrlHostSerialReconnect:
-                    Console.WriteLine($"protocol-Host Serial Reconnect"); // TESTING
-                    OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
-                    break;
-                default:
-                    Console.WriteLine("Received: default ");
-                    throw new ArgumentException("Unknown protocol control type");
+                Console.WriteLine($"Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]}");
+                break;
             }
         }
+
+        // Throw away if we found non ASCII where only text should be
+        if (buffOffset < decodedSize)
+            continue;
+        */
     }
 }

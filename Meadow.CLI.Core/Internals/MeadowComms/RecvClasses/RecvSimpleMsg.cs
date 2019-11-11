@@ -9,13 +9,13 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
     // Factory class
     public class RecvSimpleMsgFactory : RecvMessageFactory
     {
-        public override IReceivedMessage Create(byte[] recvdMsg) => new RecvSimpleMsg(recvdMsg);
+        public override IReceivedMessage Create(byte[] recvdMsg, int recvdMsgLength) => new RecvSimpleMsg(recvdMsg, recvdMsgLength);
     }
 
     // Concrete class
     internal class RecvSimpleMsg : RecvHeader
     {
-        public RecvSimpleMsg(byte[] recvdMsg) : base(recvdMsg)
+        public RecvSimpleMsg(byte[] recvdMsg, int recvdMsgLength) : base(recvdMsg, recvdMsgLength)
         {
         }
 
@@ -31,11 +31,5 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 return false;
             }
         }
-
-        public override string ToString()
-        {
-            return string.Empty;
-        }
-
     }
 }

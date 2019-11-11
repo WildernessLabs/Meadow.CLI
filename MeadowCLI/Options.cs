@@ -19,7 +19,7 @@ namespace MeadowCLI
         public bool EraseFlash { get; set; }
         [Option(longName: "VerifyErasedFlash", Required = false, HelpText = "Verify the contents of the flash were deleted")]
         public bool VerifyErasedFlash { get; set; }
-                [Option(longName: "PartitionFileSystem", Required = false, HelpText = "Partition Meadow's internal flash")]
+        [Option(longName: "PartitionFileSystem", Required = false, HelpText = "Partition Meadow's internal flash")]
         public bool PartitionFileSystem { get; set; }
         [Option(longName: "MountFileSystem", Required = false, HelpText = "Mount file system in Meadow's internal flash")]
         public bool MountFileSystem { get; set; }
@@ -93,5 +93,11 @@ namespace MeadowCLI
         public bool QspiRead { get; set; }
         [Option(longName: "QspiInit", Required = false, HelpText = "Set developer3 (0 to 4,294,967,295)")]
         public bool QspiInit { get; set; }
+
+        [Option(longName: "VSDebugging", Required = false, HelpText = "Enables MeadowCLI to interact with Visual Studio")]
+        public bool VSDebugging { get; set; }
+        [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
+        public int VSDebugPort { get; set; }
+
     }
 }

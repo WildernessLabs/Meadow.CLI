@@ -43,8 +43,10 @@
   <ItemGroup>
     <Compile Include="DeviceManagement\MeadowDeviceInfo.cs" />
     <Compile Include="DeviceManagement\MeadowSerialDevice.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\DebuggingServer.cs" />
     <Compile Include="Internals\MeadowComms\RecvClasses\RecvFactory.cs" />
     <Compile Include="Internals\MeadowComms\RecvClasses\RecvHeader.cs" />
+    <Compile Include="Internals\MeadowComms\RecvClasses\RecvSimpleBinary.cs" />
     <Compile Include="Internals\MeadowComms\RecvClasses\RecvSimpleMsg.cs" />
     <Compile Include="Internals\MeadowComms\RecvClasses\RecvSimpleText.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

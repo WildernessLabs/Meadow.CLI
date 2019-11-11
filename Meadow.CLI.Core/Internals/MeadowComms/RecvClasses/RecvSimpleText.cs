@@ -9,15 +9,13 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
     // Factory class
     public class RecvSimpleTextFactory : RecvMessageFactory
     {
-        public override IReceivedMessage Create(byte[] recvdMsg) => new RecvSimpleText(recvdMsg);
+        public override IReceivedMessage Create(byte[] recvdMsg, int recvdMsgLength) => new RecvSimpleText(recvdMsg, recvdMsgLength);
     }
 
     // Concrete class
     internal class RecvSimpleText : RecvHeader
     {
-        string _msgString;
-
-        public RecvSimpleText(byte[] recvdMsg) : base(recvdMsg)
+        public RecvSimpleText(byte[] recvdMsg, int recvdMsgLength) : base(recvdMsg, recvdMsgLength)
         {
         }
 
@@ -28,7 +26,6 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 if (recvdMsg.Length == HeaderLength)
                     throw new ArgumentException("Received RecvSimpleText with no text data");
 
-                _msgString = Encoding.UTF8.GetString(recvdMsg, HeaderLength, recvdMsgLen - HeaderLength);
                 return true;
             }
             catch (Exception ex)
@@ -37,10 +34,12 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 return false;
             }
         }
-
         public override string ToString()
         {
-            return _msgString;
+            if (MessageDataLength > 0)
+                return ASCIIEncoding.ASCII.GetString(MessageData);
+            else
+                return String.Empty;
         }
     }
 }

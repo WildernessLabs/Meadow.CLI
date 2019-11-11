@@ -41,7 +41,7 @@ namespace MeadowCLI.Hcom
                     partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
 
                 //--------------------------------------------------------------
-                // Build all the data packets
+                // Build each data packet
                 int fileBufOffset = 0;
                 int numbToSend;
                 UInt16 sequenceNumber = 1;
@@ -109,13 +109,31 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        // Build and send a basic command
+        // Build and send a "simple" message with data
+        // Added for Visual Studio Debugging
+        internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
+        {
+            int totalMsgLength = additionalData.Length + MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
+            var messageBytes = new byte[totalMsgLength];
+
+            // Populate the header
+            BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
+
+            // Copy the payload into the message
+            Array.Copy(additionalData, 0, messageBytes,
+                MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH, additionalData.Length);
+
+            EncodeAndSendPacket(messageBytes, 0, totalMsgLength);
+        }
+
+        //==========================================================================
+        // Build and send a "simple" message with only a header
         internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
         {
             var messageBytes = new byte[MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
+            // Populate the header
             BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
-
             EncodeAndSendPacket(messageBytes, 0, MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
         }
 
@@ -155,7 +173,7 @@ namespace MeadowCLI.Hcom
         internal void BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
             UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, string destFileName)
         {
-            // Future: Try to use the StructLayout attribute to build fixed size class/struct.
+            // Future: Try to use the StructLayout attribute
 
             // Allocate the correctly size message buffer
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx

@@ -311,7 +311,7 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.AppOutput:
                     if (Verbose) Console.WriteLine("App: " + args.Message);
                     break;
-                case MeadowMessageType.DiagOutput:
+                case MeadowMessageType.MeadowDiag:
                     if (Verbose) Console.WriteLine("Diag: " + args.Message);
                     break;
                 case MeadowMessageType.FileListTitle:
@@ -342,7 +342,7 @@ namespace MeadowCLI.DeviceManagement
 
         bool AttemptToReconnectToMeadow()
         {
-            int delayCount = 20;    // 10 seconds (usually take one second)
+            int delayCount = 20;    // 10 seconds
             while (true)
             {
                 System.Threading.Thread.Sleep(500);
@@ -360,6 +360,9 @@ namespace MeadowCLI.DeviceManagement
         {
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
+            if(fileNameStart == 0 && crcStart == 0)
+                return;     // No files found
+
             Debug.Assert(crcStart > fileNameStart);
 
             var file = fileListMember.Substring(fileNameStart, crcStart - fileNameStart - 2);
@@ -373,6 +376,9 @@ namespace MeadowCLI.DeviceManagement
         {
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
+            if(fileNameStart == 0 && crcStart == 0)
+                return;     // No files found
+
             Debug.Assert(crcStart == 0);
 
             var file = fileListMember.Substring(fileNameStart, fileListMember.Length - fileNameStart);
