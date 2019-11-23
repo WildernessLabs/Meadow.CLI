@@ -9,6 +9,11 @@ namespace MeadowCLI.Hcom
 {
     public class SendTargetData
     {
+        const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
+        const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
+        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0004;
+        const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
+
         //questioning if this class should send or just create the message
         SerialPort _serialPort; //refactor this .... 
 
@@ -48,10 +53,10 @@ namespace MeadowCLI.Hcom
 
                 while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
                 {
-                    if ((fileBufOffset + MeadowDeviceManager.maxAllowableDataBlock) > (fileBytes.Length - 1))
+                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableDataBlock) > (fileBytes.Length - 1))
                         numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
                     else
-                        numbToSend = MeadowDeviceManager.maxAllowableDataBlock;
+                        numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
 
                     BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
                     fileBufOffset += numbToSend;
@@ -93,7 +98,7 @@ namespace MeadowCLI.Hcom
                 // Need to prepend the sequence number to the packet
                 int xmitSize = messageSize + sizeof(UInt16);
                 byte[] fullMsg = new byte[xmitSize];
-                byte[] encodedBytes = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
                 Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
@@ -113,7 +118,7 @@ namespace MeadowCLI.Hcom
         // Added for Visual Studio Debugging
         internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
         {
-            int totalMsgLength = additionalData.Length + MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
+            int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
             var messageBytes = new byte[totalMsgLength];
 
             // Populate the header
@@ -121,7 +126,7 @@ namespace MeadowCLI.Hcom
 
             // Copy the payload into the message
             Array.Copy(additionalData, 0, messageBytes,
-                MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH, additionalData.Length);
+                HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH, additionalData.Length);
 
             EncodeAndSendPacket(messageBytes, 0, totalMsgLength);
         }
@@ -130,11 +135,11 @@ namespace MeadowCLI.Hcom
         // Build and send a "simple" message with only a header
         internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
         {
-            var messageBytes = new byte[MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
+            var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
             // Populate the header
             BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
-            EncodeAndSendPacket(messageBytes, 0, MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
+            EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
         }
 
         //==========================================================================
@@ -146,16 +151,16 @@ namespace MeadowCLI.Hcom
             int offset = 0;
 
             // Two byte seq numb
-            Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
                 messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
             // Protocol version
-            Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
             // Protocol control
-            Array.Copy(BitConverter.GetBytes((UInt16)MeadowDeviceManager.HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT), 0, messageBytes, offset, sizeof(UInt16));
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
             // Command type (2 bytes)
@@ -178,7 +183,7 @@ namespace MeadowCLI.Hcom
             // Allocate the correctly size message buffer
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
             int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + targetFileName.Length;
-            byte[] messageBytes = new byte[MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
+            byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
             // Add the required part
             int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
@@ -195,7 +200,7 @@ namespace MeadowCLI.Hcom
             Array.Copy(targetFileName, 0, messageBytes, offset, targetFileName.Length);
             offset += targetFileName.Length;
 
-            Debug.Assert(offset == optionalDataLength + MeadowDeviceManager.HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
+            Debug.Assert(offset == optionalDataLength + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
             EncodeAndSendPacket(messageBytes, 0, offset);
         }
 
@@ -208,7 +213,7 @@ namespace MeadowCLI.Hcom
                 // For testing calculate the crc including the sequence number
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
-                byte[] encodedBytes = new byte[MeadowDeviceManager.maxSizeOfXmitPacket];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
                 int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
 
                 // Verify COBS - any delimiters left?

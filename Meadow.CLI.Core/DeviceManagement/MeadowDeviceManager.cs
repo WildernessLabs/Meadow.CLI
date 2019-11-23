@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO.Ports;
-using System.Linq;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using MeadowCLI.Hcom;
@@ -15,18 +13,15 @@ namespace MeadowCLI.DeviceManagement
     /// </summary>
     public static class MeadowDeviceManager
     {
-        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
-        public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        public const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0004;
-        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
-        public const UInt16 DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
+
+        internal const UInt16 DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
 
         // Note: While not truly important, it can be noted that size of the s25fl QSPI flash
         // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
         // maxmimum data block size an even multiple of 256 we insure that each packet received
         // can be immediately written to the s25fl QSPI flash chip.
-        public const int maxAllowableDataBlock = 512;
-        public const int maxSizeOfXmitPacket = (maxAllowableDataBlock + 4) + (maxAllowableDataBlock / 254);
+        internal const int MaxAllowableDataBlock = 512;
+        internal const int MaxSizeOfXmitPacket = (MaxAllowableDataBlock + 4) + (MaxAllowableDataBlock / 254);
 
         //    public static ObservableCollection<MeadowDevice> AttachedDevices = new ObservableCollection<MeadowDevice>();
 
@@ -259,6 +254,5 @@ namespace MeadowCLI.DeviceManagement
 
             meadow.Initialize(true);
         }
-
     }
 }
