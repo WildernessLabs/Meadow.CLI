@@ -3,28 +3,21 @@ using System.Diagnostics;
 using System.IO.Ports;
 using System.Text;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
+using MeadowCLI.DeviceManagement;
 
 namespace MeadowCLI.Hcom
 {
     public class SendTargetData
     {
-        //                                                             seq+ver+ctl+cmd+user
-        public const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 2 + 2 + 2 + 2 + 4;
-        public const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        public const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0002;
-        public const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_FUTURE = 0x0000;
+        const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
+        const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
+        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0004;
+        const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
 
         //questioning if this class should send or just create the message
         SerialPort _serialPort; //refactor this .... 
 
         uint _packetCrc32;
-
-        // Note: While not truly important, it can be noted that, size of the s25fl QSPI flash
-        // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
-        // maxmimum data block size an even multiple of 256 we insure that each packet received
-        // can be immediately written to the s25fl QSPI flash chip.
-        const int maxAllowableDataBlock = 512;
-        const int maxSizeOfXmitPacket = (maxAllowableDataBlock + 4) + (maxAllowableDataBlock / 254);
 
         //==========================================================================
         // Constructor
@@ -45,41 +38,48 @@ namespace MeadowCLI.Hcom
         {
             _packetCrc32 = 0;
 
-            // Build and send the header
-            BuildAndSendFileRelatedCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
-
-            //--------------------------------------------------------------
-            // Build all the data packets
-            int fileBufOffset = 0;
-            int numbToSend;
-            UInt16 sequenceNumber = 1;
-
-            while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
+            try
             {
-                if ((fileBufOffset + maxAllowableDataBlock) > (fileBytes.Length - 1))
-                    numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
-                else
-                    numbToSend = maxAllowableDataBlock;
+                // Build and send the header
+                BuildAndSendFileRelatedCommand(
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
+                    partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
 
-                BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
-                fileBufOffset += numbToSend;
+                //--------------------------------------------------------------
+                // Build each data packet
+                int fileBufOffset = 0;
+                int numbToSend;
+                UInt16 sequenceNumber = 1;
 
-                sequenceNumber++;
-                //if (sequenceNumber % 1000 == 0)
-                //	Console.WriteLine("Have sent {0:N0} bytes out of {1:N0} in {2:N0} packets",
-                //		fileBufOffset, fileBytes.Length, sequenceNumber);
+                while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
+                {
+                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableDataBlock) > (fileBytes.Length - 1))
+                        numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
+                    else
+                        numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
+
+                    BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
+                    fileBufOffset += numbToSend;
+
+                    sequenceNumber++;
+                    //if (sequenceNumber % 1000 == 0)
+                    //	Console.WriteLine("Have sent {0:N0} bytes out of {1:N0} in {2:N0} packets",
+                    //		fileBufOffset, fileBytes.Length, sequenceNumber);
+                }
+
+                //--------------------------------------------------------------
+                // Build and send the trailer
+                BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER, 0);
+
+                // bufferOffset should point to the byte after the last byte
+                Debug.Assert(fileBufOffset == fileBytes.Length);
+                if(Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
             }
-
-            //--------------------------------------------------------------
-            // Build and send the trailer
-            BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER, 0);
-
-            // bufferOffset should point to the byte after the last byte
-            Debug.Assert(fileBufOffset == fileBytes.Length);
-            if (Verbose) Console.WriteLine("Total bytes sent {0:N0} in {1:N0} packets. PacketCRC:{2:x08} MaxPacket:{3}",
-                    fileBufOffset, sequenceNumber, _packetCrc32, maxSizeOfXmitPacket);
+            catch (Exception except)
+            {
+                Debug.WriteLine("Exception sending to Meadow:{0}", except);
+                throw;
+            }
         }
 
         //==========================================================================
@@ -98,7 +98,7 @@ namespace MeadowCLI.Hcom
                 // Need to prepend the sequence number to the packet
                 int xmitSize = messageSize + sizeof(UInt16);
                 byte[] fullMsg = new byte[xmitSize];
-                byte[] encodedBytes = new byte[maxSizeOfXmitPacket];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
                 Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
@@ -114,13 +114,31 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        // Build and send a basic command
+        // Build and send a "simple" message with data
+        // Added for Visual Studio Debugging
+        internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
+        {
+            int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
+            var messageBytes = new byte[totalMsgLength];
+
+            // Populate the header
+            BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
+
+            // Copy the payload into the message
+            Array.Copy(additionalData, 0, messageBytes,
+                HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH, additionalData.Length);
+
+            EncodeAndSendPacket(messageBytes, 0, totalMsgLength);
+        }
+
+        //==========================================================================
+        // Build and send a "simple" message with only a header
         internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
         {
             var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
+            // Populate the header
             BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
-
             EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
         }
 
@@ -141,10 +159,9 @@ namespace MeadowCLI.Hcom
             Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
-            // Protocol control (future)
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CONTROL_VALUE_FUTURE), 0, messageBytes, offset, sizeof(UInt16));
+            // Protocol control
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
-
 
             // Command type (2 bytes)
             Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
@@ -161,7 +178,7 @@ namespace MeadowCLI.Hcom
         internal void BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
             UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, string destFileName)
         {
-            // Future: Try to use the StructLayout attribute to build fixed size class/struct.
+            // Future: Try to use the StructLayout attribute
 
             // Allocate the correctly size message buffer
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
@@ -196,7 +213,7 @@ namespace MeadowCLI.Hcom
                 // For testing calculate the crc including the sequence number
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
-                byte[] encodedBytes = new byte[maxSizeOfXmitPacket];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
                 int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
 
                 // Verify COBS - any delimiters left?

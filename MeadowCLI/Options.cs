@@ -31,7 +31,7 @@ namespace MeadowCLI
         public bool FormatFileSystem { get; set; }
         [Option(longName: "ClearCache", Required = false, HelpText = "Clears the CLI's state cache")]
         public bool ClearCache { get; set; }
-
+        
         [Option(longName: "SetDeveloper1", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool SetDeveloper1 { get; set; }
         [Option(longName: "SetDeveloper2", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
@@ -42,9 +42,9 @@ namespace MeadowCLI
         public bool SetDeveloper4 { get; set; }
         [Option(longName: "SetTraceLevel", Required = false, HelpText = "Change the debug trace level (0 - 3)")]
         public bool SetTraceLevel { get; set; }
-        [Option('r', longName: "ResetTargetMcu", Required = false, HelpText = "Reset the MCU on Meadow")]
-        public bool ResetTargetMcu { get; set; }
-        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Set Meadow in DFU mode")]
+        [Option('r', longName: "ResetMeadow", Required = false, HelpText = "Reset the MCU on Meadow")]
+        public bool ResetMeadow { get; set; }
+        [Option(longName: "EnterDfuMode", Required = false, HelpText = "Put Meadow in DFU mode - Not implemented")]
         public bool EnterDfuMode { get; set; }
         [Option(longName: "NshEnable", Required = false, HelpText = "Enable NSH")]
         public bool NshEnable { get; set; }
@@ -61,7 +61,7 @@ namespace MeadowCLI
         public bool ListFiles { get; set; }
         [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
         public bool ListFilesAndCrcs { get; set; }
-
+        
         [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
         public bool ListPorts { get; set; }
         [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
@@ -78,5 +78,26 @@ namespace MeadowCLI
         public int TraceLevel { get; set; }
         [Option(longName: "DeveloperValue", Default = 0, Required = false, HelpText = "Change the developer numeric user data value")]
         public int DeveloperValue { get; set; }
+
+        [Option(longName: "RenewFileSys", Required = false, HelpText = "Recreate the Meadow File System")]
+        public bool RenewFileSys { get; set; }
+        [Option(longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
+        public bool KeepAlive { get; set; }
+        [Option(longName: "DiagDisable", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
+        public bool DiagDisable { get; set; }
+        [Option(longName: "DiagEnable", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
+        public bool DiagEnable { get; set; }
+        [Option(longName: "QspiWrite", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
+        public bool QspiWrite { get; set; }
+        [Option(longName: "QspiRead", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
+        public bool QspiRead { get; set; }
+        [Option(longName: "QspiInit", Required = false, HelpText = "Set developer3 (0 to 4,294,967,295)")]
+        public bool QspiInit { get; set; }
+
+        [Option(longName: "VSDebugging", Required = false, HelpText = "Enables MeadowCLI to interact with Visual Studio")]
+        public bool VSDebugging { get; set; }
+        [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
+        public int VSDebugPort { get; set; }
+
     }
 }

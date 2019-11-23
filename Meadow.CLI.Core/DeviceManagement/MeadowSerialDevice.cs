@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort != null)
             {
-                SerialPort.Close();
+                SerialPort.Close();  // note: exception in ReadAsync
                 SerialPort = null;
             }
 
@@ -47,52 +48,6 @@ namespace MeadowCLI.DeviceManagement
                 ListenForSerialData();
             }
             return true;
-        }
-
-        [ObsoleteAttribute("use logic to check Crcs instead")]
-        public async Task DeployRequiredLibs(string path, bool forceUpdate = false)
-        {
-            if (forceUpdate || await IsFileOnDevice(SYSTEM).ConfigureAwait(false) == false)
-            {
-                await WriteFile(SYSTEM, path).ConfigureAwait(false);
-            }
-
-            if (forceUpdate || await IsFileOnDevice(SYSTEM_CORE).ConfigureAwait(false) == false)
-            {
-                await WriteFile(SYSTEM_CORE, path).ConfigureAwait(false);
-            }
-
-            if (forceUpdate || await IsFileOnDevice(MSCORLIB).ConfigureAwait(false) == false)
-            {
-                await WriteFile(MSCORLIB, path).ConfigureAwait(false);
-            }
-
-            if (forceUpdate || await IsFileOnDevice(MEADOW_CORE).ConfigureAwait(false) == false)
-            {
-                await WriteFile(MEADOW_CORE, path).ConfigureAwait(false);
-            }
-        }
-
-        [ObsoleteAttribute("will be removed in the future")]
-        public async Task<bool> DeployApp(string path)
-        {
-            await WriteFile(APP_EXE, path);
-
-            //get list of files in folder
-            var files = Directory.GetFiles(path, "*.dll");
-
-            //currently deploys all included dlls, update to use CRCs to only deploy new files
-            //will likely need to update to deploy other files types (txt, jpg, etc.)
-            foreach (var f in files)
-            {
-                var file = Path.GetFileName(f);
-                if (file == MSCORLIB || file == SYSTEM || file == SYSTEM_CORE || file == MEADOW_CORE)
-                    continue;
-
-                await WriteFile(file, path);
-            }
-
-            return true; //can probably remove bool return type
         }
 
         public async Task<bool> DeleteFile(string filename, int timeoutInMs = 5000)
@@ -161,7 +116,7 @@ namespace MeadowCLI.DeviceManagement
             return result;
         }
 
-        public override async Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 10000)
+        public override async Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 60000)        
         {
             if (SerialPort == null)
             {
@@ -173,26 +128,44 @@ namespace MeadowCLI.DeviceManagement
             EventHandler<MeadowMessageEventArgs> handler = null;
 
             var tcs = new TaskCompletionSource<bool>();
+            var started = false;
 
             handler = (s, e) =>
             {
-                if (e.MessageType == MeadowMessageType.FileList)
+                Console.WriteLine($"Msg: {e.MessageType}");
+
+                if(e.MessageType == MeadowMessageType.FileListTitle)
                 {
-                    SetFilesAndCrcsFromMessage(e.Message);
-                    tcs.SetResult(true);
+                    FilesOnDevice.Clear();
+                    FileCrcs.Clear();
+                    started = true;
                 }
+                else if(started == false)
+                {   //ignore everything until we've started a new file list request
+                    return;
+                }
+
+                if (e.MessageType == MeadowMessageType.FileListCrcMember)
+                {
+                    SetFileAndCrcsFromMessage(e.Message);
+                } 
+
+                if (e.MessageType == MeadowMessageType.Concluded)
+                {
+                    tcs.TrySetResult(true);
+                } 
             };
             dataProcessor.OnReceiveData += handler;
 
             MeadowFileManager.ListFilesAndCrcs(this);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            dataProcessor.OnReceiveData -= handler;
+            dataProcessor.OnReceiveData -= handler; 
 
             return (FilesOnDevice, FileCrcs);
         }
 
-        public override async Task<List<string>> GetFilesOnDevice(bool refresh = true, int timeoutInMs = 10000)
+        public override async Task<List<string>> GetFilesOnDevice(bool refresh = true, int timeoutInMs = 30000)
         {
             if (SerialPort == null)
             {
@@ -206,12 +179,29 @@ namespace MeadowCLI.DeviceManagement
                 EventHandler<MeadowMessageEventArgs> handler = null;
 
                 var tcs = new TaskCompletionSource<bool>();
+                bool started = false;
 
                 handler = (s, e) =>
                 {
-                    if (e.MessageType == MeadowMessageType.FileList)
+                    if (e.MessageType == MeadowMessageType.FileListTitle)
                     {
-                        SetFilesOnDeviceFromMessage(e.Message);
+                        FilesOnDevice.Clear();
+                        FileCrcs.Clear();
+
+                        started = true;
+                    }
+                    else if (started == false)
+                    {   //ignore everything until we've started a new file list request
+                        return;
+                    }
+
+                    if (e.MessageType == MeadowMessageType.FileListMember)
+                    {
+                        SetFileNameFromMessage(e.Message);
+                    }
+
+                    if(e.MessageType == MeadowMessageType.Concluded)
+                    {
                         tcs.SetResult(true);
                     }
                 };
@@ -305,60 +295,82 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    if (Verbose) Console.Write("Data: " + args.Message);
+                    ConsoleOut("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    if (Verbose) Console.Write("App: " + args.Message);
+                    ConsoleOut("App: " + args.Message);
                     break;
-                case MeadowMessageType.FileList:
-                    SetFilesOnDeviceFromMessage(args.Message);
-                    if (Verbose)
-                    {
-                        Console.WriteLine();
-                        foreach (var f in FilesOnDevice)
-                            Console.WriteLine(f);
-                    }
+                case MeadowMessageType.MeadowDiag:
+                    ConsoleOut("Diag: " + args.Message);
+                    break;
+                case MeadowMessageType.FileListTitle:
+                    ConsoleOut("File List: ");
+                    break;
+                case MeadowMessageType.FileListMember:
+                    ConsoleOut(args.Message);
+                    break;
+                case MeadowMessageType.FileListCrcMember:
+                    ConsoleOut(args.Message);
                     break;
                 case MeadowMessageType.DeviceInfo:
+                    //ToDo move this
                     SetDeviceIdFromMessage(args.Message);
-                    if (Verbose) Console.WriteLine("ID: " + args.Message);
+                    ConsoleOut("ID: " + args.Message);
+                    break;
+                case MeadowMessageType.SerialReconnect:
+                    if(AttemptToReconnectToMeadow())
+                        ConsoleOut("Successfully reconnected");
+                    else
+                        ConsoleOut("Failed to reconnect");
                     break;
             }
         }
 
-        void SetFilesAndCrcsFromMessage(string message)
+        bool AttemptToReconnectToMeadow()
         {
-            var data = message.Split(',');
-
-            FilesOnDevice.Clear();
-            FileCrcs.Clear();
-
-            for (int i = 0; i < data.Length; i++)
+            int delayCount = 20;    // 10 seconds
+            while (true)
             {
-                int fileNameStart = data[i].LastIndexOf('/') + 1;
-                int crcStart = data[i].IndexOf('[') + 1;
+                System.Threading.Thread.Sleep(500);
 
-                var file = data[i].Substring(fileNameStart, crcStart - fileNameStart - 2);
-                FilesOnDevice.Add(file.Trim());
+                bool portOpened = Initialize(true);
+                if (portOpened)
+                    return true;
 
-                var crc = Convert.ToUInt32(data[i].Substring(crcStart, 10), 16);
-
-                FileCrcs.Add(crc);
+                if (delayCount-- == 0)
+                    return false;
             }
-
         }
 
-        void SetFilesOnDeviceFromMessage(string message)
+        void SetFileAndCrcsFromMessage(string fileListMember)
         {
-            var fileList = message.Split(',');
+            ConsoleOut($"SetFileAndCrcsFromMessage {fileListMember}");
 
-            FilesOnDevice.Clear();
+            int fileNameStart = fileListMember.LastIndexOf('/') + 1;
+            int crcStart = fileListMember.IndexOf('[') + 1;
+            if(fileNameStart == 0 && crcStart == 0)
+                return;     // No files found
 
-            foreach (var path in fileList)
-            {
-                var file = path.Substring(path.LastIndexOf('/') + 1);
-                FilesOnDevice.Add(file.Trim());
-            }
+            Debug.Assert(crcStart > fileNameStart);
+
+            var file = fileListMember.Substring(fileNameStart, crcStart - fileNameStart - 2);
+            FilesOnDevice.Add(file.Trim());
+
+            var crc = Convert.ToUInt32(fileListMember.Substring(crcStart, 10), 16);
+            FileCrcs.Add(crc);
+        }
+
+        void SetFileNameFromMessage(string fileListMember)
+        {
+            int fileNameStart = fileListMember.LastIndexOf('/') + 1;
+            int crcStart = fileListMember.IndexOf('[') + 1;
+            if(fileNameStart == 0 && crcStart == 0)
+                return;     // No files found
+
+            Debug.Assert(crcStart == 0);
+
+            var file = fileListMember.Substring(fileNameStart, fileListMember.Length - fileNameStart);
+            FilesOnDevice.Add(file.Trim());
         }
 
         /*"Meadow by Wilderness Labs,
@@ -385,6 +397,16 @@ namespace MeadowCLI.DeviceManagement
             DeviceInfo.SerialNumber = info[5];
             DeviceInfo.CoProcessor = info[6];
             DeviceInfo.CoProcessorOs = info[7];
+        }
+
+        void ConsoleOut(string msg)
+        {
+            if(Verbose == false)
+            {
+                return;
+            }
+
+            Console.WriteLine(msg);
         }
     }
 }

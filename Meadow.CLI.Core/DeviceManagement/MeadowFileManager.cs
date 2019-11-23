@@ -7,132 +7,90 @@ namespace MeadowCLI.DeviceManagement
 {
     public static class MeadowFileManager
     {
-        static HcomMeadowRequestType _meadowRequestType;
+        static HcomMeadowRequestType meadowRequestType;
 
-        const UInt16 REQUEST_HEADER_MASK = 0xff00;
-        const UInt32 UNKNOWN_USER_DATA = 0xffffffff;
-
-
-        const string APP = "App.exe";
-
-        static MeadowFileManager()
-        {
-        }
-
-        public static void DeployAppInFolder(MeadowSerialDevice meadow, string appFolder)
-        {
-            var files = Directory.GetFiles(appFolder, "*.exe");
-
-            foreach(var f in files)
-            {
-                if (f.ToLower().EndsWith(".exe"))
-                {
-                    WriteFileToFlash(meadow, f, APP);
-                }
-                if (f.ToLower().EndsWith(".dll"))
-                {
-                    WriteFileToFlash(meadow, f, Path.GetFileName(f));
-                }
-            }
-        }
+        static MeadowFileManager() { }
 
         public static void WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null, int partition = 0)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 
             if (string.IsNullOrWhiteSpace(targetFileName))
+            {
                 targetFileName = Path.GetFileName(fileName);
+            }
 
-            TransmitFileInfoToExtFlash(meadow, _meadowRequestType, fileName, targetFileName, partition, false);
+            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, false);
         }
 
         public static void DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
 
-            TransmitFileInfoToExtFlash(meadow, _meadowRequestType, fileName, fileName, partition, true);
+            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, true);
         }
 
         public static void EraseFlash(MeadowSerialDevice meadow)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType);
         }
 
         public static void VerifyErasedFlash(MeadowSerialDevice meadow)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType);
         }
 
         public static void PartitionFileSystem(MeadowSerialDevice meadow, int numberOfPartitions = 2)
         {
             if (numberOfPartitions < 1 || numberOfPartitions > 8)
+            {
                 throw new IndexOutOfRangeException("Number of partitions must be between 1 & 8 inclusive");
+            }
 
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS;
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)numberOfPartitions);
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)numberOfPartitions);
         }
 
         public static void MountFileSystem(MeadowSerialDevice meadow, int partition)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static void InitializeFileSystem(MeadowSerialDevice meadow, int partition)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static void CreateFileSystem(MeadowSerialDevice meadow)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType);
         }
 
         public static void FormatFileSystem(MeadowSerialDevice meadow, int partition)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
-        //ToDo - find the output 
         public static void ListFiles(MeadowSerialDevice meadow, int partition = 0)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
-        //ToDo - find the output 
         public static void ListFilesAndCrcs(MeadowSerialDevice meadow, int partition = 0)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)partition);
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
+            new SendTargetData(meadow.SerialPort).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
-
-        //I don't think this is needed
-        //it was used in the original code to determine if the request type alligned to a simple command
-        //but simple commands are just commands that only require 0 or 1 numerical args 
-        static HcomRqstHeaderType GetRequestHeaderType(HcomMeadowRequestType request)
-        {
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED)
-                return HcomRqstHeaderType.Undefined;
-
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE)
-                return HcomRqstHeaderType.Simple;
-
-            if (((UInt16)_meadowRequestType & REQUEST_HEADER_MASK) == (UInt16)HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE)
-                return HcomRqstHeaderType.FileType;
-
-            throw new InvalidOperationException(string.Format("Unknown request header type: {0}",
-                _meadowRequestType));
-        }
-
 
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType,
@@ -140,7 +98,7 @@ namespace MeadowCLI.DeviceManagement
                             bool deleteFile)
         {
             var sw = new Stopwatch();
-
+            
             var sendTargetData = new SendTargetData(meadow.SerialPort, false);
 
             try
@@ -167,7 +125,7 @@ namespace MeadowCLI.DeviceManagement
 
                 sw.Stop();
 
-                if (sendTargetData.Verbose) Console.WriteLine("It took {0:N0} millisec to send {1} bytes. FileCrc:{2:x08}", sw.ElapsedMilliseconds, fileLength, fileCrc32);
+                if (sendTargetData.Verbose) Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");
             }
             catch (Exception ex)
             {
@@ -176,18 +134,32 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        enum HcomProtocolHeaderTypes : UInt16
+        public enum HcomProtocolHeaderTypes : UInt16
         {
             HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED = 0x0000,
             // Simple request types, include 4-byte user data
             HCOM_PROTOCOL_HEADER_TYPE_SIMPLE = 0x0100,
             // File releted request types, includes 4-byte user data (for the
             // destination partition id), 4-byte file size, 4-byte checksum and
-            // variable length destition file name.
+            // variable length destination file name.
             HCOM_PROTOCOL_HEADER_TYPE_FILE = 0x0200,
+            // Simple text. 
+            HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT = 0x0300,
+            // Header followed by binary data. The size of the data can be up to
+            // HCOM_PROTOCOL_PACKET_MAX_SIZE minus header size
+            HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY = 0x0400,
         }
 
-        // Messages to be sent to Meadow board
+        public enum HcomProtocolHeaderOffsets
+        {
+            HCOM_PROTOCOL_REQUEST_HEADER_SEQ_OFFSET = 0,
+            HCOM_PROTOCOL_REQUEST_HEADER_VERSION_OFFSET = 2,
+            HCOM_PROTOCOL_REQUEST_HEADER_CONTROL_OFFSET = 4,
+            HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET = 6,
+            HCOM_PROTOCOL_REQUEST_HEADER_USER_DATA_OFFSET = 8,
+        }
+
+        // Messages to be sent to Meadow board from host
         public enum HcomMeadowRequestType : UInt16
         {
             HCOM_MDOW_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
@@ -210,6 +182,9 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_ENABLE = 0x10 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_RUN_STATE = 0x11 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION = 0x12 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS = 0x13 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST = 0x14 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_SEND_SYSLOG_TO_HOST = 0x15 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
@@ -217,15 +192,39 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_DEVELOPER_3 = 0xf2 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_4 = 0xf3 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
+            HCOM_MDOW_REQUEST_S25FL_QSPI_INIT  = 0xf4 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE = 0xf5 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_READ  = 0xf6 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+
             HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
             HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
+
+            // Simple debugger message to Meadow
+            HCOM_MDOW_REQUEST_DEBUGGER_MSG = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,
         }
 
-        public enum HcomRqstHeaderType
+        // Messages sent from meadow to host
+        public enum HcomHostRequestType
         {
-            Undefined = 0x0000,
-            Simple = 0x0000,
-            FileType = 0xff0000,
+            HCOM_HOST_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
+
+            // Simple types
+            HCOM_HOST_REQUEST_SIMPLE_MESSAGE = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,    // Just the header
+            // Simple with some text message
+            HCOM_HOST_REQUEST_TEXT_REJECTED = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_ACCEPTED = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_CONCLUDED = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_ERROR = 0x04 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_INFORMATION = 0x05 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_LIST_HEADER = 0x06 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_LIST_MEMBER = 0x07 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_CRC_MEMBER = 0x08 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_MONO_MSG = 0x09 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_DEVICE_INFO = 0x0A | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG = 0x0B | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_TEXT_RECONNECT = 0x0C | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            // Simple with debugger message from Meadow
+            HCOM_HOST_REQUEST_DEBUGGER_MSG = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,
         }
     }
 }
