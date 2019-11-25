@@ -14,7 +14,7 @@ To run MeadowCLI on Windows, run MeadowCLI.exe from the command prompt. On Mac a
 
 To see the options, run the application with the --help arg.
 
-## Running Commands 
+## Running Commands
 
 File and device commands require you to specify the serial port. You can determine the serial port name in Windows by viewing the Device Manager.
 
@@ -24,7 +24,7 @@ On Mac and Linux, the serial port will show up in the **/dev** folder, generally
 
 ### Set the trace level
 
-You can set the debug trace level to values 1, 2, 3, or 4. 2 in the most useful.
+You can set the debug trace level to values 0, 1, 2, or 3. 2 is the most useful.
 `MeadowCLI.exe --SetTraceLevel --Level 2 --SerialPort [NameOfSerialPort]`
 
 ### File transfers
@@ -41,13 +41,9 @@ You can set the debug trace level to values 1, 2, 3, or 4. 2 in the most useful.
 
 ### Reformat the flash
 
-`MeadowCLI.exe --EraseFlash`
+`MeadowCLI.exe --RenewFileSys` - Restarts Meadow and recreates file system
 
-`MeadowCLI.exe --PartitionFileSystem -n 2`
-
-`MeadowCLI.exe --MountFileSystem`
-
-`MeadowCLI.exe --InitializeFileSystem`
+`MeadowCLI.exe --EraseFlash` - Must wait 2 - 3 minutes to complete
 
 ### Stop/start the installed application from running automatically
 
@@ -55,9 +51,14 @@ You can set the debug trace level to values 1, 2, 3, or 4. 2 in the most useful.
 
 `MeadowCLI.exe --MonoEnable`
 
-## Running applications 
+### Useful utilities
+
+`MeadowCLI.exe --GetDeviceInfo` - Outputs Meadow OS version and other information
+
+## Running applications
 
 You'll typically need at least 5 files installed to the Meadow flash to run a Meadow app:
+
 1. System.dll
 2. System.Core.dll
 3. mscorlib.dll
@@ -65,7 +66,3 @@ You'll typically need at least 5 files installed to the Meadow flash to run a Me
 5. App.exe (your app)
 
 It's a good idea to disable mono first, copy the files, and then enable mono
-
-
-
-
