@@ -83,9 +83,8 @@ namespace MeadowCLI.DeviceManagement
         //providing a numeric (0 = none, 1 = info and 2 = debug)
         public static void SetTraceLevel(MeadowSerialDevice meadow, int level)
         {
-            if (level < 1 || level > 4)
+            if (level < 0 || level > 3)
                 throw new System.ArgumentOutOfRangeException(nameof(level), "Trace level must be between 0 & 3 inclusive");
-
 
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
 

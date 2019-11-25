@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Meadow.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "--SetTraceLevel --SerialPort Com26 --TraceLevel 0"
+    }
+  }
+}
