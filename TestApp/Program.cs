@@ -22,10 +22,12 @@ namespace TestApp
 
             // MeadowDeviceManager.MonoDisable(meadow);
 
-            var (files, crcs) = await meadow.GetFilesAndCrcs();
+            await meadow.SetDeviceInfo();
 
-            var fileList = await meadow.GetFilesOnDevice();
-            Console.WriteLine("File list received");
+        //    var (files, crcs) = await meadow.GetFilesAndCrcs();
+
+      //      var fileList = await meadow.GetFilesOnDevice();
+      //      Console.WriteLine("File list received");
         }
     }
 }

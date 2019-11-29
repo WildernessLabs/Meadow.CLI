@@ -218,7 +218,7 @@ namespace MeadowCLI.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 500)
+        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 5000)
         {
             var timeOutTask = Task.Delay(timeoutInMs);
             bool isDeviceIdSet = false;
