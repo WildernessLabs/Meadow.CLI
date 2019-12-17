@@ -211,39 +211,39 @@ namespace MeadowCLI.Hcom
                     switch(processor.RequestType)
                     {
                         case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
-                            ConsoleOut("protocol-Request Undefined"); // TESTING
+                            ConsoleOut("Request Undefined"); // TESTING
                             break;
 
                             // This set are responses to request issued by this application
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                            ConsoleOut("protocol-Request Rejected"); // TESTING
+                            ConsoleOut("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            ConsoleOut($"protocol-Request Accepted"); // TESTING
+                            //ConsoleOut($"protocol-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            ConsoleOut($"protocol-Request Concluded"); // TESTING
+                            //ConsoleOut($"protocol-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            ConsoleOut("protocol-Request Error"); // TESTING
+                            ConsoleOut("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            ConsoleOut("protocol-Request Information"); // TESTING
+                            //ConsoleOut("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            ConsoleOut("protocol-Request File List Header received"); // TESTING
+                            //ConsoleOut("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
@@ -265,13 +265,13 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
-                            ConsoleOut($"protocol-Host Serial Reconnect"); // TESTING
+                            ConsoleOut($"Host Serial Reconnect"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
                         // Debug message from Meadow for Visual Studio
                         case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG:
-                            ConsoleOut($"protocol-Debugging message from Meadow for Visual Studio"); // TESTING
+                            ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
                     }
