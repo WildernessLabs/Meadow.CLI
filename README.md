@@ -66,3 +66,24 @@ You'll typically need at least 5 files installed to the Meadow flash to run a Me
 5. App.exe (your app)
 
 It's a good idea to disable mono first, copy the files, and then enable mono
+
+
+## Source Code Quality
+
+This code is ugly. We know. :) Lots of different coding styles, spanning many decades and sensibilities.
+
+# License
+
+Copyright Wilderness Labs Inc.
+    
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+    
+      http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
