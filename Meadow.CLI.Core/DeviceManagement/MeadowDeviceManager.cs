@@ -13,7 +13,6 @@ namespace MeadowCLI.DeviceManagement
     /// </summary>
     public static class MeadowDeviceManager
     {
-
         internal const UInt16 DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
 
         // Note: While not truly important, it can be noted that size of the s25fl QSPI flash
@@ -88,124 +87,124 @@ namespace MeadowCLI.DeviceManagement
 
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)level);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)level);
         }
 
         public static void ResetMeadow(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static void EnterDfuMode(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void NshEnable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint) 1);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint) 1);
         }
 
         public static void MonoDisable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void MonoEnable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void MonoRunState(MeadowSerialDevice meadow)
         {
              _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void GetDeviceInfo(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void SetDeveloper1(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
         public static void SetDeveloper2(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
         public static void SetDeveloper3(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static void SetDeveloper4(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static void DiagDisable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void DiagEnable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_SYSLOG_TO_HOST;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void RenewFileSys(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void QspiWrite(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static void QspiRead(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static void QspiInit(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT;
 
-            new SendTargetData(meadow.SerialPort).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         // This method is called to sent to Visual Studio debugging to Mono
@@ -213,7 +212,7 @@ namespace MeadowCLI.DeviceManagement
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGER_MSG;
 
-            new SendTargetData(meadow.SerialPort).BuildAndSendSimpleData(debuggingData, _meadowRequestType, (uint)userData);
+            new SendTargetData(meadow).BuildAndSendSimpleData(debuggingData, _meadowRequestType, (uint)userData);
         }
 
         // This method is called to forward from mono debugging to Visual Studio
@@ -245,9 +244,9 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            if (meadow.SerialPort == null)
+            if (meadow.SerialPort == null && meadow.Socket == null)
             {
-                Console.WriteLine("No current serial port");
+                Console.WriteLine("No current serial port or socket");
                 return;
             }
 

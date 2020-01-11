@@ -128,7 +128,8 @@ namespace MeadowCLI
             if (ConnectToMeadowDevice(options.SerialPort))
             {
                 // verify that the port was actually connected
-                if (!IsSerialPortValid(MeadowDeviceManager.CurrentDevice.SerialPort))
+                if (MeadowDeviceManager.CurrentDevice.Socket == null &&
+                    !IsSerialPortValid(MeadowDeviceManager.CurrentDevice.SerialPort))
                 {
                     Console.WriteLine($"port not available");
                     return CompletionBehavior.RequestFailed;
