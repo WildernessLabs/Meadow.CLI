@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using MeadowCLI.Hcom;
 
@@ -16,6 +19,8 @@ namespace MeadowCLI.DeviceManagement
         public bool Verbose { get; protected set; }
 
         public SerialPort SerialPort { get; private set; }
+        public Socket Socket { get; private set; }
+
         private string serialPortName;
         public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
@@ -32,16 +37,54 @@ namespace MeadowCLI.DeviceManagement
             return SerialPort.GetPortNames();
         }
 
+        public static bool TryCreateIPEndPoint(string address,
+            out IPEndPoint endpoint)
+        {
+            address = address.Replace("localhost", "127.0.0.1");
+            endpoint = null;
+
+            string[] ep = address.Split(':');
+            if (ep.Length != 2)
+                return false;
+
+            if (!IPAddress.TryParse(ep[0], out IPAddress ip))
+                return false;
+
+            int port;
+            if (!int.TryParse(ep[1], NumberStyles.None, NumberFormatInfo.CurrentInfo, out port))
+                return false;
+
+            endpoint = new IPEndPoint(ip, port);
+            return true;
+        }
+
         public bool Initialize(bool listen = true)
         {
-            if (SerialPort != null)
+            if (TryCreateIPEndPoint(serialPortName, out IPEndPoint endpoint))
             {
-                SerialPort.Close();  // note: exception in ReadAsync
-                SerialPort = null;
-            }
+                Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            if (OpenSerialPort(serialPortName) == false)
-                return false;
+                try
+                {
+                    Socket.Connect(endpoint);
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("Could not connect to socket, aborting...");
+                    Environment.Exit(1);
+                }
+            }
+            else
+            {
+                if (SerialPort != null)
+                {
+                    SerialPort.Close();  // note: exception in ReadAsync
+                    SerialPort = null;
+                }
+
+                if (OpenSerialPort(serialPortName) == false)
+                    return false;
+            }
 
             if (listen == true)
             {
@@ -280,7 +323,12 @@ namespace MeadowCLI.DeviceManagement
 
         internal void ListenForSerialData()
         {
-            if (SerialPort != null)
+            if (Socket != null)
+            {
+                dataProcessor = new MeadowSerialDataProcessor(Socket);
+
+                dataProcessor.OnReceiveData += DataReceived;
+            } else if (SerialPort != null)
             {
                 dataProcessor = new MeadowSerialDataProcessor(SerialPort);
 

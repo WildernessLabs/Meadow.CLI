@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
@@ -44,6 +45,7 @@ namespace MeadowCLI.Hcom
         HostCommBuffer _hostCommBuffer;
         RecvFactoryManager _recvFactoryManager;
         readonly SerialPort serialPort;
+        readonly Socket socket;
 
         // It seems that the .Net SerialPort class is not all it could be.
         // To acheive reliable operation some SerialPort class methods must
@@ -52,19 +54,62 @@ namespace MeadowCLI.Hcom
 
         //-------------------------------------------------------------
         // Constructor
-        public MeadowSerialDataProcessor(SerialPort serialPort)
+        public MeadowSerialDataProcessor()
         {
-            this.serialPort = serialPort;
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
             _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfXmitPacket * 4);
 
-            var t = ReadPortAsync();
+        }
+
+        public MeadowSerialDataProcessor(SerialPort serialPort) : this()
+        {
+            this.serialPort = serialPort;
+            var t = ReadSerialPortAsync();
+        }
+
+        public MeadowSerialDataProcessor(Socket socket) : this()
+        {
+            this.socket = socket;
+            var t = ReadSocketAsync();
         }
 
         //-------------------------------------------------------------
         // All received data handled here
-        private async Task ReadPortAsync()
+        private async Task ReadSocketAsync()
+        {
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+
+            try
+            {
+                while (true)
+                {
+                    var segment = new ArraySegment<byte>(buffer);
+                    var receivedLength = await socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
+
+                    AddAndProcessData(buffer, receivedLength);
+
+                    await Task.Delay(50).ConfigureAwait(false);
+                }
+            }
+            catch (ThreadAbortException ex)
+            {
+                //ignoring for now until we wire cancelation ...
+                //this blocks the thread abort exception when the console app closes
+            }
+            catch (InvalidOperationException)
+            {
+                // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
+            }
+            catch (Exception ex)
+            {
+                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+            }
+        }
+
+        //-------------------------------------------------------------
+        // All received data handled here
+        private async Task ReadSerialPortAsync()
         {
             byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
 

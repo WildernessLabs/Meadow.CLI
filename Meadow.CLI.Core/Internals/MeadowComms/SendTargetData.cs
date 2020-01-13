@@ -15,18 +15,15 @@ namespace MeadowCLI.Hcom
         const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
 
         //questioning if this class should send or just create the message
-        SerialPort _serialPort; //refactor this .... 
+        MeadowSerialDevice _device; //refactor this .... 
 
         uint _packetCrc32;
 
         //==========================================================================
         // Constructor
-        public SendTargetData(SerialPort serialPort, bool verbose = true)
+        public SendTargetData(MeadowSerialDevice device, bool verbose = true)
         {
-            if (serialPort == null)
-                throw new ArgumentException("SerialPort cannot be null");
-
-            _serialPort = serialPort;
+            _device = device;
             this.Verbose = verbose;
         }
 
@@ -232,7 +229,19 @@ namespace MeadowCLI.Hcom
 
                 try
                 {
-                    _serialPort.Write(encodedBytes, 0, encodedToSend);
+                    if (_device.Socket != null)
+                    {
+                        _device.Socket.Send(encodedBytes, encodedToSend,
+                            System.Net.Sockets.SocketFlags.None);
+                    }
+                    else
+                    {
+                        if (_device.SerialPort == null)
+                            throw new ArgumentException("SerialPort cannot be null");
+
+                        _device.SerialPort.Write(encodedBytes, 0, encodedToSend);
+                    }
+
                 }
                 catch (InvalidOperationException ioe)  // Port not opened
                 {
