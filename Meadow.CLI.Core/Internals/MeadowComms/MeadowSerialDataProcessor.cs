@@ -206,6 +206,10 @@ namespace MeadowCLI.Hcom
                 {
                     // The buffer to receive the message is too small! Perhaps 
                     // corrupted data in buffer.
+                    // I don't know why but without the following 2 lines the Debug.Assert will
+                    // assert eventhough the following line is not executed?
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfXmitPacket}");
+                    Thread.Sleep(1000);
                     Debug.Assert(false);
                 }
 

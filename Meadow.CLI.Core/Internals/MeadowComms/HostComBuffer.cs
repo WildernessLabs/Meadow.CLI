@@ -44,11 +44,6 @@ namespace MeadowCLI.Hcom
             head = bottom;
             tail = bottom;
 
-            for (int i = 0; i < hcomCircularBuffer.Length; i++)
-            {
-                hcomCircularBuffer[i] = 0xff;
-            }
-
             return HcomBufferReturn.HCOM_CIR_BUF_INIT_OK;
         }
 
@@ -136,8 +131,6 @@ namespace MeadowCLI.Hcom
                         return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
 
                     Array.Copy(hcomCircularBuffer, tail, packetBuffer, 0, sizeFoundTop);
-
-                    // memcpy(packetBuffer, tail, sizeFoundTop);
                     tail = foundOffset + 1;
                     packetLength = sizeFoundTop;
                     return HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG;

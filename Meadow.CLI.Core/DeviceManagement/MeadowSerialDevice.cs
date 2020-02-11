@@ -25,6 +25,7 @@ namespace MeadowCLI.DeviceManagement
         public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
         private MeadowSerialDataProcessor dataProcessor;
+        private bool addAppOnNextOutput;
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
@@ -340,13 +341,40 @@ namespace MeadowCLI.DeviceManagement
         {
             OnMeadowMessage?.Invoke(this, args);
 
+            if(args.MessageType != MeadowMessageType.AppOutput)
+                addAppOnNextOutput = false;
+
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
                     ConsoleOut("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    ConsoleOut("App: " + args.Message);
+                    if(addAppOnNextOutput)
+                    {
+                        addAppOnNextOutput = false;
+                        ConsoleOutNoEol("App: ");
+                    }
+
+                    // This text is straight from mono via hcom. When the App.exe calls
+                    // Console.WriteLine() it adds a 0x0a for New Line but this isn't going
+                    // to work for Windows so replace 0x0a with Environment.NewLine
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    for(int i = 0; i < args.Message.Length; i++)
+                    {
+                        char ch = args.Message[i];
+                        if(ch == 0x0a)
+                        {
+                            // Replace the New Line character(s) used by this PC
+                            sb.Append(Environment.NewLine);
+                            addAppOnNextOutput = true;
+                        }
+                        else
+                        {
+                            sb.Append(ch);
+                        }
+                    }
+                    ConsoleOutNoEol(sb.ToString());
                     break;
                 case MeadowMessageType.MeadowDiag:
                     ConsoleOut("Diag: " + args.Message);
@@ -455,6 +483,16 @@ namespace MeadowCLI.DeviceManagement
             }
 
             Console.WriteLine(msg);
+        }
+
+        void ConsoleOutNoEol(string msg)
+        {
+            if(Verbose == false)
+            {
+                return;
+            }
+
+            Console.Write(msg);
         }
     }
 }
