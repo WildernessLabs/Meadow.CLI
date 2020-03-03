@@ -99,5 +99,13 @@ namespace MeadowCLI
         [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
         public int VSDebugPort { get; set; }
 
+        [Option(longName: "Esp32WriteFile", Required = false, HelpText = "Write an external file to ESP32's internal flash")]
+        public bool Esp32WriteFile { get; set; }
+        [Option(longName: "McuDestAddr", Required = false, HelpText = "Where file is stored in MCU's internal flash e.g. 0x10000")]
+        public string McuDestAddr { get; set; }
+        [Option(longName: "Esp32ReadMac", Required = false, HelpText = "Read the ESP32's MAC address")]
+        public bool Esp32ReadMac { get; set; }
+        [Option(longName: "Esp32Restart", Required = false, HelpText = "Restart the ESP32")]
+        public bool Esp32Restart { get; set; }
     }
 }

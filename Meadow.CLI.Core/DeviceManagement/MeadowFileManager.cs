@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -20,14 +21,14 @@ namespace MeadowCLI.DeviceManagement
                 targetFileName = Path.GetFileName(fileName);
             }
 
-            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, false);
+            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false);
         }
 
         public static void DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
 
-            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, true);
+            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, 0, true);
         }
 
         public static void EraseFlash(MeadowSerialDevice meadow)
@@ -92,10 +93,81 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
+        // fileName - is the name of the file on this host PC
+        // targetFileName - is the name of the file on the F7
+        public static void WriteFileToEspFlash(MeadowSerialDevice meadow, string fileName,
+            string targetFileName = null, int partition = 0, string mcuDestAddr = null)
+        {
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER;
+
+            // For the ESP32 on the meadow, we don't need the target file name, we just need the
+            // MCU's destination address and the file's binary.  
+            if (mcuDestAddr != null)
+            {
+                // Since the mcuDestAddr is used we'll assume the fileName field just contains
+                // a single file.
+                if (string.IsNullOrWhiteSpace(targetFileName))
+                {
+                    // While not used by the ESP32 it cost nothing to send it and can help
+                    // with debugging
+                    targetFileName = Path.GetFileName(fileName);
+                }
+
+                // Convert mcuDestAddr from a string to a 32-bit unsigned int, but first
+                // insure it starts with 0x
+                UInt32 mcuAddr = 0;
+                if (mcuDestAddr.StartsWith("0x") || mcuDestAddr.StartsWith("0X"))
+                {
+                    mcuAddr = UInt32.Parse(mcuDestAddr.Substring(2), System.Globalization.NumberStyles.HexNumber);
+                }
+                else
+                {
+                    Console.WriteLine($"The '--McuDestAddr' argument must be followed with an address in the form '0x1800'");
+                    return;
+                }
+                TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName,
+                    partition, mcuAddr, false, true);
+            }
+            else
+            {
+                // At this point, the fileName field should contain a CSV string containing the destination
+                // addresses followed by file's location within the host's file system.
+                // E.g. "0x8000, C:\Blink\partition-table.bin, 0x1000, C:\Blink\bootloader.bin, 0x10000, C:\Blink\blink.bin"
+                string[] fileInfo = fileName.Split(',');
+                if (fileInfo.Length % 2 != 0)
+                {
+                    Console.WriteLine("Please provide a CSV input with \"address, fileName, address, fileName\"");
+                    return;
+                }
+
+                UInt32 mcuAddr;
+                for (int i = 0; i < fileInfo.Length; i += 2)
+                {
+                    fileInfo[i] = fileInfo[i].Trim();
+                    fileInfo[i + 1] = fileInfo[i + 1].Trim();
+
+                    if (fileInfo[i].StartsWith("0x") || fileInfo[i].StartsWith("0X"))
+                    {
+                        mcuAddr = UInt32.Parse(fileInfo[i].Substring(2), System.Globalization.NumberStyles.HexNumber);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Please provide a CSV input with addresses like 0x1234");
+                        return;
+                    }
+
+                    // File Path and Name
+                    targetFileName = Path.GetFileName(fileInfo[i + 1]);
+                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileInfo[i + 1], targetFileName,
+                    partition, mcuAddr, false, i == fileInfo.Length - 1 ? true : false);
+                }
+            }
+        }
+
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
-                            HcomMeadowRequestType requestType,
-                            string sourceFileName, string targetFileName, int partition,
-                            bool deleteFile)
+                            HcomMeadowRequestType requestType, string sourceFileName,
+                            string targetFileName, int partition, uint mcuAddr,
+                            bool deleteFile, bool lastInSeries = false)
         {
             var sw = new Stopwatch();
             
@@ -106,10 +178,24 @@ namespace MeadowCLI.DeviceManagement
                 //----------------------------------------------
                 if (deleteFile == true)
                 {
-                    // No data packets and no end-of-file message
+                    // No data packets, no end-of-file message and no mcu address
                     sendTargetData.BuildAndSendFileRelatedCommand(requestType,
-                        (UInt32)partition, 0, 0, sourceFileName);
+                        (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName);
                     return;
+                }
+
+                // If ESP32 file we must also send the MD5 has of the file
+                string md5Hash = string.Empty;
+                if (mcuAddr != 0)
+                {
+                    using (var md5 = MD5.Create())
+                    {
+                        using (var stream = File.OpenRead(sourceFileName))
+                        {
+                            var hash = md5.ComputeHash(stream);
+                            md5Hash = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                        }
+                    }
                 }
 
                 // Open, read and close the data file
@@ -120,8 +206,8 @@ namespace MeadowCLI.DeviceManagement
                 sw.Start();
                 sw.Restart();
 
-                sendTargetData.SendTheEntireFile(targetFileName, (uint)partition,
-                    fileBytes, fileCrc32);
+                sendTargetData.SendTheEntireFile(requestType, targetFileName, (uint)partition,
+                    fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
 
                 sw.Stop();
 
@@ -142,7 +228,7 @@ namespace MeadowCLI.DeviceManagement
             // File releted request types, includes 4-byte user data (for the
             // destination partition id), 4-byte file size, 4-byte checksum and
             // variable length destination file name.
-            HCOM_PROTOCOL_HEADER_TYPE_FILE = 0x0200,
+            HCOM_PROTOCOL_HEADER_TYPE_FILE_START = 0x0200,
             // Simple text. 
             HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT = 0x0300,
             // Header followed by binary data. The size of the data can be up to
@@ -154,8 +240,8 @@ namespace MeadowCLI.DeviceManagement
         {
             HCOM_PROTOCOL_REQUEST_HEADER_SEQ_OFFSET = 0,
             HCOM_PROTOCOL_REQUEST_HEADER_VERSION_OFFSET = 2,
-            HCOM_PROTOCOL_REQUEST_HEADER_CONTROL_OFFSET = 4,
-            HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET = 6,
+            HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET = 4,
+            HCOM_PROTOCOL_REQUEST_HEADER_EXTRA_DATA_OFFSET = 6,
             HCOM_PROTOCOL_REQUEST_HEADER_USER_DATA_OFFSET = 8,
         }
 
@@ -183,8 +269,11 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_RUN_STATE = 0x11 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION = 0x12 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS = 0x13 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
-            HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST = 0x14 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_NO_SYSLOG_TO_HOST = 0x14 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_SEND_SYSLOG_TO_HOST = 0x15 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER = 0x16 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS = 0x17 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_RESTART_ESP32 = 0x18 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
@@ -196,15 +285,16 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE = 0xf5 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_S25FL_QSPI_READ  = 0xf6 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
-            HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
-            HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE,
+            HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
+            HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
+            HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
 
             // Simple debugger message to Meadow
             HCOM_MDOW_REQUEST_DEBUGGER_MSG = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,
         }
 
         // Messages sent from meadow to host
-        public enum HcomHostRequestType
+        public enum HcomHostRequestType : UInt16
         {
             HCOM_HOST_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
 

@@ -259,67 +259,67 @@ namespace MeadowCLI.Hcom
                 {
                     switch(processor.RequestType)
                     {
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
                             ConsoleOut("Request Undefined"); // TESTING
                             break;
 
                             // This set are responses to request issued by this application
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
                             ConsoleOut("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
                             //ConsoleOut($"protocol-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
                             //ConsoleOut($"protocol-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
                             ConsoleOut("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
                             //ConsoleOut("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
                             //ConsoleOut("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG:
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowDiag, processor.ToString()));
                             }
                             break;
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
                             ConsoleOut($"Host Serial Reconnect"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
                         // Debug message from Meadow for Visual Studio
-                        case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG:
                             ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;

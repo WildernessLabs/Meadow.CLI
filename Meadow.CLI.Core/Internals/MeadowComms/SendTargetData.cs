@@ -11,8 +11,8 @@ namespace MeadowCLI.Hcom
     {
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0004;
-        const UInt16 HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT = 0x0000;
+        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0005;
+        const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
         MeadowSerialDevice _device; //refactor this .... 
@@ -31,7 +31,9 @@ namespace MeadowCLI.Hcom
 
         public bool Verbose { get; protected set; }
 
-        public void SendTheEntireFile(string destFileName, uint partitionId, byte[] fileBytes, UInt32 payloadCrc32)
+        public void SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
+            uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
+            string md5Hash, bool lastInSeries)
         {
             _packetCrc32 = 0;
 
@@ -40,7 +42,8 @@ namespace MeadowCLI.Hcom
                 // Build and send the header
                 BuildAndSendFileRelatedCommand(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                    partitionId, (UInt32)fileBytes.Length, payloadCrc32, destFileName);
+                    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
+                    mcuAddr, md5Hash, destFileName);
 
                 //--------------------------------------------------------------
                 // Build each data packet
@@ -66,7 +69,8 @@ namespace MeadowCLI.Hcom
 
                 //--------------------------------------------------------------
                 // Build and send the trailer
-                BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER, 0);
+                BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+                    lastInSeries ? (uint)1 : (uint)0);
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
@@ -156,12 +160,12 @@ namespace MeadowCLI.Hcom
             Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
-            // Protocol control
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CONTROL_VALUE_DEFAULT), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
-
             // Command type (2 bytes)
             Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
+            offset += sizeof(UInt16);
+
+            // Extra Data
+            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
             // User Data
@@ -173,16 +177,18 @@ namespace MeadowCLI.Hcom
 
         //==========================================================================
         internal void BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
-            UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, string destFileName)
+            UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, UInt32 mcuAddr,
+            string md5Hash, string destFileName)
         {
             // Future: Try to use the StructLayout attribute
 
             // Allocate the correctly size message buffer
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
-            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + targetFileName.Length;
+            byte[] md5HashBytes = Encoding.UTF8.GetBytes(md5Hash);
+            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) + md5HashBytes.Length + targetFileName.Length;
             byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
-            // Add the required part
+            // Add the required header
             int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
 
             // File Size
@@ -192,6 +198,14 @@ namespace MeadowCLI.Hcom
             // CRC32 checksum or delete file partition number
             Array.Copy(BitConverter.GetBytes(fileCheckSum), 0, messageBytes, offset, sizeof(UInt32));
             offset += sizeof(UInt32);
+
+            // MCU address for this file. Used for ESP32 file downloads
+            Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(UInt32));
+            offset += sizeof(UInt32);
+
+            // Include ESP32 MD5 hash
+            Array.Copy(md5HashBytes, 0, messageBytes, offset, md5HashBytes.Length);
+            offset += md5HashBytes.Length;
 
             // Destination File Name
             Array.Copy(targetFileName, 0, messageBytes, offset, targetFileName.Length);
