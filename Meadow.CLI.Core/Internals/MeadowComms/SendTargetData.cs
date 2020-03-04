@@ -10,6 +10,7 @@ namespace MeadowCLI.Hcom
     public class SendTargetData
     {
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
+        const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
         const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0005;
         const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
@@ -181,11 +182,13 @@ namespace MeadowCLI.Hcom
             string md5Hash, string destFileName)
         {
             // Future: Try to use the StructLayout attribute
+            Debug.Assert(md5Hash.Length == 0 || md5Hash.Length == HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH);
 
-            // Allocate the correctly size message buffer
+            // Allocate the correctly size message buffers
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
             byte[] md5HashBytes = Encoding.UTF8.GetBytes(md5Hash);
-            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) + md5HashBytes.Length + targetFileName.Length;
+            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) + 
+                HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH + targetFileName.Length;
             byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
             // Add the required header
@@ -203,9 +206,12 @@ namespace MeadowCLI.Hcom
             Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(UInt32));
             offset += sizeof(UInt32);
 
-            // Include ESP32 MD5 hash
-            Array.Copy(md5HashBytes, 0, messageBytes, offset, md5HashBytes.Length);
-            offset += md5HashBytes.Length;
+            // Include ESP32 MD5 hash if it's needed
+            if (string.IsNullOrEmpty(md5Hash))
+                Array.Clear(messageBytes, offset, HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH);
+            else
+                Array.Copy(md5HashBytes, 0, messageBytes, offset, HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH);
+            offset += HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH;
 
             // Destination File Name
             Array.Copy(targetFileName, 0, messageBytes, offset, targetFileName.Length);
