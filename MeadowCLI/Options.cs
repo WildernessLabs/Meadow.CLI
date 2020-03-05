@@ -83,10 +83,10 @@ namespace MeadowCLI
         public bool RenewFileSys { get; set; }
         [Option(longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
         public bool KeepAlive { get; set; }
-        [Option(longName: "DiagDisable", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
-        public bool DiagDisable { get; set; }
-        [Option(longName: "DiagEnable", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
-        public bool DiagEnable { get; set; }
+        [Option(longName: "TraceDisable", Required = false, HelpText = "Prevent Meadow from sending internal trace messages (default)")]
+        public bool TraceDisable { get; set; }
+        [Option(longName: "TraceEnable", Required = false, HelpText = "Request Meadow to send internal trace messages")]
+        public bool TraceEnable { get; set; }
         [Option(longName: "QspiWrite", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool QspiWrite { get; set; }
         [Option(longName: "QspiRead", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]

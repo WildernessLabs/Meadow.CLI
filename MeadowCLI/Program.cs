@@ -320,15 +320,15 @@ namespace MeadowCLI
                   Console.WriteLine("Entering Dfu mode");
                   MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
               }
-              else if (options.DiagDisable)
+              else if (options.TraceDisable)
               {
                   Console.WriteLine("Disabling displaying diagnostic messages");
-                  MeadowDeviceManager.DiagDisable(MeadowDeviceManager.CurrentDevice);
+                  MeadowDeviceManager.TraceDisable(MeadowDeviceManager.CurrentDevice);
               }
-              else if (options.DiagEnable)
+              else if (options.TraceEnable)
               {
                   Console.WriteLine("Enabling displaying diagnostic messages");
-                  MeadowDeviceManager.DiagEnable(MeadowDeviceManager.CurrentDevice);
+                  MeadowDeviceManager.TraceEnable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.RenewFileSys)
               {
