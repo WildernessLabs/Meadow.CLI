@@ -376,8 +376,8 @@ namespace MeadowCLI.DeviceManagement
                     }
                     ConsoleOutNoEol(sb.ToString());
                     break;
-                case MeadowMessageType.MeadowDiag:
-                    ConsoleOut("Diag: " + args.Message);
+                case MeadowMessageType.MeadowTrace:
+                    ConsoleOut("Trace: " + args.Message);
                     break;
                 case MeadowMessageType.FileListTitle:
                     ConsoleOut("File List: ");

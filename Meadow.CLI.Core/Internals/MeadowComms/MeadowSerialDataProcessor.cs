@@ -20,7 +20,7 @@ namespace MeadowCLI.Hcom
         FileListMember,
         FileListCrcMember,
         Data,
-        MeadowDiag,
+        MeadowTrace,
         SerialReconnect,
         Accepted,
         Concluded,
@@ -310,7 +310,7 @@ namespace MeadowCLI.Hcom
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG:
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
-                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowDiag, processor.ToString()));
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowTrace, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
