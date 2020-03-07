@@ -12,7 +12,8 @@ namespace MeadowCLI.DeviceManagement
 
         static MeadowFileManager() { }
 
-        public static void WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null, int partition = 0)
+        public static void WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
+            int partition = 0)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 
@@ -21,7 +22,30 @@ namespace MeadowCLI.DeviceManagement
                 targetFileName = Path.GetFileName(fileName);
             }
 
-            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false);
+            // For the STM32F7 on meadow, we need source file and destination file names.
+            string[] csvArray = fileName.Split(',');
+            if (csvArray.Length == 1)
+            {
+                // No CSV, just the source file name. So we'll assume the targetFileName is correct
+                TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
+            }
+            else
+            {
+                // At this point, the fileName field should contain a CSV string containing the source
+                // and destionation file names, always in an even number.
+                if (csvArray.Length % 2 != 0)
+                {
+                    Console.WriteLine("Please provide a CSV input with file names \"source, destination, source, destination\"");
+                    return;
+                }
+
+                for (int i = 0; i < csvArray.Length; i += 2)
+                {
+                    // Send files one-by-one
+                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, csvArray[i].Trim(), csvArray[i + 1].Trim(),
+                        partition, 0, false);
+                }
+            }
         }
 
         public static void DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0)

@@ -41,8 +41,7 @@ namespace MeadowCLI.Hcom
             try
             {
                 // Build and send the header
-                BuildAndSendFileRelatedCommand(
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
+                BuildAndSendFileRelatedCommand(requestType,
                     partitionId, (UInt32)fileBytes.Length, payloadCrc32,
                     mcuAddr, md5Hash, destFileName);
 
@@ -71,7 +70,7 @@ namespace MeadowCLI.Hcom
                 //--------------------------------------------------------------
                 // Build and send the trailer
                 BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
-                    lastInSeries ? (uint)1 : (uint)0);
+                    lastInSeries ? (uint)1 : (uint)0);      // set UserData
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
