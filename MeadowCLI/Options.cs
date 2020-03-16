@@ -83,10 +83,10 @@ namespace MeadowCLI
         public bool RenewFileSys { get; set; }
         [Option(longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
         public bool KeepAlive { get; set; }
-        [Option(longName: "DiagDisable", Required = false, HelpText = "Prevent Meadow from sending diagnostic message (default)")]
-        public bool DiagDisable { get; set; }
-        [Option(longName: "DiagEnable", Required = false, HelpText = "Request Meadow to send diagnostic messages")]
-        public bool DiagEnable { get; set; }
+        [Option(longName: "TraceDisable", Required = false, HelpText = "Prevent Meadow from sending internal trace messages (default)")]
+        public bool TraceDisable { get; set; }
+        [Option(longName: "TraceEnable", Required = false, HelpText = "Request Meadow to send internal trace messages")]
+        public bool TraceEnable { get; set; }
         [Option(longName: "QspiWrite", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool QspiWrite { get; set; }
         [Option(longName: "QspiRead", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
@@ -99,5 +99,13 @@ namespace MeadowCLI
         [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
         public int VSDebugPort { get; set; }
 
+        [Option(longName: "Esp32WriteFile", Required = false, HelpText = "Write an external file to ESP32's internal flash")]
+        public bool Esp32WriteFile { get; set; }
+        [Option(longName: "McuDestAddr", Required = false, HelpText = "Where file is stored in MCU's internal flash e.g. 0x10000")]
+        public string McuDestAddr { get; set; }
+        [Option(longName: "Esp32ReadMac", Required = false, HelpText = "Read the ESP32's MAC address")]
+        public bool Esp32ReadMac { get; set; }
+        [Option(longName: "Esp32Restart", Required = false, HelpText = "Restart the ESP32")]
+        public bool Esp32Restart { get; set; }
     }
 }

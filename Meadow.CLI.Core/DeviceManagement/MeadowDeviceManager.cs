@@ -165,16 +165,16 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
-        public static void DiagDisable(MeadowSerialDevice meadow)
+        public static void TraceDisable(MeadowSerialDevice meadow)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_DIAG_TO_HOST;
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST;
 
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
-        public static void DiagEnable(MeadowSerialDevice meadow)
+        public static void TraceEnable(MeadowSerialDevice meadow)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_SYSLOG_TO_HOST;
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST;
 
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
@@ -251,6 +251,20 @@ namespace MeadowCLI.DeviceManagement
             }
 
             meadow.Initialize(true);
+        }
+
+        public static void Esp32ReadMac(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS;
+
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static void Esp32Restart(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32;
+
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
     }
 }

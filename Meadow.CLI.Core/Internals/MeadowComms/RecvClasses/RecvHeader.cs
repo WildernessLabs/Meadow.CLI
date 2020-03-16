@@ -17,8 +17,8 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         // These are in RecvHeader
         ushort SeqNumber { get; }
         ushort VersionNumber { get; }
-        ushort ProtocolCtrl { get; }
-        HcomHostRequestType RequestType { get; }
+        ushort RequestType { get; }
+        ushort ExtraData { get; }
         uint UserData { get; }
         int HeaderLength { get; }
 
@@ -30,8 +30,8 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         // Header 12 bytes for Header plus message data
         public ushort SeqNumber { get; private set; }
         public ushort VersionNumber { get; private set; }
-        public ushort ProtocolCtrl { get; private set; }
-        public HcomHostRequestType RequestType { get; private set; }
+        public ushort RequestType { get; private set; }
+        public ushort ExtraData { get; private set; }
         public uint UserData { get; private set; }
         public int HeaderLength { get ; private set; }
 
@@ -48,10 +48,10 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             VersionNumber = Convert.ToUInt16(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8));
             HeaderLength += sizeof(ushort);
 
-            ProtocolCtrl = Convert.ToUInt16(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8));
+            RequestType = Convert.ToUInt16(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8));
             HeaderLength += sizeof(ushort);
 
-            RequestType = (HcomHostRequestType)Convert.ToUInt16(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8));
+            ExtraData = Convert.ToUInt16(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8));
             HeaderLength += sizeof(ushort);
 
             UserData = Convert.ToUInt32(recvdMsg[HeaderLength] + (recvdMsg[HeaderLength + 1] << 8) +
