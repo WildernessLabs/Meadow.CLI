@@ -1,0 +1,47 @@
+
+trigger:
+  branches:
+    exclude:
+    - '*'
+
+pr:
+  branches:
+    exclude:
+    - '*'
+  
+variables:
+  solution: '**/MeadowCLI.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  internalFeedName: 'Meadow'
+  preReleasePackageBranch: 'refs/heads/develop'
+  meadowNugetServiceConnectionName: 'Meadow_Nuget'
+  tag: 'test1'
+
+pool:
+  vmImage: windows-2019
+
+stages:
+- stage: Build_Release
+  jobs:
+    - job: Build_Solution
+      steps:
+        - task: NuGetToolInstaller@1
+        - task: NuGetCommand@2
+          inputs:
+            feedsToUse: 'select' 
+            restoreSolution: '$(solution)'
+        - task: VSBuild@1
+          inputs:
+            solution: '$(solution)'
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+        - task: GithubRelease@0 
+          displayName: 'Create GitHub Release'      
+          inputs:
+            gitHubConnection: wildernesslabs
+            repositoryName: wildernesslabs/Meadow.CLI
+            tagSource: manual
+            tag: $(tag)      
+            assets: |
+                'MeadowCLI\bin\Release\net472\*'
