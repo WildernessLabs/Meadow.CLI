@@ -36,11 +36,13 @@ stages:
             Contents: 'MeadowCLI\bin\Release\net472\*'
             TargetFolder: '$(Build.ArtifactStagingDirectory)\Meadow.CLI'
             cleanTargetFolder: true
+            flattenFolders: true
         - task: CopyFiles@2
           inputs:
             Contents: '**\*.nupkg'
             TargetFolder: '$(Build.ArtifactStagingDirectory)\packages'
             cleanTargetFolder: true
+            flattenFolders: true
         - task: PublishBuildArtifacts@1
           inputs:
             pathtoPublish: '$(Build.ArtifactStagingDirectory)'
