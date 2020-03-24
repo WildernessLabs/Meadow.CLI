@@ -31,17 +31,20 @@ stages:
             solution: '$(solution)'
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
-        # - task: CopyFiles@2
-        #   inputs:
-        #     Contents: '**\*.nupkg'
-        #     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-        #     flattenFolders: true
-        #     cleanTargetFolder: true
-        #     overWrite: true
-        # - task: PublishBuildArtifacts@1
-        #   inputs:
-        #     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        #     artifactName: packages
+        - task: CopyFiles@2
+          inputs:
+            Contents: 'MeadowCLI\bin\Release\net472\*'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)\Meadow.CLI'
+            cleanTargetFolder: true
+        - task: CopyFiles@2
+          inputs:
+            Contents: '**\*.nupkg'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)\packages'
+            cleanTargetFolder: true
+        - task: PublishBuildArtifacts@1
+          inputs:
+            pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: artifacts
 
 # - stage: Publish_Staging
 #   dependsOn: Build
