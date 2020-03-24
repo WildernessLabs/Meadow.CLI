@@ -36,15 +36,6 @@ stages:
             solution: '$(solution)'
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
-        - task: GithubRelease@0 
-          displayName: 'Create GitHub Release'      
-          inputs:
-            gitHubConnection: 
-            repositoryName: wildernesslabs/Meadow.CLI
-            tagSource: manual
-            tag: $(tag)      
-            assets: |
-                'MeadowCLI\bin\Release\net472\*'
         - task: CopyFiles@2
           inputs:
             Contents: 'MeadowCLI\bin\Release\net472\*'
