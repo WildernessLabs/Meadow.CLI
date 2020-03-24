@@ -39,7 +39,7 @@ stages:
         - task: GithubRelease@0 
           displayName: 'Create GitHub Release'      
           inputs:
-            gitHubConnection: WildernessLabs
+            gitHubConnection: WildernessLabs-PAT
             repositoryName: wildernesslabs/Meadow.CLI
             tagSource: manual
             tag: $(tag)      
