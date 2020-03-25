@@ -47,7 +47,7 @@ stages:
             rootFolderOrFile: 'MeadowCLI\bin\Release\net472'
             includeRootFolder: false
             archiveType: 'zip'
-            archiveFile: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(Build.BuildId).zip'
         - task: GitHubRelease@1
           inputs:
             gitHubConnection: 'github.com_lamebrain'
@@ -57,6 +57,6 @@ stages:
             tagSource: 'userSpecifiedTag'
             tag: '$(tagName)'
             title: '$(title)'
-            assets: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.zip'
+            assets: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(Build.BuildId).zip'
             isPreRelease: true
             addChangeLog: false
