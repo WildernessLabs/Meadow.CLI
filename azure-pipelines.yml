@@ -41,7 +41,7 @@ stages:
           inputs:
             Contents: '**\*.nupkg'
             TargetFolder: '$(Build.ArtifactStagingDirectory)'
-            cleanTargetFolder: true
+            cleanTargetFolder: false
             flattenFolders: true
         - task: PublishBuildArtifacts@1
           inputs:
