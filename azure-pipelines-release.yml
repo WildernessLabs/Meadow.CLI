@@ -51,6 +51,6 @@ stages:
             tagSource: 'userSpecifiedTag'
             tag: '$(tagName)'
             title: '$(title)'
-            assets: '$(Build.ArtifactStagingDirectory)/Meadow.CLI'
+            assets: '$(Build.ArtifactStagingDirectory)\Meadow.CLI\*'
             isPreRelease: true
             addChangeLog: false
