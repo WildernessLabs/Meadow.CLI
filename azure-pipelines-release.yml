@@ -20,7 +20,7 @@ pool:
 stages:
 - stage: Build_Release
   jobs:
-    - job: Build_Solution
+    - job: Create_Release
       steps:
         - task: NuGetToolInstaller@1
         - task: NuGetCommand@2
