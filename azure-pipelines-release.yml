@@ -49,8 +49,8 @@ stages:
             action: 'create'
             target: '$(Build.SourceVersion)'
             tagSource: 'userSpecifiedTag'
-            tag: $(tagName)
-            title: $(title)
+            tag: 'testtag'
+            title: 'testtitle'
             assets: '$(Build.ArtifactStagingDirectory)/Meadow.CLI'
             isPreRelease: true
             addChangeLog: false
