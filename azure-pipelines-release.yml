@@ -13,10 +13,6 @@ variables:
   solution: '**/MeadowCLI.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  internalFeedName: 'Meadow'
-  preReleasePackageBranch: 'refs/heads/develop'
-  meadowNugetServiceConnectionName: 'Meadow_Nuget'
-  tag: 'test1'
 
 pool:
   vmImage: windows-2019
@@ -36,18 +32,12 @@ stages:
             solution: '$(solution)'
             platform: '$(buildPlatform)'
             configuration: '$(buildConfiguration)'
-        # - task: CopyFiles@2
-        #   inputs:
-        #     Contents: 'MeadowCLI\bin\Release\net472\*'
-        #     TargetFolder: '$(Build.ArtifactStagingDirectory)\Meadow.CLI'
-        #     cleanTargetFolder: true
-        #     flattenFolders: true
         - task: ArchiveFiles@2
           inputs:
             rootFolderOrFile: 'MeadowCLI\bin\Release\net472'
             includeRootFolder: false
             archiveType: 'zip'
-            archiveFile: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(Build.BuildId).zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(tagName).zip'
         - task: GitHubRelease@1
           inputs:
             gitHubConnection: 'github.com_lamebrain'
@@ -57,6 +47,6 @@ stages:
             tagSource: 'userSpecifiedTag'
             tag: '$(tagName)'
             title: '$(title)'
-            assets: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(Build.BuildId).zip'
+            assets: '$(Build.ArtifactStagingDirectory)\Meadow.CLI.$(tagName).zip'
             isPreRelease: true
             addChangeLog: false
