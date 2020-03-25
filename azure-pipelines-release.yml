@@ -44,7 +44,7 @@ stages:
             flattenFolders: true
         - task: GitHubRelease@1
           inputs:
-            gitHubConnection: 'WildernessLabsPAT'
+            gitHubConnection: 'github.com_lamebrain'
             repositoryName: '$(Build.Repository.Name)'
             action: 'create'
             target: '$(Build.SourceVersion)'
