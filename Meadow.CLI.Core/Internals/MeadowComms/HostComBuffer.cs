@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MeadowCLI.DeviceManagement;
+using System;
+using System.Diagnostics;
 
 namespace MeadowCLI.Hcom
 {
@@ -128,7 +130,12 @@ namespace MeadowCLI.Hcom
                     sizeFoundTop = foundOffset - tail + 1;
 
                     if (sizeFoundTop > packetBufferSize)
+                    {
+                        packetLength = sizeFoundTop;
+                        Console.WriteLine($"1. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                        //Debug.Assert(false);
                         return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
+                    }
 
                     Array.Copy(hcomCircularBuffer, tail, packetBuffer, 0, sizeFoundTop);
                     tail = foundOffset + 1;
@@ -145,7 +152,12 @@ namespace MeadowCLI.Hcom
                 sizeFoundTop = top - tail;
                 int sizeFoundBottom = foundOffset - bottom + 1;
                 if (sizeFoundBottom + sizeFoundTop > packetBufferSize)
+                {
+                    packetLength = sizeFoundTop;
+                    Console.WriteLine($"2. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                    //Debug.Assert(false);
                     return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
+                }
 
                 Array.Copy(hcomCircularBuffer, tail, packetBuffer, 0, sizeFoundTop);
                 Array.Copy(hcomCircularBuffer, bottom, packetBuffer, sizeFoundTop, sizeFoundBottom);

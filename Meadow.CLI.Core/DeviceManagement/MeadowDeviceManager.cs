@@ -21,6 +21,8 @@ namespace MeadowCLI.DeviceManagement
         // can be immediately written to the s25fl QSPI flash chip.
         internal const int MaxAllowableDataBlock = 512;
         internal const int MaxSizeOfXmitPacket = (MaxAllowableDataBlock + 4) + (MaxAllowableDataBlock / 254);
+        internal const int ProtocolHeaderSize = 12;
+        internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
 
         //    public static ObservableCollection<MeadowDevice> AttachedDevices = new ObservableCollection<MeadowDevice>();
 

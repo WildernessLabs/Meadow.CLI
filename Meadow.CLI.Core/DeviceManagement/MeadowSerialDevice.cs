@@ -359,22 +359,27 @@ namespace MeadowCLI.DeviceManagement
                     // This text is straight from mono via hcom. When the App.exe calls
                     // Console.WriteLine() it adds a 0x0a for New Line but this isn't going
                     // to work for Windows so replace 0x0a with Environment.NewLine
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                    for(int i = 0; i < args.Message.Length; i++)
-                    {
-                        char ch = args.Message[i];
-                        if(ch == 0x0a)
-                        {
-                            // Replace the New Line character(s) used by this PC
-                            sb.Append(Environment.NewLine);
-                            addAppOnNextOutput = true;
-                        }
-                        else
-                        {
-                            sb.Append(ch);
-                        }
-                    }
-                    ConsoleOutNoEol(sb.ToString());
+                    string winstring = args.Message.Replace("\n", System.Environment.NewLine);
+                    if(winstring.Length > args.Message.Length)
+                        addAppOnNextOutput = true;
+                    ConsoleOutNoEol(winstring.ToString());
+
+                    //System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    //for(int i = 0; i < args.Message.Length; i++)
+                    //{
+                    //    char ch = args.Message[i];
+                    //    if(ch == 0x0a)
+                    //    {
+                    //        // Replace the New Line character(s) used by this PC
+                    //        sb.Append(Environment.NewLine);
+                    //        addAppOnNextOutput = true;
+                    //    }
+                    //    else
+                    //    {
+                    //        sb.Append(ch);
+                    //    }
+                    //}
+                    //ConsoleOutNoEol(sb.ToString());
                     break;
                 case MeadowMessageType.MeadowTrace:
                     ConsoleOut("Trace: " + args.Message);
