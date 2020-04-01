@@ -350,12 +350,15 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    // This text is straight from mono via hcom and may not be
-                    // correctly displayed. The previous version added one
-                    // line breaks on a each message received.                    
-                    // This code should create new line as the original App.exe author
-                    // intended when using Console.Write or Console.WriteLine for
-                    // diagnostic messages.
+                    // The received text is straight from mono via hcom and may not be
+                    // correctly packetized.
+                    // Previous this code assumed that each received block of text should
+                    // begin with 'App :' and end with a new line. This was wrong.
+                    // When the App sends a lot of text quickly the received boundaries
+                    // can have no relation to the original App.exe author intended when
+                    // using Console.Write or Console.WriteLine.
+                    // This code creates new lines much more closly to the intent of the
+                    // original App.exe author.
                     string[] oneLine = args.Message.Split('\n');
                     for(int i = 0; i < oneLine.Length; i++)
                     {
