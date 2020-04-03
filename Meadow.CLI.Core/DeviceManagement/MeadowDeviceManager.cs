@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO.Ports;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
+using Meadow.CLI.Internals.Udev;
 using MeadowCLI.Hcom;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
 
@@ -68,14 +69,22 @@ namespace MeadowCLI.DeviceManagement
         {
             var devices = new List<string>();
 
-            foreach (var s in SerialPort.GetPortNames())
+            //Liunx Udev. Only returns matching product
+            if (LibudevNative.Instance != null)
             {
-                //limit Mac searches to tty.usb*, Windows, try all COM ports
-                //on Mac it's pretty quick to test em all so we could remove this check 
-                if (Environment.OSVersion.Platform != PlatformID.Unix ||
-                    s.Contains("tty.usb"))
+                devices.AddRange(Udev.GetUSBDevicePaths("idVendor","2e6a"));  //May need to filter by idProduct someday
+            }
+            else //Win or Mac
+            {
+                foreach (var s in SerialPort.GetPortNames())
                 {
-                    devices.Add(s);
+                    //limit Mac searches to tty.usb*, Windows, try all COM ports
+                    //on Mac it's pretty quick to test em all so we could remove this check 
+                    if (Environment.OSVersion.Platform != PlatformID.Unix ||
+                        s.Contains("tty.usb"))
+                    {
+                        devices.Add(s);
+                    }
                 }
             }
             return devices;
