@@ -12,14 +12,14 @@ using MeadowCLI.Hcom;
 namespace MeadowCLI.DeviceManagement
 {
     //a simple model object that represents a meadow device including connection
-    public class MeadowSerialDevice : MeadowDevice
+    public class MeadowSerialDevice : MeadowDevice, IDisposable
     {
         public EventHandler<MeadowMessageEventArgs> OnMeadowMessage;
 
         public bool Verbose { get; protected set; }
 
-        public SerialPort SerialPort { get; private set; }
-        public Socket Socket { get; private set; }
+        private SerialPort SerialPort { get; set; }
+        private Socket Socket { get; set; }
 
         private string serialPortName;
         public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
@@ -58,7 +58,15 @@ namespace MeadowCLI.DeviceManagement
             endpoint = new IPEndPoint(ip, port);
             return true;
         }
-
+        
+        public bool IsConnected
+        {
+            get
+            {
+                return (SerialPort?.IsOpen ?? false) || (Socket?.Connected ?? false);
+            }
+        }
+         
         public bool Initialize(bool listen = true)
         {
             if (TryCreateIPEndPoint(serialPortName, out IPEndPoint endpoint))
@@ -407,6 +415,22 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
+        internal void SendData(byte[] encodedBytes, int start, int len)
+        {
+            if (Socket != null)
+            {
+                Socket.Send(encodedBytes, len,
+                    System.Net.Sockets.SocketFlags.None);
+            }
+            else
+            {
+                if (SerialPort == null)
+                    throw new ArgumentException("SerialPort cannot be null");
+
+                SerialPort.Write(encodedBytes, start, len);
+            }
+        }
+
         bool AttemptToReconnectToMeadow()
         {
             int delayCount = 20;    // 10 seconds
@@ -498,6 +522,18 @@ namespace MeadowCLI.DeviceManagement
             }
 
             Console.Write(msg);
+        }
+
+        public void CloseConnection()
+        {
+             SerialPort?.Close();
+             Socket?.Close();
+        }
+        
+        public void Dispose()
+        {
+            SerialPort?.Dispose();
+            Socket?.Dispose();
         }
     }
 }

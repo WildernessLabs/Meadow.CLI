@@ -248,18 +248,7 @@ namespace MeadowCLI.Hcom
 
                 try
                 {
-                    if (_device.Socket != null)
-                    {
-                        _device.Socket.Send(encodedBytes, encodedToSend,
-                            System.Net.Sockets.SocketFlags.None);
-                    }
-                    else
-                    {
-                        if (_device.SerialPort == null)
-                            throw new ArgumentException("SerialPort cannot be null");
-
-                        _device.SerialPort.Write(encodedBytes, 0, encodedToSend);
-                    }
+                    _device.SendData(encodedBytes, 0, encodedToSend);
 
                 }
                 catch (InvalidOperationException ioe)  // Port not opened

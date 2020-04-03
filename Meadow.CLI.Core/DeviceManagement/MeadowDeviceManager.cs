@@ -54,7 +54,7 @@ namespace MeadowCLI.DeviceManagement
                     return meadow;
                 }
    
-                meadow.SerialPort.Close();
+                meadow.Dispose();
                 return null;
             }
             catch //(Exception ex)
@@ -255,7 +255,7 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            if (meadow.SerialPort == null && meadow.Socket == null)
+            if (!meadow.IsConnected)
             {
                 Console.WriteLine("No current serial port or socket");
                 return;
