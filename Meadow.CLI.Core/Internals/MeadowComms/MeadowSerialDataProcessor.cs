@@ -307,7 +307,7 @@ namespace MeadowCLI.Hcom
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG:
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowTrace, processor.ToString()));
@@ -319,10 +319,11 @@ namespace MeadowCLI.Hcom
                             break;
 
                         // Debug message from Meadow for Visual Studio
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG:
                             ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
+
                     }
                     return true;
                 }

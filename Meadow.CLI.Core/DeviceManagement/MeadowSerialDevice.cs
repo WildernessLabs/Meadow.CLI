@@ -350,31 +350,36 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("Data: " + args.Message);
                     break;
                 case MeadowMessageType.AppOutput:
-                    if(addAppOnNextOutput)
+                    // The received text is straight from mono via hcom and may not be
+                    // correctly packetized.
+                    // Previous this code assumed that each received block of text should
+                    // begin with 'App :' and end with a new line. This was wrong.
+                    // When the App sends a lot of text quickly the received boundaries
+                    // can have no relation to the original App.exe author intended when
+                    // using Console.Write or Console.WriteLine.
+                    // This code creates new lines much more closly to the intent of the
+                    // original App.exe author.
+                    string[] oneLine = args.Message.Split('\n');
+                    for(int i = 0; i < oneLine.Length; i++)
                     {
-                        addAppOnNextOutput = false;
-                        ConsoleOutNoEol("App: ");
-                    }
-
-                    // This text is straight from mono via hcom. When the App.exe calls
-                    // Console.WriteLine() it adds a 0x0a for New Line but this isn't going
-                    // to work for Windows so replace 0x0a with Environment.NewLine
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                    for(int i = 0; i < args.Message.Length; i++)
-                    {
-                        char ch = args.Message[i];
-                        if(ch == 0x0a)
+                        // The last array entry is a special case. If it's null or
+                        // empty then the last character was  a single '\n' and
+                        // we ignore it
+                        if (i == oneLine.Length - 1)
                         {
-                            // Replace the New Line character(s) used by this PC
-                            sb.Append(Environment.NewLine);
-                            addAppOnNextOutput = true;
+                            if (!string.IsNullOrEmpty(oneLine[i]))
+                            {
+                                ConsoleOutNoEol("App: ");
+                                ConsoleOutNoEol(oneLine[i]);
+                            }
                         }
                         else
                         {
-                            sb.Append(ch);
+                            // Most typical line
+                            ConsoleOutNoEol("App: ");
+                            ConsoleOut(oneLine[i]);
                         }
                     }
-                    ConsoleOutNoEol(sb.ToString());
                     break;
                 case MeadowMessageType.MeadowTrace:
                     ConsoleOut("Trace: " + args.Message);

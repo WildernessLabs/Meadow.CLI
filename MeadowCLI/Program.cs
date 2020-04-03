@@ -322,12 +322,12 @@ namespace MeadowCLI
               }
               else if (options.TraceDisable)
               {
-                  Console.WriteLine("Disabling displaying Meadow trace messages");
+                  Console.WriteLine("Disabling Meadow trace messages");
                   MeadowDeviceManager.TraceDisable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.TraceEnable)
               {
-                  Console.WriteLine("Enabling displaying Meadow trace messages");
+                  Console.WriteLine("Enabling Meadow trace messages");
                   MeadowDeviceManager.TraceEnable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.RenewFileSys)

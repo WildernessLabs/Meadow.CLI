@@ -21,6 +21,8 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
           // A factory for each unique request type
             _factories = new Dictionary<HcomHostRequestType, RecvMessageFactory>
             {
+                {HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG, new RecvSimpleBinaryFactory() },
+
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED, new RecvSimpleTextFactory() },
@@ -31,11 +33,8 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO, new RecvSimpleTextFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MEADOW_DIAG, new RecvSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT, new RecvSimpleTextFactory() },
-
-                {HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGER_MSG, new RecvSimpleBinaryFactory() },
-
             };
         }
 
