@@ -26,7 +26,7 @@ namespace MeadowCLI
             {
                 _quit = true;
                 e.Cancel = true;
-                MeadowDeviceManager.CurrentDevice?.SerialPort?.Close();
+                MeadowDeviceManager.CurrentDevice?.CloseConnection();
             };
 
             CompletionBehavior behavior = CompletionBehavior.Success;
@@ -128,8 +128,7 @@ namespace MeadowCLI
             if (ConnectToMeadowDevice(options.SerialPort))
             {
                 // verify that the port was actually connected
-                if (MeadowDeviceManager.CurrentDevice.Socket == null &&
-                    !IsSerialPortValid(MeadowDeviceManager.CurrentDevice.SerialPort))
+                if (!MeadowDeviceManager.CurrentDevice.IsConnected)
                 {
                     Console.WriteLine($"port not available");
                     return CompletionBehavior.RequestFailed;
