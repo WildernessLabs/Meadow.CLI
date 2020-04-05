@@ -1,13 +1,15 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibUsbDotNet;
+using LibUsbDotNet.DeviceNotify;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
+using Meadow.CLI.Internals.Udev;
 
 namespace Meadow.CLI.DeviceManagement
 {
@@ -18,161 +20,336 @@ namespace Meadow.CLI.DeviceManagement
         public static UsbDeviceManager Instance => instance.Value;
 
         // propers
-        public ObservableCollection<MeadowUsbDevice> Devices = new ObservableCollection<MeadowUsbDevice>();
-        public int PollingIntervalInSeconds { get; set; } = 1;
+        private readonly object _devices_lock = new object();
+        private List<MeadowUsbDevice> Devices = new List<MeadowUsbDevice>();        
+        public int PollingIntervalInSeconds { get; set; } = 3;
 
         // state
         protected bool _listeningForDevices = false;
         protected CancellationTokenSource _listenCancel = new CancellationTokenSource();
+        
+        //events
+        public event EventHandler<MeadowUsbDevice> DeviceNew;
+        public event EventHandler<MeadowUsbDevice> DeviceRemoved;
 
-        // internals
-        protected ushort _vendorID = 0x483; // STMicro
-        protected ushort _productID = 0xdf11; // STM32F7 chip
+        public IDeviceNotifier UsbDeviceNotifier;
+
 
         private UsbDeviceManager()
         {
-
             this.PopulateInitialDeviceList();
 
-            this.StartListeningForDevices();
+            //Try to use notifier
+            try 
+            {
+            //***Notifier seems broken in LibUsbDotNet (at least on Linux).
+            //     UsbDeviceNotifier = DeviceNotifier.OpenDeviceNotifier();
+            //    UsbDeviceNotifier.OnDeviceNotify += OnDeviceNotifyEvent;
+                
+            }
+            catch (Exception ex)
+            {
+            }
+
+            //Fallback to polling
+            if (!UsbDeviceNotifier?.Enabled ?? true)
+            {
+                this.StartListeningForDevices();
+            }
         }
+
+        /// <summary>
+        /// Callback for LibUsbDotNet notifier
+        /// </summary>
+        /// <param name="sender">Sender.</param>
+        /// <param name="e">E.</param>
+        private void OnDeviceNotifyEvent(object sender, DeviceNotifyEventArgs e)
+        {
+            UpdateDeviceList();
+        }
+
 
         private void PopulateInitialDeviceList()
         {
             Debug.WriteLine("PopulateInitialDeviceList");
 
             // devices
-            var ds = GetDevices(_vendorID, _productID);
+            var ds = GetDevices();
 
             foreach (var d in ds) {
-                Debug.WriteLine($"Found device: {d.Info.ProductString}, by {d.Info.ManufacturerString}, serial: {d.Info.SerialString}");
-                Debug.WriteLine($" VendordID: 0x{d.Info.Descriptor.VendorID.ToString("x4")}, ProductID: 0x{d.Info.Descriptor.ProductID.ToString("x4")}");
+                Debug.WriteLine($"Found device: {d.DeviceType}, by {d.ManufacturerString}, serial: {d.Serial}");
+                Debug.WriteLine($" VendordID: 0x{d.VendorID.ToString("x4")}, ProductID: 0x{d.ProductID.ToString("x4")}");
 
-                Devices.Add(new MeadowUsbDevice() { Serial = d.Info.SerialString, UsbDeviceName = d.Info.ProductString });
+                Devices.Add(d);
             }
         }
 
-        protected object _deviceListLock;
-        protected void UpdateDeviceList()
-        {
-            Debug.WriteLine("UpdateDeviceList()");
-
-            //// thread safety.
-            // BUGBUG: this causes a bug where devices don't update.
-            //lock (_deviceListLock) {
-
-            // get a list of devices
-            var ds = GetDevices(_vendorID, _productID);
-
-            // remove any missing
-            // TODO: there's got to be a way better way to do this. someone
-            // please clean up my terrible code.
-            List<MeadowUsbDevice> devicesToRemove = new List<MeadowUsbDevice>();
-            foreach (var d in Devices) {
-                if (!ds.Exists((x) => x.Info.SerialString == d.Serial)) {
-                    devicesToRemove.Add(d);
-                }
-            }
-            foreach (var d in devicesToRemove) {
-                Devices.Remove(d);
-            }
-
-            // add any new ones
-            List<MeadowUsbDevice> newDevices = new List<MeadowUsbDevice>();
-            foreach (var d in ds) {
-                if (!DevicesContains(d.Info.SerialString)) {
-                    // add to the collection
-                    Devices.Add(new MeadowUsbDevice() { Serial = d.Info.SerialString, UsbDeviceName = d.Info.ProductString });
-                }
-            }
-            //}
-
-        }
-        // probably a better way to do this, but .Exists() doesn't
-        // seem to exist for ObservableCollection. 
-        protected bool DevicesContains(string serial)
-        {
-            foreach (var d in Devices) {
-                if (d.Serial == serial) {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         /// <summary>
         /// Gets all USB devices that match the vendor id and product id passed in.
         /// </summary>
-        /// <param name="vendorIdFilter"></param>
-        /// <param name="productIdFilter"></param>
         /// <returns></returns>
-        private List<UsbDevice> GetDevices(ushort vendorIdFilter, ushort productIdFilter)
+        private List<MeadowUsbDevice> GetDevices()
         {
-            List<UsbDevice> matchingDevices = new List<UsbDevice>();
+            List<MeadowUsbDevice> matchingDevices = new List<MeadowUsbDevice>();
 
             // get all the devices in the USB Registry
             UsbRegDeviceList devices = UsbDevice.AllDevices;
 
             // loop through all the devices
-            foreach (UsbRegistry usbRegistry in devices) {
-
+            foreach (UsbRegistry usbRegistry in devices)
+            {
                 // try and open the device to get info
-                if (usbRegistry.Open(out UsbDevice device)) {
-
-                    // Filters
-                    // string BS because of [this](https://github.com/LibUsbDotNet/LibUsbDotNet/issues/91) bug.
-                    ushort vendorID = ushort.Parse(device.Info.Descriptor.VendorID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
-                    ushort productID = ushort.Parse(device.Info.Descriptor.ProductID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
-                    if (vendorIdFilter != 0 && vendorID != vendorIdFilter) {
-                        continue;
-                    }
-                    if (productIdFilter != 0 && productID != productIdFilter) {
-                        continue;
-                    }
-
-                    // Check for the DFU descriptor in the 
-
-                    // get the configs
-                    for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
-                        UsbConfigInfo configInfo = device.Configs[iConfig];
-
-                        // get the interfaces
-                        ReadOnlyCollection<UsbInterfaceInfo> interfaceList = configInfo.InterfaceInfoList;
-
-                        // loop through the interfaces
-                        for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
-                            // shortcut
-                            UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
-
-                            // if it's a DFU device, we want to grab the DFU descriptor
-                            // have to string compare because 0xfe isn't defined in `ClassCodeType`
-                            if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
-                                // interface doesn't support DFU
-                            }
-
-                            // we should also be getting the DFU descriptor
-                            // which describes the DFU parameters like speed and
-                            // flash size. However, it's missing from LibUsbDotNet
-                            // the Dfu descriptor is supposed to be 0x21
-                            //// get the custom descriptor
-                            //var dfuDescriptor = interfaceInfo.CustomDescriptors[0x21];
-                            //if (dfuDescriptor != null) {
-                            //    // add the matching device
-                            //    matchingDevices.Add(device);
-                            //}
-                        }
-                    }
-
-                    // add the matching device
-                    matchingDevices.Add(device);
-
-                    // cleanup
+                if (usbRegistry.Open(out UsbDevice device))
+                {
+                    var meadowDevice = ProcessDevice(device);
+                    if (meadowDevice != null) matchingDevices.Add(meadowDevice);
                     device.Close();
                 }
             }
 
             return matchingDevices;
         }
+
+        /// <summary>
+        /// Return a copy of the device list.
+        /// </summary>
+        /// <returns>The device list.</returns>
+        public List<MeadowUsbDevice> GetDeviceList()
+        {
+            lock (_devices_lock)
+            {
+                return Devices.ToList();
+            }
+        }
+        
+
+        /// <summary>
+        /// Updates the device list.  Called from notifier or polling
+        /// </summary>
+        protected void UpdateDeviceList()
+        {
+            try
+            {
+                lock (_devices_lock)
+                {
+                    List<MeadowUsbDevice> latestDeviceList = new List<MeadowUsbDevice>();
+
+                    // get all the devices in the USB Registry
+                    UsbRegDeviceList devices = UsbDevice.AllDevices;
+
+                    // loop through all the devices
+                    foreach (UsbRegistry usbRegistry in devices)
+                    {
+                        // try and open the device to get info
+                        if (usbRegistry.Open(out UsbDevice device))
+                        {
+                            var meadowDevice = ProcessDevice(device);
+                            if (meadowDevice != null) latestDeviceList.Add(meadowDevice);
+                        }
+                    }
+
+                    List<MeadowUsbDevice> devicesToRemove = new List<MeadowUsbDevice>();
+                    foreach (var d in Devices)
+                    {
+                        if (GetMatchingDevice(latestDeviceList, d) == null) devicesToRemove.Add(d);
+                    }
+                    foreach (var d in devicesToRemove)
+                    {
+                        Devices.Remove(d);
+                        DeviceRemoved?.Invoke(this, d);
+                    }
+
+                    // add any new ones
+                    List<MeadowUsbDevice> newDevices = new List<MeadowUsbDevice>();
+                    foreach (var d in latestDeviceList)
+                    {
+                        if (GetMatchingDevice(Devices, d) == null)
+                        {
+                            Devices.Add(d);
+                            DeviceNew?.Invoke(this, d);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"UpdateDeviceList Error: {ex.Message}");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Gets our defined device type, or null for unknown device.
+        /// </summary>
+        /// <returns>The device type.</returns>
+        /// <param name="vendorID">Vendor identifier.</param>
+        /// <param name="productID">Product identifier.</param>
+        MeadowUsbDevice.eDeviceType? GetDeviceType(ushort vendorID, ushort productID)
+        {
+            switch (vendorID)
+            {
+                case 0x483:  // STMicro
+                    if (productID != 0xdf11) return null;
+                    return MeadowUsbDevice.eDeviceType.MeadowBoot;
+                case 0x2e6a: // Wilderness Labs
+                    return MeadowUsbDevice.eDeviceType.MeadowMono;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Processes the device, from LibUsbDotNet
+        /// </summary>
+        /// <returns>The device.</returns>
+        /// <param name="device">Device.</param>
+        MeadowUsbDevice ProcessDevice(UsbDevice device)
+        {
+                // string BS because of [this](https://github.com/LibUsbDotNet/LibUsbDotNet/issues/91) bug.
+                ushort vendorID = ushort.Parse(device.Info.Descriptor.VendorID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
+                ushort productID = ushort.Parse(device.Info.Descriptor.ProductID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
+
+                var devicetype = GetDeviceType(vendorID, productID);
+                if (!devicetype.HasValue) return null;
+
+                var USBDevice = new MeadowUsbDevice()
+                {
+                    DeviceType = devicetype.Value,
+                    Serial = device.Info.SerialString,
+                    VendorID = vendorID,
+                    ProductID = productID,
+                    UsbDeviceName = device.Info.ProductString,
+                    ManufacturerString = device.Info.ManufacturerString
+                };
+
+
+                if (device is LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)
+                {
+                    var deviceInfo = (LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)device;
+                    USBDevice.Port = Udev.GetUSBDevicePath(deviceInfo.BusNumber, deviceInfo.DeviceAddress);
+                }
+                
+                // Check for the DFU descriptor in the 
+
+                // get the configs
+                for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
+                    UsbConfigInfo configInfo = device.Configs[iConfig];
+
+                    // get the interfaces
+                    ReadOnlyCollection<UsbInterfaceInfo> interfaceList = configInfo.InterfaceInfoList;
+
+                    // loop through the interfaces
+                    for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
+                        // shortcut
+                        UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
+
+                        // if it's a DFU device, we want to grab the DFU descriptor
+                        // have to string compare because 0xfe isn't defined in `ClassCodeType`
+                        if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
+                            // interface doesn't support DFU
+                        }
+
+                        // we should also be getting the DFU descriptor
+                        // which describes the DFU parameters like speed and
+                        // flash size. However, it's missing from LibUsbDotNet
+                        // the Dfu descriptor is supposed to be 0x21
+                        //// get the custom descriptor
+                        //var dfuDescriptor = interfaceInfo.CustomDescriptors[0x21];
+                        //if (dfuDescriptor != null) {
+                        //    // add the matching device
+                        //    matchingDevices.Add(device);
+                        //}
+                    }
+                }
+
+            return USBDevice;
+
+        }
+
+
+
+        MeadowUsbDevice GetMatchingDevice(List<MeadowUsbDevice> deviceList, MeadowUsbDevice matchDevice)
+        {
+            return deviceList.Find(x => IsMatch(x, matchDevice));
+        }
+        
+        /// <summary>
+        /// Minimum match, to determin we wre looking at the same device
+        /// </summary>
+        /// <returns><c>true</c>, if matched <c>false</c> otherwise.</returns>
+        /// <param name="device">Device.</param>
+        /// <param name="matchDevice">Match device.</param>
+        bool IsMatch(MeadowUsbDevice device, MeadowUsbDevice matchDevice)
+        {
+                return  (device.VendorID == matchDevice.VendorID
+                         && device.ProductID == matchDevice.ProductID
+                         && device.Serial == matchDevice.Serial
+                         && device.UsbDeviceName == matchDevice.UsbDeviceName
+                        );
+        }
+        
+
+
+        /// <summary>
+        /// Waits for a matching UsbDevice
+        /// </summary>
+        /// <returns>Actual device class, or Null if timed out.</returns>
+        /// <param name="matchingDevice">Matching device.</param>
+        /// <param name="timeout">Timeout milliseconds.</param>
+        public async Task<MeadowUsbDevice> AwaitAddedDevice(MeadowUsbDevice matchingDevice, int timeout)
+        {
+           MeadowUsbDevice tdevice = null;
+           var signalEvent = new ManualResetEvent(false);
+           
+           await Task.Run(() =>
+           {
+               EventHandler<MeadowUsbDevice> handler = (sender, e) =>
+               {
+                   if (IsMatch(e, matchingDevice))
+                   {
+                       tdevice = e;
+                       signalEvent.Set();
+                   }
+               };
+
+               DeviceNew += handler;
+               tdevice = GetMatchingDevice(Devices,matchingDevice);
+               if (tdevice==null) signalEvent.WaitOne(timeout);
+               DeviceNew -= handler;
+           });
+           
+           return tdevice;
+        }
+        
+        /// <summary>
+        /// Waits for a matching device to be removed.
+        /// </summary>
+        /// <returns>True if matched, false if timed out.</returns>
+        /// <param name="matchingDevice">Matching device.</param>
+        /// <param name="timeout">Timeout in milliseconds.</param>
+        public async Task<bool> AwaitRemovedDevice(MeadowUsbDevice matchingDevice, int timeout)
+        {
+           var signalEvent = new ManualResetEvent(false);
+
+           bool removeEvent = false;
+           
+           await Task.Run(() =>
+           {
+               EventHandler<MeadowUsbDevice> handler = (sender, e) =>
+               {
+                   if (IsMatch(e, matchingDevice)) signalEvent.Set();
+               };
+
+               DeviceRemoved += handler;
+
+               if (GetMatchingDevice(Devices,matchingDevice) != null) removeEvent = signalEvent.WaitOne(timeout);
+               
+               DeviceRemoved -= handler;
+           });
+
+            return removeEvent;
+        }        
 
         /// <summary>
         /// Used for debug, enumerates all USB devices and their info to the console.
@@ -265,7 +442,7 @@ namespace Meadow.CLI.DeviceManagement
             if (_listeningForDevices) { return new Task(() => { }); }
 
             // spin up a new task
-            Task t = new Task(() => {
+            Task task = new Task(() => {
                 // state
                 _listeningForDevices = true;
 
@@ -285,9 +462,9 @@ namespace Meadow.CLI.DeviceManagement
                     Thread.Sleep(PollingIntervalInSeconds * 1000);
                 }
             });
-            t.Start();
+            task.Start();
 
-            return t;
+            return task;
         }
 
         /// <summary>
