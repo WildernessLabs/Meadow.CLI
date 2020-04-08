@@ -1,6 +1,7 @@
 ﻿using System;
 using LibUsbDotNet;
 using LibUsbDotNet.Main;
+using MonoLibUsb.Profile;
 
 namespace Meadow.CLI.DeviceManagement
 {
@@ -21,10 +22,12 @@ namespace Meadow.CLI.DeviceManagement
         public ushort VendorID { get; internal set; }
         public ushort ProductID { get; internal set; }
         public string ManufacturerString { get; internal set; }
+        public object Handle { get; internal set; }
 
         public override string ToString()
         {
             return UsbDeviceName + "::" + Serial;
         }
+        
     }
 }

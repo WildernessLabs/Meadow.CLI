@@ -102,7 +102,7 @@ namespace Meadow.CLI.DeviceManagement
                 // try and open the device to get info
                 if (usbRegistry.Open(out UsbDevice device))
                 {
-                    var meadowDevice = ProcessDevice(device);
+                    var meadowDevice = ProcessDevice(usbRegistry, device);
                     if (meadowDevice != null) matchingDevices.Add(meadowDevice);
                     device.Close();
                 }
@@ -144,7 +144,7 @@ namespace Meadow.CLI.DeviceManagement
                         // try and open the device to get info
                         if (usbRegistry.Open(out UsbDevice device))
                         {
-                            var meadowDevice = ProcessDevice(device);
+                            var meadowDevice = ProcessDevice(usbRegistry, device);
                             if (meadowDevice != null) latestDeviceList.Add(meadowDevice);
                         }
                     }
@@ -156,8 +156,10 @@ namespace Meadow.CLI.DeviceManagement
                     }
                     foreach (var d in devicesToRemove)
                     {
+                        Console.WriteLine($"Device Removed: {d.UsbDeviceName}");
                         Devices.Remove(d);
                         DeviceRemoved?.Invoke(this, d);
+                        
                     }
 
                     // add any new ones
@@ -166,6 +168,7 @@ namespace Meadow.CLI.DeviceManagement
                     {
                         if (GetMatchingDevice(Devices, d) == null)
                         {
+                            Console.WriteLine($"Device Added: {d.UsbDeviceName}");
                             Devices.Add(d);
                             DeviceNew?.Invoke(this, d);
                         }
@@ -204,7 +207,7 @@ namespace Meadow.CLI.DeviceManagement
         /// </summary>
         /// <returns>The device.</returns>
         /// <param name="device">Device.</param>
-        MeadowUsbDevice ProcessDevice(UsbDevice device)
+        MeadowUsbDevice ProcessDevice(UsbRegistry usbRegistry, UsbDevice device)
         {
                 // string BS because of [this](https://github.com/LibUsbDotNet/LibUsbDotNet/issues/91) bug.
                 ushort vendorID = ushort.Parse(device.Info.Descriptor.VendorID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
@@ -220,16 +223,22 @@ namespace Meadow.CLI.DeviceManagement
                     VendorID = vendorID,
                     ProductID = productID,
                     UsbDeviceName = device.Info.ProductString,
-                    ManufacturerString = device.Info.ManufacturerString
+                    ManufacturerString = device.Info.ManufacturerString,
                 };
 
 
-                if (device is LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)
-                {
-                    var deviceInfo = (LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)device;
-                    USBDevice.Port = Udev.GetUSBDevicePath(deviceInfo.BusNumber, deviceInfo.DeviceAddress);
-                }
-                
+
+            if (device is LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)
+            {
+                var deviceInfo = (LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)device ;
+                USBDevice.Port = Udev.GetUSBDevicePath(deviceInfo.BusNumber, deviceInfo.DeviceAddress);
+                USBDevice.Handle = deviceInfo.Profile.ProfileHandle;
+            }
+            else
+            {
+                USBDevice.Handle = usbRegistry.DeviceInterfaceGuids;
+            }
+             
                 // Check for the DFU descriptor in the 
 
                 // get the configs
@@ -282,10 +291,11 @@ namespace Meadow.CLI.DeviceManagement
         /// <param name="matchDevice">Match device.</param>
         bool IsMatch(MeadowUsbDevice device, MeadowUsbDevice matchDevice)
         {
-                return  (device.VendorID == matchDevice.VendorID
+                return  (device.Handle == matchDevice.Handle ||
+                         (device.VendorID == matchDevice.VendorID
                          && device.ProductID == matchDevice.ProductID
                          && device.Serial == matchDevice.Serial
-                         && device.UsbDeviceName == matchDevice.UsbDeviceName
+                         && device.UsbDeviceName == matchDevice.UsbDeviceName)
                         );
         }
         
@@ -329,7 +339,7 @@ namespace Meadow.CLI.DeviceManagement
         /// <param name="matchingDevice">Matching device.</param>
         /// <param name="timeout">Timeout in milliseconds.</param>
         public async Task<bool> AwaitRemovedDevice(MeadowUsbDevice matchingDevice, int timeout)
-        {
+        {        
            var signalEvent = new ManualResetEvent(false);
 
            bool removeEvent = false;
@@ -341,8 +351,10 @@ namespace Meadow.CLI.DeviceManagement
                    if (IsMatch(e, matchingDevice)) signalEvent.Set();
                };
 
+               //Start to listen to any removed devices 
                DeviceRemoved += handler;
-
+               
+                //Check if it's already been removed, and if not wait for an event, or timeout 
                if (GetMatchingDevice(Devices,matchingDevice) != null) removeEvent = signalEvent.WaitOne(timeout);
                
                DeviceRemoved -= handler;
