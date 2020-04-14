@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Threading.Tasks;
+using Meadow.CLI.DeviceManagement;
+using Meadow.CLI.DeviceMonitor;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using Meadow.CLI.Internals.Udev;
 using MeadowCLI.Hcom;
@@ -39,30 +41,41 @@ namespace MeadowCLI.DeviceManagement
             // TODO: wire up listeners for device plug and unplug
         }
 
-        //returns null if we can't detect a Meadow board
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort) //, bool verbose = true)
-        {
-            var meadow = CurrentDevice = new MeadowSerialDevice(serialPort);
 
+        public static async Task<MeadowSerialDevice> GetMeadowForConnection(Connection connection)
+        {
+            Console.WriteLine($"GetMeadowForConnection: Initialize {connection?.USB.DevicePort}");
+            
             try
             {
-                meadow.Initialize(true);
-                var isMeadow = await meadow.SetDeviceInfo();
-
-                if (isMeadow)
-                {
-                    return meadow;
-                }
-   
-                meadow.Dispose();
-                return null;
+                var meadowSerialDevice = new MeadowSerialDevice(connection, true);
+                if (CurrentDevice == null || (CurrentDevice?.connection.Removed ?? true)) CurrentDevice = meadowSerialDevice;
+                return meadowSerialDevice;
             }
-            catch //(Exception ex)
+            catch (Exception ex)
             {
-                //swallow for now
+                Console.WriteLine($"GetMeadowForConnection Error: {ex.Message}");
                 return null;
             }
         }
+
+        [ObsoleteAttribute("This property is obsolete. Use GetMeadowForConnection instead.", false)]
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort) //, bool verbose = true)
+        {
+
+            var connection = new Connection()
+            {
+                Mode = MeadowMode.MeadowMono,
+                USB = new Connection.USB_interface()
+                {                
+                     DevicePort = serialPort,
+                }
+            };
+            
+            return CurrentDevice = new MeadowSerialDevice(connection);
+        }
+
+
 
         //we'll move this soon
         public static List<string> FindSerialDevices()
@@ -104,7 +117,7 @@ namespace MeadowCLI.DeviceManagement
         public static void ResetMeadow(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
-
+            meadow.SetImpendingRebootFlag();
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
@@ -125,7 +138,7 @@ namespace MeadowCLI.DeviceManagement
         public static void MonoDisable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE;
-
+            meadow.SetImpendingRebootFlag();
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
@@ -261,7 +274,7 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            meadow.Initialize(true);
+         //   meadow.OpenConnection();
         }
 
         public static void Esp32ReadMac(MeadowSerialDevice meadow)
