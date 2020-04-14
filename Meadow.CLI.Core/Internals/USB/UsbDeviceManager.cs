@@ -37,6 +37,8 @@ namespace Meadow.CLI.DeviceManagement
 
         private UsbDeviceManager()
         {
+
+            
             this.PopulateInitialDeviceList();
 
             //Try to use notifier
@@ -99,13 +101,25 @@ namespace Meadow.CLI.DeviceManagement
             // loop through all the devices
             foreach (UsbRegistry usbRegistry in devices)
             {
-                // try and open the device to get info
-                if (usbRegistry.Open(out UsbDevice device))
-                {
-                    var meadowDevice = ProcessDevice(usbRegistry, device);
-                    if (meadowDevice != null) matchingDevices.Add(meadowDevice);
-                    device.Close();
-                }
+                //// try and open the device to get info
+                //if (usbRegistry.Open(out UsbDevice device))
+                //{
+                //    var meadowDevice = ProcessDevice(usbRegistry, device);
+                //    if (meadowDevice != null) matchingDevices.Add(meadowDevice);
+                //    device.Close();
+                //}
+                //else
+                //{
+                    
+
+                    var deviceType = GetDeviceType((ushort)usbRegistry.Vid, (ushort)usbRegistry.Pid);
+                    if (deviceType.HasValue)
+                    {
+                        var meadowDevice = ProcessDevice(usbRegistry);
+                        if (meadowDevice != null) matchingDevices.Add(meadowDevice);
+                    }
+                    
+              //  }
             }
 
             return matchingDevices;
@@ -141,12 +155,22 @@ namespace Meadow.CLI.DeviceManagement
                     // loop through all the devices
                     foreach (UsbRegistry usbRegistry in devices)
                     {
-                        // try and open the device to get info
-                        if (usbRegistry.Open(out UsbDevice device))
-                        {
-                            var meadowDevice = ProcessDevice(usbRegistry, device);
-                            if (meadowDevice != null) latestDeviceList.Add(meadowDevice);
-                        }
+                    
+                    var deviceType = GetDeviceType((ushort)usbRegistry.Vid, (ushort)usbRegistry.Pid);
+                    if (deviceType.HasValue)
+                    {
+                        var meadowDevice = ProcessDevice(usbRegistry);
+                        if (meadowDevice != null) latestDeviceList.Add(meadowDevice);
+                    }
+                    
+                    
+                    
+                        //// try and open the device to get info
+                        //if (usbRegistry.Open(out UsbDevice device))
+                        //{
+                        //    var meadowDevice = ProcessDevice(usbRegistry);
+                        //    if (meadowDevice != null) latestDeviceList.Add(meadowDevice);
+                        //}
                     }
 
                     List<MeadowUsbDevice> devicesToRemove = new List<MeadowUsbDevice>();
@@ -207,70 +231,77 @@ namespace Meadow.CLI.DeviceManagement
         /// </summary>
         /// <returns>The device.</returns>
         /// <param name="device">Device.</param>
-        MeadowUsbDevice ProcessDevice(UsbRegistry usbRegistry, UsbDevice device)
+        MeadowUsbDevice ProcessDevice(UsbRegistry usbRegistry)
         {
-                // string BS because of [this](https://github.com/LibUsbDotNet/LibUsbDotNet/issues/91) bug.
-                ushort vendorID = ushort.Parse(device.Info.Descriptor.VendorID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
-                ushort productID = ushort.Parse(device.Info.Descriptor.ProductID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
 
-                var devicetype = GetDeviceType(vendorID, productID);
+                var devicetype = GetDeviceType((ushort)usbRegistry.Vid, (ushort)usbRegistry.Pid);
                 if (!devicetype.HasValue) return null;
 
-                var USBDevice = new MeadowUsbDevice()
-                {
-                    DeviceType = devicetype.Value,
-                    Serial = device.Info.SerialString,
-                    VendorID = vendorID,
-                    ProductID = productID,
-                    UsbDeviceName = device.Info.ProductString,
-                    ManufacturerString = device.Info.ManufacturerString,
-                };
-
-
-
-            if (device is LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)
+            
+            UsbDevice device;
+            if (usbRegistry.Open(out device))
             {
-                var deviceInfo = (LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)device ;
-                USBDevice.Port = Udev.GetUSBDevicePath(deviceInfo.BusNumber, deviceInfo.DeviceAddress);
-                USBDevice.Handle = deviceInfo.Profile.ProfileHandle;
+                ;
             }
-            else
+           
+
+
+            var USBDevice = new MeadowUsbDevice()
             {
-                USBDevice.Handle = usbRegistry.DeviceInterfaceGuids;
-            }
+                DeviceType = devicetype.Value,
+                //  Serial = device.Info.SerialString,
+                VendorID = (ushort)usbRegistry.Vid,
+                ProductID = (ushort)usbRegistry.Pid,
+                //  UsbDeviceName = device.Info.ProductString,
+                //  ManufacturerString = device.Info.ManufacturerString,
+                Handle = usbRegistry
+            };
+
+
+
+            //if (device is LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)
+            //{
+            //    var deviceInfo = (LibUsbDotNet.LudnMonoLibUsb.MonoUsbDevice)device ;
+            //    USBDevice.Port = Udev.GetUSBDevicePath(deviceInfo.BusNumber, deviceInfo.DeviceAddress);
+            //    USBDevice.Handle = deviceInfo.Profile.ProfileHandle;
+            //}
+            //else
+            //{
+            //    USBDevice.Handle = usbRegistry.DeviceInterfaceGuids;
+            //}
              
                 // Check for the DFU descriptor in the 
 
-                // get the configs
-                for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
-                    UsbConfigInfo configInfo = device.Configs[iConfig];
+                //// get the configs
+                //for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
+                //    UsbConfigInfo configInfo = device.Configs[iConfig];
 
-                    // get the interfaces
-                    ReadOnlyCollection<UsbInterfaceInfo> interfaceList = configInfo.InterfaceInfoList;
+                //    // get the interfaces
+                //    ReadOnlyCollection<UsbInterfaceInfo> interfaceList = configInfo.InterfaceInfoList;
 
-                    // loop through the interfaces
-                    for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
-                        // shortcut
-                        UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
+                //    // loop through the interfaces
+                //    for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
+                //        // shortcut
+                //        UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
 
-                        // if it's a DFU device, we want to grab the DFU descriptor
-                        // have to string compare because 0xfe isn't defined in `ClassCodeType`
-                        if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
-                            // interface doesn't support DFU
-                        }
+                //        // if it's a DFU device, we want to grab the DFU descriptor
+                //        // have to string compare because 0xfe isn't defined in `ClassCodeType`
+                //        if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
+                //            // interface doesn't support DFU
+                //        }
 
-                        // we should also be getting the DFU descriptor
-                        // which describes the DFU parameters like speed and
-                        // flash size. However, it's missing from LibUsbDotNet
-                        // the Dfu descriptor is supposed to be 0x21
-                        //// get the custom descriptor
-                        //var dfuDescriptor = interfaceInfo.CustomDescriptors[0x21];
-                        //if (dfuDescriptor != null) {
-                        //    // add the matching device
-                        //    matchingDevices.Add(device);
-                        //}
-                    }
-                }
+                //        // we should also be getting the DFU descriptor
+                //        // which describes the DFU parameters like speed and
+                //        // flash size. However, it's missing from LibUsbDotNet
+                //        // the Dfu descriptor is supposed to be 0x21
+                //        //// get the custom descriptor
+                //        //var dfuDescriptor = interfaceInfo.CustomDescriptors[0x21];
+                //        //if (dfuDescriptor != null) {
+                //        //    // add the matching device
+                //        //    matchingDevices.Add(device);
+                //        //}
+                //    }
+                //}
 
             return USBDevice;
 
@@ -291,7 +322,7 @@ namespace Meadow.CLI.DeviceManagement
         /// <param name="matchDevice">Match device.</param>
         bool IsMatch(MeadowUsbDevice device, MeadowUsbDevice matchDevice)
         {
-                return  (device.Handle == matchDevice.Handle ||
+                return  (
                          (device.VendorID == matchDevice.VendorID
                          && device.ProductID == matchDevice.ProductID
                          && device.Serial == matchDevice.Serial

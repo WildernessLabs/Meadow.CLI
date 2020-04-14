@@ -1,7 +1,4 @@
 ﻿using System;
-using LibUsbDotNet;
-using LibUsbDotNet.Main;
-using MonoLibUsb.Profile;
 
 namespace Meadow.CLI.DeviceManagement
 {
