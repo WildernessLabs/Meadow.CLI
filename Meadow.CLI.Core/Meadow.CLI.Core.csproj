@@ -30,11 +30,17 @@
 
   <ItemGroup>
     <Content Include="libusb-1.0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="libusb-1.0.dylib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="DeviceManagement\MeadowUsbDevice %28copy%29.cs" />
+    <Compile Remove="DeviceManagement\UsbDeviceManager %28copy%29.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ConnectionMonitor\" />
+    <Folder Include="Internals\USB\" />
+  </ItemGroup>
 </Project>
