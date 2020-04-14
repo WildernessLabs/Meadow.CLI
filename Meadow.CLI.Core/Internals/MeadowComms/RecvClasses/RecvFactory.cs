@@ -43,6 +43,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             HcomHostRequestType rqstType = HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST;
             try
             {
+                Console.WriteLine($"RX: {BitConverter.ToString(recvdMsg,0,receivedMsgLen)}");
                 rqstType = FindRequestTypeValue(recvdMsg);
                 RecvMessageFactory factory = _factories[rqstType];
                 return factory.Create(recvdMsg, receivedMsgLen);
@@ -52,7 +53,8 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 // I saw a few time, that this exception was being thrown. It was caused by
                 // corrupted data being processed.
                 Console.WriteLine($"Request type was: {rqstType}. Exception: {ex.Message}");
-                System.Threading.Thread.Sleep(1);
+                Console.WriteLine($"{BitConverter.ToString(recvdMsg,0,receivedMsgLen)}");
+                System.Threading.Thread.Sleep(1);                
                 return null;
             }
         }
