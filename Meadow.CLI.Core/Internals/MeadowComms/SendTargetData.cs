@@ -109,7 +109,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception except)
             {
-                Console.WriteLine($"An exception was caught: {except}");
+                if (_device.IsConnected) Console.WriteLine($"An exception was caught: {except}");
                 throw;
             }
         }
@@ -253,7 +253,7 @@ namespace MeadowCLI.Hcom
                 }
                 catch (InvalidOperationException ioe)  // Port not opened
                 {
-                    Console.WriteLine("Write but port not opened. Exception: {0}", ioe);
+                   // Console.WriteLine("Write but port not opened. Exception: {0}", ioe);
                     throw;
                 }
                 catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer

@@ -42,6 +42,8 @@ namespace MeadowCLI.Hcom
     {   
         //collapse to one and use enum
         public EventHandler<MeadowMessageEventArgs> OnReceiveData;
+        public EventHandler OnSocketClosed;
+        
         HostCommBuffer _hostCommBuffer;
         RecvFactoryManager _recvFactoryManager;
         readonly SerialPort serialPort;
@@ -64,14 +66,17 @@ namespace MeadowCLI.Hcom
 
         public MeadowSerialDataProcessor(SerialPort serialPort) : this()
         {
+            ConsoleOut($"MeadowSerialDataProcessor: Opening {serialPort.PortName}");
             this.serialPort = serialPort;
             var t = ReadSerialPortAsync();
         }
 
         public MeadowSerialDataProcessor(Socket socket) : this()
         {
+            ConsoleOut($"MeadowSerialDataProcessor: Opening {socket.LocalEndPoint}");
             this.socket = socket;
             var t = ReadSocketAsync();
+            
         }
 
         //-------------------------------------------------------------
@@ -92,23 +97,17 @@ namespace MeadowCLI.Hcom
                     await Task.Delay(50).ConfigureAwait(false);
                 }
             }
-            catch (ThreadAbortException ex)
-            {
-                //ignoring for now until we wire cancelation ...
-                //this blocks the thread abort exception when the console app closes
-            }
-            catch (InvalidOperationException)
-            {
-                // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
-            }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                if (socket?.Connected ?? false) ConsoleOut($"ReadSocketAsync: {ex}");
+            }
+            finally
+            {
+                OnSocketClosed?.Invoke(this, null);
             }
         }
+        
 
-        //-------------------------------------------------------------
-        // All received data handled here
         private async Task ReadSerialPortAsync()
         {
             byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
@@ -138,9 +137,14 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                if (serialPort?.IsOpen ?? false) ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+            }
+            finally
+            {
+                OnSocketClosed?.Invoke(this, null);
             }
         }
+
 
         void AddAndProcessData(byte[] buffer, int availableBytes)
         {
@@ -272,11 +276,11 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            //ConsoleOut($"protocol-Request Accepted"); // TESTING
+                            ConsoleOut($"protocol-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            //ConsoleOut($"protocol-Request Concluded"); // TESTING
+                            ConsoleOut($"protocol-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
@@ -287,27 +291,32 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            //ConsoleOut("protocol-Request Information"); // TESTING
+                            ConsoleOut("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            //ConsoleOut("protocol-Request File List Header received"); // TESTING
+                            ConsoleOut("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
+                            ConsoleOut("protocol-Request File List Member received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_CRC_MEMBER"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_MONO_MSG"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_DEVICE_INFO"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG:
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_TRACE_MSG"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowTrace, processor.ToString()));
@@ -322,6 +331,9 @@ namespace MeadowCLI.Hcom
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG:
                             ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
+                            break;
+                        default:
+                            ConsoleOut($"Unknown message {processor.RequestType}");
                             break;
 
                     }
