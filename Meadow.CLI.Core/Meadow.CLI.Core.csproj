@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <RootNamespace>Meadow.CLI</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.8.0</Version>
+    <Version>0.8.1</Version>
     <PackageId>WildernessLabs.Meadow.CLI.Core</PackageId>
     <Authors>Peter Moody, Adrian Stevens, Bryan Costanich, Brian Kim</Authors>
     <Description>Meadow Command-Line-Interface Core library.</Description>
@@ -35,6 +35,10 @@
     <Content Include="libusb-1.0.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Management" />
   </ItemGroup>
 
 </Project>

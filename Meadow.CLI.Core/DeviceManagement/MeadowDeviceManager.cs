@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO.Ports;
+using System.Management;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using MeadowCLI.Hcom;
@@ -76,6 +77,21 @@ namespace MeadowCLI.DeviceManagement
                     s.Contains("tty.usb"))
                 {
                     devices.Add(s);
+                }
+            }
+            return devices;
+        }
+
+        public static List<string> GetSerialDeviceCaptions()
+        {
+            var devices = new List<string>();
+
+            using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
+            {
+                var portnames = SerialPort.GetPortNames();
+                foreach (var item in searcher.Get())
+                {
+                    devices.Add(item["Caption"].ToString());
                 }
             }
             return devices;
