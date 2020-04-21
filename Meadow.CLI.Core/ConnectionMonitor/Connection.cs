@@ -69,14 +69,35 @@ namespace Meadow.CLI.DeviceMonitor
         public bool IsMatch(Connection connection)
         {
             if (this == connection) return true;
-            if (this.Mode != connection.Mode) return false;
-            
-            //The meadow does not have a USB serial at this time.
-            //if (!String.IsNullOrEmpty(this.SerialNumber) && this.SerialNumber == connection?.SerialNumber) return true;
 
+            //Serial is the best way of chcking a matching device, but meny devices don't set it
+            //The meadow is no exception at this time. But worth checking.
+            if (!String.IsNullOrEmpty(this.SerialNumber))
+            {
+                //Need to make sure the serial is not Zero, which is often an default
+                if (!int.TryParse(this.SerialNumber, out int test) || test > 0)
+                {
+                    //Return the result either way.
+                    return (this.SerialNumber == connection?.SerialNumber);
+                }
+            }
+
+            //Lets try and make an educated guess
             if (this.USB != null && connection.USB != null)
             {
-                if (this.USB.BusNumber == USB.BusNumber && this.USB.DeviceNumber == USB.DeviceNumber) return true;
+                //Bus numbers should be the same
+                if (this.USB.BusNumber == connection.USB.BusNumber)
+                {
+                   //Device numbers (at least on Linux) incroment on each USB connection.
+                   //Test to see if tha same, just in case.
+                   if (this.USB.DeviceNumber == connection.USB.DeviceNumber) return true;
+                   //If the new device has a higher device number, than a previous recent disconnect
+                   if (this.Removed && this.USB.DeviceNumber < connection.USB.DeviceNumber
+                       && (connection.TimeConnected - this.TimeRemoved).TotalSeconds < 2 )
+                   {
+                        return true;
+                   }
+                }
             }
 
             if (this.IP != null && connection.IP != null)
