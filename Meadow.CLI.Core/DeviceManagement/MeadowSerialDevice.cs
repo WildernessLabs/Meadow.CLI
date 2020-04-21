@@ -30,7 +30,8 @@ namespace MeadowCLI.DeviceManagement
         
         const int bootRecoveryTimeMs = 200;
         private ManualResetEvent InitalizedWait = new ManualResetEvent(false);
-
+        
+        public EventHandler<String> ConsoleOutputText;
 
         public MeadowSerialDevice(Connection connection, bool verbose = true)
         {
@@ -69,26 +70,25 @@ namespace MeadowCLI.DeviceManagement
             switch (newStatus)
             {
                 case DeviceStatus.USBConnected:
-                    Console.WriteLine("Meadow: Usb Connected");
+                    ConsoleOutput("Meadow: Usb Connected\n");
                     InitalizedWait.Reset();
                     OpenConnection();
                     break;
                 case DeviceStatus.PortOpen:
-                    Console.WriteLine("Meadow: Connected");
+                    ConsoleOutput("Meadow: Connected\n");
                     ListenForSerialData();
                     break;
                 case DeviceStatus.PortOpenGotInfo:
-                    Console.WriteLine("Meadow: Initalized");
+                    ConsoleOutput("Meadow: Initalized\n");
                     InitalizedWait.Set();
-                    GetRunState(5000);
                     break;
                 case DeviceStatus.Disconnected:
-                    Console.WriteLine("Meadow: Disconnected");
+                    ConsoleOutput("Meadow: Disconnected\n");
                     CloseConnection();
                     InitalizedWait.Reset();
                     break;
                 case DeviceStatus.Reboot:
-                    Console.WriteLine("Meadow: Reboot");
+                    ConsoleOutput("Meadow: Reboot\n");
                     InitalizedWait.Reset();
                     break;
             }
@@ -135,7 +135,7 @@ namespace MeadowCLI.DeviceManagement
                 sw.Start();
                 var result = InitalizedWait.WaitOne(Timeout);
                 sw.Stop();
-                Console.WriteLine($"AwaitReboot: {sw.ElapsedMilliseconds}ms");
+                ConsoleOutput($"AwaitReboot: {sw.ElapsedMilliseconds}ms\n");
                 return result;
             });
         }
@@ -145,7 +145,7 @@ namespace MeadowCLI.DeviceManagement
             var timeOutTask = Task.Delay(timeoutInMs);
             var tcs = new TaskCompletionSource<bool>();
             DeviceStatus? result = null;
-            Console.WriteLine($"AwaitStatus: {string.Join(",",status)}");
+            ConsoleOutput($"AwaitStatus: {string.Join(",",status)}\n");
             var sw = new Stopwatch();
             sw.Start();
             EventHandler<DeviceStatus> handler = (s, e) =>
@@ -161,7 +161,7 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             StatusChange -= handler;
             sw.Stop();
-            Console.WriteLine($"AwaitStatus: {result} {sw.ElapsedMilliseconds}ms");
+            ConsoleOutput($"AwaitStatus: {result} {sw.ElapsedMilliseconds}ms\n");
             return result;
         }
         
@@ -222,7 +222,7 @@ namespace MeadowCLI.DeviceManagement
                 }
                 catch (SocketException)
                 {
-                    Console.WriteLine("Could not connect to socket, aborting...");
+                    ConsoleOutput("Could not connect to socket, aborting...\n");
                     Environment.Exit(1);
                 }
             }
@@ -235,7 +235,6 @@ namespace MeadowCLI.DeviceManagement
                 }
             }
             return false;
-
         }
 
         public async Task<bool> DeleteFile(string filename, int timeoutInMs = 5000)
@@ -320,7 +319,7 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                Console.WriteLine($"Msg: {e.MessageType}");
+                ConsoleOutput($"Msg: {e.MessageType}\n");
 
                 if(e.MessageType == MeadowMessageType.FileListTitle)
                 {
@@ -406,10 +405,12 @@ namespace MeadowCLI.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 5000)
-        {
-            var timeOutTask = Task.Delay(timeoutInMs);
+        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 3000)
+        {            
             bool isDeviceIdSet = false;
+            
+            ConsoleOutput("Device info: Requesting\n");
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
             EventHandler<MeadowMessageEventArgs> handler = null;
@@ -427,12 +428,12 @@ namespace MeadowCLI.DeviceManagement
             dataProcessor.OnReceiveData += handler;
 
             MeadowDeviceManager.GetDeviceInfo(this);
-
-            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
+            
+            await Task.WhenAny(new Task[] { Task.Delay(timeoutInMs), tcs.Task });
             dataProcessor.OnReceiveData -= handler;
             sw.Stop();
 
-            ConsoleOut($"SetDeviceInfo: {isDeviceIdSet} {sw.ElapsedMilliseconds}ms");
+            ConsoleOut($"Device info: {(isDeviceIdSet ? "OK":"Timeout")} {sw.ElapsedMilliseconds}ms\n");
 
             if (isDeviceIdSet) Status = DeviceStatus.PortOpenGotInfo;
             return isDeviceIdSet;
@@ -440,10 +441,13 @@ namespace MeadowCLI.DeviceManagement
         
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public async Task<bool> GetRunState(int timeoutInMs = 5000)
+        public async Task<bool> GetRunState(int timeoutInMs = 3000)
         {
             var timeOutTask = Task.Delay(timeoutInMs);
-            bool isDeviceIdSet = false;
+            bool isRunStateSet = false;
+            
+            ConsoleOutput("Run State: Requesting.\n");
+            
             Stopwatch sw = new Stopwatch();
             sw.Start();
             EventHandler<MeadowMessageEventArgs> handler = null;
@@ -452,9 +456,10 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                if (e.MessageType == MeadowMessageType.Data)
+                if (e.MessageType == MeadowMessageType.Data
+                && e.Message.StartsWith("On reset"))
                 {
-                    isDeviceIdSet = true;
+                    isRunStateSet = !e.Message.Contains("not");
                     tcs.SetResult(true);
                 }
             };
@@ -465,10 +470,10 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             dataProcessor.OnReceiveData -= handler;
             sw.Stop();
+            
+            ConsoleOut($"Run State: {(isRunStateSet ? "Enabled":"Disabled")} {sw.ElapsedMilliseconds}ms\n");
 
-            ConsoleOut($"GetRunState: {isDeviceIdSet} {sw.ElapsedMilliseconds}ms");
-
-            return isDeviceIdSet;
+            return isRunStateSet;
         }
         
 
@@ -476,11 +481,11 @@ namespace MeadowCLI.DeviceManagement
         bool OpenSerialPort(string portName)
         {
             
-            Console.Write($"OpenSerialPort: {portName} Opening.... ");
+            ConsoleOutput($"OpenSerialPort: {portName} Opening.... ");
 
             if ((SerialPort?.IsOpen ?? false) == true)
             {
-                Console.WriteLine("already open!");
+                ConsoleOutput("already open!");
                 return true;
             }
             
@@ -488,7 +493,7 @@ namespace MeadowCLI.DeviceManagement
             if (msSinceConnection < bootRecoveryTimeMs)
             {
                 var waitabit = bootRecoveryTimeMs - msSinceConnection;
-                Console.Write($" waiting {waitabit}ms... ");
+                ConsoleOutput($" waiting {waitabit}ms... ");
                 Thread.Sleep(waitabit);
             }
 
@@ -510,21 +515,28 @@ namespace MeadowCLI.DeviceManagement
                 };
 
                 port.Open();
-                Console.WriteLine("Opened");
+                ConsoleOutput("Opened\n");
 
                 //improves perf on Windows?
-                //   port.BaseStream.ReadTimeout = 0;
+                port.BaseStream.ReadTimeout = 0;
+                   
                 if (port.BytesToRead > 0)
                 {
-                    Console.WriteLine($"Serial: Cleared {port.BytesToRead} bytes from rx buffer");
+                    ConsoleOutput($"Serial: Cleared {port.BytesToRead} bytes from rx buffer\n");
                     port.DiscardInBuffer();
+                }
+                
+                if (port.BytesToWrite > 0)
+                {
+                    ConsoleOutput($"Serial: Cleared {port.BytesToRead} bytes from tx buffer\n");
+                    port.DiscardOutBuffer();
                 }
 
                 SerialPort = port;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                ConsoleOutput($"Error: {ex.Message}\n");
                 return false;
             }
             return true;
@@ -543,8 +555,8 @@ namespace MeadowCLI.DeviceManagement
                 dataProcessor.OnReceiveData += DataReceived;
                 dataProcessor.OnSocketClosed += DataProcessor_SocketClosed;
             }
-            Console.WriteLine("Requesting Device Info");
-            SetDeviceInfo(5000);
+            GetRunState();
+            SetDeviceInfo();
         }
 
 
@@ -568,7 +580,7 @@ namespace MeadowCLI.DeviceManagement
                     // begin with 'App :' and end with a new line. This was wrong.
                     // When the App sends a lot of text quickly the received boundaries
                     // can have no relation to the original App.exe author intended when
-                    // using Console.Write or Console.WriteLine.
+                    // using Console.Write or ConsoleOutput.
                     // This code creates new lines much more closly to the intent of the
                     // original App.exe author.
                     string[] oneLine = args.Message.Split('\n');
@@ -597,7 +609,7 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("Trace: " + args.Message);
                     break;
                 case MeadowMessageType.FileListTitle:
-                    ConsoleOut("File List: ");
+                    ConsoleOut("File List: \n");
                     break;
                 case MeadowMessageType.FileListMember:
                     ConsoleOut(args.Message);
@@ -611,11 +623,11 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("ID: " + args.Message);
                     break;
                 case MeadowMessageType.SerialReconnect:
-                    Console.WriteLine("MeadowMessageType.SerialReconnect");
+                    ConsoleOutput("MeadowMessageType.SerialReconnect\n");
                     //if(AttemptToReconnectToMeadow())
-                    //    ConsoleOut("Successfully reconnected");
+                    //    ConsoleOut("Successfully reconnected\n");
                     //else
-                        //ConsoleOut("Failed to reconnect");
+                        //ConsoleOut("Failed to reconnect\n");
                     break;
             }
         }
@@ -630,7 +642,7 @@ namespace MeadowCLI.DeviceManagement
             else
             {
                 if (SerialPort == null)
-                    throw new ArgumentException("SerialPort cannot be null");
+                    throw new ArgumentException("SerialPort cannot be null\n");
 
                 SerialPort.Write(encodedBytes, start, len);
             }
@@ -639,7 +651,7 @@ namespace MeadowCLI.DeviceManagement
         
         void SetFileAndCrcsFromMessage(string fileListMember)
         {
-            ConsoleOut($"SetFileAndCrcsFromMessage {fileListMember}");
+            ConsoleOut($"SetFileAndCrcsFromMessage {fileListMember}\n");
 
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
@@ -679,19 +691,19 @@ namespace MeadowCLI.DeviceManagement
         */
         void SetDeviceIdFromMessage(string message)
         {
-            var info = message.Split(',');
+            var info = message.Split(new string[] { ",", ": " }, StringSplitOptions.None);
 
-            if (info.Length < 8)
+            if (info.Length < 15)
                 return;
 
             DeviceInfo.Name = info[0];
-            DeviceInfo.Model = info[1];
-            DeviceInfo.MeadowOSVersion = info[2];
-            DeviceInfo.Proccessor = info[3];
-            DeviceInfo.ProcessorId = info[4];
-            DeviceInfo.SerialNumber = info[5];
-            DeviceInfo.CoProcessor = info[6];
-            DeviceInfo.CoProcessorOs = info[7];
+            DeviceInfo.Model = info[2].TrimStart();
+            DeviceInfo.MeadowOSVersion = info[4].TrimStart();
+            DeviceInfo.Proccessor = info[6].TrimStart();
+            DeviceInfo.ProcessorId = info[8].TrimStart();
+            DeviceInfo.SerialNumber = info[10].TrimStart();
+            DeviceInfo.CoProcessor = info[12].TrimStart();
+            DeviceInfo.CoProcessorOs = info[14].TrimStart();
         }
 
         void ConsoleOut(string msg)
@@ -701,7 +713,7 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            Console.WriteLine(msg);
+            ConsoleOutput(msg);
         }
 
         void ConsoleOutNoEol(string msg)
@@ -711,12 +723,20 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            Console.Write(msg);
+            ConsoleOutput(msg);
         }
 
         void DataProcessor_SocketClosed(object sender, EventArgs e)
         {
             if ((int)Status >= 100) Status = DeviceStatus.Disconnected;
+        }
+
+        void ConsoleOutput(string text)
+        {
+            ConsoleOutputText?.Invoke(this,text);
+#if DEBUG
+            Console.Write(text);
+#endif
         }
 
         public void CloseConnection()
