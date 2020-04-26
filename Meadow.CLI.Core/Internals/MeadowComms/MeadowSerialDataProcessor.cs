@@ -43,6 +43,7 @@ namespace MeadowCLI.Hcom
         //collapse to one and use enum
         public EventHandler<MeadowMessageEventArgs> OnReceiveData;
         public EventHandler OnSocketClosed;
+        public EventHandler<string> ConsoleText;
         
         HostCommBuffer _hostCommBuffer;
         RecvFactoryManager _recvFactoryManager;
@@ -66,14 +67,14 @@ namespace MeadowCLI.Hcom
 
         public MeadowSerialDataProcessor(SerialPort serialPort) : this()
         {
-            ConsoleOut($"MeadowSerialDataProcessor: Opening {serialPort.PortName}");
+            ConsoleOut($"MeadowSerialDataProcessor: Opening {serialPort.PortName}\n");
             this.serialPort = serialPort;
             var t = ReadSerialPortAsync();
         }
 
         public MeadowSerialDataProcessor(Socket socket) : this()
         {
-            ConsoleOut($"MeadowSerialDataProcessor: Opening {socket.LocalEndPoint}");
+            ConsoleOut($"MeadowSerialDataProcessor: Opening {socket.LocalEndPoint}\n");
             this.socket = socket;
             var t = ReadSocketAsync();
             
@@ -99,7 +100,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                if (socket?.Connected ?? false) ConsoleOut($"ReadSocketAsync: {ex}");
+                if (socket?.Connected ?? false) ConsoleOut($"ReadSocketAsync: {ex}\n");
             }
             finally
             {
@@ -137,7 +138,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                if (serialPort?.IsOpen ?? false) ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                if (serialPort?.IsOpen ?? false) ConsoleOut($"Exception: {ex} may mean the target connection dropped\n");
             }
             finally
             {
@@ -212,7 +213,7 @@ namespace MeadowCLI.Hcom
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfXmitPacket}");
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfXmitPacket}\n");
                     Thread.Sleep(1000);
                     Debug.Assert(false);
                 }
@@ -228,7 +229,7 @@ namespace MeadowCLI.Hcom
                 // any others that were queued along the usb serial pipe line.
                 if (packetLength == 1)
                 {
-                    //ConsoleOut("Throwing out 0x00 from buffer");
+                    //ConsoleOut("Throwing out 0x00 from buffer\n");
                     continue;
                 }
 
@@ -264,76 +265,76 @@ namespace MeadowCLI.Hcom
                     switch(processor.RequestType)
                     {
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
-                            ConsoleOut("Request Undefined"); // TESTING
+                            ConsoleOut("Request Undefined\n"); // TESTING
                             break;
 
                             // This set are responses to request issued by this application
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                            ConsoleOut("Request Rejected"); // TESTING
+                            ConsoleOut("Request Rejected\n"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            ConsoleOut($"protocol-Request Accepted"); // TESTING
+                            ConsoleOut($"protocol-Request Accepted\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            ConsoleOut($"protocol-Request Concluded"); // TESTING
+                            ConsoleOut($"protocol-Request Concluded\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            ConsoleOut("Request Error"); // TESTING
+                            ConsoleOut("Request Error\n"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            ConsoleOut("protocol-Request Information"); // TESTING
+                            ConsoleOut("protocol-Request Information\n"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            ConsoleOut("protocol-Request File List Header received"); // TESTING
+                            ConsoleOut("protocol-Request File List Header received\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
-                            ConsoleOut("protocol-Request File List Member received"); // TESTING
+                            ConsoleOut("protocol-Request File List Member received\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
-                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_CRC_MEMBER"); // TESTING
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_CRC_MEMBER\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
-                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_MONO_MSG"); // TESTING
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_MONO_MSG\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
-                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_DEVICE_INFO"); // TESTING
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_DEVICE_INFO\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG:
-                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_TRACE_MSG"); // TESTING
+                            ConsoleOut("protocol-Request HCOM_HOST_REQUEST_TEXT_TRACE_MSG\n"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowTrace, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
-                            ConsoleOut($"Host Serial Reconnect"); // TESTING
+                            ConsoleOut($"Host Serial Reconnect\n"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
                         // Debug message from Meadow for Visual Studio
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG:
-                            ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
+                            ConsoleOut($"Debugging message from Meadow for Visual Studio\n"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
                         default:
-                            ConsoleOut($"Unknown message {processor.RequestType}");
+                            ConsoleOut($"Unknown message {processor.RequestType}\n");
                             break;
 
                     }
@@ -346,7 +347,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex}");
+                ConsoleOut($"Exception: {ex}\n");
                 return false;
             }
         }
@@ -354,7 +355,8 @@ namespace MeadowCLI.Hcom
         void ConsoleOut(string msg)
         {
 #if DEBUG
-            Console.WriteLine(msg);
+            ConsoleText?.Invoke(this,msg);
+            Console.Write(msg);
 #endif
         }
 
@@ -365,7 +367,7 @@ namespace MeadowCLI.Hcom
         // Test the message and if it fails it's trashed.
         if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
         {
-            ConsoleOut("Corrupted message, first 2 bytes not 0x00");
+            ConsoleOut("Corrupted message, first 2 bytes not 0x00\n");
             continue;
         }
 

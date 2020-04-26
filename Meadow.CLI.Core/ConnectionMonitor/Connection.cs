@@ -93,7 +93,7 @@ namespace Meadow.CLI.DeviceMonitor
                    if (this.USB.DeviceNumber == connection.USB.DeviceNumber) return true;
                    //If the new device has a higher device number, than a previous recent disconnect
                    if (this.Removed && this.USB.DeviceNumber < connection.USB.DeviceNumber
-                       && (connection.TimeConnected - this.TimeRemoved).TotalSeconds < 2 )
+                       && (connection.TimeConnected - this.TimeRemoved).TotalSeconds < 3 )
                    {
                         return true;
                    }

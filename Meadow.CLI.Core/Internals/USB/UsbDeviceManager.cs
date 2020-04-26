@@ -35,10 +35,8 @@ namespace Meadow.CLI.DeviceManagement
         public IDeviceNotifier UsbDeviceNotifier;
 
 
-        private UsbDeviceManager()
+        public UsbDeviceManager()
         {
-
-            
             this.PopulateInitialDeviceList();
 
             //Try to use notifier
