@@ -33,6 +33,12 @@ namespace MeadowCLI.DeviceManagement
         
         public EventHandler<String> ConsoleOutputText;
 
+
+        public MeadowSerialDevice(bool verbose = true)
+        {
+            Verbose = verbose;
+        }
+
         public MeadowSerialDevice(Connection connection, bool verbose = true)
         {
             Verbose = verbose;
@@ -60,6 +66,21 @@ namespace MeadowCLI.DeviceManagement
                     _status = value;
                     StatusChange?.Invoke(this, value);
                     StatusChangeAction(value);
+                }
+            }
+        }
+
+        public EventHandler<bool?> RunStateChange;
+        private bool? _runState = false;
+        public bool? RunState
+        {
+            get { return _runState; }
+            private set
+            {
+                if (!_runState.HasValue || _runState.Value != value)
+                {
+                    _runState = value;
+                    RunStateChange?.Invoke(this, value);
                 }
             }
         }
@@ -208,17 +229,20 @@ namespace MeadowCLI.DeviceManagement
         }
 
 
-        private bool OpenConnection()
+        private async Task<bool> OpenConnection()
         {
             if (connection?.IP?.Endpoint != null)
             {
                 Socket = new Socket(connection.IP.Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 try
-                {
-                    Socket.Connect(connection.IP.Endpoint);
-                    Status = DeviceStatus.PortOpen;
-                    return true;
+                {                
+                    await Socket.ConnectAsync(connection.IP.Endpoint);
+                    if (Socket.Connected)
+                    {
+                        Status = DeviceStatus.PortOpen;
+                        return true;
+                    }
                 }
                 catch (SocketException)
                 {
@@ -294,7 +318,7 @@ namespace MeadowCLI.DeviceManagement
                 }
             };
             dataProcessor.OnReceiveData += handler;
-
+            
             MeadowFileManager.WriteFileToFlash(this, Path.Combine(path, filename), filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
@@ -472,7 +496,8 @@ namespace MeadowCLI.DeviceManagement
             sw.Stop();
             
             ConsoleOut($"Run State: {(isRunStateSet ? "Enabled":"Disabled")} {sw.ElapsedMilliseconds}ms\n");
-
+            
+            RunState = isRunStateSet;
             return isRunStateSet;
         }
         
@@ -510,8 +535,8 @@ namespace MeadowCLI.DeviceManagement
                     Handshake = Handshake.None,
 
                     // Set the read/write timeouts
-                    ReadTimeout = -1,
-                    WriteTimeout = 5000
+                    ReadTimeout = SerialPort.InfiniteTimeout,
+                    WriteTimeout = 2000                    
                 };
 
                 port.Open();
@@ -547,16 +572,25 @@ namespace MeadowCLI.DeviceManagement
             if (Socket != null)
             {
                 dataProcessor = new MeadowSerialDataProcessor(Socket);
-                dataProcessor.OnReceiveData += DataReceived;
-                dataProcessor.OnSocketClosed += DataProcessor_SocketClosed;
             } else if (SerialPort?.IsOpen ?? false)
             {
                 dataProcessor = new MeadowSerialDataProcessor(SerialPort);
+            }
+
+            if (dataProcessor != null)
+            {
                 dataProcessor.OnReceiveData += DataReceived;
                 dataProcessor.OnSocketClosed += DataProcessor_SocketClosed;
+                if (Verbose) dataProcessor.ConsoleText += DataProcessor_ConsoleText;
+                GetRunState(1000);
+                SetDeviceInfo(1000);
+                GetRunState(1000); //Possible meadow bug on first request after a reboot. Check again.
             }
-            GetRunState();
-            SetDeviceInfo();
+        }
+
+        void DataProcessor_ConsoleText(object sender, string text)
+        {
+            ConsoleOutputText?.Invoke(this,text);
         }
 
 
@@ -571,7 +605,7 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    ConsoleOut("Data: " + args.Message);
+                    ConsoleOut($"Data: {args.Message}\n" );
                     break;
                 case MeadowMessageType.AppOutput:
                     // The received text is straight from mono via hcom and may not be
@@ -606,7 +640,7 @@ namespace MeadowCLI.DeviceManagement
                     }
                     break;
                 case MeadowMessageType.MeadowTrace:
-                    ConsoleOut("Trace: " + args.Message);
+                    ConsoleOut("Trace: {args.Message}\n");
                     break;
                 case MeadowMessageType.FileListTitle:
                     ConsoleOut("File List: \n");
@@ -620,7 +654,7 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.DeviceInfo:
                     //ToDo move this
                     SetDeviceIdFromMessage(args.Message);
-                    ConsoleOut("ID: " + args.Message);
+                    ConsoleOut($"ID: {args.Message}\n");
                     break;
                 case MeadowMessageType.SerialReconnect:
                     ConsoleOutput("MeadowMessageType.SerialReconnect\n");
@@ -745,6 +779,7 @@ namespace MeadowCLI.DeviceManagement
             {
                 dataProcessor.OnReceiveData -= DataReceived;
                 dataProcessor.OnSocketClosed -= DataProcessor_SocketClosed;
+                if (Verbose) dataProcessor.ConsoleText -= DataProcessor_ConsoleText;
                 dataProcessor = null;
             }
             SerialPort?.Dispose();

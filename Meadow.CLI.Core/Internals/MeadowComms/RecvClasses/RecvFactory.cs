@@ -43,7 +43,9 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             HcomHostRequestType rqstType = HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST;
             try
             {
+#if DEBUG            
                 Console.WriteLine($"RX: {BitConverter.ToString(recvdMsg,0,receivedMsgLen)}");
+#endif                
                 rqstType = FindRequestTypeValue(recvdMsg);
                 RecvMessageFactory factory = _factories[rqstType];
                 return factory.Create(recvdMsg, receivedMsgLen);
