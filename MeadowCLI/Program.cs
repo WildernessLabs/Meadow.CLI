@@ -306,6 +306,10 @@ namespace MeadowCLI
               {
                   MeadowDeviceManager.MonoRunState(MeadowDeviceManager.CurrentDevice);
               }
+              else if (options.MonoFlash)
+              {
+                  MeadowDeviceManager.MonoFlash(MeadowDeviceManager.CurrentDevice);
+              }
               else if (options.GetDeviceInfo)
               {
                   MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);

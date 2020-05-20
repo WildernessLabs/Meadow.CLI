@@ -150,6 +150,13 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
+        public static void MonoFlash(MeadowSerialDevice meadow)
+        {
+             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH;
+
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
         public static void GetDeviceInfo(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
