@@ -239,18 +239,18 @@ namespace MeadowCLI
               else if (options.ListFiles)
               {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of a files on partition {options.Partition}");
+                  Console.WriteLine($"Getting list of files on partition {options.Partition}");
 #else
-                  Console.WriteLine($"Getting list of a files");
+                  Console.WriteLine($"Getting list of files");
 #endif
                   MeadowFileManager.ListFiles(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               else if (options.ListFilesAndCrcs)
               {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of a files and Crcs on partition {options.Partition}");
+                  Console.WriteLine($"Getting list of files and CRCs on partition {options.Partition}");
 #else
-                  Console.WriteLine("Getting list of a files and Crcs");
+                  Console.WriteLine("Getting list of files and CRCs");
 #endif
                   MeadowFileManager.ListFilesAndCrcs(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
