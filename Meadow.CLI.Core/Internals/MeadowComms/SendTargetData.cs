@@ -12,7 +12,7 @@ namespace MeadowCLI.Hcom
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0005;
+        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;
         const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
