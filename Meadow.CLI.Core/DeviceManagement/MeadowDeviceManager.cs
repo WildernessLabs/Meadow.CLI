@@ -204,6 +204,20 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
+        public static void Uart1Apps(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART;
+
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static void Uart1Trace(MeadowSerialDevice meadow)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART;
+
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
         public static void RenewFileSys(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS;

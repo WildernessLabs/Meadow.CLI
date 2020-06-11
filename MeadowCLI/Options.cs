@@ -89,6 +89,10 @@ namespace MeadowCLI
         public bool TraceDisable { get; set; }
         [Option(longName: "TraceEnable", Required = false, HelpText = "Request Meadow to send internal trace messages")]
         public bool TraceEnable { get; set; }
+        [Option(longName: "Uart1Apps", Required = false, HelpText = "Use Uart1 for .NET apps")]
+        public bool Uart1Apps { get; set; }
+        [Option(longName: "Uart1Trace", Required = false, HelpText = "Use Uart1 for outputting Meadow trace messages")]
+        public bool Uart1Trace { get; set; }
         [Option(longName: "QspiWrite", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool QspiWrite { get; set; }
         [Option(longName: "QspiRead", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
