@@ -57,7 +57,7 @@ namespace MeadowCLI.DeviceManagement
                 meadow.SerialPort.Close();
                 return null;
             }
-            catch //(Exception ex)
+            catch (Exception ex)
             {
                 //swallow for now
                 return null;
@@ -108,11 +108,12 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)level);
         }
 
-        public static void ResetMeadow(MeadowSerialDevice meadow, int userData)
+        public static async Task<bool> ResetMeadow(MeadowSerialDevice meadow, int userData)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU;
-
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
+            await Task.Delay(3000);
+            return true;
         }
 
         public static void EnterDfuMode(MeadowSerialDevice meadow)
@@ -129,18 +130,20 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint) 1);
         }
 
-        public static void MonoDisable(MeadowSerialDevice meadow)
+        public static async Task<bool> MonoDisable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE;
-
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            await Task.Delay(3000);
+            return true;
         }
 
-        public static void MonoEnable(MeadowSerialDevice meadow)
+        public static async Task<bool> MonoEnable(MeadowSerialDevice meadow)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE;
-
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            await Task.Delay(3000);
+            return true;
         }
 
         public static void MonoRunState(MeadowSerialDevice meadow)
@@ -150,11 +153,13 @@ namespace MeadowCLI.DeviceManagement
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
-        public static void MonoFlash(MeadowSerialDevice meadow)
+        public static async Task<bool> MonoFlash(MeadowSerialDevice meadow)
         {
              _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH;
 
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+
+            return await WaitForResponseMessage(meadow, x => x.Message.StartsWith("Mono runtime successfully flashed"));
         }
 
         public static void GetDeviceInfo(MeadowSerialDevice meadow)
@@ -304,6 +309,29 @@ namespace MeadowCLI.DeviceManagement
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32;
 
             new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 300000)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            var result = false;
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (filter(e))
+                {
+                    tcs.SetResult(true);
+                    result = true;
+                }
+            };
+
+            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData += handler;
+
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(millisecondDelay) });
+
+            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
+
+            return result;
         }
     }
 }
