@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -12,7 +14,7 @@ namespace MeadowCLI.DeviceManagement
 
         static MeadowFileManager() { }
 
-        public static void WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
+        public static async Task<bool> WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
             int partition = 0)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
@@ -27,7 +29,10 @@ namespace MeadowCLI.DeviceManagement
             if (csvArray.Length == 1)
             {
                 // No CSV, just the source file name. So we'll assume the targetFileName is correct
-                TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
+                await Task.WhenAll(
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message.StartsWith("Download success")));
+                return true;
             }
             else
             {
@@ -36,7 +41,7 @@ namespace MeadowCLI.DeviceManagement
                 if (csvArray.Length % 2 != 0)
                 {
                     Console.WriteLine("Please provide a CSV input with file names \"source, destination, source, destination\"");
-                    return;
+                    return false;
                 }
 
                 for (int i = 0; i < csvArray.Length; i += 2)
@@ -46,6 +51,7 @@ namespace MeadowCLI.DeviceManagement
                         partition, 0, false);
                 }
             }
+            return false;
         }
 
         public static void DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
@@ -55,12 +61,15 @@ namespace MeadowCLI.DeviceManagement
             TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, 0, true);
         }
 
-        public static void EraseFlash(MeadowSerialDevice meadow)
+        public static async Task<bool> EraseFlash(MeadowSerialDevice meadow)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
-
             new SendTargetData(meadow).SendSimpleCommand(meadowRequestType);
+
+            return await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message == "Bulk erase completed");
         }
+
+        
 
         public static void VerifyErasedFlash(MeadowSerialDevice meadow)
         {

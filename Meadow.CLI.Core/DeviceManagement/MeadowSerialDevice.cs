@@ -24,7 +24,8 @@ namespace MeadowCLI.DeviceManagement
         private string serialPortName;
         public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
-        private MeadowSerialDataProcessor dataProcessor;
+        public MeadowSerialDataProcessor DataProcessor { get; private set; }
+
         private bool addAppOnNextOutput;
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
@@ -94,7 +95,7 @@ namespace MeadowCLI.DeviceManagement
             return true;
         }
 
-        public async Task<bool> DeleteFile(string filename, int timeoutInMs = 5000)
+        public async Task<bool> DeleteFile(string filename, int timeoutInMs = 10000)
         {
             if (SerialPort == null)
             {
@@ -111,18 +112,18 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                if (e.Message.Contains("deleted. No errors reported"))
+                if (e.Message.StartsWith("Delete success"))
                 {
                     result = true;
                     tcs.SetResult(true);
                 }
             };
-            dataProcessor.OnReceiveData += handler;
+            DataProcessor.OnReceiveData += handler;
 
             MeadowFileManager.DeleteFile(this, filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            dataProcessor.OnReceiveData -= handler;
+            DataProcessor.OnReceiveData -= handler;
 
             return result;
         }
@@ -150,12 +151,12 @@ namespace MeadowCLI.DeviceManagement
                     tcs.SetResult(true);
                 }
             };
-            dataProcessor.OnReceiveData += handler;
+            DataProcessor.OnReceiveData += handler;
 
             MeadowFileManager.WriteFileToFlash(this, Path.Combine(path, filename), filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            dataProcessor.OnReceiveData -= handler;
+            DataProcessor.OnReceiveData -= handler;
 
             return result;
         }
@@ -199,12 +200,12 @@ namespace MeadowCLI.DeviceManagement
                     tcs.TrySetResult(true);
                 } 
             };
-            dataProcessor.OnReceiveData += handler;
+            DataProcessor.OnReceiveData += handler;
 
             MeadowFileManager.ListFilesAndCrcs(this);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            dataProcessor.OnReceiveData -= handler; 
+            DataProcessor.OnReceiveData -= handler; 
 
             return (FilesOnDevice, FileCrcs);
         }
@@ -249,12 +250,12 @@ namespace MeadowCLI.DeviceManagement
                         tcs.SetResult(true);
                     }
                 };
-                dataProcessor.OnReceiveData += handler;
+                DataProcessor.OnReceiveData += handler;
 
                 MeadowFileManager.ListFiles(this);
 
                 await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-                dataProcessor.OnReceiveData -= handler;
+                DataProcessor.OnReceiveData -= handler;
             }
 
             return FilesOnDevice;
@@ -279,12 +280,12 @@ namespace MeadowCLI.DeviceManagement
                     tcs.SetResult(true);
                 }
             };
-            dataProcessor.OnReceiveData += handler;
+            if(DataProcessor != null) DataProcessor.OnReceiveData += handler;
 
             MeadowDeviceManager.GetDeviceInfo(this);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            dataProcessor.OnReceiveData -= handler;
+            if (DataProcessor != null) DataProcessor.OnReceiveData -= handler;
 
             return isDeviceIdSet;
         }
@@ -315,7 +316,7 @@ namespace MeadowCLI.DeviceManagement
 
                 SerialPort = port;
             }
-            catch
+            catch(Exception ex)
             {
                 return false; //serial port couldn't be opened .... that's ok
             }
@@ -326,14 +327,14 @@ namespace MeadowCLI.DeviceManagement
         {
             if (Socket != null)
             {
-                dataProcessor = new MeadowSerialDataProcessor(Socket);
+                DataProcessor = new MeadowSerialDataProcessor(Socket);
 
-                dataProcessor.OnReceiveData += DataReceived;
+                DataProcessor.OnReceiveData += DataReceived;
             } else if (SerialPort != null)
             {
-                dataProcessor = new MeadowSerialDataProcessor(SerialPort);
+                DataProcessor = new MeadowSerialDataProcessor(SerialPort);
 
-                dataProcessor.OnReceiveData += DataReceived;
+                DataProcessor.OnReceiveData += DataReceived;
             }
         }
 
