@@ -334,6 +334,16 @@ namespace MeadowCLI
                   Console.WriteLine("Enabling Meadow trace messages");
                   MeadowDeviceManager.TraceEnable(MeadowDeviceManager.CurrentDevice);
               }
+              else if (options.Uart1Apps)
+              {
+                  Console.WriteLine("Use Uart1 for .NET Apps");
+                  MeadowDeviceManager.Uart1Apps(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.Uart1Trace)
+              {
+                  Console.WriteLine("Use Uart1 for outputting Meadow trace messages");
+                  MeadowDeviceManager.Uart1Trace(MeadowDeviceManager.CurrentDevice);
+              }
               else if (options.RenewFileSys)
               {
                   Console.WriteLine("Recreate a new file system on Meadow");
