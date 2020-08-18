@@ -100,8 +100,8 @@ namespace MeadowCLI
         [Option(longName: "QspiInit", Required = false, HelpText = "Set developer3 (0 to 4,294,967,295)")]
         public bool QspiInit { get; set; }
 
-        [Option(longName: "VSDebugging", Required = false, HelpText = "Enables MeadowCLI to interact with Visual Studio")]
-        public bool VSDebugging { get; set; }
+        [Option(longName: "VSDebug", Required = false, HelpText = "Enables MeadowCLI to interact with Visual Studio")]
+        public bool VSDebug { get; set; }
         [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
         public int VSDebugPort { get; set; }
 

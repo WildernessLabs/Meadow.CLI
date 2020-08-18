@@ -128,4 +128,4 @@ The following should never be used for file system creation. This is automatical
 
 The following have not been implemented  
 `Meadow.CLI --EnterDfuMode`  
-`Meadow.CLI --VSDebugging --VSDebugPort [TCP/IP Port]`  
+`Meadow.CLI --VSDebug --VSDebugPort [TCP/IP Port]`  
