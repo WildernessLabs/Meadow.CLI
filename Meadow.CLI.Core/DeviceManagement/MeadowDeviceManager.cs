@@ -265,8 +265,8 @@ namespace MeadowCLI.DeviceManagement
             debuggingServer.SendToVisualStudio(debuggerData);
         }
 
-        // Enter VSDebugging mode.
-        public static void VSDebugging(int vsDebugPort)
+        // Enter VSDebug mode.
+        public static void VSDebug(int vsDebugPort)
         {
             // Create an instance of the TCP socket send/receiver class and
             // starts it receiving.

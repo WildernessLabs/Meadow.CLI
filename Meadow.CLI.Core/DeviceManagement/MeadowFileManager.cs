@@ -47,8 +47,9 @@ namespace MeadowCLI.DeviceManagement
                 for (int i = 0; i < csvArray.Length; i += 2)
                 {
                     // Send files one-by-one
+                    bool lastFile = i == csvArray.Length - 2 ? true : false;
                     TransmitFileInfoToExtFlash(meadow, meadowRequestType, csvArray[i].Trim(), csvArray[i + 1].Trim(),
-                        partition, 0, false);
+                        partition, 0, false, lastFile);
                 }
             }
             return false;
@@ -134,7 +135,8 @@ namespace MeadowCLI.DeviceManagement
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER;
 
             // For the ESP32 on the meadow, we don't need the target file name, we just need the
-            // MCU's destination address and the file's binary.  
+            // MCU's destination address and the file's binary.
+            // Assume if no mcuDestAddr that the fileName is a CSV with both file names and Mcu Addr
             if (mcuDestAddr != null)
             {
                 // Since the mcuDestAddr is used we'll assume the fileName field just contains
@@ -166,33 +168,37 @@ namespace MeadowCLI.DeviceManagement
                 // At this point, the fileName field should contain a CSV string containing the destination
                 // addresses followed by file's location within the host's file system.
                 // E.g. "0x8000, C:\Blink\partition-table.bin, 0x1000, C:\Blink\bootloader.bin, 0x10000, C:\Blink\blink.bin"
-                string[] fileInfo = fileName.Split(',');
-                if (fileInfo.Length % 2 != 0)
+                string[] fileElement = fileName.Split(',');
+                if (fileElement.Length % 2 != 0)
                 {
                     Console.WriteLine("Please provide a CSV input with \"address, fileName, address, fileName\"");
                     return;
                 }
 
                 UInt32 mcuAddr;
-                for (int i = 0; i < fileInfo.Length; i += 2)
+                for (int i = 0; i < fileElement.Length; i += 2)
                 {
-                    fileInfo[i] = fileInfo[i].Trim();
-                    fileInfo[i + 1] = fileInfo[i + 1].Trim();
+                    // Trim any white space from this mcu addr and file name
+                    fileElement[i] = fileElement[i].Trim();
+                    fileElement[i + 1] = fileElement[i + 1].Trim();
 
-                    if (fileInfo[i].StartsWith("0x") || fileInfo[i].StartsWith("0X"))
+                    if (fileElement[i].StartsWith("0x") || fileElement[i].StartsWith("0X"))
                     {
-                        mcuAddr = UInt32.Parse(fileInfo[i].Substring(2), System.Globalization.NumberStyles.HexNumber);
+                        // Fill in the Mcu Addr
+                        mcuAddr = UInt32.Parse(fileElement[i].Substring(2), System.Globalization.NumberStyles.HexNumber);
                     }
                     else
                     {
                         Console.WriteLine("Please provide a CSV input with addresses like 0x1234");
                         return;
                     }
-
+                    // Meadow.CLI --Esp32WriteFile --SerialPort Com26 --File
+                    // "0x8000, C:\Download\Esp32\Hello\partition-table.bin, 0x1000, C:\Download\Esp32\Hello\bootloader.bin, 0x10000, C:\Download\Esp32\Hello\hello-world.bin"
                     // File Path and Name
-                    targetFileName = Path.GetFileName(fileInfo[i + 1]);
-                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileInfo[i + 1], targetFileName,
-                    partition, mcuAddr, false, i == fileInfo.Length - 1 ? true : false);
+                    targetFileName = Path.GetFileName(fileElement[i + 1]);
+                    bool lastFile = i == fileElement.Length - 2 ? true : false;
+                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileElement[i + 1], targetFileName,
+                    partition, mcuAddr, false, lastFile);
                 }
             }
         }
