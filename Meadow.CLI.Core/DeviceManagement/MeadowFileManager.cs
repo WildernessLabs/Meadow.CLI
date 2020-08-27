@@ -29,9 +29,7 @@ namespace MeadowCLI.DeviceManagement
             if (csvArray.Length == 1)
             {
                 // No CSV, just the source file name. So we'll assume the targetFileName is correct
-                await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),
-                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message.StartsWith("Download success")));
+                TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
                 return true;
             }
             else
