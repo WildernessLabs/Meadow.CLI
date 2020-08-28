@@ -61,7 +61,7 @@ The Mono runtime can be prevented from running and re-enabled using the followin
 `MeadowCLI.exe --MonoDisable --SerialPort [NameOfSerialPort]` - Disables Mono from running  
 `MeadowCLI.exe --MonoEnable --SerialPort [NameOfSerialPort]` - Enables Mono to run  
 `MeadowCLI.exe --MonoRunState --SerialPort [NameOfSerialPort]` - Reports if the Mono runtime will run after Meadow is restarted.  
-`Meadow.CLI --MonoFlash --SerialPort [NameOfSerialPort]` - copies the Meadow.OS.Runtime.bin file from the Meadow's file system to flash where is will be executed. Once this command is executed the Meadow.OS.Runtime.bin file can be deleted from the Meadow file system.  
+`Meadow.CLI --MonoFlash --SerialPort [NameOfSerialPort] --KeepAlive` - copies the Meadow.OS.Runtime.bin file from the Meadow's file system to flash where is will be executed. Once this command is executed the Meadow.OS.Runtime.bin file can be deleted from the Meadow file system. Suggestion: use with the `--KeepAlive`  
 
 ### Meadow File System
 
@@ -128,4 +128,4 @@ The following should never be used for file system creation. This is automatical
 
 The following have not been implemented  
 `Meadow.CLI --EnterDfuMode`  
-`Meadow.CLI --VSDebugging --VSDebugPort [TCP/IP Port]`  
+`Meadow.CLI --VSDebug --VSDebugPort [TCP/IP Port]`  

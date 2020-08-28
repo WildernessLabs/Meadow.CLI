@@ -57,7 +57,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                         }
                         
                         activeClient = new ActiveClient(this, tcpClient);
-                        activeClient.ReceiveVSDebugging();
+                        activeClient.ReceiveVSDebug();
                         activeClientCount++;
                     });
                 }
@@ -104,7 +104,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 tcpClient.Close();      // Closes NetworkStream too
             }
 
-            internal async void ReceiveVSDebugging()
+            internal async void ReceiveVSDebug()
             {
                 //Console.WriteLine("ActiveClient:Start receiving");
                 try
