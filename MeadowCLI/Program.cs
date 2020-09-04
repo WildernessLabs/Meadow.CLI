@@ -310,6 +310,12 @@ namespace MeadowCLI
               {
                   MeadowDeviceManager.MonoFlash(MeadowDeviceManager.CurrentDevice);
               }
+              else if (options.MonoUpdateRt)
+              {
+                  MeadowFileManager.MonoUpdateRt(MeadowDeviceManager.CurrentDevice,
+                    options.FileName, options.TargetFileName, options.Partition);
+
+              }
               else if (options.GetDeviceInfo)
               {
                   MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
@@ -371,35 +377,34 @@ namespace MeadowCLI
                   Console.WriteLine($"Ready for Visual Studio debugging");
                   options.KeepAlive = true;
               }
-                else if (options.Esp32WriteFile)
-                {
-                    if (string.IsNullOrEmpty(options.FileName))
-                    {
-                        Console.WriteLine($"option --Esp32WriteFile requires option --File (the local file you wish to write)");
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(options.TargetFileName))
-                        {
-                            Console.WriteLine($"Writing {options.FileName} to ESP32");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
-                        }
-                        MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
-                            options.FileName, options.TargetFileName, options.Partition, options.McuDestAddr);
-                    }
-                }
-                else if (options.Esp32ReadMac)
-                {
-                    MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
-                }
-                else if (options.Esp32Restart)
-                {
-                    MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
-                }
-
+              else if (options.Esp32WriteFile)
+              {
+                  if (string.IsNullOrEmpty(options.FileName))
+                  {
+                      Console.WriteLine($"option --Esp32WriteFile requires option --File (the local file you wish to write)");
+                  }
+                  else
+                  {
+                      if (string.IsNullOrEmpty(options.TargetFileName))
+                      {
+                          Console.WriteLine($"Writing {options.FileName} to ESP32");
+                      }
+                      else
+                      {
+                          Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
+                      }
+                      MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
+                          options.FileName, options.TargetFileName, options.Partition, options.McuDestAddr);
+                  }
+              }
+              else if (options.Esp32ReadMac)
+              {
+                  MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.Esp32Restart)
+              {
+                  MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
+              }
             }
             catch (IOException ex)
             {
