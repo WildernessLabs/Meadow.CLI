@@ -56,6 +56,8 @@ namespace MeadowCLI
         public bool MonoRunState { get; set; }
         [Option(longName: "MonoFlash", Required = false, HelpText = "Flashes Mono runtime to the external flash")]
         public bool MonoFlash { get; set; }
+        [Option(longName: "MonoUpdateRt", Required = false, HelpText = "Download runtime files and flashes Mono runtime to flash")]
+        public bool MonoUpdateRt { get; set; }
         [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Enable mono so it can run")]
         public bool GetDeviceInfo { get; set; }
 

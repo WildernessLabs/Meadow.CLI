@@ -60,6 +60,20 @@ namespace MeadowCLI.DeviceManagement
             TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, 0, true);
         }
 
+        public static void MonoUpdateRt(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
+            int partition = 0)
+        {
+            meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME;
+
+            if (string.IsNullOrWhiteSpace(targetFileName))
+            {
+                targetFileName = Path.GetFileName(fileName);
+            }
+
+            // Just the source file name. So we'll assume the targetFileName is correct
+            TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
+        }
+
         public static async Task<bool> EraseFlash(MeadowSerialDevice meadow)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
@@ -67,8 +81,6 @@ namespace MeadowCLI.DeviceManagement
 
             return await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message == "Bulk erase completed");
         }
-
-        
 
         public static void VerifyErasedFlash(MeadowSerialDevice meadow)
         {
@@ -314,6 +326,8 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_FLASH = 0x19 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART = 0x1a | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_NO_TRACE_TO_UART = 0x1b | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME = 0x1c | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END = 0x1d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,

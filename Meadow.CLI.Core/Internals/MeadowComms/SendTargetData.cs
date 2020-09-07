@@ -68,9 +68,20 @@ namespace MeadowCLI.Hcom
                 }
 
                 //--------------------------------------------------------------
-                // Build and send the trailer
-                BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
-                    lastInSeries ? (uint)1 : (uint)0);      // set UserData
+                // Build and send the correct trailer
+                switch(requestType)
+                {
+                    // Provide the correct message end depending on the reason the file
+                    // is being downloaded to the F7 file system.
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER:
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
+                        break;
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME:
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
+                        break;
+                }
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
