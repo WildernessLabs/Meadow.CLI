@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Meadow.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "--WriteFile --File Meadow.dll"
+    }
+  }
+}

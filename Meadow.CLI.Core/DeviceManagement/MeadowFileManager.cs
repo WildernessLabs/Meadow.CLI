@@ -28,8 +28,12 @@ namespace MeadowCLI.DeviceManagement
             string[] csvArray = fileName.Split(',');
             if (csvArray.Length == 1)
             {
+                await Task.WhenAll(
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),	
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message.StartsWith("Download success")));
+
                 // No CSV, just the source file name. So we'll assume the targetFileName is correct
-                TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
+                //TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
                 return true;
             }
             else
@@ -65,7 +69,7 @@ namespace MeadowCLI.DeviceManagement
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE;
             new SendTargetData(meadow).SendSimpleCommand(meadowRequestType);
 
-            return await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message == "Bulk erase completed");
+            return await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.Message.StartsWith("Bulk erase completed"));
         }
 
         

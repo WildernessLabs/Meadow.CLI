@@ -153,7 +153,7 @@ namespace MeadowCLI.DeviceManagement
             };
             DataProcessor.OnReceiveData += handler;
 
-            MeadowFileManager.WriteFileToFlash(this, Path.Combine(path, filename), filename);
+            await MeadowFileManager.WriteFileToFlash(this, Path.Combine(path, filename), filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler;
