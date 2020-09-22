@@ -17,6 +17,7 @@ Note: All commands require the name of the serial port at least once. The serial
 `Meadow.CLI --MonoEnable`  
 `Meadow.CLI --MonoRunState`  
 `Meadow.CLI --MonoFlash`  
+`Meadow.CLI --MonoUpdateRt`
 
 `Meadow.CLI --WriteFile --File | -f [FilePathAndName]`  
 `Meadow.CLI --DeleteFile --TargetFileName App.exe`  
@@ -62,10 +63,11 @@ The Mono runtime can be prevented from running and re-enabled using the followin
 `MeadowCLI.exe --MonoEnable --SerialPort [NameOfSerialPort]` - Enables Mono to run  
 `MeadowCLI.exe --MonoRunState --SerialPort [NameOfSerialPort]` - Reports if the Mono runtime will run after Meadow is restarted.  
 `Meadow.CLI --MonoFlash --SerialPort [NameOfSerialPort] --KeepAlive` - copies the Meadow.OS.Runtime.bin file from the Meadow's file system to flash where is will be executed. Once this command is executed the Meadow.OS.Runtime.bin file can be deleted from the Meadow file system. Suggestion: use with the `--KeepAlive`  
+`MeadowCLI.exe --MonoUpdateRt --SerialPort [NameOfSerialPort]` - Combines `--WriteFile` with `--MonoFlash` into a single command.  
 
 ### Meadow File System
 
-`MeadowCLI.exe --WriteFile | -f [NameOfFile] --SerialPort [NameOfSerialPort]` - Writes a single file to the Meadow file system.  
+`MeadowCLI.exe --WriteFile --File | -f [NameOfFile] --SerialPort [NameOfSerialPort]` - Writes a single file to the Meadow file system.  
 `MeadowCLI.exe --WriteFile [CSV file info] --SerialPort [NameOfSerialPort]` - Writes multiple files to the Meadow file system in one command. To do this the files to be written are placed in a comma separated list beginning and ending with double quote marks. This list consists of a file's host path and file within the host PC/Mac, a comma, followed by the desired name within the Meadow File System. Add another comma if there are more files.  
 Example:  
 `Meadow.CLI --WriteFile --File "C:\WildernessLabs\Binaries\mscorlib.dll, mscorlib.dll, C:\WildernessLabs\Binaries\System.Core.dll, System.Core.dll, C:\WildernessLabs\Binaries\System.dll, System.dll" --SerialPort [NameOfSerialPort]`  
@@ -84,7 +86,7 @@ Example:
 ## ESP32 Commands
 
 `Meadow.CLI --Esp32ReadMac --SerialPort [NameOfSerialPort]` - Reads the MAC Address of the ESP32 co-processor.  
-`Meadow.CLI --Esp32Restart --SerialPort [NameOfSerialPort]` - Restarts the Esp32. The Esp32Restart command is required to restart the ESP32. memory. Restarting Meadow, even with the RST button, will not restart the ESP32. This command must be used after a file has been written to the ESP32's flash for the ESP32 to utilized the file.  
+`Meadow.CLI --Esp32Restart --SerialPort [NameOfSerialPort]` - Restarts the Esp32. The Esp32Restart command is required to restart the ESP32. memory. Restarting Meadow, even with the RST button, will not restart the ESP32. This command must be used after a file has been written to the ESP32's flash for the ESP32 to utilized the file.
 `Meadow.CLI --Esp32WriteFile --SerialPort [NameOfSerialPort] --McuDestAddr [DestAddress] --File  [NameOfFile]` - Moves a file from the host PC/Mac into the ESP32's initernal memory.  
 Multiple files can be combined in a CSV format as shown below.  
 Example:

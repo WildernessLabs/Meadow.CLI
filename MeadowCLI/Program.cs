@@ -4,6 +4,7 @@ using MeadowCLI.DeviceManagement;
 using System.IO.Ports;
 using System.Threading;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MeadowCLI
 {
@@ -66,7 +67,14 @@ namespace MeadowCLI
                   else
                   {
                       SyncArgsCache(options);
-                      behavior = ProcessHcom(options);
+                        try
+                        {
+                            behavior = ProcessHcom(options).Result;
+                        }
+                        catch(Exception ex)
+                        {
+
+                        }
                   }
                 }
             });
@@ -82,7 +90,7 @@ namespace MeadowCLI
             }
             else
             {
-                Thread.Sleep(2000);
+                Thread.Sleep(500);
             }
         }
 
@@ -122,7 +130,7 @@ namespace MeadowCLI
 
         //Probably rename
 
-        static CompletionBehavior ProcessHcom(Options options)
+        static async Task<CompletionBehavior> ProcessHcom(Options options)
         {
             Console.Write($"Opening port '{options.SerialPort}'...");
             if (ConnectToMeadowDevice(options.SerialPort))
@@ -168,8 +176,8 @@ namespace MeadowCLI
                         Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
 #endif
                       }
-                      MeadowFileManager.WriteFileToFlash(MeadowDeviceManager.CurrentDevice,
-                          options.FileName, options.TargetFileName, options.Partition);
+                       
+                        await MeadowFileManager.WriteFileToFlash(MeadowDeviceManager.CurrentDevice, options.FileName, options.TargetFileName, options.Partition).ConfigureAwait(false); ;
                   }
               }
               else if (options.DeleteFile)
@@ -192,7 +200,7 @@ namespace MeadowCLI
               else if (options.EraseFlash)
               {
                   Console.WriteLine("Erasing flash");
-                  MeadowFileManager.EraseFlash(MeadowDeviceManager.CurrentDevice);
+                  await MeadowFileManager.EraseFlash(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.VerifyErasedFlash)
               {
@@ -287,11 +295,11 @@ namespace MeadowCLI
               }
               else if (options.MonoDisable)
               {
-                  MeadowDeviceManager.MonoDisable(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.MonoDisable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.MonoEnable)
               {
-                  MeadowDeviceManager.MonoEnable(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.MonoEnable(MeadowDeviceManager.CurrentDevice);
 
                   // the device is going to reset, so we need to wait for it to reconnect
                   Console.WriteLine($"Reconnecting...");
@@ -308,7 +316,13 @@ namespace MeadowCLI
               }
               else if (options.MonoFlash)
               {
-                  MeadowDeviceManager.MonoFlash(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.MonoFlash(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.MonoUpdateRt)
+              {
+                  MeadowFileManager.MonoUpdateRt(MeadowDeviceManager.CurrentDevice,
+                    options.FileName, options.TargetFileName, options.Partition);
+
               }
               else if (options.GetDeviceInfo)
               {
@@ -317,7 +331,7 @@ namespace MeadowCLI
               else if (options.ResetMeadow)
               {
                   Console.WriteLine("Resetting Meadow");
-                  MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.EnterDfuMode)
               {
@@ -371,35 +385,34 @@ namespace MeadowCLI
                   Console.WriteLine($"Ready for Visual Studio debugging");
                   options.KeepAlive = true;
               }
-                else if (options.Esp32WriteFile)
-                {
-                    if (string.IsNullOrEmpty(options.FileName))
-                    {
-                        Console.WriteLine($"option --Esp32WriteFile requires option --File (the local file you wish to write)");
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(options.TargetFileName))
-                        {
-                            Console.WriteLine($"Writing {options.FileName} to ESP32");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
-                        }
-                        MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
-                            options.FileName, options.TargetFileName, options.Partition, options.McuDestAddr);
-                    }
-                }
-                else if (options.Esp32ReadMac)
-                {
-                    MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
-                }
-                else if (options.Esp32Restart)
-                {
-                    MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
-                }
-
+              else if (options.Esp32WriteFile)
+              {
+                  if (string.IsNullOrEmpty(options.FileName))
+                  {
+                      Console.WriteLine($"option --Esp32WriteFile requires option --File (the local file you wish to write)");
+                  }
+                  else
+                  {
+                      if (string.IsNullOrEmpty(options.TargetFileName))
+                      {
+                          Console.WriteLine($"Writing {options.FileName} to ESP32");
+                      }
+                      else
+                      {
+                          Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
+                      }
+                      MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
+                          options.FileName, options.TargetFileName, options.Partition, options.McuDestAddr);
+                  }
+              }
+              else if (options.Esp32ReadMac)
+              {
+                  MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
+              }
+              else if (options.Esp32Restart)
+              {
+                  MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
+              }
             }
             catch (IOException ex)
             {
