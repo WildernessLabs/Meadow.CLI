@@ -318,7 +318,7 @@ namespace MeadowCLI.DeviceManagement
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                if (filter(e))
+                if (!string.IsNullOrEmpty(e.Message) && filter(e))
                 {
                     tcs.SetResult(true);
                     result = true;
