@@ -31,10 +31,11 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER, new RecvSimpleTextFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG, new RecvSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT, new RecvSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR, new RecvSimpleTextFactory() },
             };
         }
 
@@ -47,12 +48,16 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 RecvMessageFactory factory = _factories[rqstType];
                 return factory.Create(recvdMsg, receivedMsgLen);
             }
+            catch (KeyNotFoundException)
+            {
+                Console.WriteLine($"An unknown request value of '0x{rqstType:x}' was received.");
+                return null;
+            }
             catch (Exception ex)
             {
                 // I saw a few time, that this exception was being thrown. It was caused by
                 // corrupted data being processed.
-                Console.WriteLine($"Request type was: {rqstType}. Exception: {ex.Message}");
-                System.Threading.Thread.Sleep(1);
+                Console.WriteLine($"Request type was: 0x{rqstType:x}. Exception: {ex.Message}");
                 return null;
             }
         }
