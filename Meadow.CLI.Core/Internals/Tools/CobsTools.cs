@@ -16,11 +16,13 @@ namespace MeadowCLI.Hcom
         // Modifications were needed and adding a starting offset to support large buffers was
         // added to allow sub-segments to be encoded.
         //
-        public static int CobsEncoding(byte[] source, int startingOffset, int length, ref byte[] encoded)
+        public static int CobsEncoding(byte[] source, int startingOffset, int length,
+                                    ref byte[] encoded, int encodedSkipFirst)
         {
             int sourceOffset = startingOffset;  // Offset into source buffer
-            int encodedOffset = 1;  // Offset into destination buffer
-            int replaceOffset = 0;  // Offset where replacement is being tracked
+            // Add 1 because first byte filled with first replacement value
+            int encodedOffset = encodedSkipFirst + 1;  // Offset into destination buffer.
+            int replaceOffset = encodedSkipFirst;  // Offset where replacement is being tracked
             byte replacement = 1;  // Value that will be inserted to indicate replaced value
 
             while (sourceOffset < length + startingOffset)

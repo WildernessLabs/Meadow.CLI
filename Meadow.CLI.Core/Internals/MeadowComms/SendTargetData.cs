@@ -110,7 +110,6 @@ namespace MeadowCLI.Hcom
                 // Need to prepend the sequence number to the packet
                 int xmitSize = messageSize + sizeof(UInt16);
                 byte[] fullMsg = new byte[xmitSize];
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
                 Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
@@ -240,21 +239,25 @@ namespace MeadowCLI.Hcom
                 // For testing calculate the crc including the sequence number
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
-                int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
+                // Add 2, first to account for start delimiter and second for end
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer + 2];
+                // Skip first byte so it can be a start delimiter
+                int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes, 1);
 
-                // Verify COBS - any delimiters left?
-                for (int i = 0; i < encodedToSend; i++)
+                // Verify COBS - any delimiters left? Skip first byte
+                for (int i = 1; i < encodedToSend; i++)
                 {
                     if (encodedBytes[i] == 0x00)
                     {
                         throw new InvalidProgramException("All zeros should have been removed. " +
-                            $"There's one at {i}");
+                            $"There's one at offset of {i}");
                     }
                 }
 
-                // Terminate packet with delimiter so packet boundaries can be found
-                encodedBytes[encodedToSend] = 0;
+                // Terminate packet with delimiter so packet boundaries can be more easily found
+                encodedBytes[0] = 0;                // Start delimiter
+                encodedToSend++;
+                encodedBytes[encodedToSend] = 0;    // End delimiter
                 encodedToSend++;
 
                 try

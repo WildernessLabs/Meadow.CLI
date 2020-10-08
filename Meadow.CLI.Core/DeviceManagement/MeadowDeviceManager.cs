@@ -21,7 +21,7 @@ namespace MeadowCLI.DeviceManagement
         // maxmimum data block size an even multiple of 256 we insure that each packet received
         // can be immediately written to the s25fl QSPI flash chip.
         internal const int MaxAllowableDataBlock = 512;
-        internal const int MaxSizeOfXmitPacket = (MaxAllowableDataBlock + 4) + (MaxAllowableDataBlock / 254);
+        internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
         internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
 
