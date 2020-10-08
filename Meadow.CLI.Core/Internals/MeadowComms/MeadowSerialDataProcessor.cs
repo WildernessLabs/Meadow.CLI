@@ -15,7 +15,6 @@ namespace MeadowCLI.Hcom
     public enum MeadowMessageType
     {
         AppOutput,
-        ErrOutput,
         DeviceInfo,
         FileListTitle,
         FileListMember,
@@ -302,11 +301,8 @@ namespace MeadowCLI.Hcom
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
-                            break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.ErrOutput, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
