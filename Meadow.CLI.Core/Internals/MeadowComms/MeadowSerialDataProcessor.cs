@@ -59,7 +59,7 @@ namespace MeadowCLI.Hcom
         {
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfXmitPacket * 4);
+            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
 
         }
 
@@ -79,7 +79,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSocketAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
@@ -112,7 +112,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSerialPortAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
@@ -192,7 +192,7 @@ namespace MeadowCLI.Hcom
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
-            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
             int packetLength;
             HcomBufferReturn result;
@@ -209,8 +209,8 @@ namespace MeadowCLI.Hcom
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfXmitPacket}");
-                    Thread.Sleep(1000);
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfPacketBuffer}");
+                    Thread.Sleep(1);
                     Debug.Assert(false);
                 }
 
@@ -230,11 +230,12 @@ namespace MeadowCLI.Hcom
                 }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
-                if (decodedSize == 0)
+
+                // If a message is too short it is ignored
+                if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
 
                 Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableDataBlock);
-             //   Debug.Assert(decodedSize >= HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 
                 // Process the received packet
                 if (decodedSize > 0)
