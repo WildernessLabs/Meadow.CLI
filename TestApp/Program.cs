@@ -13,7 +13,7 @@ namespace TestApp
         {
             Console.WriteLine("Hello Meadow!");
 
-            TestFlashCommands().Wait();
+            //TestFlashCommands().Wait();
 
             //TestNonFlashDeviceManagerCommands().Wait();
 
@@ -32,25 +32,25 @@ namespace TestApp
             //Console.WriteLine("CreateFileSystem");
             //await MeadowFileManager.CreateFileSystem(meadow);
 
-            //Console.WriteLine("WriteFileToFlash");
-            //await MeadowFileManager.WriteFileToFlash(meadow, @"C:\Users\brikim\AppData\Local\WildernessLabs\Firmware\hello_meadow.txt");
+            Console.WriteLine("WriteFileToFlash");
+            File.WriteAllText(".\\hello_meadow.txt", "test");
+            await MeadowFileManager.WriteFileToFlash(meadow, @".\\hello_meadow.txt");
 
             // MonoUpdateRt, PartitionFileSystem, MountFileSystem, InitializeFileSystem, CreateFileSystem, FormatFileSystem - do we still need these?
 
-            //Console.WriteLine("ListFiles");
-            //await MeadowFileManager.ListFiles(meadow);
+            Console.WriteLine("ListFiles");
+            await MeadowFileManager.ListFiles(meadow);
 
-            //Console.WriteLine("ListFilesAndCrcs");
-            //await MeadowFileManager.ListFilesAndCrcs(meadow);
+            Console.WriteLine("ListFilesAndCrcs");
+            await MeadowFileManager.ListFilesAndCrcs(meadow);
 
-            //Console.WriteLine("DeleteFile");
-            //await MeadowFileManager.DeleteFile(meadow, @"hello_meadow.txt");
+            Console.WriteLine("DeleteFile");
+            await MeadowFileManager.DeleteFile(meadow, @"hello_meadow.txt");
 
-            //Console.WriteLine("ListFiles");
-            //await MeadowFileManager.ListFiles(meadow);
+            Console.WriteLine("ListFiles");
+            await MeadowFileManager.ListFiles(meadow);
 
             //await MeadowFileManager.EraseFlash(meadow);
-
             //await MeadowFileManager.VerifyErasedFlash(meadow);
         }
 
