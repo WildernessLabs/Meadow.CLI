@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
   </ItemGroup>
 
   <ItemGroup>

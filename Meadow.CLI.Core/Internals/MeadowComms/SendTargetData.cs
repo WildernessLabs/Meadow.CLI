@@ -4,6 +4,8 @@ using System.IO.Ports;
 using System.Text;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
 using MeadowCLI.DeviceManagement;
+using System.Threading.Tasks;
+using Meadow.CLI;
 
 namespace MeadowCLI.Hcom
 {
@@ -95,9 +97,38 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        internal void SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0)
+        internal async Task SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
         {
+            var tcs = new TaskCompletionSource<bool>();
+            var received = false;
+
+            if (!doAcceptedCheck)
+            {
+                BuildAndSendSimpleCommand(requestType, userData);
+                return;
+            }
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.Accepted)
+                {
+                    received = true;
+                    tcs.SetResult(true);
+                }
+            };
+            
+            if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData += handler;
+
             BuildAndSendSimpleCommand(requestType, userData);
+
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(10000) });
+
+            if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData -= handler;
+
+            if (!received)
+            {
+                throw new Exception("Command not accepted.");
+            }
         }
 
         //==========================================================================
@@ -270,7 +301,7 @@ namespace MeadowCLI.Hcom
                     else
                     {
                         if (_device.SerialPort == null)
-                            throw new ArgumentException("SerialPort cannot be null");
+                            throw new NotConnectedException();
 
                         _device.SerialPort.Write(encodedBytes, 0, encodedToSend);
                     }
@@ -304,4 +335,6 @@ namespace MeadowCLI.Hcom
             }
         }
     }
+
+    public class NotConnectedException : Exception { }
 }

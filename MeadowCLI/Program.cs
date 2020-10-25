@@ -71,7 +71,7 @@ namespace MeadowCLI
                         {
                             behavior = ProcessHcom(options).Result;
                         }
-                        catch(Exception ex)
+                        catch(Exception)
                         {
 
                         }
@@ -193,8 +193,7 @@ namespace MeadowCLI
 #else
                       Console.WriteLine($"Deleting {options.FileName}");
 #endif
-                      MeadowFileManager.DeleteFile(MeadowDeviceManager.CurrentDevice,
-                      options.TargetFileName, options.Partition);
+                      await MeadowFileManager.DeleteFile(MeadowDeviceManager.CurrentDevice, options.TargetFileName, options.Partition);
                   }
               }
               else if (options.EraseFlash)
@@ -205,12 +204,12 @@ namespace MeadowCLI
               else if (options.VerifyErasedFlash)
               {
                   Console.WriteLine("Verifying flash is erased");
-                  MeadowFileManager.VerifyErasedFlash(MeadowDeviceManager.CurrentDevice);
+                  await MeadowFileManager.VerifyErasedFlash(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.PartitionFileSystem)
               {
                   Console.WriteLine($"Partioning file system into {options.NumberOfPartitions} partition(s)");
-                  MeadowFileManager.PartitionFileSystem(MeadowDeviceManager.CurrentDevice, options.NumberOfPartitions);
+                  await MeadowFileManager.PartitionFileSystem(MeadowDeviceManager.CurrentDevice, options.NumberOfPartitions);
               }
               else if (options.MountFileSystem)
               {
@@ -219,7 +218,7 @@ namespace MeadowCLI
 #else
                   Console.WriteLine("Mounting file system");
 #endif
-                  MeadowFileManager.MountFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
+                  await MeadowFileManager.MountFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               else if (options.InitFileSystem)
               {
@@ -228,12 +227,12 @@ namespace MeadowCLI
 #else
                   Console.WriteLine("Intializing filesystem");
 #endif
-                  MeadowFileManager.InitializeFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
+                  await MeadowFileManager.InitializeFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               else if (options.CreateFileSystem) //should this have a partition???
               {
                   Console.WriteLine($"Creating file system");
-                  MeadowFileManager.CreateFileSystem(MeadowDeviceManager.CurrentDevice);
+                  await MeadowFileManager.CreateFileSystem(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.FormatFileSystem)
               {
@@ -242,7 +241,7 @@ namespace MeadowCLI
 #else
                   Console.WriteLine("Format file system");
 #endif
-                  MeadowFileManager.FormatFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
+                  await MeadowFileManager.FormatFileSystem(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               else if (options.ListFiles)
               {
@@ -251,7 +250,7 @@ namespace MeadowCLI
 #else
                   Console.WriteLine($"Getting list of files");
 #endif
-                  MeadowFileManager.ListFiles(MeadowDeviceManager.CurrentDevice, options.Partition);
+                  await MeadowFileManager.ListFiles(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               else if (options.ListFilesAndCrcs)
               {
@@ -260,38 +259,38 @@ namespace MeadowCLI
 #else
                   Console.WriteLine("Getting list of files and CRCs");
 #endif
-                  MeadowFileManager.ListFilesAndCrcs(MeadowDeviceManager.CurrentDevice, options.Partition);
+                  await MeadowFileManager.ListFilesAndCrcs(MeadowDeviceManager.CurrentDevice, options.Partition);
               }
               //Device manager
               else if (options.SetTraceLevel)
               {
                   Console.WriteLine($"Setting trace level to {options.TraceLevel}");
-                  MeadowDeviceManager.SetTraceLevel(MeadowDeviceManager.CurrentDevice, options.TraceLevel);
+                  await MeadowDeviceManager.SetTraceLevel(MeadowDeviceManager.CurrentDevice, options.TraceLevel);
               }
               else if (options.SetDeveloper1)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
-                  MeadowDeviceManager.SetDeveloper1(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.SetDeveloper1(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.SetDeveloper2)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
-                  MeadowDeviceManager.SetDeveloper2(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.SetDeveloper2(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.SetDeveloper3)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
-                  MeadowDeviceManager.SetDeveloper3(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.SetDeveloper3(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.SetDeveloper4)
               {
                   Console.WriteLine($"Setting developer level to {options.DeveloperValue}");
-                  MeadowDeviceManager.SetDeveloper4(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.SetDeveloper4(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.NshEnable)
               {
                   Console.WriteLine($"Enable Nsh");
-                  MeadowDeviceManager.NshEnable(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.NshEnable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.MonoDisable)
               {
@@ -312,7 +311,7 @@ namespace MeadowCLI
               }
               else if (options.MonoRunState)
               {
-                  MeadowDeviceManager.MonoRunState(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.MonoRunState(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.MonoFlash)
               {
@@ -320,63 +319,63 @@ namespace MeadowCLI
               }
               else if (options.MonoUpdateRt)
               {
-                  MeadowFileManager.MonoUpdateRt(MeadowDeviceManager.CurrentDevice,
+                  await MeadowFileManager.MonoUpdateRt(MeadowDeviceManager.CurrentDevice,
                     options.FileName, options.TargetFileName, options.Partition);
 
               }
               else if (options.GetDeviceInfo)
               {
-                  MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.ResetMeadow)
               {
                   Console.WriteLine("Resetting Meadow");
-                  await MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.ResetMeadow(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.EnterDfuMode)
               {
                   Console.WriteLine("Entering Dfu mode");
-                  MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.EnterDfuMode(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.TraceDisable)
               {
                   Console.WriteLine("Disabling Meadow trace messages");
-                  MeadowDeviceManager.TraceDisable(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.TraceDisable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.TraceEnable)
               {
                   Console.WriteLine("Enabling Meadow trace messages");
-                  MeadowDeviceManager.TraceEnable(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.TraceEnable(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.Uart1Apps)
               {
                   Console.WriteLine("Use Uart1 for .NET Apps");
-                  MeadowDeviceManager.Uart1Apps(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.Uart1Apps(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.Uart1Trace)
               {
                   Console.WriteLine("Use Uart1 for outputting Meadow trace messages");
-                  MeadowDeviceManager.Uart1Trace(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.Uart1Trace(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.RenewFileSys)
               {
                   Console.WriteLine("Recreate a new file system on Meadow");
-                  MeadowDeviceManager.RenewFileSys(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.RenewFileSys(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.QspiWrite)
               {
                   Console.WriteLine($"Executing QSPI Flash Write using {options.DeveloperValue}");
-                  MeadowDeviceManager.QspiWrite(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.QspiWrite(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.QspiRead)
               {
                   Console.WriteLine($"Executing QSPI Flash Read using {options.DeveloperValue}");
-                  MeadowDeviceManager.QspiRead(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.QspiRead(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.QspiInit)
               {
                   Console.WriteLine($"Executing QSPI Flash Initialization using {options.DeveloperValue}");
-                  MeadowDeviceManager.QspiInit(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
+                  await MeadowDeviceManager.QspiInit(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
               else if (options.VSDebug)
               {
@@ -401,17 +400,17 @@ namespace MeadowCLI
                       {
                           Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
                       }
-                      MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
+                      await MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice,
                           options.FileName, options.TargetFileName, options.Partition, options.McuDestAddr);
                   }
               }
               else if (options.Esp32ReadMac)
               {
-                  MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.Esp32ReadMac(MeadowDeviceManager.CurrentDevice);
               }
               else if (options.Esp32Restart)
               {
-                  MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
+                  await MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
               }
             }
             catch (IOException ex)

@@ -7,6 +7,7 @@ using System.IO.Ports;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Meadow.CLI;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -118,7 +119,7 @@ namespace MeadowCLI.DeviceManagement
             };
             DataProcessor.OnReceiveData += handler;
 
-            MeadowFileManager.DeleteFile(this, filename);
+            await MeadowFileManager.DeleteFile(this, filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler;
@@ -200,7 +201,7 @@ namespace MeadowCLI.DeviceManagement
             };
             DataProcessor.OnReceiveData += handler;
 
-            MeadowFileManager.ListFilesAndCrcs(this);
+            await MeadowFileManager.ListFilesAndCrcs(this).ConfigureAwait(false);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler; 
@@ -250,7 +251,7 @@ namespace MeadowCLI.DeviceManagement
                 };
                 DataProcessor.OnReceiveData += handler;
 
-                MeadowFileManager.ListFiles(this);
+                await MeadowFileManager.ListFiles(this);
 
                 await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
                 DataProcessor.OnReceiveData -= handler;
@@ -261,31 +262,13 @@ namespace MeadowCLI.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 5000)
+        public override async Task GetDeviceInfo(int timeoutInMs = 1000)
         {
-            var timeOutTask = Task.Delay(timeoutInMs);
-            bool isDeviceIdSet = false;
-
-            EventHandler<MeadowMessageEventArgs> handler = null;
-
-            var tcs = new TaskCompletionSource<bool>();
-
-            handler = (s, e) =>
+            var result = await MeadowDeviceManager.GetDeviceInfo(this, timeoutInMs);
+            if (!result)
             {
-                if (e.MessageType == MeadowMessageType.DeviceInfo)
-                {
-                    isDeviceIdSet = true;
-                    tcs.SetResult(true);
-                }
-            };
-            if(DataProcessor != null) DataProcessor.OnReceiveData += handler;
-
-            MeadowDeviceManager.GetDeviceInfo(this);
-
-            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            if (DataProcessor != null) DataProcessor.OnReceiveData -= handler;
-
-            return isDeviceIdSet;
+                throw new DeviceInfoException();
+            }
         }
 
         //putting this here for now ..... 
@@ -314,7 +297,7 @@ namespace MeadowCLI.DeviceManagement
 
                 SerialPort = port;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 return false; //serial port couldn't be opened .... that's ok
             }
@@ -363,10 +346,7 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("ID: " + args.Message);
                     break;
                 case MeadowMessageType.SerialReconnect:
-                    if(AttemptToReconnectToMeadow())
-                        ConsoleOut("Successfully reconnected");
-                    else
-                        ConsoleOut("Failed to reconnect");
+                    AttemptToReconnectToMeadow();
                     break;
                     // The last 2 types received text straight from mono' stdout / stderr
                     // via hcom and may not be packetized at the end of a lines.
@@ -435,7 +415,7 @@ namespace MeadowCLI.DeviceManagement
                     return true;
 
                 if (delayCount-- == 0)
-                    return false;
+                    throw new NotConnectedException();
             }
         }
 
@@ -516,4 +496,6 @@ namespace MeadowCLI.DeviceManagement
             Console.Write(msg);
         }
     }
+
+    public class DeviceInfoException : Exception { }
 }

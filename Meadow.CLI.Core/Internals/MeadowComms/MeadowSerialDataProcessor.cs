@@ -93,7 +93,7 @@ namespace MeadowCLI.Hcom
                     await Task.Delay(50).ConfigureAwait(false);
                 }
             }
-            catch (ThreadAbortException ex)
+            catch (ThreadAbortException)
             {
                 //ignoring for now until we wire cancelation ...
                 //this blocks the thread abort exception when the console app closes
@@ -128,7 +128,7 @@ namespace MeadowCLI.Hcom
                     await Task.Delay(50).ConfigureAwait(false);
                 }
             }
-            catch (ThreadAbortException ex)
+            catch (ThreadAbortException)
             {
                 //ignoring for now until we wire cancelation ...
                 //this blocks the thread abort exception when the console app closes
