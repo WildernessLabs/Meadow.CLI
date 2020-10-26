@@ -15,6 +15,7 @@ namespace MeadowCLI.Hcom
     public enum MeadowMessageType
     {
         AppOutput,
+        ErrOutput,
         DeviceInfo,
         FileListTitle,
         FileListMember,
@@ -58,7 +59,7 @@ namespace MeadowCLI.Hcom
         {
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfXmitPacket * 4);
+            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
 
         }
 
@@ -78,7 +79,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSocketAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
@@ -92,7 +93,7 @@ namespace MeadowCLI.Hcom
                     await Task.Delay(50).ConfigureAwait(false);
                 }
             }
-            catch (ThreadAbortException ex)
+            catch (ThreadAbortException)
             {
                 //ignoring for now until we wire cancelation ...
                 //this blocks the thread abort exception when the console app closes
@@ -111,7 +112,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSerialPortAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
@@ -127,7 +128,7 @@ namespace MeadowCLI.Hcom
                     await Task.Delay(50).ConfigureAwait(false);
                 }
             }
-            catch (ThreadAbortException ex)
+            catch (ThreadAbortException)
             {
                 //ignoring for now until we wire cancelation ...
                 //this blocks the thread abort exception when the console app closes
@@ -191,7 +192,7 @@ namespace MeadowCLI.Hcom
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
-            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
+            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
             int packetLength;
             HcomBufferReturn result;
@@ -208,8 +209,8 @@ namespace MeadowCLI.Hcom
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfXmitPacket}");
-                    Thread.Sleep(1000);
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfPacketBuffer}");
+                    Thread.Sleep(1);
                     Debug.Assert(false);
                 }
 
@@ -229,11 +230,12 @@ namespace MeadowCLI.Hcom
                 }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
-                if (decodedSize == 0)
+
+                // If a message is too short it is ignored
+                if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
 
                 Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableDataBlock);
-             //   Debug.Assert(decodedSize >= HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
 
                 // Process the received packet
                 if (decodedSize > 0)
@@ -301,8 +303,11 @@ namespace MeadowCLI.Hcom
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
+                            break;
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.ErrOutput, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));

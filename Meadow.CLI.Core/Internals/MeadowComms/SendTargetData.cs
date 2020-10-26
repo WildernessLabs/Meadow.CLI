@@ -4,6 +4,8 @@ using System.IO.Ports;
 using System.Text;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
 using MeadowCLI.DeviceManagement;
+using System.Threading.Tasks;
+using Meadow.CLI;
 
 namespace MeadowCLI.Hcom
 {
@@ -12,7 +14,7 @@ namespace MeadowCLI.Hcom
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;
+        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;         // Used for transmission
         const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
@@ -95,9 +97,38 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        internal void SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0)
+        internal async Task SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
         {
+            var tcs = new TaskCompletionSource<bool>();
+            var received = false;
+
+            if (!doAcceptedCheck)
+            {
+                BuildAndSendSimpleCommand(requestType, userData);
+                return;
+            }
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.Accepted)
+                {
+                    received = true;
+                    tcs.SetResult(true);
+                }
+            };
+            
+            if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData += handler;
+
             BuildAndSendSimpleCommand(requestType, userData);
+
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(10000) });
+
+            if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData -= handler;
+
+            if (!received)
+            {
+                throw new Exception("Command not accepted.");
+            }
         }
 
         //==========================================================================
@@ -110,7 +141,6 @@ namespace MeadowCLI.Hcom
                 // Need to prepend the sequence number to the packet
                 int xmitSize = messageSize + sizeof(UInt16);
                 byte[] fullMsg = new byte[xmitSize];
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
                 Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
@@ -240,21 +270,25 @@ namespace MeadowCLI.Hcom
                 // For testing calculate the crc including the sequence number
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfXmitPacket];
-                int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes);
+                // Add 2, first to account for start delimiter and second for end
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer + 2];
+                // Skip first byte so it can be a start delimiter
+                int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes, 1);
 
-                // Verify COBS - any delimiters left?
-                for (int i = 0; i < encodedToSend; i++)
+                // Verify COBS - any delimiters left? Skip first byte
+                for (int i = 1; i < encodedToSend; i++)
                 {
                     if (encodedBytes[i] == 0x00)
                     {
                         throw new InvalidProgramException("All zeros should have been removed. " +
-                            $"There's one at {i}");
+                            $"There's one at offset of {i}");
                     }
                 }
 
-                // Terminate packet with delimiter so packet boundaries can be found
-                encodedBytes[encodedToSend] = 0;
+                // Terminate packet with delimiter so packet boundaries can be more easily found
+                encodedBytes[0] = 0;                // Start delimiter
+                encodedToSend++;
+                encodedBytes[encodedToSend] = 0;    // End delimiter
                 encodedToSend++;
 
                 try
@@ -267,7 +301,7 @@ namespace MeadowCLI.Hcom
                     else
                     {
                         if (_device.SerialPort == null)
-                            throw new ArgumentException("SerialPort cannot be null");
+                            throw new NotConnectedException();
 
                         _device.SerialPort.Write(encodedBytes, 0, encodedToSend);
                     }
@@ -301,4 +335,6 @@ namespace MeadowCLI.Hcom
             }
         }
     }
+
+    public class NotConnectedException : Exception { }
 }

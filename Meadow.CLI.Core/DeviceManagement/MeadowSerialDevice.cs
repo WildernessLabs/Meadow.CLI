@@ -7,6 +7,7 @@ using System.IO.Ports;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Meadow.CLI;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -25,8 +26,6 @@ namespace MeadowCLI.DeviceManagement
         public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
         public MeadowSerialDataProcessor DataProcessor { get; private set; }
-
-        private bool addAppOnNextOutput;
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
@@ -120,7 +119,7 @@ namespace MeadowCLI.DeviceManagement
             };
             DataProcessor.OnReceiveData += handler;
 
-            MeadowFileManager.DeleteFile(this, filename);
+            await MeadowFileManager.DeleteFile(this, filename);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler;
@@ -202,7 +201,7 @@ namespace MeadowCLI.DeviceManagement
             };
             DataProcessor.OnReceiveData += handler;
 
-            MeadowFileManager.ListFilesAndCrcs(this);
+            await MeadowFileManager.ListFilesAndCrcs(this).ConfigureAwait(false);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler; 
@@ -252,7 +251,7 @@ namespace MeadowCLI.DeviceManagement
                 };
                 DataProcessor.OnReceiveData += handler;
 
-                MeadowFileManager.ListFiles(this);
+                await MeadowFileManager.ListFiles(this);
 
                 await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
                 DataProcessor.OnReceiveData -= handler;
@@ -263,31 +262,13 @@ namespace MeadowCLI.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<bool> SetDeviceInfo(int timeoutInMs = 5000)
+        public override async Task GetDeviceInfo(int timeoutInMs = 1000)
         {
-            var timeOutTask = Task.Delay(timeoutInMs);
-            bool isDeviceIdSet = false;
-
-            EventHandler<MeadowMessageEventArgs> handler = null;
-
-            var tcs = new TaskCompletionSource<bool>();
-
-            handler = (s, e) =>
+            var result = await MeadowDeviceManager.GetDeviceInfo(this, timeoutInMs);
+            if (!result)
             {
-                if (e.MessageType == MeadowMessageType.DeviceInfo)
-                {
-                    isDeviceIdSet = true;
-                    tcs.SetResult(true);
-                }
-            };
-            if(DataProcessor != null) DataProcessor.OnReceiveData += handler;
-
-            MeadowDeviceManager.GetDeviceInfo(this);
-
-            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            if (DataProcessor != null) DataProcessor.OnReceiveData -= handler;
-
-            return isDeviceIdSet;
+                throw new DeviceInfoException();
+            }
         }
 
         //putting this here for now ..... 
@@ -316,7 +297,7 @@ namespace MeadowCLI.DeviceManagement
 
                 SerialPort = port;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 return false; //serial port couldn't be opened .... that's ok
             }
@@ -342,45 +323,10 @@ namespace MeadowCLI.DeviceManagement
         {
             OnMeadowMessage?.Invoke(this, args);
 
-            if(args.MessageType != MeadowMessageType.AppOutput)
-                addAppOnNextOutput = false;
-
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
                     ConsoleOut("Data: " + args.Message);
-                    break;
-                case MeadowMessageType.AppOutput:
-                    // The received text is straight from mono via hcom and may not be
-                    // correctly packetized.
-                    // Previous this code assumed that each received block of text should
-                    // begin with 'App :' and end with a new line. This was wrong.
-                    // When the App sends a lot of text quickly the received boundaries
-                    // can have no relation to the original App.exe author intended when
-                    // using Console.Write or Console.WriteLine.
-                    // This code creates new lines much more closly to the intent of the
-                    // original App.exe author.
-                    string[] oneLine = args.Message.Split('\n');
-                    for(int i = 0; i < oneLine.Length; i++)
-                    {
-                        // The last array entry is a special case. If it's null or
-                        // empty then the last character was  a single '\n' and
-                        // we ignore it
-                        if (i == oneLine.Length - 1)
-                        {
-                            if (!string.IsNullOrEmpty(oneLine[i]))
-                            {
-                                ConsoleOutNoEol("App: ");
-                                ConsoleOutNoEol(oneLine[i]);
-                            }
-                        }
-                        else
-                        {
-                            // Most typical line
-                            ConsoleOutNoEol("App: ");
-                            ConsoleOut(oneLine[i]);
-                        }
-                    }
                     break;
                 case MeadowMessageType.MeadowTrace:
                     ConsoleOut("Trace: " + args.Message);
@@ -400,11 +346,60 @@ namespace MeadowCLI.DeviceManagement
                     ConsoleOut("ID: " + args.Message);
                     break;
                 case MeadowMessageType.SerialReconnect:
-                    if(AttemptToReconnectToMeadow())
-                        ConsoleOut("Successfully reconnected");
-                    else
-                        ConsoleOut("Failed to reconnect");
+                    AttemptToReconnectToMeadow();
                     break;
+                    // The last 2 types received text straight from mono' stdout / stderr
+                    // via hcom and may not be packetized at the end of a lines.
+                case MeadowMessageType.ErrOutput:
+                    ParseAndOutputStdioText(args.Message, "Err: ");
+                    break;
+                case MeadowMessageType.AppOutput:
+                    ParseAndOutputStdioText(args.Message, "App: ");
+                    break;
+            }
+        }
+
+        // Previously this code assumed that each received block of text should
+        // begin with 'App :' and end with a new line.
+        // However, when the App sends a lot of text quickly the packet's boundaries
+        // can have no relation to the original App.exe author's intended when
+        // using Console.Write or Console.WriteLine.
+        // This code creates new lines much more closly to the intent of the
+        // original App.exe author. It looks for the new line as an indication
+        // that a new line is needed, because some packets have not new line.
+        private void ParseAndOutputStdioText(string message, string leadInText)
+        {
+            // Note: There may have already been a part of a line received and
+            // displayed (i.e. our screen cursor may be at the end of a text
+            // that doesn't represent a full line. So we may need to finish
+            // the line and then add our new line.
+            // 
+            // Break the data into whatever lines we can
+            // If a normal line is received it will be split into 2 array
+            // entries. The first all the text and the second empty and
+            // ignored
+            string[] oneLine = message.Split('\n');
+            for (int i = 0; i < oneLine.Length; i++)
+            {
+                // The last oneLine array entry is a special case. If it's null or
+                // empty then the last character received was a single '\n' and
+                // we can ignore it
+                if (i == oneLine.Length - 1)
+                {
+                    // Last oneLine array entry. 
+                    if (!string.IsNullOrEmpty(oneLine[i]))
+                    {
+                        // There's text on this line but no '\n'
+                        ConsoleOutNoEol(leadInText);
+                        ConsoleOutNoEol(oneLine[i]);
+                    }
+                }
+                else
+                {
+                    // Most typical lines have new line at end
+                    ConsoleOutNoEol(leadInText);
+                    ConsoleOut(oneLine[i]);
+                }
             }
         }
 
@@ -420,7 +415,7 @@ namespace MeadowCLI.DeviceManagement
                     return true;
 
                 if (delayCount-- == 0)
-                    return false;
+                    throw new NotConnectedException();
             }
         }
 
@@ -501,4 +496,6 @@ namespace MeadowCLI.DeviceManagement
             Console.Write(msg);
         }
     }
+
+    public class DeviceInfoException : Exception { }
 }
