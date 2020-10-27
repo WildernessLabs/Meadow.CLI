@@ -262,7 +262,8 @@ namespace MeadowCLI.DeviceManagement
         // This method is called to sent to Visual Studio debugging to Mono
         public static void ForwardVisualStudioDataToMono(byte[] debuggingData, MeadowSerialDevice meadow, int userData)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGER_MSG;
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA;
+
             new SendTargetData(meadow).BuildAndSendSimpleData(debuggingData, _meadowRequestType, (uint)userData);
         }
 
@@ -272,8 +273,8 @@ namespace MeadowCLI.DeviceManagement
             debuggingServer.SendToVisualStudio(debuggerData);
         }
 
-        // Enter VSDebug mode.
-        public static void VSDebug(int vsDebugPort)
+        // Enter StartDebugging mode.
+        public static void StartDebugging(MeadowSerialDevice meadow, int vsDebugPort)
         {
             // Create an instance of the TCP socket send/receiver class and
             // starts it receiving.
@@ -283,8 +284,13 @@ namespace MeadowCLI.DeviceManagement
                 vsDebugPort = DefaultVS2019DebugPort;
             }
 
+            // Startu the local Meadow.CLI debugging server
             debuggingServer = new DebuggingServer(vsDebugPort);
             debuggingServer.StartListening();
+
+            // Tell meadow to start it's debugging server, after rebooting
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION;
+            new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static void EnterEchoMode(MeadowSerialDevice meadow)

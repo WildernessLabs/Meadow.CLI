@@ -4,14 +4,13 @@
 
 This section contains an abbreviated list of necessary commands
 
-Note: All commands require the name of the serial port at least once. The serial port format is `--SerialPort [NameOfSerialPort]` or `-s [NameOfSerialPort]`. Once the serial port has been specified it will be cached by Meadow.CLI.
- Like all commands the serial port can appear anywhere within the command line.  
+Note: All commands require the name of the serial port. Once provided it will be cached by Meadow.CLI. While not shown below, the serial port format is `--SerialPort [NameOfSerialPort]` or `-s [NameOfSerialPort]`. Like all commands the serial port can appear anywhere within the command line.  
 
 `Meadow.CLI --help arg`  
 `Meadow.CLI --Dfu | -d --OsFile [Meadow.OS.bin]`  
 `Meadow.CLI --ClearCache`  
 `Meadow.CLI --ListPorts`  
-`Meadow.CLI --KeepAlive` or `Meadow.CLI --Any-Other-Cmd --KeepAlive`  
+`Meadow.CLI --KeepAlive` or `Meadow.CLI --AnyOtherCmd --KeepAlive`  
 
 `Meadow.CLI --MonoDisable`  
 `Meadow.CLI --MonoEnable`  
@@ -39,6 +38,8 @@ Note: All commands require the name of the serial port at least once. The serial
 `Meadow.CLI --TraceDisable`  
 `Meadow.CLI --Uart1Trace`  
 `Meadow.CLI --Uart1Apps`  
+
+`Meadow.CLI --StartDebugging`  
 
 ## Full Command Listing
 
@@ -101,6 +102,7 @@ You can set the debug trace level to values 0, 1, 2, or 3. The default is 0 whic
 `Meadow.CLI --TraceDisable` - Stop routing Meadow OS trace information to Meadow.CLI  
 `Meadow.CLI --Uart1Trace` - Routes Meadow OS trace information to COM1 (UART1) Tx=D12, RX=D13  
 `Meadow.CLI --Uart1Apps` - Frees COM1 for Meadow application use (default)  
+`Meadow.CLI --StartDebugging --VSDebugPort 4024` - Starts the remote debugging servers in Meadow.CLI and in Meadow.OS, allowing Visual Studio remote debugging of the .Net code running in Meadow. This command will also restart Meadow.  
 
 ## Persisted Commands
 
@@ -108,18 +110,19 @@ The following commands are maintained by Meadow when the Meadow is restarted. Ho
 `SetTraceLevel` - Default is a Trace Level of 0.  
 `MonoEnable & MonoDisable` - Default is mono enable.  
 `TraceEnable & TraceDisable - Enables / disables trace to MeadowCLI` - Default is not to send trace to MeadowCLI.  
-`Uart1race & Uart1App` - Default is Uart1 available for application.
+`Uart1race & Uart1App` - Default is Uart1 available for application.  
+`StartDebugging` - Default is remote debugging disabled.  
 
 ## Extraneous Commands
 
-Used only for Meadow.OS development and may not be implemented in release versions of Meadow.OS.  
+Used only for Meadow.OS development and may not be implemented or work as expected in release versions of Meadow.OS.  
 `Meadow.CLI --NshEnable --SerialPort Com26`  
-`Meadow.CLI --SetDeveloper1, 2, 3, 4 --DeveloperValue 1`  
+`Meadow.CLI --SetDeveloper1-4 --DeveloperValue 1-65535`  
 `Meadow.CLI --QspiWrite --SerialPort Com26 --DeveloperValue 65534`  
 `Meadow.CLI --QspiRead --SerialPort Com26 --DeveloperValue 65534`  
 `Meadow.CLI --QspiInit --SerialPort Com26 --DeveloperValue 65534`  
 
-The following should never be used for file system creation. This is automatically done at Meadow restart if no file system exists.  
+The following are not longer supported and should never be used.
 `Meadow.CLI --PartitionFileSystem`  
 `Meadow.CLI --MountFileSystem`  
 `Meadow.CLI --InitializeFileSystem`  
@@ -130,4 +133,3 @@ The following should never be used for file system creation. This is automatical
 
 The following have not been implemented  
 `Meadow.CLI --EnterDfuMode`  
-`Meadow.CLI --VSDebug --VSDebugPort [TCP/IP Port]`  

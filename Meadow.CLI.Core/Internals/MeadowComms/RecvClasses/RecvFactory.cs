@@ -21,7 +21,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
           // A factory for each unique request type
             _factories = new Dictionary<HcomHostRequestType, RecvMessageFactory>
             {
-                {HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG, new RecvSimpleBinaryFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA, new RecvSimpleBinaryFactory() },
 
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED, new RecvSimpleTextFactory() },

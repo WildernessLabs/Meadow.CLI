@@ -377,10 +377,9 @@ namespace MeadowCLI
                   Console.WriteLine($"Executing QSPI Flash Initialization using {options.DeveloperValue}");
                   await MeadowDeviceManager.QspiInit(MeadowDeviceManager.CurrentDevice, options.DeveloperValue);
               }
-              else if (options.VSDebug)
+              else if (options.StartDebugging)
               {
-                   MeadowDeviceManager.VSDebug(options.VSDebugPort);
-
+                  MeadowDeviceManager.StartDebugging(MeadowDeviceManager.CurrentDevice, options.VSDebugPort);
                   Console.WriteLine($"Ready for Visual Studio debugging");
                   options.KeepAlive = true;
               }
