@@ -403,7 +403,7 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        bool AttemptToReconnectToMeadow()
+        internal bool AttemptToReconnectToMeadow()
         {
             int delayCount = 20;    // 10 seconds
             while (true)
