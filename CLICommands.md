@@ -103,14 +103,15 @@ You can set the debug trace level to values 0, 1, 2, or 3. The default is 0 whic
 `Meadow.CLI --Uart1Trace` - Routes Meadow OS trace information to COM1 (UART1) Tx=D12, RX=D13  
 `Meadow.CLI --Uart1Apps` - Frees COM1 for Meadow application use (default)  
 `Meadow.CLI --StartDebugging --VSDebugPort 4024` - Starts the remote debugging servers in Meadow.CLI and in Meadow.OS, allowing Visual Studio remote debugging of the .Net code running in Meadow. This command will also restart Meadow.  
+Note: port 4024 is the default port for Visual Studio 2019
 
 ## Persisted Commands
 
 The following commands are maintained by Meadow when the Meadow is restarted. However, no command is persisted if the Meadow is power cycled. After a power cycle the following default values will apply.  
 `SetTraceLevel` - Default is a Trace Level of 0.  
 `MonoEnable & MonoDisable` - Default is mono enable.  
-`TraceEnable & TraceDisable - Enables / disables trace to MeadowCLI` - Default is not to send trace to MeadowCLI.  
-`Uart1race & Uart1App` - Default is Uart1 available for application.  
+`TraceEnable & TraceDisable` - Enables / disables trace to Meadow.CLI - Default is not to send trace to MeadowCLI.  
+`Uart1Trace & Uart1App` -  Switches the function of Uart1 to/from the application from/to debugging. - Default is Uart1 available for application.
 `StartDebugging` - Default is remote debugging disabled.  
 
 ## Extraneous Commands
@@ -122,7 +123,7 @@ Used only for Meadow.OS development and may not be implemented or work as expect
 `Meadow.CLI --QspiRead --SerialPort Com26 --DeveloperValue 65534`  
 `Meadow.CLI --QspiInit --SerialPort Com26 --DeveloperValue 65534`  
 
-The following are not longer supported and should never be used.
+The following are not longer supported.
 `Meadow.CLI --PartitionFileSystem`  
 `Meadow.CLI --MountFileSystem`  
 `Meadow.CLI --InitializeFileSystem`  
