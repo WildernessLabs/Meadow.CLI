@@ -126,7 +126,7 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task ResetMeadow(MeadowSerialDevice meadow)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false);
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false, filter: null);
 
             // needs some time to complete restart
             Thread.Sleep(1000);
@@ -336,6 +336,11 @@ namespace MeadowCLI.DeviceManagement
         }
         public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
         {
+            if(filter == null)
+            {
+                return true;
+            }
+
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
 

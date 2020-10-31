@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI", "MeadowCLI\Meadow.CLI.csproj", "{794C970F-2E77-4CE0-85F8-E6F06B69A23D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI", "MeadowCLI\Meadow.CLI.csproj", "{794C970F-2E77-4CE0-85F8-E6F06B69A23D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI.Core", "Meadow.CLI.Core\Meadow.CLI.Core.csproj", "{00F05278-9F3F-40B0-B377-64E26B028888}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI.Core", "Meadow.CLI.Core\Meadow.CLI.Core.csproj", "{00F05278-9F3F-40B0-B377-64E26B028888}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{62312BB6-7553-4D47-99BE-4C93B048B899}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI.Test", "Meadow.CLI.Test\Meadow.CLI.Test.csproj", "{FB0BE82A-B8DD-4F30-96FD-6A72724B4E9A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{62312BB6-7553-4D47-99BE-4C93B048B899}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62312BB6-7553-4D47-99BE-4C93B048B899}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62312BB6-7553-4D47-99BE-4C93B048B899}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB0BE82A-B8DD-4F30-96FD-6A72724B4E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB0BE82A-B8DD-4F30-96FD-6A72724B4E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB0BE82A-B8DD-4F30-96FD-6A72724B4E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB0BE82A-B8DD-4F30-96FD-6A72724B4E9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
