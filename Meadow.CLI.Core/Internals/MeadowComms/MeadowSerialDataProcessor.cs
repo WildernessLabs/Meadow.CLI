@@ -324,7 +324,7 @@ namespace MeadowCLI.Hcom
                             break;
 
                         // Debug message from Meadow for Visual Studio
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
                             ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;

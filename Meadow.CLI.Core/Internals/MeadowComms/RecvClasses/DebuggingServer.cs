@@ -106,9 +106,10 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
 
             internal async void ReceiveVSDebug()
             {
-                //Console.WriteLine("ActiveClient:Start receiving");
+                // Console.WriteLine("ActiveClient:Start receiving from VS");
                 try
                 {
+                    // Receive from Visual Studio and send to Meadow
                     await Task.Run(async () =>
                     {
                         while (tcpClient.Connected && okayToRun)
@@ -120,7 +121,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
 
                             if (bytesRead > 0)
                             {
-                                //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-VS sent {bytesRead} will forward to Meadow");
+                                // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Received {bytesRead} bytes from VS will forward to HCOM");
 
                                 // Need a buffer the exact size of received data to work with CLI
                                 var meadowBuffer = new byte[bytesRead];
@@ -153,6 +154,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 //Console.WriteLine($"Forwarding {byteData.Length} bytes to VS");
                 try
                 {
+                    // Receive from Meadow and send to Visual Studio
                     if (!tcpClient.Connected)
                     {
                         Console.WriteLine($"Send attempt is not possible, Visual Studio not connected");

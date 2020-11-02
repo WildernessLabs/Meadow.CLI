@@ -260,29 +260,41 @@ namespace MeadowCLI.DeviceManagement
         }
 
         // This method is called to sent to Visual Studio debugging to Mono
-        public static void ForwardVisualStudioDataToMono(byte[] debuggingData, MeadowSerialDevice meadow, int userData)
+        public static void ForwardVisualStudioDataToMono(byte[] debuggerData, MeadowSerialDevice meadow, int userData)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGER_MSG;
-            new SendTargetData(meadow).BuildAndSendSimpleData(debuggingData, _meadowRequestType, (uint)userData);
+            // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Forwarding {debuggerData.Length} bytes to Mono via hcom");
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA;
+
+            new SendTargetData(meadow).BuildAndSendSimpleData(debuggerData, _meadowRequestType, (uint)userData);
         }
 
         // This method is called to forward from mono debugging to Visual Studio
         public static void ForwardMonoDataToVisualStudio(byte[] debuggerData)
         {
+            // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Received {debuggerData.Length} bytes from hcom for VS");
             debuggingServer.SendToVisualStudio(debuggerData);
         }
 
-        // Enter VSDebug mode.
-        public static void VSDebug(int vsDebugPort)
+        // Enter StartDebugging mode.
+        public static async Task StartDebugging(MeadowSerialDevice meadow, int vsDebugPort)
         {
+            // Tell meadow to start it's debugging server, after restarting.
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION;
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+
+            // The previous command caused Meadow to restart. Therefore, we must reestablish
+            // Meadow communication.
+            meadow.AttemptToReconnectToMeadow();
+
             // Create an instance of the TCP socket send/receiver class and
-            // starts it receiving.
+            // start it receiving.
             if (vsDebugPort == 0)
             {
-                Console.WriteLine($"With '--VSDebugPort' not found. Assuming Visual Studio 2019 with port {DefaultVS2019DebugPort}");
+                Console.WriteLine($"Without '--VSDebugPort' being specified, will assume Visual Studio 2019 using default port {DefaultVS2019DebugPort}");
                 vsDebugPort = DefaultVS2019DebugPort;
             }
 
+            // Start the local Meadow.CLI debugging server
             debuggingServer = new DebuggingServer(vsDebugPort);
             debuggingServer.StartListening();
         }
