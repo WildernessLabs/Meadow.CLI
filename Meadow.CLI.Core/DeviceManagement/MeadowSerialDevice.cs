@@ -41,6 +41,10 @@ namespace MeadowCLI.DeviceManagement
         public static bool TryCreateIPEndPoint(string address,
             out IPEndPoint endpoint)
         {
+            if (string.IsNullOrEmpty(address))
+            {
+                address = string.Empty;
+            }
             address = address.Replace("localhost", "127.0.0.1");
             endpoint = null;
 

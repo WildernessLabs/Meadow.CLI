@@ -2,7 +2,7 @@
   "profiles": {
     "Meadow.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "--WriteFile --File Meadow.dll"
+      "commandLineArgs": "--DeployApp --File C:\\Users\\brikim\\source\\repos\\MeadowApplication29\\MeadowApplication29\\bin\\Debug\\net472\\App.exe --SerialPort COM3"
     }
   }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
 using System.Management.Instrumentation;
 using System.Threading;
@@ -328,6 +330,95 @@ namespace MeadowCLI.DeviceManagement
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32);
             //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32;
             //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
+        {
+            if(!File.Exists(applicationFilePath))
+            {
+                Console.WriteLine($"{applicationFilePath} not found.");
+                return;
+            }
+
+            var deviceFile = await meadow.GetFilesAndCrcs();
+            FileInfo fi = new FileInfo(applicationFilePath);
+            var extensions = new List<string> { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+
+            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(s => extensions.Contains(new FileInfo(s).Extension));
+
+            var files = new List<string>();
+            var crcs = new List<UInt32>();
+
+            foreach (var file in paths)
+            {
+                using (FileStream fs = File.Open(file, FileMode.Open))
+                {
+                    var len = (int)fs.Length;
+                    var bytes = new byte[len];
+
+                    fs.Read(bytes, 0, len);
+
+                    //0x
+                    var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
+
+                    //Console.WriteLine($"{file} crc is {crc}");
+                    files.Add(Path.GetFileName(file));
+                    crcs.Add(crc);
+                }
+            }
+
+            var dependences = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
+
+            //crawl dependences
+            foreach (var file in dependences)
+            {
+                using (FileStream fs = File.Open(Path.Combine(fi.DirectoryName, file), FileMode.Open))
+                {
+                    var len = (int)fs.Length;
+                    var bytes = new byte[len];
+
+                    fs.Read(bytes, 0, len);
+
+                    //0x
+                    var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
+
+                    Console.WriteLine($"{file} crc is {crc}");
+                    files.Add(Path.GetFileName(file));
+                    crcs.Add(crc);
+                }
+            }
+
+            // delete unused filed
+            foreach (var file in deviceFile.files)
+            {
+                if (files.Contains(file) == false)
+                {
+                    await meadow.DeleteFile(file).ConfigureAwait(false);
+                    Console.WriteLine($"Removing file: {file}");
+                }
+            }
+
+            // write new files
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (deviceFile.crcs.Contains(crcs[i]))
+                {
+                    Console.WriteLine($"Skipping file: {files[i]}");
+                    continue;
+                }
+
+                if (!File.Exists(Path.Combine(fi.DirectoryName, files[i])))
+                {
+                    Console.WriteLine($"{files[i]} not found");
+                    continue;
+                }
+
+                await meadow.WriteFile(files[i], fi.DirectoryName);
+                Console.WriteLine($"Writing file: {files[i]}");
+            }
+
+            Console.WriteLine($"{fi.Name} deploy complete");
         }
 
         public static async Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,

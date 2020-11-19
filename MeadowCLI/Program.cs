@@ -411,6 +411,10 @@ namespace MeadowCLI
               {
                   await MeadowDeviceManager.Esp32Restart(MeadowDeviceManager.CurrentDevice);
               }
+              else if (options.DeployApp && !string.IsNullOrEmpty(options.FileName))
+              {
+                    await MeadowDeviceManager.DeployApp(MeadowDeviceManager.CurrentDevice, options.FileName);
+              }
             }
             catch (IOException ex)
             {

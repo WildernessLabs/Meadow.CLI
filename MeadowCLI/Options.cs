@@ -115,5 +115,7 @@ namespace MeadowCLI
         public bool Esp32ReadMac { get; set; }
         [Option(longName: "Esp32Restart", Required = false, HelpText = "Restart the ESP32")]
         public bool Esp32Restart { get; set; }
+        [Option(longName: "DeployApp", Required = false, HelpText = "Deploy app and dependencies")]
+        public bool DeployApp { get; set; }
     }
 }
