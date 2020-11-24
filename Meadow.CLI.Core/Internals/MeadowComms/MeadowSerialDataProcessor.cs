@@ -274,11 +274,11 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            //ConsoleOut($"protocol-Request Accepted"); // TESTING
+                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            //ConsoleOut($"protocol-Request Concluded"); // TESTING
+                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
