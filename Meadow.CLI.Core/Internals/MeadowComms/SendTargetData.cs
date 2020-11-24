@@ -48,6 +48,22 @@ namespace MeadowCLI.Hcom
                     mcuAddr, md5Hash, destFileName);
 
                 //--------------------------------------------------------------
+                if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
+                {
+                  // For the ESP32 file download, the proceeding command will erase
+                  // the ESP32 on chip flash memory before we can download. If the
+                  // file is large enough, the time to erase the flash will prevent
+                  // data from being downloaded and the 'semaphore timeout' error
+                  // will cause the CLI to disconnect.
+                  if((UInt32)fileBytes.Length > 1024 * 200)
+                  {
+                    // Using 6 ms / kbyte
+                    int eraseDelay = (6 * fileBytes.Length) / 1000;
+                    // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
+                    System.Threading.Thread.Sleep(eraseDelay);
+                  }
+                }
+
                 // Build each data packet
                 int fileBufOffset = 0;
                 int numbToSend;
@@ -83,6 +99,13 @@ namespace MeadowCLI.Hcom
                         BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
                             lastInSeries ? (uint)1 : (uint)0);      // set UserData
                         break;
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER:
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
+                        break;
+                    default:
+                        Console.WriteLine($"File end Meadow request type of {requestType} not defined");
+                        break;
                 }
 
                 // bufferOffset should point to the byte after the last byte
@@ -91,7 +114,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception except)
             {
-                Debug.WriteLine("Exception sending to Meadow:{0}", except);
+                Debug.WriteLine("{DateTime.Now:HH:mm:ss.fff}-Exception sending to Meadow:{0}", except);
                 throw;
             }
         }
