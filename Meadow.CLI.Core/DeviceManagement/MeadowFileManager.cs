@@ -343,7 +343,8 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME = 0x1c | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END = 0x1d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION = 0x1e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
-
+            HCOM_MDOW_REQUEST_GET_DEVICE_NAME = 0x1f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_2 = 0xf1 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,

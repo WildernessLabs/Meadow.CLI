@@ -54,6 +54,7 @@ You can set the debug trace level to values 0, 1, 2, or 3. 2 is the most useful.
 ### Useful utilities
 
 `MeadowCLI.exe --GetDeviceInfo` - Outputs Meadow OS version and other information
+`MeadowCLI.exe --GetDeviceName` - Outputs Meadow device name contained in configuration file
 
 ## Running applications
 

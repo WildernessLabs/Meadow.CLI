@@ -25,6 +25,7 @@ Note: All commands require the name of the serial port. Once provided it will be
 `Meadow.CLI --RenewFileSys`  
 
 `Meadow.CLI --GetDeviceInfo`  
+`Meadow.CLI --GetDeviceName`  
 `Meadow.CLI --ResetMeadow | -r`  
 `Meadow.CLI --EraseFlash`  
 `Meadow.CLI --VerifyErasedFlash`  
@@ -80,6 +81,7 @@ Example:
 ## Utility Commands
 
 `MeadowCLI.exe --GetDeviceInfo --SerialPort [NameOfSerialPort]` - Outputs Meadow OS version and other device information.  
+`MeadowCLI.exe --GetDeviceName --SerialPort [NameOfSerialPort]` - Reads the device name from an internal configuration file.  
 `MeadowCLI.exe --ResetMeadow --SerialPort [NameOfSerialPort]` - Restarts the Meadow.OS  
 `MeadowCLI.exe --EraseFlash --SerialPort [NameOfSerialPort] --KeepAlive` - Completely erase the Meadow external 32 MB flash.This includes the Meadow file system. Suggestion: use with the `--KeepAlive` since command takes signficant time to execute.  
 `Meadow.CLI --VerifyErasedFlash --SerialPort [NameOfSerialPort] --KeepAlive` - Verifies that the Meadow's 32 MB flash has been completely erased. An erased flash's memory is one where all memory locations are set to 0xff. Suggestion: use with the `--KeepAlive` since command takes signficant time to execute.  
