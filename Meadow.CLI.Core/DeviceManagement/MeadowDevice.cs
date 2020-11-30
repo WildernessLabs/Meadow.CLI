@@ -28,6 +28,8 @@ namespace MeadowCLI.DeviceManagement
         public abstract Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 10000);
 
         public abstract Task GetDeviceInfo(int timeoutInMs = 500);
+        
+        public abstract Task GetDeviceName(int timeoutInMs = 500);
 
         public Task<bool> IsFileOnDevice (string filename)
         {

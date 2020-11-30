@@ -275,6 +275,17 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
+        //device name is processed when the message is received
+        //this will request the device name and return true it was successfully
+        public override async Task GetDeviceName(int timeoutInMs = 1000)
+        {
+            var result = await MeadowDeviceManager.GetDeviceName(this, timeoutInMs);
+            if (!result)
+            {
+                throw new DeviceInfoException();
+            }
+        }
+
         //putting this here for now ..... 
         bool OpenSerialPort(string portName)
         {

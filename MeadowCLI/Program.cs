@@ -327,6 +327,10 @@ namespace MeadowCLI
               {
                   await MeadowDeviceManager.GetDeviceInfo(MeadowDeviceManager.CurrentDevice);
               }
+              else if (options.GetDeviceName)
+              {
+                  await MeadowDeviceManager.GetDeviceName(MeadowDeviceManager.CurrentDevice);
+              }
               else if (options.ResetMeadow)
               {
                   Console.WriteLine("Resetting Meadow");

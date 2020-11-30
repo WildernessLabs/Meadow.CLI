@@ -58,8 +58,10 @@ namespace MeadowCLI
         public bool MonoFlash { get; set; }
         [Option(longName: "MonoUpdateRt", Required = false, HelpText = "Download runtime files and flashes Mono runtime to flash")]
         public bool MonoUpdateRt { get; set; }
-        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Enable mono so it can run")]
+        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Reads device information")]
         public bool GetDeviceInfo { get; set; }
+        [Option(longName: "GetDeviceName", Required = false, HelpText = "Reads device name")]
+        public bool GetDeviceName { get; set; }
 
         [Option(longName: "ListFiles", Required = false, HelpText = "List all files in Meadow partition")]
         public bool ListFiles { get; set; }

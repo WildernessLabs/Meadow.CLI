@@ -81,6 +81,9 @@ namespace TestApp
                 Console.WriteLine("GetDeviceInfo");
                 await MeadowDeviceManager.GetDeviceInfo(meadow);
 
+                Console.WriteLine("GetDeviceName");
+                await MeadowDeviceManager.GetDeviceName(meadow);
+
                 Console.WriteLine("SetDeveloper1");
                 await MeadowDeviceManager.SetDeveloper1(meadow, 1);
 

@@ -177,6 +177,13 @@ namespace MeadowCLI.DeviceManagement
             return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
         }
 
+        public static async Task<bool> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME;
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+        }
+
         public static async Task SetDeveloper1(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1, userData: (uint)userData);
