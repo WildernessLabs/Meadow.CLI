@@ -149,7 +149,7 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                if (e.Message.Contains("Download success"))
+                if (e.MessageType == MeadowMessageType.Concluded)
                 {
                     result = true;
                     tcs.SetResult(true);

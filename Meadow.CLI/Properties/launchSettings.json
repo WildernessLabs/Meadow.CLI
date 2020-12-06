@@ -15,6 +15,18 @@
     "MonoEnable": {
       "commandName": "Project",
       "commandLineArgs": "--MonoEnable"
+    },
+    "GetDeviceInfo": {
+      "commandName": "Project",
+      "commandLineArgs": "--GetDeviceInfo --SerialPort COM4"
+    },
+    "DeployApp": {
+      "commandName": "Project",
+      "commandLineArgs": "--DeployApp --File C:\\Users\\brikim\\source\\repos\\MeadowApplication29\\MeadowApplication29\\bin\\Debug\\net472\\App.exe"
+    },
+    "DeleteFile": {
+      "commandName": "Project",
+      "commandLineArgs": "--DeleteFile --TargetFileName App.exe --SerialPort COM4"
     }
   }
 }
