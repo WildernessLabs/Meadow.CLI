@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "FlashEsp": {
+      "commandName": "Project",
+      "commandLineArgs": "--FlashEsp"
+    },
+    "FlashOS": {
+      "commandName": "Project",
+      "commandLineArgs": "--FlashOS"
+    },
+    "MonoDisable": {
+      "commandName": "Project",
+      "commandLineArgs": "--MonoDisable"
+    },
+    "MonoEnable": {
+      "commandName": "Project",
+      "commandLineArgs": "--MonoEnable"
+    }
+  }
+}

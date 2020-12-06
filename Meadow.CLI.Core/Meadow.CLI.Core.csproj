@@ -1,45 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
-    <RootNamespace>Meadow.CLI</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.8.1</Version>
-    <PackageId>WildernessLabs.Meadow.CLI.Core</PackageId>
-    <Authors>Peter Moody, Adrian Stevens, Bryan Costanich, Brian Kim</Authors>
-    <Description>Meadow Command-Line-Interface Core library.</Description>
-    <Product>Meadow CLI</Product>
-    <Company>Wilderness Labs, Inc</Company>
-    <PackageProjectUrl>https://github.com/WildernessLabs/Meadow.CLI</PackageProjectUrl>
-    <PackageIconUrl>https://github.com/WildernessLabs/Meadow.Foundation/blob/master/Source/icon.png?raw=true</PackageIconUrl>
-    <RepositoryUrl>https://github.com/WildernessLabs/Meadow.</RepositoryUrl>
-    <Copyright>(C) 2019, Wilderness Labs</Copyright>
-    <PackageTags>meadow, cli</PackageTags>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="libusb-1.0.dll" />
-    <None Remove="libusb-1.0.dylib" />
+    <Compile Remove="Internals\Dfu\WIP.DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />
+    <Compile Remove="Internals\Dfu\WIP.NativeMethods.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="libusb-1.0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="libusb-1.0.dylib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="System.IO.Ports" Version="5.0.0" />
+    <PackageReference Include="System.Management" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="System.Management" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="libusb-1.0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libusb-1.0.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
 </Project>

@@ -79,6 +79,9 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAll(
                     Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000));
+
+            // wait for the flash concluded message
+            await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000);
         }
 
         public static async Task EraseFlash(MeadowSerialDevice meadow)

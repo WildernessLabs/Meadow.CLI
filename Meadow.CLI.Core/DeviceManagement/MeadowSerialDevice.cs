@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using MeadowCLI.Hcom;
@@ -427,7 +428,10 @@ namespace MeadowCLI.DeviceManagement
 
                 bool portOpened = Initialize(true);
                 if (portOpened)
+                {
+                    Thread.Sleep(2000);
                     return true;
+                }
 
                 if (delayCount-- == 0)
                     throw new NotConnectedException();

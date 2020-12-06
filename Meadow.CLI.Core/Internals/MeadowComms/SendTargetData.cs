@@ -326,6 +326,11 @@ namespace MeadowCLI.Hcom
                         if (_device.SerialPort == null)
                             throw new NotConnectedException();
 
+                        if (!_device.SerialPort.IsOpen)
+                        {
+                            _device.AttemptToReconnectToMeadow();
+                        }
+
                         _device.SerialPort.Write(encodedBytes, 0, encodedToSend);
                     }
 
