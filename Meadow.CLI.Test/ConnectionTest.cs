@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using MeadowCLI.DeviceManagement;
 using MeadowCLI.Hcom;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 
 namespace Meadow.CLI.Test
 {
-    [TestClass]
+    [TestFixture]
     public class ConnectionTest
     {
         string port = "COM3";
@@ -18,18 +18,18 @@ namespace Meadow.CLI.Test
         public readonly string networkBootloaderFilename = "bootloader.bin";
         public readonly string networkMeadowCommsFilename = "MeadowComms.bin";
         public readonly string networkPartitionTableFilename = "partition-table.bin";
-        DirectoryInfo fixturesPath = new DirectoryInfo("../../Fixtures");
+        DirectoryInfo fixturesPath = new DirectoryInfo("../../../../Fixtures");
 
         // All tests are run expecting the device to already be DFU flash with OS.
 
-        [TestMethod]
+        [Test]
         public async Task BasicConnectionTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
             Assert.IsNotNull(meadow);
         }
 
-        [TestMethod]
+        [Test]
         public async Task ReconnectTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
@@ -38,7 +38,7 @@ namespace Meadow.CLI.Test
             Assert.IsNotNull(meadow);
         }
 
-        [TestMethod]
+        [Test]
         public async Task MonoDisableTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
@@ -46,7 +46,7 @@ namespace Meadow.CLI.Test
             await MeadowDeviceManager.MonoDisable(meadow);
         }
 
-        [TestMethod]
+        [Test]
         public async Task MonoEnableTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
@@ -54,7 +54,7 @@ namespace Meadow.CLI.Test
             await MeadowDeviceManager.MonoEnable(meadow);
         }
 
-        [TestMethod]
+        [Test]
         public async Task RuntimeFlashTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
@@ -66,7 +66,7 @@ namespace Meadow.CLI.Test
             meadow.OnMeadowMessage -= MeadowMesageHandler;
         }
 
-        [TestMethod]
+        [Test]
         public async Task EspFlashTest()
         {
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port);
@@ -79,7 +79,7 @@ namespace Meadow.CLI.Test
             meadow.OnMeadowMessage -= MeadowMesageHandler;
         }
 
-        [TestMethod]
+        [Test]
         public async Task ReconnectLoadTest()
         {
             MeadowSerialDevice meadow;
@@ -90,7 +90,6 @@ namespace Meadow.CLI.Test
                 await MeadowDeviceManager.MonoEnable(meadow);
             }
         }
-
         public void MeadowMesageHandler(object sender, MeadowMessageEventArgs e)
         {
             if (!string.IsNullOrEmpty(e.Message))

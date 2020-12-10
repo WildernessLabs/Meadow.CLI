@@ -62,10 +62,6 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAll(
                     Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME, fileName, fileName, partition, 0, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded));
-
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME;
-
-            //TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, fileName, partition, 0, true);
         }
 
         public static async Task MonoUpdateRt(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
@@ -79,6 +75,9 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAll(
                     Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000));
+
+            // wait for the flash concluded message
+            await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000);
         }
 
         public static async Task EraseFlash(MeadowSerialDevice meadow)
@@ -89,8 +88,6 @@ namespace MeadowCLI.DeviceManagement
         public static async Task VerifyErasedFlash(MeadowSerialDevice meadow)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH, timeoutMs: 30000);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType);
         }
 
         public static async Task PartitionFileSystem(MeadowSerialDevice meadow, int numberOfPartitions = 2)
@@ -101,23 +98,16 @@ namespace MeadowCLI.DeviceManagement
             }
 
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS, userData: (uint)numberOfPartitions);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS;
-
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)numberOfPartitions);
         }
 
         public static async Task MountFileSystem(MeadowSerialDevice meadow, int partition)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task InitializeFileSystem(MeadowSerialDevice meadow, int partition)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task CreateFileSystem(MeadowSerialDevice meadow)

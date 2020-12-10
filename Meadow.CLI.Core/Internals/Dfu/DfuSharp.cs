@@ -23,6 +23,67 @@ namespace DfuSharp
 
     public delegate void HotplugCallback(IntPtr ctx, IntPtr device, HotplugEventType eventType, IntPtr userData);
 
+
+    class NativeMethods
+    {
+
+        const string LIBUSB_LIBRARY = "libusb-1.0.dll";
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_init(ref IntPtr ctx);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern void libusb_exit(IntPtr ctx);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern void libusb_set_debug(IntPtr ctx, LogLevel level);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_get_device_list(IntPtr ctx, ref IntPtr list);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_free_device_list(IntPtr list, int free_devices);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_get_device_descriptor(IntPtr dev, ref DeviceDescriptor desc);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_get_config_descriptor(IntPtr dev, ushort config_index, out IntPtr desc);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_open(IntPtr dev, ref IntPtr handle);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_close(IntPtr handle);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_claim_interface(IntPtr dev, int interface_number);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_set_interface_alt_setting(IntPtr dev, int interface_number, int alternate_setting);
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_control_transfer(IntPtr dev, byte bmRequestType, byte bRequest, ushort wValue, ushort wIndex, IntPtr data, ushort wLength, uint timeout);
+
+        /// <summary>
+        /// Whether or not the USB supports a particular feature.
+        /// </summary>
+        /// <returns>nonzero if the running library has the capability, 0 otherwise</returns>
+        /// <param name="capability">Capability.</param>
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern int libusb_has_capability(Capabilities capability);
+
+
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern ErrorCodes libusb_hotplug_register_callback(IntPtr ctx, HotplugEventType eventType, HotplugFlags flags,
+                                                                    int vendorID, int productID, int deviceClass,
+                                                                    HotplugCallback callback, IntPtr userData,
+                                                                    out IntPtr callbackHandle);
+        [DllImport(LIBUSB_LIBRARY)]
+        internal static extern void libusb_hotplug_deregister_callback(IntPtr ctx, IntPtr callbackHandle);
+
+    }
+
     [Flags]
     public enum HotplugEventType : uint
     {
@@ -156,10 +217,13 @@ namespace DfuSharp
         public IntPtr altsetting;
         public int num_altsetting;
 
-        public InterfaceDescriptor[] Altsetting {
-            get {
+        public InterfaceDescriptor[] Altsetting
+        {
+            get
+            {
                 var descriptors = new InterfaceDescriptor[num_altsetting];
-                for (int i = 0; i < num_altsetting; i++) {
+                for (int i = 0; i < num_altsetting; i++)
+                {
                     descriptors[i] = Marshal.PtrToStructure<InterfaceDescriptor>(altsetting + i * Marshal.SizeOf<InterfaceDescriptor>());
                 }
 
@@ -221,7 +285,7 @@ namespace DfuSharp
         {
             this.interface_descriptor = interface_descriptor;
             this.dfu_descriptor = dfu_descriptor;
-            if (LibUsb.libusb_open(device, ref handle) < 0)
+            if (NativeMethods.libusb_open(device, ref handle) < 0)
                 throw new Exception("Error opening device");
         }
 
@@ -234,22 +298,24 @@ namespace DfuSharp
         }
         public void ClaimInterface()
         {
-            LibUsb.libusb_claim_interface(handle, interface_descriptor.bInterfaceNumber);
+            NativeMethods.libusb_claim_interface(handle, interface_descriptor.bInterfaceNumber);
         }
 
         public void SetInterfaceAltSetting(int alt_setting)
         {
-            LibUsb.libusb_set_interface_alt_setting(handle, interface_descriptor.bInterfaceNumber, alt_setting);
+            NativeMethods.libusb_set_interface_alt_setting(handle, interface_descriptor.bInterfaceNumber, alt_setting);
         }
 
         public void Clear()
         {
             var state = (byte)0xff;
 
-            while (state != 0 && state != 2) {
+            while (state != 0 && state != 2)
+            {
                 state = GetStatus(handle, interface_descriptor.bInterfaceNumber);
 
-                switch (state) {
+                switch (state)
+                {
                     case 5:
                     case 9:
                         Abort(handle, interface_descriptor.bInterfaceNumber);
@@ -267,8 +333,10 @@ namespace DfuSharp
         {
             var buffer = new byte[transfer_size];
 
-            using (var reader = new BinaryReader(file)) {
-                for (var pos = 0; pos < flash_size; pos += transfer_size) {
+            using (var reader = new BinaryReader(file))
+            {
+                for (var pos = 0; pos < flash_size; pos += transfer_size)
+                {
                     int write_address = (baseAddress ?? address) + pos;
                     var count = reader.Read(buffer, 0, transfer_size);
 
@@ -284,8 +352,14 @@ namespace DfuSharp
         {
             var mem = Marshal.AllocHGlobal(transfer_size);
 
-            try {
-                for (var pos = 0; pos < flash_size; pos += transfer_size) {
+            try
+            {
+                //Clear();
+                //ClaimInterface();
+                //if (altSetting != 0) SetInterfaceAltSetting(altSetting);
+
+                for (var pos = 0; pos < flash_size; pos += transfer_size)
+                {
                     int write_address = (baseAddress ?? address) + pos;
                     var count = Math.Min(data.Length - pos, transfer_size);
 
@@ -300,13 +374,13 @@ namespace DfuSharp
 
                     Marshal.Copy(data, pos, mem, count);
 
-                    var ret = LibUsb.libusb_control_transfer(
+                    var ret = NativeMethods.libusb_control_transfer(
                                                 handle,
                                                 0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                                                 1 /*DFU_DNLOAD*/,
                                                 2,
                                                 interface_descriptor.bInterfaceNumber,
-                                                mem,
+                                                 mem,
                                                 (ushort)count,
                                                 5000);
 
@@ -314,13 +388,16 @@ namespace DfuSharp
                         throw new Exception(string.Format("Error with WRITE_SECTOR: {0}", ret));
                     var status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
 
-                    while (status == 4) {
+                    while (status == 4)
+                    {
                         Thread.Sleep(100);
                         status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
                     }
                     OnUploading(new UploadingEventArgs(count));
                 }
-            } finally {
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(mem);
             }
         }
@@ -330,12 +407,18 @@ namespace DfuSharp
             var buffer = new byte[transfer_size];
             var mem = Marshal.AllocHGlobal(transfer_size);
 
-            try {
+            try
+            {
                 int count = 0;
                 ushort transaction = 2;
-                using (var writer = new BinaryWriter(file)) {
-                    while (count < flash_size) {
-                        int ret = LibUsb.libusb_control_transfer(
+                using (var writer = new BinaryWriter(file))
+                {
+                    while (count < flash_size)
+                    {
+                        Clear();
+                        ClaimInterface();
+
+                        int ret = NativeMethods.libusb_control_transfer(
                                                                 handle,
                                                                 0x80 /*LIBUSB_ENDPOINT_IN*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                                                                 2 /*DFU_UPLOAD*/,
@@ -352,7 +435,9 @@ namespace DfuSharp
                         writer.Write(buffer, 0, ret);
                     }
                 }
-            } finally {
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(mem);
             }
         }
@@ -363,7 +448,8 @@ namespace DfuSharp
 
             var mem = Marshal.AllocHGlobal(size);
 
-            try {
+            try
+            {
                 ushort transaction = 2;
 
                 Clear();
@@ -372,7 +458,7 @@ namespace DfuSharp
                 SetAddress(address);
                 Clear();
 
-                int ret = LibUsb.libusb_control_transfer(
+                int ret = NativeMethods.libusb_control_transfer(
                                                         handle,
                                                         0x80 /*LIBUSB_ENDPOINT_IN*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                                                         2 /*DFU_UPLOAD*/,
@@ -385,7 +471,9 @@ namespace DfuSharp
                     throw new Exception(string.Format("Error with DFU_UPLOAD: {0}", ret));
 
                 Marshal.Copy(mem, block, 0, ret);
-            } finally {
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(mem);
                 Clear();
             }
@@ -395,7 +483,8 @@ namespace DfuSharp
         {
             var mem = Marshal.AllocHGlobal(5);
 
-            try {
+            try
+            {
                 Marshal.WriteByte(mem, 0, 0x41);
                 Marshal.WriteByte(mem, 1, (byte)((address >> 0) & 0xff));
                 Marshal.WriteByte(mem, 2, (byte)((address >> 8) & 0xff));
@@ -403,7 +492,7 @@ namespace DfuSharp
                 Marshal.WriteByte(mem, 4, (byte)((address >> 24) & 0xff));
 
 
-                var ret = LibUsb.libusb_control_transfer(
+                var ret = NativeMethods.libusb_control_transfer(
                                         handle,
                                         0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                                         1 /*DFU_DNLOAD*/,
@@ -418,11 +507,47 @@ namespace DfuSharp
 
                 var status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
 
-                while (status == 4) {
+                while (status == 4)
+                {
                     Thread.Sleep(100);
                     status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
                 }
-            } finally {
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(mem);
+            }
+        }
+
+        public void Reset()
+        {
+            var mem = Marshal.AllocHGlobal(0);
+
+            try
+            {
+                var ret = NativeMethods.libusb_control_transfer(
+                                        handle,
+                                        0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
+                                        1 /*DFU_DNLOAD*/,
+                                        0,
+                                        interface_descriptor.bInterfaceNumber,
+                                        mem,
+                                        0,
+                                        5000);
+
+                if (ret < 0)
+                    throw new Exception(string.Format("Error with RESET: {0}", ret));
+
+                var status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
+
+                while (status == 4)
+                {
+                    Thread.Sleep(100);
+                    status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
+                }
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(mem);
             }
         }
@@ -431,7 +556,8 @@ namespace DfuSharp
         {
             var mem = Marshal.AllocHGlobal(5);
 
-            try {
+            try
+            {
                 Marshal.WriteByte(mem, 0, 0x21);
                 Marshal.WriteByte(mem, 1, (byte)((address >> 0) & 0xff));
                 Marshal.WriteByte(mem, 2, (byte)((address >> 8) & 0xff));
@@ -439,7 +565,7 @@ namespace DfuSharp
                 Marshal.WriteByte(mem, 4, (byte)((address >> 24) & 0xff));
 
 
-                var ret = LibUsb.libusb_control_transfer(
+                var ret = NativeMethods.libusb_control_transfer(
                                         handle,
                                         0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                                         1 /*DFU_DNLOAD*/,
@@ -454,11 +580,14 @@ namespace DfuSharp
 
                 var status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
 
-                while (status == 4) {
+                while (status == 4)
+                {
                     Thread.Sleep(100);
                     status = GetStatus(handle, interface_descriptor.bInterfaceNumber);
                 }
-            } finally {
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(mem);
             }
         }
@@ -467,8 +596,9 @@ namespace DfuSharp
         {
             var buffer = Marshal.AllocHGlobal(6);
 
-            try {
-                int ret = LibUsb.libusb_control_transfer(
+            try
+            {
+                int ret = NativeMethods.libusb_control_transfer(
                     dev,
                     0x80 /*LIBUSB_ENDPOINT_IN*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                     3 /*DFU_GETSTATUS*/,
@@ -482,14 +612,16 @@ namespace DfuSharp
                     return Marshal.ReadByte(buffer, 4);
 
                 return 0xff;
-            } finally {
+            }
+            finally
+            {
                 Marshal.FreeHGlobal(buffer);
             }
         }
 
         static void Abort(IntPtr dev, ushort interface_number)
         {
-            int ret = LibUsb.libusb_control_transfer(
+            int ret = NativeMethods.libusb_control_transfer(
                 dev,
                 0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                 6 /*DFU_ABORT*/,
@@ -501,7 +633,7 @@ namespace DfuSharp
         }
         static void ClearStatus(IntPtr dev, ushort interface_number)
         {
-            int ret = LibUsb.libusb_control_transfer(
+            int ret = NativeMethods.libusb_control_transfer(
                dev,
                0x00 /*LIBUSB_ENDPOINT_OUT*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,
                4 /*DFU_GETSTATUS*/,
@@ -513,7 +645,7 @@ namespace DfuSharp
         }
         public void Dispose()
         {
-            LibUsb.libusb_close(handle);
+            NativeMethods.libusb_close(handle);
         }
     }
 
@@ -530,9 +662,9 @@ namespace DfuSharp
         IntPtr handle;
         public Context(LogLevel debug_level = LogLevel.None)
         {
-            var ret = LibUsb.libusb_init(ref handle);
+            var ret = NativeMethods.libusb_init(ref handle);
 
-            LibUsb.libusb_set_debug(handle, debug_level);
+            NativeMethods.libusb_set_debug(handle, debug_level);
             if (ret != 0)
                 throw new Exception(string.Format("Error: {0} while trying to initialize libusb", ret));
 
@@ -543,14 +675,14 @@ namespace DfuSharp
         public void Dispose()
         {
             //this.StopListeningForHotplugEvents(); // not needed, they're automatically deregistered in libusb_exit.
-            LibUsb.libusb_exit(handle);
+            NativeMethods.libusb_exit(handle);
         }
 
         public List<DfuDevice> GetDfuDevices(List<ushort> idVendors)
         {
             var list = IntPtr.Zero;
             var dfu_devices = new List<DfuDevice>();
-            var ret = LibUsb.libusb_get_device_list(handle, ref list);
+            var ret = NativeMethods.libusb_get_device_list(handle, ref list);
 
             if (ret < 0)
                 throw new Exception(string.Format("Error: {0} while trying to get the device list", ret));
@@ -559,33 +691,37 @@ namespace DfuSharp
             Marshal.Copy(list, devices, 0, ret);
 
             // This is awful nested looping -- we should fix it.
-            for (int i = 0; i < ret; i++) {
+            for (int i = 0; i < ret; i++)
+            {
                 var device_descriptor = new DeviceDescriptor();
                 var ptr = IntPtr.Zero;
 
-                if (LibUsb.libusb_get_device_descriptor(devices[i], ref device_descriptor) != 0)
+                if (NativeMethods.libusb_get_device_descriptor(devices[i], ref device_descriptor) != 0)
                     continue;
 
                 //if (!idVendors.Contains(device_descriptor.idVendor))
                 //    continue;
 
-                for (int j = 0; j < device_descriptor.bNumConfigurations; j++) {
-                    var ret2 = LibUsb.libusb_get_config_descriptor(devices[i], (ushort)j, out ptr);
+                for (int j = 0; j < device_descriptor.bNumConfigurations; j++)
+                {
+                    var ret2 = NativeMethods.libusb_get_config_descriptor(devices[i], (ushort)j, out ptr);
 
                     if (ret2 < 0)
                         continue;
-                    //throw new Exception(string.Format("Error: {0} while trying to get the config descriptor", ret2));
+                        //throw new Exception(string.Format("Error: {0} while trying to get the config descriptor", ret2));
 
                     var config_descriptor = Marshal.PtrToStructure<ConfigDescriptor>(ptr);
 
-                    for (int k = 0; k < config_descriptor.bNumInterfaces; k++) {
+                    for (int k = 0; k < config_descriptor.bNumInterfaces; k++)
+                    {
                         var p = config_descriptor.interfaces + j * Marshal.SizeOf<@Interface>();
 
                         if (p == IntPtr.Zero)
                             continue;
 
                         var @interface = Marshal.PtrToStructure<@Interface>(p);
-                        for (int l = 0; l < @interface.num_altsetting; l++) {
+                        for (int l = 0; l < @interface.num_altsetting; l++)
+                        {
                             var interface_descriptor = @interface.Altsetting[l];
 
                             // Ensure this is a DFU descriptor
@@ -600,7 +736,7 @@ namespace DfuSharp
                 }
             }
 
-            LibUsb.libusb_free_device_list(list, 1);
+            NativeMethods.libusb_free_device_list(list, 1);
             return dfu_devices;
         }
 
@@ -608,13 +744,15 @@ namespace DfuSharp
         {
             int p = 0;
 
-            while (p + 1 < list_len) {
+            while (p + 1 < list_len)
+            {
                 int len, type;
 
                 len = Marshal.ReadByte(desc_list, p);
                 type = Marshal.ReadByte(desc_list, p + 1);
 
-                if (type == desc_type) {
+                if (type == desc_type)
+                {
                     return Marshal.PtrToStructure<DfuFunctionDescriptor>(desc_list + p);
                 }
                 p += len;
@@ -625,22 +763,25 @@ namespace DfuSharp
 
         public bool HasCapability(Capabilities caps)
         {
-            return LibUsb.libusb_has_capability(caps) == 0 ? false : true;
+            return NativeMethods.libusb_has_capability(caps) == 0 ? false : true;
         }
 
         public void BeginListeningForHotplugEvents()
         {
-            if (_callbackHandle != IntPtr.Zero) {
+            if (_callbackHandle != IntPtr.Zero)
+            {
                 Debug.WriteLine("Already listening for events.");
                 return;
             }
 
-            if (!HasCapability(Capabilities.HasCapabilityAPI)) {
+            if (!HasCapability(Capabilities.HasCapabilityAPI))
+            {
                 Debug.WriteLine("Capability API not supported.");
                 return;
             }
 
-            if (!HasCapability(Capabilities.SupportsHotplug)) {
+            if (!HasCapability(Capabilities.SupportsHotplug))
+            {
                 Debug.WriteLine("Hotplug notifications not supported.");
                 return;
             }
@@ -650,12 +791,15 @@ namespace DfuSharp
             int deviceClass = -1;
             IntPtr userData = IntPtr.Zero;
 
-            ErrorCodes success = LibUsb.libusb_hotplug_register_callback(this.handle, HotplugEventType.DeviceArrived | HotplugEventType.DeviceLeft, HotplugFlags.DefaultNoFlags,
+            ErrorCodes success = NativeMethods.libusb_hotplug_register_callback(this.handle, HotplugEventType.DeviceArrived | HotplugEventType.DeviceLeft, HotplugFlags.DefaultNoFlags,
                                                                     vendorID, productID, deviceClass, this._hotplugCallbackHandler, userData, out _callbackHandle);
 
-            if (success == ErrorCodes.Success) {
+            if (success == ErrorCodes.Success)
+            {
                 Debug.WriteLine("Callback registration successful");
-            } else {
+            }
+            else
+            {
                 throw new Exception("callback registration failed, error: " + success.ToString());
             }
 
@@ -663,12 +807,13 @@ namespace DfuSharp
 
         public void StopListeningForHotplugEvents()
         {
-            if (_callbackHandle == IntPtr.Zero) {
+            if (_callbackHandle == IntPtr.Zero)
+            {
                 Debug.WriteLine("Not listening already.");
                 return;
             }
 
-            LibUsb.libusb_hotplug_deregister_callback(this.handle, this._callbackHandle);
+            NativeMethods.libusb_hotplug_deregister_callback(this.handle, this._callbackHandle);
 
         }
 

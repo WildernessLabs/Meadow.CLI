@@ -4,13 +4,8 @@ namespace MeadowCLI
 {
     public class Options
     {
-        [Option('d', "Dfu", Required = false, HelpText = "DFU copy os and user files. Looks for files in execution direction. To override, user 'OsFile' and 'UserFile'.")]
-        public bool Dfu { get; set; }
-        [Option(longName: "OsFile", Default = null, Required = false, HelpText = "File path to os file. Usage: --OsFile mypath")]
-        public string DfuOsPath { get; set; }
-        [Option(longName: "UserFile", Default = null, Required = false, HelpText = "File path to user file. Usage: --UserFile mypath")]
-        public string DfuUserPath { get; set; }
-
+        [Option("FlashOS", Required = false, HelpText = "DFU flash Meadow OS.")]
+        public bool FlashOS { get; set; }
         [Option(longName: "WriteFile", Required = false, HelpText = "Write an external file to Meadow's internal flash")]
         public bool WriteFile { get; set; }
         [Option(longName: "DeleteFile", Required = false, HelpText = "Delete a file in Meadow's internal flash")]
@@ -119,5 +114,10 @@ namespace MeadowCLI
         public bool Esp32Restart { get; set; }
         [Option(longName: "DeployApp", Required = false, HelpText = "Deploy app and dependencies")]
         public bool DeployApp { get; set; }
+        [Option(longName: "Download", Required = false, HelpText = "Download latest OS, runtime, and networking files.")]
+        public bool DownloadLatest { get; set; }
+        [Option(longName: "FlashEsp", Required = false, HelpText = "Flash ESP 32 Coprocessor.")]
+        public bool FlashEsp { get; set; }
+
     }
 }
