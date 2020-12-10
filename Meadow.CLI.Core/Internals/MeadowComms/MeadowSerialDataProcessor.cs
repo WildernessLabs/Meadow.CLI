@@ -274,11 +274,11 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            //ConsoleOut($"protocol-Request Accepted"); // TESTING
+                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            //ConsoleOut($"protocol-Request Concluded"); // TESTING
+                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
@@ -324,7 +324,7 @@ namespace MeadowCLI.Hcom
                             break;
 
                         // Debug message from Meadow for Visual Studio
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_MONO_DEBUGGER_MSG:
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
                             ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
                             MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;

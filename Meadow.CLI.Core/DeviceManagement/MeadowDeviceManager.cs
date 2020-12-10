@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
-using System.Management.Instrumentation;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI;
@@ -27,8 +28,6 @@ namespace MeadowCLI.DeviceManagement
         internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
         internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
-
-        //    public static ObservableCollection<MeadowDevice> AttachedDevices = new ObservableCollection<MeadowDevice>();
 
         public static MeadowSerialDevice CurrentDevice { get; set; } //short cut for now but may be useful
 
@@ -119,15 +118,11 @@ namespace MeadowCLI.DeviceManagement
                 throw new System.ArgumentOutOfRangeException(nameof(level), "Trace level must be between 0 & 3 inclusive");
 
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL, userData: (uint)level);
-
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)level);
         }
 
         public static async Task ResetMeadow(MeadowSerialDevice meadow)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false);
-
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false, filter: null);
             // needs some time to complete restart
             Thread.Sleep(1000);
         }
@@ -135,15 +130,11 @@ namespace MeadowCLI.DeviceManagement
         public static async Task EnterDfuMode(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task NshEnable(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH, userData: (uint)1);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint) 1);
         }
 
         public static async Task MonoDisable(MeadowSerialDevice meadow)
@@ -159,8 +150,6 @@ namespace MeadowCLI.DeviceManagement
         public static async Task MonoRunState(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task MonoFlash(MeadowSerialDevice meadow)
@@ -175,114 +164,107 @@ namespace MeadowCLI.DeviceManagement
             return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
         }
 
+        public static async Task<bool> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME;
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+        }
+
         public static async Task SetDeveloper1(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
         public static async Task SetDeveloper2(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
         public static async Task SetDeveloper3(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static async Task SetDeveloper4(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static async Task TraceDisable(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task TraceEnable(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task Uart1Apps(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART);
-
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART;
-
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task Uart1Trace(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task RenewFileSys(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task QspiWrite(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static async Task QspiRead(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         public static async Task QspiInit(MeadowSerialDevice meadow, int userData)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT, userData: (uint)userData);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, (uint)userData);
         }
 
         // This method is called to sent to Visual Studio debugging to Mono
-        public static void ForwardVisualStudioDataToMono(byte[] debuggingData, MeadowSerialDevice meadow, int userData)
+        public static void ForwardVisualStudioDataToMono(byte[] debuggerData, MeadowSerialDevice meadow, int userData)
         {
-            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGER_MSG;
-            new SendTargetData(meadow).BuildAndSendSimpleData(debuggingData, _meadowRequestType, (uint)userData);
+            // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Forwarding {debuggerData.Length} bytes to Mono via hcom");
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA;
+
+            new SendTargetData(meadow).BuildAndSendSimpleData(debuggerData, _meadowRequestType, (uint)userData);
         }
 
         // This method is called to forward from mono debugging to Visual Studio
         public static void ForwardMonoDataToVisualStudio(byte[] debuggerData)
         {
+            // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Received {debuggerData.Length} bytes from hcom for VS");
             debuggingServer.SendToVisualStudio(debuggerData);
         }
 
-        // Enter VSDebug mode.
-        public static void VSDebug(int vsDebugPort)
+        // Enter StartDebugging mode.
+        public static async Task StartDebugging(MeadowSerialDevice meadow, int vsDebugPort)
         {
+            // Tell meadow to start it's debugging server, after restarting.
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION;
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+
+            // The previous command caused Meadow to restart. Therefore, we must reestablish
+            // Meadow communication.
+            meadow.AttemptToReconnectToMeadow();
+
             // Create an instance of the TCP socket send/receiver class and
-            // starts it receiving.
+            // start it receiving.
             if (vsDebugPort == 0)
             {
-                Console.WriteLine($"With '--VSDebugPort' not found. Assuming Visual Studio 2019 with port {DefaultVS2019DebugPort}");
+                Console.WriteLine($"Without '--VSDebugPort' being specified, will assume Visual Studio 2019 using default port {DefaultVS2019DebugPort}");
                 vsDebugPort = DefaultVS2019DebugPort;
             }
 
+            // Start the local Meadow.CLI debugging server
             debuggingServer = new DebuggingServer(vsDebugPort);
             debuggingServer.StartListening();
         }
@@ -307,15 +289,100 @@ namespace MeadowCLI.DeviceManagement
         public static async Task Esp32ReadMac(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
         }
 
         public static async Task Esp32Restart(MeadowSerialDevice meadow)
         {
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32);
-            //_meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32;
-            //new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+        }
+
+        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
+        {
+            if(!File.Exists(applicationFilePath))
+            {
+                Console.WriteLine($"{applicationFilePath} not found.");
+                return;
+            }
+
+            var deviceFile = await meadow.GetFilesAndCrcs();
+            FileInfo fi = new FileInfo(applicationFilePath);
+            var extensions = new List<string> { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+
+            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(s => extensions.Contains(new FileInfo(s).Extension));
+
+            var files = new List<string>();
+            var crcs = new List<UInt32>();
+
+            foreach (var file in paths)
+            {
+                using (FileStream fs = File.Open(file, FileMode.Open))
+                {
+                    var len = (int)fs.Length;
+                    var bytes = new byte[len];
+
+                    fs.Read(bytes, 0, len);
+
+                    //0x
+                    var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
+
+                    //Console.WriteLine($"{file} crc is {crc}");
+                    files.Add(Path.GetFileName(file));
+                    crcs.Add(crc);
+                }
+            }
+
+            var dependences = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
+
+            //crawl dependences
+            foreach (var file in dependences)
+            {
+                using (FileStream fs = File.Open(Path.Combine(fi.DirectoryName, file), FileMode.Open))
+                {
+                    var len = (int)fs.Length;
+                    var bytes = new byte[len];
+
+                    fs.Read(bytes, 0, len);
+
+                    //0x
+                    var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
+
+                    Console.WriteLine($"{file} crc is {crc}");
+                    files.Add(Path.GetFileName(file));
+                    crcs.Add(crc);
+                }
+            }
+
+            // delete unused filed
+            foreach (var file in deviceFile.files)
+            {
+                if (files.Contains(file) == false)
+                {
+                    await meadow.DeleteFile(file).ConfigureAwait(false);
+                    Console.WriteLine($"Removing file: {file}");
+                }
+            }
+
+            // write new files
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (deviceFile.crcs.Contains(crcs[i]))
+                {
+                    Console.WriteLine($"Skipping file: {files[i]}");
+                    continue;
+                }
+
+                if (!File.Exists(Path.Combine(fi.DirectoryName, files[i])))
+                {
+                    Console.WriteLine($"{files[i]} not found");
+                    continue;
+                }
+
+                await meadow.WriteFile(files[i], fi.DirectoryName);
+                Console.WriteLine($"Writing file: {files[i]}");
+            }
+
+            Console.WriteLine($"{fi.Name} deploy complete");
         }
 
         public static async Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
@@ -336,6 +403,11 @@ namespace MeadowCLI.DeviceManagement
         }
         public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
         {
+            if(filter == null)
+            {
+                return true;
+            }
+
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
 

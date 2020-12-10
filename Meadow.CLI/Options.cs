@@ -4,13 +4,8 @@ namespace MeadowCLI
 {
     public class Options
     {
-        [Option('d', "Dfu", Required = false, HelpText = "DFU copy os and user files. Looks for files in execution direction. To override, user 'OsFile' and 'UserFile'.")]
-        public bool Dfu { get; set; }
-        [Option(longName: "OsFile", Default = null, Required = false, HelpText = "File path to os file. Usage: --OsFile mypath")]
-        public string DfuOsPath { get; set; }
-        [Option(longName: "UserFile", Default = null, Required = false, HelpText = "File path to user file. Usage: --UserFile mypath")]
-        public string DfuUserPath { get; set; }
-
+        [Option("FlashOS", Required = false, HelpText = "DFU flash Meadow OS.")]
+        public bool FlashOS { get; set; }
         [Option(longName: "WriteFile", Required = false, HelpText = "Write an external file to Meadow's internal flash")]
         public bool WriteFile { get; set; }
         [Option(longName: "DeleteFile", Required = false, HelpText = "Delete a file in Meadow's internal flash")]
@@ -58,8 +53,10 @@ namespace MeadowCLI
         public bool MonoFlash { get; set; }
         [Option(longName: "MonoUpdateRt", Required = false, HelpText = "Download runtime files and flashes Mono runtime to flash")]
         public bool MonoUpdateRt { get; set; }
-        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Enable mono so it can run")]
+        [Option(longName: "GetDeviceInfo", Required = false, HelpText = "Reads device information")]
         public bool GetDeviceInfo { get; set; }
+        [Option(longName: "GetDeviceName", Required = false, HelpText = "Reads device name")]
+        public bool GetDeviceName { get; set; }
 
         [Option(longName: "ListFiles", Required = false, HelpText = "List all files in Meadow partition")]
         public bool ListFiles { get; set; }
@@ -102,8 +99,8 @@ namespace MeadowCLI
         [Option(longName: "QspiInit", Required = false, HelpText = "Set developer3 (0 to 4,294,967,295)")]
         public bool QspiInit { get; set; }
 
-        [Option(longName: "VSDebug", Required = false, HelpText = "Enables MeadowCLI to interact with Visual Studio")]
-        public bool VSDebug { get; set; }
+        [Option(longName: "StartDebugging", Required = false, HelpText = "Enables remote debug of Meadow app.exe")]
+        public bool StartDebugging { get; set; }
         [Option(longName: "VSDebugPort", Default = 0, Required = false, HelpText = "TCP/IP debugging port, Visual Studio 2019 uses 4024")]
         public int VSDebugPort { get; set; }
 
@@ -115,5 +112,12 @@ namespace MeadowCLI
         public bool Esp32ReadMac { get; set; }
         [Option(longName: "Esp32Restart", Required = false, HelpText = "Restart the ESP32")]
         public bool Esp32Restart { get; set; }
+        [Option(longName: "DeployApp", Required = false, HelpText = "Deploy app and dependencies")]
+        public bool DeployApp { get; set; }
+        [Option(longName: "Download", Required = false, HelpText = "Download latest OS, runtime, and networking files.")]
+        public bool DownloadLatest { get; set; }
+        [Option(longName: "FlashEsp", Required = false, HelpText = "Flash ESP 32 Coprocessor.")]
+        public bool FlashEsp { get; set; }
+
     }
 }

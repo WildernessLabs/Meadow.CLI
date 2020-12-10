@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using MeadowCLI.Hcom;
@@ -41,6 +42,10 @@ namespace MeadowCLI.DeviceManagement
         public static bool TryCreateIPEndPoint(string address,
             out IPEndPoint endpoint)
         {
+            if (string.IsNullOrEmpty(address))
+            {
+                address = string.Empty;
+            }
             address = address.Replace("localhost", "127.0.0.1");
             endpoint = null;
 
@@ -144,7 +149,7 @@ namespace MeadowCLI.DeviceManagement
 
             handler = (s, e) =>
             {
-                if (e.Message.Contains("Download success"))
+                if (e.MessageType == MeadowMessageType.Concluded)
                 {
                     result = true;
                     tcs.SetResult(true);
@@ -265,6 +270,17 @@ namespace MeadowCLI.DeviceManagement
         public override async Task GetDeviceInfo(int timeoutInMs = 1000)
         {
             var result = await MeadowDeviceManager.GetDeviceInfo(this, timeoutInMs);
+            if (!result)
+            {
+                throw new DeviceInfoException();
+            }
+        }
+
+        //device name is processed when the message is received
+        //this will request the device name and return true it was successfully
+        public override async Task GetDeviceName(int timeoutInMs = 1000)
+        {
+            var result = await MeadowDeviceManager.GetDeviceName(this, timeoutInMs);
             if (!result)
             {
                 throw new DeviceInfoException();
@@ -403,7 +419,7 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        bool AttemptToReconnectToMeadow()
+        internal bool AttemptToReconnectToMeadow()
         {
             int delayCount = 20;    // 10 seconds
             while (true)
@@ -412,7 +428,10 @@ namespace MeadowCLI.DeviceManagement
 
                 bool portOpened = Initialize(true);
                 if (portOpened)
+                {
+                    Thread.Sleep(2000);
                     return true;
+                }
 
                 if (delayCount-- == 0)
                     throw new NotConnectedException();
