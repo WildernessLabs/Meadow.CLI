@@ -1,16 +1,24 @@
 {
   "profiles": {
-    "FlashEsp": {
+    "Download": {
       "commandName": "Project",
-      "commandLineArgs": "--FlashEsp"
+      "commandLineArgs": "--Download"
     },
     "FlashOS": {
       "commandName": "Project",
       "commandLineArgs": "--FlashOS"
     },
+    "MonoUpdateRt": {
+      "commandName": "Project",
+      "commandLineArgs": "--MonoUpdateRt"
+    },
+    "FlashEsp": {
+      "commandName": "Project",
+      "commandLineArgs": "--FlashEsp"
+    },
     "MonoDisable": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoDisable"
+      "commandLineArgs": "--MonoDisable -s COM4"
     },
     "MonoEnable": {
       "commandName": "Project",

@@ -10,7 +10,7 @@
     <Company>Wilderness Labs, Inc</Company>
     <Product>Meadow</Product>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.12.6</Version>
+    <Version>0.12.0</Version>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
@@ -22,7 +22,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputPath>C:\Users\brikim\temp\assemblies</OutputPath>
-  </PropertyGroup>
+  </PropertyGroup> 
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.6.0" />
@@ -32,12 +32,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Update="libusb-1.0.dylib">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   
   <ItemGroup>

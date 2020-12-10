@@ -26,6 +26,7 @@ namespace DfuSharp
 
     class NativeMethods
     {
+
         const string LIBUSB_LIBRARY = "libusb-1.0.dll";
 
         [DllImport(LIBUSB_LIBRARY)]
@@ -353,9 +354,9 @@ namespace DfuSharp
 
             try
             {
-                Clear();
-                ClaimInterface();
-                if (altSetting != 0) SetInterfaceAltSetting(altSetting);
+                //Clear();
+                //ClaimInterface();
+                //if (altSetting != 0) SetInterfaceAltSetting(altSetting);
 
                 for (var pos = 0; pos < flash_size; pos += transfer_size)
                 {
@@ -365,11 +366,11 @@ namespace DfuSharp
                     if (count <= 0)
                         return;
 
-                    //Clear();
-                    //ClaimInterface();
-                    //if (altSetting != 0) SetInterfaceAltSetting(altSetting);
+                    Clear();
+                    ClaimInterface();
+                    if (altSetting != 0) SetInterfaceAltSetting(altSetting);
                     SetAddress(write_address);
-                    //Clear();
+                    Clear();
 
                     Marshal.Copy(data, pos, mem, count);
 
@@ -379,7 +380,7 @@ namespace DfuSharp
                                                 1 /*DFU_DNLOAD*/,
                                                 2,
                                                 interface_descriptor.bInterfaceNumber,
-                                                mem,
+                                                 mem,
                                                 (ushort)count,
                                                 5000);
 
@@ -414,6 +415,9 @@ namespace DfuSharp
                 {
                     while (count < flash_size)
                     {
+                        Clear();
+                        ClaimInterface();
+
                         int ret = NativeMethods.libusb_control_transfer(
                                                                 handle,
                                                                 0x80 /*LIBUSB_ENDPOINT_IN*/ | (0x1 << 5) /*LIBUSB_REQUEST_TYPE_CLASS*/ | 0x01 /*LIBUSB_RECIPIENT_INTERFACE*/,

@@ -329,7 +329,7 @@ namespace MeadowCLI
                     if (string.IsNullOrEmpty(options.FileName))
                     {
                         var downloadManager = new DownloadManager();
-                        var downloadedRuntimePath = Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.runtimeFilename);
+                        var downloadedRuntimePath = Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.RuntimeFilename);
                         if (File.Exists(downloadedRuntimePath))
                         {
                             Console.WriteLine("FileName not specified, falling back to latest download.");
@@ -427,14 +427,19 @@ namespace MeadowCLI
               else if (options.FlashEsp)
               {
                     var downloadManager = new DownloadManager();
+                    Console.WriteLine($"Transferring {downloadManager.NetworkMeadowCommsFilename}");
                     await MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice, 
-                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.networkMeadowCommsFilename), mcuDestAddr: "0x10000");
+                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
                     await Task.Delay(1000);
+
+                    Console.WriteLine($"Transferring {downloadManager.NetworkBootloaderFilename}");
                     await MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice, 
-                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.networkBootloaderFilename), mcuDestAddr: "0x1000");
+                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
                     await Task.Delay(1000);
+
+                    Console.WriteLine($"Transferring {downloadManager.NetworkPartitionTableFilename}");
                     await MeadowFileManager.WriteFileToEspFlash(MeadowDeviceManager.CurrentDevice, 
-                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.networkPartitionTableFilename), mcuDestAddr: "0x8000");
+                        Path.Combine(downloadManager.FirmwareDownloadsFilePath, downloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
                     await Task.Delay(1000);
                 }
               else if (options.Esp32ReadMac)

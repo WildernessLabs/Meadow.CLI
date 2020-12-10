@@ -1,40 +1,35 @@
-﻿using Meadow;
-using MeadowCLI;
-using MeadowCLI.DeviceManagement;
-using MeadowCLI.Hcom;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Management;
 using System.Net;
 using System.Net.Http;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI
 {
     public class DownloadManager
     {
-        readonly string versionCheckUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/latest.json";
-        readonly Guid DEVICE_INTERFACE_GUID_STDFU = new Guid(0x3fe809ab, 0xfb91, 0x4cb5, 0xa6, 0x43, 0x69, 0x67, 0x0d, 0x52, 0x36, 0x6e);
+        readonly string _versionCheckUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/latest.json";
+        string _versionCheckFile { get { return new Uri(_versionCheckUrl).Segments.Last(); } }
+
         public readonly string FirmwareDownloadsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "Firmware");
-        string VersionCheckFile { get { return new Uri(versionCheckUrl).Segments.Last(); } }
-        public readonly string osFilename = "Meadow.OS.bin";
-        public readonly string runtimeFilename = "Meadow.OS.Runtime.bin";
-        public readonly string networkBootloaderFilename = "bootloader.bin";
-        public readonly string networkMeadowCommsFilename = "MeadowComms.bin";
-        public readonly string networkPartitionTableFilename = "partition-table.bin";
-        public readonly uint osAddress = 0x08000000;
+        public readonly string WildernessLabsTemp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "temp");
+        public readonly string OSFilename = "Meadow.OS.bin";
+        public readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
+        public readonly string NetworkBootloaderFilename = "bootloader.bin";
+        public readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
+        public readonly string NetworkPartitionTableFilename = "partition-table.bin";
+
+        readonly string dfuUtilExe = "dfu-util.exe";
+        readonly string libusb = "libusb-1.0.dll";
 
         public async Task DownloadLatest()
         {
             HttpClient httpClient = new HttpClient();
-            var payload = await httpClient.GetStringAsync(versionCheckUrl);
+            var payload = await httpClient.GetStringAsync(_versionCheckUrl);
             var version = ExtractJsonValue(payload, "version");
             var minCLIVersion = ExtractJsonValue(payload, "minCLIVersion", "0.12.0");
 
@@ -56,7 +51,64 @@ namespace Meadow.CLI
             await DownloadFile(new Uri(ExtractJsonValue(payload, "downloadUrl")));
             await DownloadFile(new Uri(ExtractJsonValue(payload, "networkDownloadUrl")));
 
-            Console.WriteLine($"Downloaded Meadow OS version {version}");
+            Console.WriteLine($"Download and extracted firmware version {version} to:\r\n{FirmwareDownloadsFilePath}");
+        }
+
+        public async Task<bool> DownloadDfuUtil(bool is64bit = true)
+        {
+            try
+            {
+                if (Directory.Exists(WildernessLabsTemp))
+                {
+                    Directory.Delete(WildernessLabsTemp, true);
+                }
+                Directory.CreateDirectory(WildernessLabsTemp);
+
+                WebClient client = new WebClient();
+                if (is64bit)
+                {
+                    var dfuzip = "dfu-util-0.9-win64.zip";
+                    var downloadUri = $"http://dfu-util.sourceforge.net/releases/{dfuzip}";
+
+                    client.DownloadFile(downloadUri, Path.Combine(WildernessLabsTemp, dfuzip));
+                    Console.WriteLine($"Downloaded {downloadUri}");
+
+                    ZipFile.ExtractToDirectory(Path.Combine(WildernessLabsTemp, dfuzip), WildernessLabsTemp);
+                    File.Copy(Path.Combine(WildernessLabsTemp, dfuzip.Substring(0, dfuzip.LastIndexOf(".")), dfuUtilExe), $@"C:\Windows\system\{dfuUtilExe}");
+                    File.Copy(Path.Combine(WildernessLabsTemp, dfuzip.Substring(0, dfuzip.LastIndexOf(".")), libusb), $@"C:\Windows\system\{libusb}");
+                    Console.WriteLine($"Extracted and moved {dfuUtilExe} to system folder");
+                }
+                else
+                {
+                    var dfuexe = "http://dfu-util.sourceforge.net/releases/dfu-util-0.8-binaries/win32-mingw32/dfu-util.exe";
+                    var libusbdll = "http://dfu-util.sourceforge.net/releases/dfu-util-0.8-binaries/win32-mingw32/libusb-1.0.dll";
+                    client.DownloadFile(dfuexe, Path.Combine(WildernessLabsTemp, dfuUtilExe));
+                    client.DownloadFile(libusbdll, Path.Combine(WildernessLabsTemp, libusb));
+                    File.Copy(Path.Combine(WildernessLabsTemp, dfuUtilExe), $@"C:\Windows\system32\{dfuUtilExe}");
+                    File.Copy(Path.Combine(WildernessLabsTemp, libusb), $@"C:\Windows\system32\{libusb}");
+                }
+
+                return true;
+            }
+            catch(Exception ex)
+            {
+                if(ex.Message.Contains("Access to the path"))
+                {
+                    Console.WriteLine($"{ex.Message}{Environment.NewLine}Run terminal as administrator and try again.");
+                }
+                else
+                {
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                }
+                return false;
+            }
+            finally
+            {
+                if (Directory.Exists(WildernessLabsTemp))
+                {
+                    Directory.Delete(WildernessLabsTemp, true);
+                }
+            }
         }
 
         string ExtractJsonValue(string json, string field, string def = "")
@@ -75,7 +127,7 @@ namespace Meadow.CLI
 
             WebClient webClient = new WebClient();
             webClient.DownloadFile(uri, Path.Combine(FirmwareDownloadsFilePath, fileName));
-            webClient.DownloadFile(versionCheckUrl, Path.Combine(FirmwareDownloadsFilePath, VersionCheckFile));
+            webClient.DownloadFile(_versionCheckUrl, Path.Combine(FirmwareDownloadsFilePath, _versionCheckFile));
             ZipFile.ExtractToDirectory(Path.Combine(FirmwareDownloadsFilePath, fileName), FirmwareDownloadsFilePath);
         }
 
