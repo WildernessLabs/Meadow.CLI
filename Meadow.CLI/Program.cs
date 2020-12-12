@@ -92,10 +92,10 @@ namespace MeadowCLI
                 }
             });
 
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                behavior = CompletionBehavior.KeepConsoleOpen;
-            }
+            //if (System.Diagnostics.Debugger.IsAttached)
+            //{
+            //    behavior = CompletionBehavior.KeepConsoleOpen;
+            //}
 
             if ((behavior & CompletionBehavior.KeepConsoleOpen) == CompletionBehavior.KeepConsoleOpen)
             {
@@ -107,37 +107,16 @@ namespace MeadowCLI
             }
         }
 
-        static bool IsSerialPortValid(SerialPort serialPort)
-        {
-            if (serialPort == null)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         static void SyncArgsCache(Options options)
         {
-            State state = null;
-
-            if (options.ClearCache)
+            var port = SettingsManager.GetSetting(Setting.PORT);
+            if (string.IsNullOrEmpty(options.SerialPort) && !string.IsNullOrEmpty(port))
             {
-                StateCache.Clear();
+                options.SerialPort = port;
             }
-            else
+            else if (!string.IsNullOrEmpty(options.SerialPort))
             {
-                state = StateCache.Load();
-            }
-
-            if (string.IsNullOrWhiteSpace(options.SerialPort))
-            {
-                options.SerialPort = state.SerialPort;
-            }
-            else
-            {
-                state.SerialPort = options.SerialPort;
-                StateCache.Save(state);
+                SettingsManager.SaveSetting(Setting.PORT, options.SerialPort);
             }
         }
 
@@ -145,16 +124,21 @@ namespace MeadowCLI
 
         static async Task<CompletionBehavior> ProcessHcom(Options options)
         {
-            Console.Write($"Opening port '{options.SerialPort}'...");
+            if (string.IsNullOrEmpty(options.SerialPort))
+            {
+                Console.WriteLine("Please specify a --SerialPort");
+                return CompletionBehavior.RequestFailed;
+            }
+
+            Console.WriteLine($"Opening port '{options.SerialPort}'");
             await MeadowDeviceManager.GetMeadowForSerialPort(options.SerialPort);
             // verify that the port was actually connected
             if (MeadowDeviceManager.CurrentDevice.Socket == null &&
                 MeadowDeviceManager.CurrentDevice.SerialPort == null)
             {
-                Console.WriteLine($"port not available");
+                Console.WriteLine($"Port is unavailable.");
                 return CompletionBehavior.RequestFailed;
             }
-            Console.WriteLine($"ok.");
 
             try
             {
@@ -305,15 +289,6 @@ namespace MeadowCLI
               else if (options.MonoEnable)
               {
                   await MeadowDeviceManager.MonoEnable(MeadowDeviceManager.CurrentDevice);
-
-                  // the device is going to reset, so we need to wait for it to reconnect
-                  Console.WriteLine($"Reconnecting...");
-                  System.Threading.Thread.Sleep(5000);
-
-                  // just enter port echo mode until the user cancels
-                  MeadowDeviceManager.EnterEchoMode(MeadowDeviceManager.CurrentDevice);
-
-                  return CompletionBehavior.Success | CompletionBehavior.KeepConsoleOpen;
               }
               else if (options.MonoRunState)
               {

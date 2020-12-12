@@ -18,7 +18,7 @@
     },
     "MonoDisable": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoDisable -s COM4"
+      "commandLineArgs": "--MonoDisable"
     },
     "MonoEnable": {
       "commandName": "Project",
@@ -26,7 +26,19 @@
     },
     "GetDeviceInfo": {
       "commandName": "Project",
-      "commandLineArgs": "--GetDeviceInfo --SerialPort COM4"
+      "commandLineArgs": "--GetDeviceInfo"
+    },
+    "ListFiles": {
+      "commandName": "Project",
+      "commandLineArgs": "--ListFiles"
+    },
+    "SerialPort": {
+      "commandName": "Project",
+      "commandLineArgs": "--SerialPort COM6"
+    },
+    "KeepAlive": {
+      "commandName": "Project",
+      "commandLineArgs": "--KeepAlive"
     },
     "DeployApp": {
       "commandName": "Project",
