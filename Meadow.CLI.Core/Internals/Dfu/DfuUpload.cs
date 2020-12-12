@@ -66,7 +66,7 @@ namespace MeadowCLI
 
                 try
                 {
-                    var process = Process.Start("dfu-util", $"-a 0 -S {serial} -D {filename} -s {_osAddress}");
+                    var process = Process.Start("dfu-util", $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}");
                     process.WaitForExit();
                 }
                 catch (Exception ex)

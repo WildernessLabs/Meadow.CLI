@@ -36,11 +36,11 @@ namespace Meadow.CLI
             FileVersionInfo myFileVersionInfo =
                 FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName);
 
-            if (!CheckCompatibility(minCLIVersion, myFileVersionInfo.ProductVersion))
-            {
-                Console.WriteLine($"Please update Meadow.CLI to continue. Run \"dotnet tool update Meadow.CLI --global\" to update.");
-                return;
-            }
+            //if (!CheckCompatibility(minCLIVersion, myFileVersionInfo.ProductVersion))
+            //{
+            //    Console.WriteLine($"Please update Meadow.CLI to continue. Run \"dotnet tool update WildernessLabs.Meadow.CLI --global\" to update.");
+            //    return;
+            //}
 
             if (Directory.Exists(FirmwareDownloadsFilePath))
             {
