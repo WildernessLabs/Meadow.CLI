@@ -31,6 +31,13 @@ namespace Meadow.CLI
             {
                 settings.Add(setting.ToString(), value);
             }
+
+            FileInfo fi = new FileInfo(path);
+            if (!Directory.Exists(fi.Directory.FullName))
+            {
+                Directory.CreateDirectory(fi.Directory.FullName);
+            }
+
             var json = JsonSerializer.Serialize(settings);
             File.WriteAllText(path, json);
         }
