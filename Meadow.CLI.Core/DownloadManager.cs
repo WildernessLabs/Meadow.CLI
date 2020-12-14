@@ -125,7 +125,7 @@ namespace Meadow.CLI
                 if (!string.IsNullOrEmpty(result?.versions?.LastOrDefault()))
                 {
                     var latest = result.versions.Last();
-                    return (latest.ToVersion() > appVersion.ToVersion(), result.versions.Last());
+                    return (latest.ToVersion() > appVersion.ToVersion(), latest);
                 }
             }
             catch(Exception ex)
