@@ -159,6 +159,10 @@ namespace MeadowCLI
                   {
                       Console.WriteLine($"option --WriteFile also requires option --File (the local file you wish to write)");
                   }
+                  else if (!File.Exists(options.FileName))
+                  {
+                      Console.WriteLine($"Cannot find {options.FileName}");
+                  }
                   else
                   {
                       if (string.IsNullOrEmpty(options.TargetFileName))
