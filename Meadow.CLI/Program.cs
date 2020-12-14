@@ -105,6 +105,8 @@ namespace MeadowCLI
             {
                 Thread.Sleep(500);
             }
+
+            Environment.Exit(0);
         }
 
         static void SyncArgsCache(Options options)

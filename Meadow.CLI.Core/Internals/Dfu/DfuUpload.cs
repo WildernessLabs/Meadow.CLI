@@ -32,6 +32,7 @@ namespace MeadowCLI
             if (device == null)
             {
                 Console.WriteLine("Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
+                return;
             }
             else
             {
