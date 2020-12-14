@@ -11,6 +11,8 @@ using System.IO.Compression;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Meadow.CLI;
+using System.Reflection;
+using System.Text.Json;
 
 namespace MeadowCLI
 {
@@ -38,6 +40,13 @@ namespace MeadowCLI
             };
 
             CompletionBehavior behavior = CompletionBehavior.Success;
+
+            DownloadManager downloadManager = new DownloadManager();
+            var check = downloadManager.CheckForUpdates().Result;
+            if (check.updateExists)
+            {
+                Console.WriteLine($"CLI version {check.latestVersion} is available. To update, run: {downloadManager.updateCommand}");
+            }
 
             if (args.Length == 0)
             {

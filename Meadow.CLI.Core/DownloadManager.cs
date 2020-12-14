@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Text.Json;
 
 namespace Meadow.CLI
 {
@@ -23,10 +24,11 @@ namespace Meadow.CLI
         public readonly string NetworkBootloaderFilename = "bootloader.bin";
         public readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
         public readonly string NetworkPartitionTableFilename = "partition-table.bin";
+        public readonly string updateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
         readonly string dfuUtilExe = "dfu-util.exe";
         readonly string libusb = "libusb-1.0.dll";
-
+        
         public async Task DownloadLatest()
         {
             HttpClient httpClient = new HttpClient();
@@ -36,9 +38,9 @@ namespace Meadow.CLI
 
             var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
             
-            if (!CheckCompatibility(minCLIVersion, appVersion))
+            if (CompareVersions(minCLIVersion, appVersion) > 0)
             {
-               Console.WriteLine($"Please update Meadow.CLI to continue. Run \"dotnet tool update WildernessLabs.Meadow.CLI --global\" to update.");
+               Console.WriteLine($"Installing OS version {version} requires the latest CLI. To update, run: {updateCommand}");
                return;
             }
 
@@ -51,7 +53,7 @@ namespace Meadow.CLI
             await DownloadFile(new Uri(ExtractJsonValue(payload, "downloadUrl")));
             await DownloadFile(new Uri(ExtractJsonValue(payload, "networkDownloadUrl")));
 
-            Console.WriteLine($"Download and extracted firmware version {version} to:\r\n{FirmwareDownloadsFilePath}");
+            Console.WriteLine($"Download and extracted OS version {version} to:\r\n{FirmwareDownloadsFilePath}");
         }
 
         public async Task<bool> DownloadDfuUtil(bool is64bit = true)
@@ -111,6 +113,27 @@ namespace Meadow.CLI
             }
         }
 
+        public async Task<(bool updateExists, string latestVersion)> CheckForUpdates()
+        {
+            try
+            {
+                var packageId = "WildernessLabs.Meadow.CLI";
+                var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
+                HttpClient client = new HttpClient();
+                var json = await client.GetStringAsync($"https://api.nuget.org/v3-flatcontainer/{packageId}/index.json");
+                var result = JsonSerializer.Deserialize<PackageVersions>(json);
+
+                if (!string.IsNullOrEmpty(result?.versions?.LastOrDefault()))
+                {
+                    return (CompareVersions(appVersion, result.versions.Last()) < 0, result.versions.Last());
+                }
+            }
+            catch(Exception ex)
+            {
+            }
+            return (false, string.Empty);
+        }
+
         string ExtractJsonValue(string json, string field, string def = "")
         {
             var jo = JObject.Parse(json);
@@ -131,13 +154,18 @@ namespace Meadow.CLI
             ZipFile.ExtractToDirectory(Path.Combine(FirmwareDownloadsFilePath, fileName), FirmwareDownloadsFilePath);
         }
 
-        private bool CheckCompatibility(string minVsixVersion, string vsixVersion)
+        private int CompareVersions(string versionA, string versionB)
         {
-            Version vsix, minVsix;
-            Version.TryParse(minVsixVersion, out minVsix);
-            Version.TryParse(vsixVersion, out vsix);
+            Version a, b;
+            Version.TryParse(versionA, out a);
+            Version.TryParse(versionB, out b);
 
-            return (vsix ?? new Version(0, 0, 0)) >= (minVsix ?? new Version(0, 0, 0));
+            if (a < b)
+                return -1;
+            else if (a > b)
+                return 1;
+            else 
+                return 0;
         }
     }
 }
