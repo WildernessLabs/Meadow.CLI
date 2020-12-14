@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Meadow.CLI
 {
@@ -31,16 +32,15 @@ namespace Meadow.CLI
             HttpClient httpClient = new HttpClient();
             var payload = await httpClient.GetStringAsync(_versionCheckUrl);
             var version = ExtractJsonValue(payload, "version");
-            var minCLIVersion = ExtractJsonValue(payload, "minCLIVersion", "0.12.0");
+            var minCLIVersion = ExtractJsonValue(payload, "minCLIVersion");
 
-            FileVersionInfo myFileVersionInfo =
-                FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName);
-
-            //if (!CheckCompatibility(minCLIVersion, myFileVersionInfo.ProductVersion))
-            //{
-            //    Console.WriteLine($"Please update Meadow.CLI to continue. Run \"dotnet tool update WildernessLabs.Meadow.CLI --global\" to update.");
-            //    return;
-            //}
+            var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
+            
+            if (!CheckCompatibility(minCLIVersion, appVersion))
+            {
+               Console.WriteLine($"Please update Meadow.CLI to continue. Run \"dotnet tool update WildernessLabs.Meadow.CLI --global\" to update.");
+               return;
+            }
 
             if (Directory.Exists(FirmwareDownloadsFilePath))
             {
