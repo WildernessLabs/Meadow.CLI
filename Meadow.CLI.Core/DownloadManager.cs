@@ -35,10 +35,9 @@ namespace Meadow.CLI
             var payload = await httpClient.GetStringAsync(_versionCheckUrl);
             var version = ExtractJsonValue(payload, "version");
             var minCLIVersion = ExtractJsonValue(payload, "minCLIVersion");
-
             var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
             
-            if (CompareVersions(minCLIVersion, appVersion) > 0)
+            if (minCLIVersion.ToVersion() > appVersion.ToVersion())
             {
                Console.WriteLine($"Installing OS version {version} requires the latest CLI. To update, run: {updateCommand}");
                return;
@@ -125,7 +124,8 @@ namespace Meadow.CLI
 
                 if (!string.IsNullOrEmpty(result?.versions?.LastOrDefault()))
                 {
-                    return (CompareVersions(appVersion, result.versions.Last()) < 0, result.versions.Last());
+                    var latest = result.versions.Last();
+                    return (latest.ToVersion() > appVersion.ToVersion(), result.versions.Last());
                 }
             }
             catch(Exception ex)
@@ -152,20 +152,6 @@ namespace Meadow.CLI
             webClient.DownloadFile(uri, Path.Combine(FirmwareDownloadsFilePath, fileName));
             webClient.DownloadFile(_versionCheckUrl, Path.Combine(FirmwareDownloadsFilePath, _versionCheckFile));
             ZipFile.ExtractToDirectory(Path.Combine(FirmwareDownloadsFilePath, fileName), FirmwareDownloadsFilePath);
-        }
-
-        private int CompareVersions(string versionA, string versionB)
-        {
-            Version a, b;
-            Version.TryParse(versionA, out a);
-            Version.TryParse(versionB, out b);
-
-            if (a < b)
-                return -1;
-            else if (a > b)
-                return 1;
-            else 
-                return 0;
         }
     }
 }
