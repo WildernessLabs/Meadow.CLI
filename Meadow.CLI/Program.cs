@@ -11,6 +11,8 @@ using System.IO.Compression;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Meadow.CLI;
+using System.Reflection;
+using System.Text.Json;
 
 namespace MeadowCLI
 {
@@ -38,6 +40,13 @@ namespace MeadowCLI
             };
 
             CompletionBehavior behavior = CompletionBehavior.Success;
+
+            DownloadManager downloadManager = new DownloadManager();
+            var check = downloadManager.CheckForUpdates().Result;
+            if (check.updateExists)
+            {
+                Console.WriteLine($"CLI version {check.latestVersion} is available. To update, run: {downloadManager.updateCommand}");
+            }
 
             if (args.Length == 0)
             {
@@ -105,6 +114,8 @@ namespace MeadowCLI
             {
                 Thread.Sleep(500);
             }
+
+            Environment.Exit(0);
         }
 
         static void SyncArgsCache(Options options)
@@ -147,6 +158,10 @@ namespace MeadowCLI
                   if (string.IsNullOrEmpty(options.FileName))
                   {
                       Console.WriteLine($"option --WriteFile also requires option --File (the local file you wish to write)");
+                  }
+                  else if (!File.Exists(options.FileName))
+                  {
+                      Console.WriteLine($"Cannot find {options.FileName}");
                   }
                   else
                   {

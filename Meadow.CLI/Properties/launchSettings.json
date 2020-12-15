@@ -47,6 +47,10 @@
     "DeleteFile": {
       "commandName": "Project",
       "commandLineArgs": "--DeleteFile --TargetFileName App.exe --SerialPort COM4"
+    },
+    "WriteFile": {
+      "commandName": "Project",
+      "commandLineArgs": "--WriteFile --File App.exe"
     }
   }
 }
