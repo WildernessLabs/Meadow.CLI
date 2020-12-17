@@ -421,6 +421,9 @@ namespace MeadowCLI.DeviceManagement
 
         internal bool AttemptToReconnectToMeadow()
         {
+            //close port ASAP to solve plotblem with old win7 usbser.sys driver
+            SerialPort?.Close();
+
             int delayCount = 20;    // 10 seconds
             while (true)
             {
