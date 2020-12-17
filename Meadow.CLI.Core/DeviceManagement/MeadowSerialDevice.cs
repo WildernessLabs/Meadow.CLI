@@ -165,7 +165,7 @@ namespace MeadowCLI.DeviceManagement
             return result;
         }
 
-        public override async Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 60000)        
+        public override async Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 60000)
         {
             if (SerialPort == null)
             {
@@ -183,13 +183,13 @@ namespace MeadowCLI.DeviceManagement
             {
                 Console.WriteLine($"Msg: {e.MessageType}");
 
-                if(e.MessageType == MeadowMessageType.FileListTitle)
+                if (e.MessageType == MeadowMessageType.FileListTitle)
                 {
                     FilesOnDevice.Clear();
                     FileCrcs.Clear();
                     started = true;
                 }
-                else if(started == false)
+                else if (started == false)
                 {   //ignore everything until we've started a new file list request
                     return;
                 }
@@ -197,19 +197,19 @@ namespace MeadowCLI.DeviceManagement
                 if (e.MessageType == MeadowMessageType.FileListCrcMember)
                 {
                     SetFileAndCrcsFromMessage(e.Message);
-                } 
+                }
 
                 if (e.MessageType == MeadowMessageType.Concluded)
                 {
                     tcs.TrySetResult(true);
-                } 
+                }
             };
             DataProcessor.OnReceiveData += handler;
 
             await MeadowFileManager.ListFilesAndCrcs(this).ConfigureAwait(false);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            DataProcessor.OnReceiveData -= handler; 
+            DataProcessor.OnReceiveData -= handler;
 
             return (FilesOnDevice, FileCrcs);
         }
@@ -249,7 +249,7 @@ namespace MeadowCLI.DeviceManagement
                         SetFileNameFromMessage(e.Message);
                     }
 
-                    if(e.MessageType == MeadowMessageType.Concluded)
+                    if (e.MessageType == MeadowMessageType.Concluded)
                     {
                         tcs.SetResult(true);
                     }
@@ -313,7 +313,7 @@ namespace MeadowCLI.DeviceManagement
 
                 SerialPort = port;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return false; //serial port couldn't be opened .... that's ok
             }
@@ -327,7 +327,8 @@ namespace MeadowCLI.DeviceManagement
                 DataProcessor = new MeadowSerialDataProcessor(Socket);
 
                 DataProcessor.OnReceiveData += DataReceived;
-            } else if (SerialPort != null)
+            }
+            else if (SerialPort != null)
             {
                 DataProcessor = new MeadowSerialDataProcessor(SerialPort);
 
@@ -364,8 +365,8 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.SerialReconnect:
                     AttemptToReconnectToMeadow();
                     break;
-                    // The last 2 types received text straight from mono' stdout / stderr
-                    // via hcom and may not be packetized at the end of a lines.
+                // The last 2 types received text straight from mono' stdout / stderr
+                // via hcom and may not be packetized at the end of a lines.
                 case MeadowMessageType.ErrOutput:
                     ParseAndOutputStdioText(args.Message, "Err: ");
                     break;
@@ -447,7 +448,7 @@ namespace MeadowCLI.DeviceManagement
 
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
-            if(fileNameStart == 0 && crcStart == 0)
+            if (fileNameStart == 0 && crcStart == 0)
                 return;     // No files found
 
             Debug.Assert(crcStart > fileNameStart);
@@ -463,7 +464,7 @@ namespace MeadowCLI.DeviceManagement
         {
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
-            if(fileNameStart == 0 && crcStart == 0)
+            if (fileNameStart == 0 && crcStart == 0)
                 return;     // No files found
 
             Debug.Assert(crcStart == 0);
@@ -500,7 +501,7 @@ namespace MeadowCLI.DeviceManagement
 
         void ConsoleOut(string msg)
         {
-            if(Verbose == false)
+            if (Verbose == false)
             {
                 return;
             }
@@ -510,7 +511,7 @@ namespace MeadowCLI.DeviceManagement
 
         void ConsoleOutNoEol(string msg)
         {
-            if(Verbose == false)
+            if (Verbose == false)
             {
                 return;
             }
