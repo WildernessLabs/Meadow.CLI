@@ -79,7 +79,8 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task EraseFlash(MeadowSerialDevice meadow)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, timeoutMs: 200000);
+            // not sure why this responds with a SerialReconnect message
+            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, MeadowMessageType.SerialReconnect, timeoutMs: 200000);
         }
 
         public static async Task VerifyErasedFlash(MeadowSerialDevice meadow)

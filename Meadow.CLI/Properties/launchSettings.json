@@ -38,7 +38,7 @@
     },
     "SerialPort": {
       "commandName": "Project",
-      "commandLineArgs": "--SerialPort COM10"
+      "commandLineArgs": "--SerialPort COM14"
     },
     "KeepAlive": {
       "commandName": "Project",
