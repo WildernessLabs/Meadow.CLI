@@ -1,11 +1,6 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Threading;
+﻿using System.IO;
 using System.Threading.Tasks;
-using MeadowCLI;
 using MeadowCLI.DeviceManagement;
-using MeadowCLI.Hcom;
 using NUnit.Framework;
 
 namespace Meadow.CLI.Test
@@ -13,25 +8,24 @@ namespace Meadow.CLI.Test
     [TestFixture]
     public class ConnectionTest
     {
-        string port = "COM7";
+        string port = "COM5";
         public readonly string osFilename = "Meadow.OS.bin";
         public readonly string runtimeFilename = "Meadow.OS.Runtime.bin";
         public readonly string networkBootloaderFilename = "bootloader.bin";
         public readonly string networkMeadowCommsFilename = "MeadowComms.bin";
         public readonly string networkPartitionTableFilename = "partition-table.bin";
-        DirectoryInfo fixturesPath = new DirectoryInfo(@".\Fixtures");
+        DirectoryInfo fixturesPath = new DirectoryInfo("Fixtures");
 
         // All tests are run expecting the device to already be DFU flash with OS.
 
         [Test]
         public async Task FlashOSTest()
         {
-            DfuUpload.FlashOS(Path.Combine(fixturesPath.FullName, osFilename));
-            Thread.Sleep(5000);
-
+            //DfuUpload.FlashOS(Path.Combine(fixturesPath.FullName, osFilename));
+            
             using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
             {
-                Assert.IsNotNull(meadow);
+                Assert.IsNotNull(meadow, "Initial connection");
                 await MeadowDeviceManager.MonoDisable(meadow);
                 var isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
                 // try to disable one more time
