@@ -120,7 +120,7 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        internal async Task SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
+        internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
         {
             var tcs = new TaskCompletionSource<bool>();
             var received = false;
@@ -128,7 +128,7 @@ namespace MeadowCLI.Hcom
             if (!doAcceptedCheck)
             {
                 BuildAndSendSimpleCommand(requestType, userData);
-                return;
+                return true;
             }
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
@@ -152,6 +152,7 @@ namespace MeadowCLI.Hcom
             {
                 throw new Exception("Command not accepted.");
             }
+            return received;
         }
 
         //==========================================================================

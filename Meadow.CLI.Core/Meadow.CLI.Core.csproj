@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Internals\Dfu\DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\DfuSharp.cs" />
     <Compile Remove="Internals\Dfu\WIP.DfuContext.cs" />
     <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
     <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />

@@ -8,6 +8,10 @@
       "commandName": "Project",
       "commandLineArgs": "--FlashOS"
     },
+    "EraseFlash": {
+      "commandName": "Project",
+      "commandLineArgs": "--EraseFlash"
+    },
     "MonoUpdateRt": {
       "commandName": "Project",
       "commandLineArgs": "--MonoUpdateRt"
@@ -34,7 +38,7 @@
     },
     "SerialPort": {
       "commandName": "Project",
-      "commandLineArgs": "--SerialPort COM6"
+      "commandLineArgs": "--SerialPort COM7"
     },
     "KeepAlive": {
       "commandName": "Project",
@@ -51,6 +55,10 @@
     "WriteFile": {
       "commandName": "Project",
       "commandLineArgs": "--WriteFile --File App.exe"
+    },
+    "InstallDfuUtil": {
+      "commandName": "Project",
+      "commandLineArgs": "--InstallDfuUtil"
     }
   }
 }

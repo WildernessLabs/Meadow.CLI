@@ -14,7 +14,7 @@ using MeadowCLI.Hcom;
 namespace MeadowCLI.DeviceManagement
 {
     //a simple model object that represents a meadow device including connection
-    public class MeadowSerialDevice : MeadowDevice
+    public class MeadowSerialDevice : MeadowDevice, IDisposable
     {
         public EventHandler<MeadowMessageEventArgs> OnMeadowMessage;
 
@@ -313,9 +313,9 @@ namespace MeadowCLI.DeviceManagement
 
                 SerialPort = port;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
-                return false; //serial port couldn't be opened .... that's ok
+                throw ex;
             }
             return true;
         }
@@ -513,6 +513,11 @@ namespace MeadowCLI.DeviceManagement
             }
 
             Console.Write(msg);
+        }
+
+        public void Dispose()
+        {
+            this.SerialPort?.Dispose();
         }
     }
 

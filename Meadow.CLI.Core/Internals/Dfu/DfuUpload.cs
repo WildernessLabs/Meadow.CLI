@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.RegularExpressions;
-using DfuSharp;
 using LibUsbDotNet;
 using Meadow.CLI;
 
@@ -20,7 +14,6 @@ namespace MeadowCLI
 
         public static void FlashOS(string filename = "")
         {
-        start:
             var allDevices = UsbDevice.AllDevices;
             if (allDevices.Count(x => x.Name == _usbStmName) > 1)
             {
@@ -39,8 +32,7 @@ namespace MeadowCLI
                 // if filename isn't specified fallback to download path
                 if (string.IsNullOrEmpty(filename))
                 {
-                    DownloadManager flashManager = new DownloadManager();
-                    filename = Path.Combine(flashManager.FirmwareDownloadsFilePath, flashManager.OSFilename);
+                    filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OSFilename);
                 }
 
                 if (!File.Exists(filename))
@@ -65,54 +57,88 @@ namespace MeadowCLI
                     serial = device.DeviceProperties["SerialNumber"].ToString();
                 }
 
+                //var dfuUtilVersion = GetDfuUtilVersion();
+
+                //if (string.IsNullOrEmpty(dfuUtilVersion))
+                //{
+                //    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                //    {
+                //        Console.WriteLine("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
+                //    }
+                //    else
+                //    {
+                //        Console.WriteLine("dfu-util not found. To install run: brew install dfu-util");
+                //    }
+                //    return;
+                //}
+                //else if (dfuUtilVersion != "0.10")
+                //{
+                //    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                //    {
+                //        Console.WriteLine("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
+                //    }
+                //    else
+                //    {
+                //        Console.WriteLine("dfu-util update required. To install, run: brew upgrade dfu-util");
+                //    }
+                //    return;
+                //}
+
                 try
                 {
-                    var process = Process.Start("dfu-util", $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}");
-                    process.WaitForExit();
+                    using (var process = new Process())
+                    {
+                        process.StartInfo.FileName = "dfu-util";
+                        process.StartInfo.Arguments = $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave";
+                        process.StartInfo.UseShellExecute = false;
+                        process.Start();
+                        process.WaitForExit();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    // dfu-util isn't installed
-                    if (ex.Message.Contains("cannot find"))
-                    {
-                        if (Environment.OSVersion.Platform == PlatformID.Unix)
-                        {
-                            Console.WriteLine("dfu-util not found, to install run: brew install dfu-util");
-                        }
-                        else
-                        {
-                            Console.Write("dfu-util not found. Do you want to install it? (Y/N): ");
-                            var key = Console.ReadKey();
-                            Console.WriteLine();
-                            if (key.Key == ConsoleKey.Y)
-                            {
-                                var downloadManager = new DownloadManager();
-                                if (downloadManager.DownloadDfuUtil(Environment.Is64BitOperatingSystem).Result)
-                                {
-                                    goto start;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"There was a problem executing dfu-util: {ex.Message}");
-                    }
-
+                    Console.WriteLine($"There was a problem executing dfu-util: {ex.Message}");
                     return;
                 }
+            }
+        }
 
-                try
+        private static string GetDfuUtilVersion()
+        {
+            try
+            {
+                using (var process = new Process())
                 {
-                    // TODO: need to get the serial number and target the appropriate device to support multiple devices
-                    DfuContext.Init();
-                    var devices = DfuContext.Current.GetDevices();
-                    devices[0].Clear();
-                    devices[0].Reset();
+                    process.StartInfo.FileName = "dfu-util";
+                    process.StartInfo.Arguments = $"--version";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.Start();
+
+                    var reader = process.StandardOutput;
+                    string output = reader.ReadLine();
+                    if (output.StartsWith("dfu-util"))
+                    {
+                        var split = output.Split(new char[] { ' ' });
+                        if (split.Length == 2)
+                        {
+                            return split[1];
+                        }
+                    }
+
+                    process.WaitForExit();
+                    return string.Empty;
                 }
-                catch (Exception ex)
+            }
+            catch(Exception ex)
+            {
+                if(ex.Message.Contains("cannot find"))
                 {
-                    Console.WriteLine("Manually reset or reconnect to start device in runtime mode");
+                    return string.Empty;
+                }
+                else
+                {
+                    throw ex;
                 }
             }
         }

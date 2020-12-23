@@ -118,6 +118,8 @@ namespace MeadowCLI
         public bool DownloadLatest { get; set; }
         [Option(longName: "FlashEsp", Required = false, HelpText = "Flash ESP 32 Coprocessor.")]
         public bool FlashEsp { get; set; }
+        [Option(longName: "InstallDfuUtil", Required = false, HelpText = "Download and install dfu-util.")]
+        public bool InstallDfuUtil { get; set; }
 
     }
 }

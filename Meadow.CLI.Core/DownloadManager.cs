@@ -17,18 +17,17 @@ namespace Meadow.CLI
         readonly string _versionCheckUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/latest.json";
         string _versionCheckFile { get { return new Uri(_versionCheckUrl).Segments.Last(); } }
 
-        public readonly string FirmwareDownloadsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "Firmware");
-        public readonly string WildernessLabsTemp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "temp");
-        public readonly string OSFilename = "Meadow.OS.bin";
-        public readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
-        public readonly string NetworkBootloaderFilename = "bootloader.bin";
-        public readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
-        public readonly string NetworkPartitionTableFilename = "partition-table.bin";
-        public readonly string updateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
+        public static readonly string FirmwareDownloadsFilePath = 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "Firmware");
+        public static readonly string WildernessLabsTemp = 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "temp");
+        public static readonly string OSFilename = "Meadow.OS.bin";
+        public static readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
+        public static readonly string NetworkBootloaderFilename = "bootloader.bin";
+        public static readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
+        public static readonly string NetworkPartitionTableFilename = "partition-table.bin";
+        public static readonly string UpdateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
-        readonly string dfuUtilExe = "dfu-util.exe";
-        readonly string libusb = "libusb-1.0.dll";
-        
         public async Task DownloadLatest()
         {
             HttpClient httpClient = new HttpClient();
@@ -39,7 +38,7 @@ namespace Meadow.CLI
             
             if (minCLIVersion.ToVersion() > appVersion.ToVersion())
             {
-               Console.WriteLine($"Installing OS version {version} requires the latest CLI. To update, run: {updateCommand}");
+               Console.WriteLine($"Installing OS version {version} requires the latest CLI. To update, run: {UpdateCommand}");
                return;
             }
 
@@ -55,7 +54,7 @@ namespace Meadow.CLI
             Console.WriteLine($"Download and extracted OS version {version} to:\r\n{FirmwareDownloadsFilePath}");
         }
 
-        public async Task<bool> DownloadDfuUtil(bool is64bit = true)
+        public void InstallDfuUtil(bool is64bit = true)
         {
             try
             {
@@ -66,30 +65,31 @@ namespace Meadow.CLI
                 Directory.CreateDirectory(WildernessLabsTemp);
 
                 WebClient client = new WebClient();
-                if (is64bit)
+                var downloadUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-0.10-binaries.zip";
+                var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/") + 1);
+                client.DownloadFile(downloadUrl, Path.Combine(WildernessLabsTemp, downloadFileName));
+                ZipFile.ExtractToDirectory(Path.Combine(WildernessLabsTemp, downloadFileName), WildernessLabsTemp);
+
+                var dfuutilexe = new FileInfo(Path.Combine(WildernessLabsTemp, is64bit ? "win64" : "win32", "dfu-util.exe"));
+                var libusbdll = new FileInfo(Path.Combine(WildernessLabsTemp, is64bit ? "win64" : "win32", "libusb-1.0.dll"));
+
+                var targetDir = is64bit ?
+                    Environment.GetFolderPath(Environment.SpecialFolder.System) :
+                    Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
+
+                File.Copy(dfuutilexe.FullName, Path.Combine(targetDir, dfuutilexe.Name), true);
+                File.Copy(libusbdll.FullName, Path.Combine(targetDir, libusbdll.Name), true);
+
+                // clean up from previous version
+                if (File.Exists(Path.Combine(@"C:\Windows\System", dfuutilexe.Name)))
                 {
-                    var dfuzip = "dfu-util-0.9-win64.zip";
-                    var downloadUri = $"http://dfu-util.sourceforge.net/releases/{dfuzip}";
-
-                    client.DownloadFile(downloadUri, Path.Combine(WildernessLabsTemp, dfuzip));
-                    Console.WriteLine($"Downloaded {downloadUri}");
-
-                    ZipFile.ExtractToDirectory(Path.Combine(WildernessLabsTemp, dfuzip), WildernessLabsTemp);
-                    File.Copy(Path.Combine(WildernessLabsTemp, dfuzip.Substring(0, dfuzip.LastIndexOf(".")), dfuUtilExe), $@"C:\Windows\system\{dfuUtilExe}");
-                    File.Copy(Path.Combine(WildernessLabsTemp, dfuzip.Substring(0, dfuzip.LastIndexOf(".")), libusb), $@"C:\Windows\system\{libusb}");
-                    Console.WriteLine($"Extracted and moved {dfuUtilExe} to system folder");
+                    File.Delete(Path.Combine(@"C:\Windows\System", dfuutilexe.Name));
                 }
-                else
+                if (File.Exists(Path.Combine(@"C:\Windows\System", libusbdll.Name)))
                 {
-                    var dfuexe = "http://dfu-util.sourceforge.net/releases/dfu-util-0.8-binaries/win32-mingw32/dfu-util.exe";
-                    var libusbdll = "http://dfu-util.sourceforge.net/releases/dfu-util-0.8-binaries/win32-mingw32/libusb-1.0.dll";
-                    client.DownloadFile(dfuexe, Path.Combine(WildernessLabsTemp, dfuUtilExe));
-                    client.DownloadFile(libusbdll, Path.Combine(WildernessLabsTemp, libusb));
-                    File.Copy(Path.Combine(WildernessLabsTemp, dfuUtilExe), $@"C:\Windows\system32\{dfuUtilExe}");
-                    File.Copy(Path.Combine(WildernessLabsTemp, libusb), $@"C:\Windows\system32\{libusb}");
+                    File.Delete(Path.Combine(@"C:\Windows\System", libusbdll.Name));
                 }
-
-                return true;
+                Console.WriteLine("dfu-util 0.10 installed");
             }
             catch(Exception ex)
             {
@@ -101,7 +101,6 @@ namespace Meadow.CLI
                 {
                     Console.WriteLine($"Unexpected error: {ex.Message}");
                 }
-                return false;
             }
             finally
             {

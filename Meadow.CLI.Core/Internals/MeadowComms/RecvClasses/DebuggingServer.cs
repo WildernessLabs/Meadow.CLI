@@ -26,7 +26,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             vsPort = visualStudioPort;
         }
 
-        public async void StartListening()
+        public async void StartListening(MeadowSerialDevice meadow)
         {
             try
             {
@@ -57,7 +57,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                         }
                         
                         activeClient = new ActiveClient(this, tcpClient);
-                        activeClient.ReceiveVSDebug();
+                        activeClient.ReceiveVSDebug(meadow);
                         activeClientCount++;
                     });
                 }
@@ -104,7 +104,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 tcpClient.Close();      // Closes NetworkStream too
             }
 
-            internal async void ReceiveVSDebug()
+            internal async void ReceiveVSDebug(MeadowSerialDevice meadow)
             {
                 // Console.WriteLine("ActiveClient:Start receiving from VS");
                 try
@@ -128,7 +128,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                                 Array.Copy(recvdBuffer, 0, meadowBuffer, 0, bytesRead);
 
                                 // Forward to Meadow
-                                MeadowDeviceManager.ForwardVisualStudioDataToMono(meadowBuffer, MeadowDeviceManager.CurrentDevice, 0);
+                                MeadowDeviceManager.ForwardVisualStudioDataToMono(meadowBuffer, meadow, 0);
                                 //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Forwarded {bytesRead} from VS to Meadow");
                             }
                         }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Meadow.CLI;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -75,9 +75,6 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAll(
                     Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000));
-
-            // wait for the flash concluded message
-            await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000);
         }
 
         public static async Task EraseFlash(MeadowSerialDevice meadow)
@@ -113,29 +110,21 @@ namespace MeadowCLI.DeviceManagement
         public static async Task CreateFileSystem(MeadowSerialDevice meadow)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType);
         }
 
         public static async Task FormatFileSystem(MeadowSerialDevice meadow, int partition)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task ListFiles(MeadowSerialDevice meadow, int partition = 0)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task ListFilesAndCrcs(MeadowSerialDevice meadow, int partition = 0)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC, userData: (uint)partition, timeoutMs: 30000);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         // fileName - is the name of the file on this host PC
@@ -215,6 +204,24 @@ namespace MeadowCLI.DeviceManagement
                     TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileElement[i + 1], targetFileName, partition, mcuAddr, false, lastFile);
                 }
             }
+        }
+
+        public static async Task FlashEsp(MeadowSerialDevice device, string sourcePath)
+        {
+            Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
+            await Task.Delay(1000);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
+            await Task.Delay(1000);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
+            await Task.Delay(1000);
         }
 
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
