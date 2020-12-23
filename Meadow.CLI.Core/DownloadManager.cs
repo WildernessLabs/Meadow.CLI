@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Text.Json;
+using Meadow.CLI.Core;
 
 namespace Meadow.CLI
 {
@@ -32,13 +31,12 @@ namespace Meadow.CLI
         {
             HttpClient httpClient = new HttpClient();
             var payload = await httpClient.GetStringAsync(_versionCheckUrl);
-            var version = ExtractJsonValue(payload, "version");
-            var minCLIVersion = ExtractJsonValue(payload, "minCLIVersion");
+            var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
             var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
             
-            if (minCLIVersion.ToVersion() > appVersion.ToVersion())
+            if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
-               Console.WriteLine($"Installing OS version {version} requires the latest CLI. To update, run: {UpdateCommand}");
+               Console.WriteLine($"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
                return;
             }
 
@@ -48,10 +46,10 @@ namespace Meadow.CLI
             }
             Directory.CreateDirectory(FirmwareDownloadsFilePath);
 
-            await DownloadFile(new Uri(ExtractJsonValue(payload, "downloadUrl")));
-            await DownloadFile(new Uri(ExtractJsonValue(payload, "networkDownloadUrl")));
+            await DownloadFile(new Uri(release.DownloadURL));
+            await DownloadFile(new Uri(release.NetworkDownloadURL));
 
-            Console.WriteLine($"Download and extracted OS version {version} to:\r\n{FirmwareDownloadsFilePath}");
+            Console.WriteLine($"Download and extracted OS version {release.Version} to:\r\n{FirmwareDownloadsFilePath}");
         }
 
         public void InstallDfuUtil(bool is64bit = true)
@@ -131,16 +129,6 @@ namespace Meadow.CLI
             {
             }
             return (false, string.Empty);
-        }
-
-        string ExtractJsonValue(string json, string field, string def = "")
-        {
-            var jo = JObject.Parse(json);
-            if (jo.ContainsKey(field))
-            {
-                return jo[field].Value<string>();
-            }
-            return def;
         }
 
         async Task DownloadFile(Uri uri)
