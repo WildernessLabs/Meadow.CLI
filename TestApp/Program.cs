@@ -9,11 +9,11 @@ namespace TestApp
 {
     class MainClass
     {
-        static string _devicePort = "COM5";
-        static FileInfo _cliExe = new FileInfo(@"..\..\..\..\Meadow.CLI\bin\Debug\net5.0\Meadow.CLI.exe");
+        static string _devicePort = "/dev/tty.usbmodem3366337830361";
+        static FileInfo _cliExe = new FileInfo(@"./Meadow.CLI/bin/Debug/net5.0/Meadow.CLI.dll");
         public static void Main(string[] args)
         {
-            //ExecuteCLI("--FlashOS");
+            ExecuteCLI("--FlashOS");
             ExecuteCLI("--Download");
             ExecuteCLI($"--MonoDisable -s {_devicePort}");
             ExecuteCLI($"--MonoDisable -s {_devicePort}");
@@ -22,7 +22,7 @@ namespace TestApp
             ExecuteCLI("--MonoEnable");
 
             Console.WriteLine("Done!");
-            Console.ReadKey();
+            Console.Read();
         }
 
         static void ExecuteCLI(string arg)
@@ -33,13 +33,23 @@ namespace TestApp
 
             using (var process = new Process())
             {
-                process.StartInfo.FileName = _cliExe.FullName;
-                process.StartInfo.Arguments = arg;
+                process.StartInfo.FileName = "dotnet";
+                process.StartInfo.Arguments = $"Meadow.CLI/bin/Debug/net5.0/Meadow.CLI.dll {arg}";
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
 
                 process.WaitForExit();
             }
+
+            // using (var process = new Process())
+            // {
+            //     process.StartInfo.FileName = _cliExe.FullName;
+            //     process.StartInfo.Arguments = arg;
+            //     process.StartInfo.UseShellExecute = false;
+            //     process.Start();
+
+            //     process.WaitForExit();
+            // }
         }
 
         /*
