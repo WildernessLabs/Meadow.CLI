@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Collections.Generic;
+using CommandLine;
 
 namespace MeadowCLI
 {
@@ -6,10 +7,10 @@ namespace MeadowCLI
     {
         [Option("FlashOS", Required = false, HelpText = "DFU flash Meadow OS.")]
         public bool FlashOS { get; set; }
-        [Option(longName: "WriteFile", Required = false, HelpText = "Write an external file to Meadow's internal flash")]
-        public bool WriteFile { get; set; }
-        [Option(longName: "DeleteFile", Required = false, HelpText = "Delete a file in Meadow's internal flash")]
-        public bool DeleteFile { get; set; }
+        [Option('w', longName: "WriteFile", Required = false, Min = 1, Max = 2, HelpText = "Write one or multiple external files to Meadow's internal flash.\n --WriteFile file[,file,...] [targetFileName[,targetFileName,...]]")]
+        public IEnumerable<string> WriteFile { get; set; }
+        [Option('d', longName: "DeleteFile", Required = false, Min = 1, Max = 1, HelpText = "Delete one or multiple files in Meadow's internal flash. /n --DeleteFile file[,file,...]")]
+        public IEnumerable<string> DeleteFile { get; set; }
         [Option(longName: "EraseFlash", Required = false, HelpText = "Delete all content in Meadow flash")]
         public bool EraseFlash { get; set; }
         [Option(longName: "VerifyErasedFlash", Required = false, HelpText = "Verify the contents of the flash were deleted")]
