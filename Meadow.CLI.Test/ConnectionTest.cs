@@ -22,7 +22,7 @@ namespace Meadow.CLI.Test
         public async Task FlashOSTest()
         {
             //DfuUpload.FlashOS(Path.Combine(fixturesPath.FullName, osFilename));
-            
+
             using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
             {
                 Assert.IsNotNull(meadow, "Initial connection");

@@ -16,9 +16,9 @@ namespace Meadow.CLI
         readonly string _versionCheckUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/latest.json";
         string _versionCheckFile { get { return new Uri(_versionCheckUrl).Segments.Last(); } }
 
-        public static readonly string FirmwareDownloadsFilePath = 
+        public static readonly string FirmwareDownloadsFilePath =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "Firmware");
-        public static readonly string WildernessLabsTemp = 
+        public static readonly string WildernessLabsTemp =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "temp");
         public static readonly string OSFilename = "Meadow.OS.bin";
         public static readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
@@ -33,11 +33,11 @@ namespace Meadow.CLI
             var payload = await httpClient.GetStringAsync(_versionCheckUrl);
             var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
             var appVersion = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
-            
+
             if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
-               Console.WriteLine($"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
-               return;
+                Console.WriteLine($"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
+                return;
             }
 
             if (Directory.Exists(FirmwareDownloadsFilePath))
@@ -89,9 +89,9 @@ namespace Meadow.CLI
                 }
                 Console.WriteLine("dfu-util 0.10 installed");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                if(ex.Message.Contains("Access to the path"))
+                if (ex.Message.Contains("Access to the path"))
                 {
                     Console.WriteLine($"{ex.Message}{Environment.NewLine}Run terminal as administrator and try again.");
                 }
@@ -125,7 +125,7 @@ namespace Meadow.CLI
                     return (latest.ToVersion() > appVersion.ToVersion(), latest);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
             }
             return (false, string.Empty);

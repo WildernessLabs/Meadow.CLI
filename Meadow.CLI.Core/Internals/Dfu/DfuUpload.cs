@@ -61,27 +61,27 @@ namespace MeadowCLI
 
                 if (string.IsNullOrEmpty(dfuUtilVersion))
                 {
-                   if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                   {
-                       Console.WriteLine("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
-                   }
-                   else
-                   {
-                       Console.WriteLine("dfu-util not found. To install run: brew install dfu-util");
-                   }
-                   return;
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        Console.WriteLine("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    }
+                    else
+                    {
+                        Console.WriteLine("dfu-util not found. To install run: brew install dfu-util");
+                    }
+                    return;
                 }
                 else if (dfuUtilVersion != "0.10")
                 {
-                   if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                   {
-                       Console.WriteLine("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
-                   }
-                   else
-                   {
-                       Console.WriteLine("dfu-util update required. To install, run: brew upgrade dfu-util");
-                   }
-                   return;
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        Console.WriteLine("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    }
+                    else
+                    {
+                        Console.WriteLine("dfu-util update required. To install, run: brew upgrade dfu-util");
+                    }
+                    return;
                 }
 
                 try
@@ -130,9 +130,9 @@ namespace MeadowCLI
                     return string.Empty;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                if(ex.Message.Contains("cannot find") || ex.Message.Contains("No such file or directory"))
+                if (ex.Message.Contains("cannot find") || ex.Message.Contains("No such file or directory"))
                 {
                     return string.Empty;
                 }

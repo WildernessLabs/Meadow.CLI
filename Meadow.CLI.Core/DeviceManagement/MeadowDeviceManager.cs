@@ -6,7 +6,6 @@ using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using MeadowCLI.Hcom;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
@@ -41,7 +40,7 @@ namespace MeadowCLI.DeviceManagement
 
         static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
 
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort) //, bool verbose = true)
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort) //, bool verbose = true)
         {
             try
             {
@@ -55,7 +54,7 @@ namespace MeadowCLI.DeviceManagement
                 meadow.Initialize();
                 _connections.Add(serialPort, meadow);
                 return meadow;
-                
+
             }
             catch (Exception ex)
             {
@@ -141,9 +140,9 @@ namespace MeadowCLI.DeviceManagement
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                if(e.MessageType == MeadowMessageType.Data)
+                if (e.MessageType == MeadowMessageType.Data)
                 {
-                    if(e.Message == "On reset, Meadow will start MONO and run app.exe")
+                    if (e.Message == "On reset, Meadow will start MONO and run app.exe")
                     {
                         result = true;
                         tcs.SetResult(true);
@@ -167,7 +166,7 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task MonoFlash(MeadowSerialDevice meadow)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e=> e.Message.StartsWith("Mono runtime successfully flashed."));
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e => e.Message.StartsWith("Mono runtime successfully flashed."));
         }
 
         public static async Task<bool> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000)
@@ -311,7 +310,7 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
         {
-            if(!File.Exists(applicationFilePath))
+            if (!File.Exists(applicationFilePath))
             {
                 Console.WriteLine($"{applicationFilePath} not found.");
                 return;
@@ -416,7 +415,7 @@ namespace MeadowCLI.DeviceManagement
         }
         public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
         {
-            if(filter == null)
+            if (filter == null)
             {
                 return true;
             }

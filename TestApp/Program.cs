@@ -10,12 +10,13 @@ namespace TestApp
     class MainClass
     {
         //static string _devicePort = "/dev/tty.usbmodem3366337830361"; //mac
-        static string _devicePort = "COM5"; //win
+        static string _devicePort = "COM14"; //win
         public static void Main(string[] args)
         {
             ExecuteCLI("--FlashOS");
             ExecuteCLI("--Download");
             ExecuteCLI($"--MonoDisable -s {_devicePort}");
+            // try one more time. this is usually needed right after OS flash for some reason
             ExecuteCLI($"--MonoDisable -s {_devicePort}");
             ExecuteCLI("--MonoUpdateRt");
             ExecuteCLI("--FlashEsp");
@@ -33,7 +34,7 @@ namespace TestApp
 
             using (var process = new Process())
             {
-                if(Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     process.StartInfo.FileName = @"..\..\..\..\Meadow.CLI\bin\Debug\net5.0\Meadow.CLI.exe";
                     process.StartInfo.Arguments = arg;
@@ -44,7 +45,7 @@ namespace TestApp
                     process.StartInfo.FileName = "dotnet";
                     process.StartInfo.Arguments = $"./Meadow.CLI/bin/Debug/net5.0/Meadow.CLI.dll {arg}";
                 }
-                
+
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
 

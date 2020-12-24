@@ -4,3 +4,4 @@
 packages
 *.user
 _clicache
+.vscode/*

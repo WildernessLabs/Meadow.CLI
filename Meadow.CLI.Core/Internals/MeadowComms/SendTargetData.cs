@@ -50,18 +50,18 @@ namespace MeadowCLI.Hcom
                 //--------------------------------------------------------------
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
-                  // For the ESP32 file download, the proceeding command will erase
-                  // the ESP32 on chip flash memory before we can download. If the
-                  // file is large enough, the time to erase the flash will prevent
-                  // data from being downloaded and the 'semaphore timeout' error
-                  // will cause the CLI to disconnect.
-                  if((UInt32)fileBytes.Length > 1024 * 200)
-                  {
-                    // Using 6 ms / kbyte
-                    int eraseDelay = (6 * fileBytes.Length) / 1000;
-                    // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
-                    System.Threading.Thread.Sleep(eraseDelay);
-                  }
+                    // For the ESP32 file download, the proceeding command will erase
+                    // the ESP32 on chip flash memory before we can download. If the
+                    // file is large enough, the time to erase the flash will prevent
+                    // data from being downloaded and the 'semaphore timeout' error
+                    // will cause the CLI to disconnect.
+                    if ((UInt32)fileBytes.Length > 1024 * 200)
+                    {
+                        // Using 6 ms / kbyte
+                        int eraseDelay = (6 * fileBytes.Length) / 1000;
+                        // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
+                        System.Threading.Thread.Sleep(eraseDelay);
+                    }
                 }
 
                 // Build each data packet
@@ -87,7 +87,7 @@ namespace MeadowCLI.Hcom
 
                 //--------------------------------------------------------------
                 // Build and send the correct trailer
-                switch(requestType)
+                switch (requestType)
                 {
                     // Provide the correct message end depending on the reason the file
                     // is being downloaded to the F7 file system.
@@ -110,7 +110,7 @@ namespace MeadowCLI.Hcom
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
-                if(Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
+                if (Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
             }
             catch (Exception except)
             {
@@ -139,7 +139,7 @@ namespace MeadowCLI.Hcom
                     tcs.SetResult(true);
                 }
             };
-            
+
             if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData += handler;
 
             BuildAndSendSimpleCommand(requestType, userData);
@@ -251,7 +251,7 @@ namespace MeadowCLI.Hcom
             // Allocate the correctly size message buffers
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
             byte[] md5HashBytes = Encoding.UTF8.GetBytes(md5Hash);
-            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) + 
+            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) +
                 HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH + targetFileName.Length;
             byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 

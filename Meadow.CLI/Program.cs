@@ -5,6 +5,7 @@ using System.Threading;
 using System.IO;
 using System.Threading.Tasks;
 using Meadow.CLI;
+using System.Linq;
 
 namespace MeadowCLI
 {
@@ -152,52 +153,81 @@ namespace MeadowCLI
 
                 try
                 {
-                    if (options.WriteFile)
+                    if (options.WriteFile.Any())
                     {
-                        if (string.IsNullOrEmpty(options.FileName))
+                        string[] parameters = options.WriteFile.ToArray();
+
+                        string[] files = parameters[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        string[] targetFileNames;
+
+                        if (parameters.Length == 1)
                         {
-                            Console.WriteLine($"option --WriteFile also requires option --File (the local file you wish to write)");
-                        }
-                        else if (!File.Exists(options.FileName))
-                        {
-                            Console.WriteLine($"Cannot find {options.FileName}");
+                            targetFileNames = new string[files.Length];
                         }
                         else
                         {
-                            if (string.IsNullOrEmpty(options.TargetFileName))
-                            {
-#if USE_PARTITIONS
-                          Console.WriteLine($"Writing {options.FileName} to partition {options.Partition}");
-#else
-                                Console.WriteLine($"Writing {options.FileName}");
-#endif
-                            }
-                            else
-                            {
-#if USE_PARTITIONS
-                        Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName} to partition {options.Partition}");
-#else
-                                Console.WriteLine($"Writing {options.FileName} as {options.TargetFileName}");
-#endif
-                            }
+                            targetFileNames = parameters[1].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        }
 
-                            await MeadowFileManager.WriteFileToFlash(device, options.FileName, options.TargetFileName, options.Partition).ConfigureAwait(false); ;
+                        if (files.Length != targetFileNames.Length)
+                        {
+                            Console.WriteLine($"Number of files to write ({files.Length}) does not match the number of target file names ({targetFileNames.Length}).");
+                        }
+                        else
+                        {
+                            for (int i = 0; i < files.Length; i++)
+                            {
+                                string targetFileName = targetFileNames[i];
+
+                                if (String.IsNullOrEmpty(targetFileName))
+                                {
+                                    targetFileName = null;
+                                }
+
+                                if (!File.Exists(files[i]))
+                                {
+                                    Console.WriteLine($"Cannot find {files[i]}");
+                                }
+                                else
+                                {
+                                    if (string.IsNullOrEmpty(targetFileName))
+                                    {
+#if USE_PARTITIONS
+                                        Console.WriteLine($"Writing {files[i]} to partition {options.Partition}");
+#else
+                                        Console.WriteLine($"Writing {files[i]}");
+#endif
+                                    }
+                                    else
+                                    {
+#if USE_PARTITIONS
+                                        Console.WriteLine($"Writing {files[i]} as {targetFileName} to partition {options.Partition}");
+#else
+                                        Console.WriteLine($"Writing {files[i]} as {targetFileName}");
+#endif
+                                    }
+
+                                    await MeadowFileManager.WriteFileToFlash(device, files[i], targetFileName, options.Partition).ConfigureAwait(false);
+                                }
+                            }
                         }
                     }
-                    else if (options.DeleteFile)
+                    else if (options.DeleteFile.Any())
                     {
-                        if (string.IsNullOrEmpty(options.TargetFileName))
+                        string[] parameters = options.DeleteFile.ToArray();
+                        string[] files = parameters[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                        foreach (string file in files)
                         {
-                            Console.WriteLine($"option --DeleteFile also requires option --TargetFileName (the file you wish to delete)");
-                        }
-                        else
-                        {
+                            if (!String.IsNullOrEmpty(file))
+                            {
 #if USE_PARTITIONS
-                      Console.WriteLine($"Deleting {options.FileName} from partion {options.Partition}");
+                                Console.WriteLine($"Deleting {file} from partion {options.Partition}");
 #else
-                            Console.WriteLine($"Deleting {options.FileName}");
+                                Console.WriteLine($"Deleting {file}");
 #endif
-                            await MeadowFileManager.DeleteFile(device, options.TargetFileName, options.Partition);
+                                await MeadowFileManager.DeleteFile(device, file, options.Partition);
+                            }
                         }
                     }
                     else if (options.EraseFlash)
@@ -218,7 +248,7 @@ namespace MeadowCLI
                     else if (options.MountFileSystem)
                     {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Mounting partition {options.Partition}");
+                        Console.WriteLine($"Mounting partition {options.Partition}");
 #else
                         Console.WriteLine("Mounting file system");
 #endif
@@ -227,7 +257,7 @@ namespace MeadowCLI
                     else if (options.InitFileSystem)
                     {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Intializing filesystem in partition {options.Partition}");
+                        Console.WriteLine($"Intializing filesystem in partition {options.Partition}");
 #else
                         Console.WriteLine("Intializing filesystem");
 #endif
@@ -241,7 +271,7 @@ namespace MeadowCLI
                     else if (options.FormatFileSystem)
                     {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Format file system on partition {options.Partition}");
+                        Console.WriteLine($"Format file system on partition {options.Partition}");
 #else
                         Console.WriteLine("Format file system");
 #endif
@@ -250,7 +280,7 @@ namespace MeadowCLI
                     else if (options.ListFiles)
                     {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of files on partition {options.Partition}");
+                        Console.WriteLine($"Getting list of files on partition {options.Partition}");
 #else
                         Console.WriteLine($"Getting list of files");
 #endif
@@ -259,13 +289,12 @@ namespace MeadowCLI
                     else if (options.ListFilesAndCrcs)
                     {
 #if USE_PARTITIONS
-                  Console.WriteLine($"Getting list of files and CRCs on partition {options.Partition}");
+                        Console.WriteLine($"Getting list of files and CRCs on partition {options.Partition}");
 #else
                         Console.WriteLine("Getting list of files and CRCs");
 #endif
                         await MeadowFileManager.ListFilesAndCrcs(device, options.Partition);
                     }
-                    //Device manager
                     else if (options.SetTraceLevel)
                     {
                         Console.WriteLine($"Setting trace level to {options.TraceLevel}");
@@ -323,10 +352,9 @@ namespace MeadowCLI
                                 Console.WriteLine("FileName not specified, using latest download.");
                                 filename = downloadedRuntimePath;
                             }
-                        }
 
-                        await MeadowFileManager.MonoUpdateRt(device,
-                        filename, options.TargetFileName, options.Partition);
+                            await MeadowFileManager.MonoUpdateRt(device, filename, options.TargetFileName, options.Partition);
+                        }
                     }
                     else if (options.GetDeviceInfo)
                     {
@@ -414,7 +442,20 @@ namespace MeadowCLI
                     }
                     else if (options.FlashEsp)
                     {
-                        await MeadowFileManager.FlashEsp(device, DownloadManager.FirmwareDownloadsFilePath);
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
+                        await Task.Delay(1000);
+
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
+                        await Task.Delay(1000);
+
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
+                        await Task.Delay(1000);
                     }
                     else if (options.Esp32ReadMac)
                     {
@@ -428,22 +469,26 @@ namespace MeadowCLI
                     {
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
                     }
+
                 }
                 catch (IOException ex)
                 {
                     if (ex.Message.Contains("semaphore"))
                     {
-                        Console.WriteLine("Timeout communicating with Meadow");
+                        if (ex.Message.Contains("semaphore"))
+                        {
+                            Console.WriteLine("Timeout communicating with Meadow");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Unexpected error occurred: {ex.Message}");
+                        }
+                        return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
                     }
-                    else
-                    {
-                        Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
-                    }
-                    return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Exception communicating with Meadow: {ex.Message}");
+                    Console.WriteLine($"Unexpected error occurred: {ex.Message}");
                     return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
                 }
 
@@ -453,24 +498,5 @@ namespace MeadowCLI
                     return CompletionBehavior.Success | CompletionBehavior.ExitConsole;
             }
         }
-
-        //temp code until we get the device manager logic in place 
-        static bool ConnectToMeadowDevice(string commPort)
-        {
-            var device = new MeadowSerialDevice(commPort);
-            try
-            {
-                device.Initialize();
-            }
-            catch (MeadowDeviceException ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
-
-            return true;
-        }
-
-
     }
 }
