@@ -22,7 +22,7 @@ namespace MeadowCLI.DeviceManagement
 
             var dependencies = GetDependencies(refs, dependencyMap);
 
-            for(int i = 0; i < dependencies.Count; i++)
+            for (int i = 0; i < dependencies.Count; i++)
             {
                 dependencies[i] += ".dll";
             }

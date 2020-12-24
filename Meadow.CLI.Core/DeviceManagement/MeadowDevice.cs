@@ -20,7 +20,7 @@ namespace MeadowCLI.DeviceManagement
 
         public List<string> FilesOnDevice { get; protected set; } = new List<string>();
         public List<UInt32> FileCrcs { get; protected set; } = new List<UInt32>();
-        
+
         public abstract Task<bool> WriteFile(string filename, string path, int timeoutInMs = 200000);
 
         public abstract Task<List<string>> GetFilesOnDevice(bool refresh = false, int timeoutInMs = 10000);
@@ -28,10 +28,10 @@ namespace MeadowCLI.DeviceManagement
         public abstract Task<(List<string> files, List<UInt32> crcs)> GetFilesAndCrcs(int timeoutInMs = 10000);
 
         public abstract Task GetDeviceInfo(int timeoutInMs = 500);
-        
+
         public abstract Task GetDeviceName(int timeoutInMs = 500);
 
-        public Task<bool> IsFileOnDevice (string filename)
+        public Task<bool> IsFileOnDevice(string filename)
         {
             return Task.FromResult(FilesOnDevice.Contains(filename));
         }

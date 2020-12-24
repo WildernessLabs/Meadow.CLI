@@ -44,7 +44,8 @@ namespace Meadow.CLI.DeviceManagement
             // devices
             var ds = GetDevices(_vendorID, _productID);
 
-            foreach (var d in ds) {
+            foreach (var d in ds)
+            {
                 Debug.WriteLine($"Found device: {d.Info.ProductString}, by {d.Info.ManufacturerString}, serial: {d.Info.SerialString}");
                 Debug.WriteLine($" VendordID: 0x{d.Info.Descriptor.VendorID.ToString("x4")}, ProductID: 0x{d.Info.Descriptor.ProductID.ToString("x4")}");
 
@@ -68,19 +69,24 @@ namespace Meadow.CLI.DeviceManagement
             // TODO: there's got to be a way better way to do this. someone
             // please clean up my terrible code.
             List<MeadowUsbDevice> devicesToRemove = new List<MeadowUsbDevice>();
-            foreach (var d in Devices) {
-                if (!ds.Exists((x) => x.Info.SerialString == d.Serial)) {
+            foreach (var d in Devices)
+            {
+                if (!ds.Exists((x) => x.Info.SerialString == d.Serial))
+                {
                     devicesToRemove.Add(d);
                 }
             }
-            foreach (var d in devicesToRemove) {
+            foreach (var d in devicesToRemove)
+            {
                 Devices.Remove(d);
             }
 
             // add any new ones
             List<MeadowUsbDevice> newDevices = new List<MeadowUsbDevice>();
-            foreach (var d in ds) {
-                if (!DevicesContains(d.Info.SerialString)) {
+            foreach (var d in ds)
+            {
+                if (!DevicesContains(d.Info.SerialString))
+                {
                     // add to the collection
                     Devices.Add(new MeadowUsbDevice() { Serial = d.Info.SerialString, UsbDeviceName = d.Info.ProductString });
                 }
@@ -92,8 +98,10 @@ namespace Meadow.CLI.DeviceManagement
         // seem to exist for ObservableCollection. 
         protected bool DevicesContains(string serial)
         {
-            foreach (var d in Devices) {
-                if (d.Serial == serial) {
+            foreach (var d in Devices)
+            {
+                if (d.Serial == serial)
+                {
                     return true;
                 }
             }
@@ -114,39 +122,46 @@ namespace Meadow.CLI.DeviceManagement
             UsbRegDeviceList devices = UsbDevice.AllDevices;
 
             // loop through all the devices
-            foreach (UsbRegistry usbRegistry in devices) {
+            foreach (UsbRegistry usbRegistry in devices)
+            {
 
                 // try and open the device to get info
-                if (usbRegistry.Open(out UsbDevice device)) {
+                if (usbRegistry.Open(out UsbDevice device))
+                {
 
                     // Filters
                     // string BS because of [this](https://github.com/LibUsbDotNet/LibUsbDotNet/issues/91) bug.
                     ushort vendorID = ushort.Parse(device.Info.Descriptor.VendorID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
                     ushort productID = ushort.Parse(device.Info.Descriptor.ProductID.ToString("x"), System.Globalization.NumberStyles.AllowHexSpecifier);
-                    if (vendorIdFilter != 0 && vendorID != vendorIdFilter) {
+                    if (vendorIdFilter != 0 && vendorID != vendorIdFilter)
+                    {
                         continue;
                     }
-                    if (productIdFilter != 0 && productID != productIdFilter) {
+                    if (productIdFilter != 0 && productID != productIdFilter)
+                    {
                         continue;
                     }
 
                     // Check for the DFU descriptor in the 
 
                     // get the configs
-                    for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
+                    for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++)
+                    {
                         UsbConfigInfo configInfo = device.Configs[iConfig];
 
                         // get the interfaces
                         ReadOnlyCollection<UsbInterfaceInfo> interfaceList = configInfo.InterfaceInfoList;
 
                         // loop through the interfaces
-                        for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
+                        for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++)
+                        {
                             // shortcut
                             UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
 
                             // if it's a DFU device, we want to grab the DFU descriptor
                             // have to string compare because 0xfe isn't defined in `ClassCodeType`
-                            if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
+                            if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1)
+                            {
                                 // interface doesn't support DFU
                             }
 
@@ -184,10 +199,12 @@ namespace Meadow.CLI.DeviceManagement
             Debug.WriteLine($"Device Count: {devices.Count}");
 
             // loop through all the devices in the registry
-            foreach (UsbRegistry usbRegistry in devices) {
+            foreach (UsbRegistry usbRegistry in devices)
+            {
 
                 // try and open the device to get info
-                if (usbRegistry.Open(out UsbDevice device)) {
+                if (usbRegistry.Open(out UsbDevice device))
+                {
                     //Debug.WriteLine($"Device.Info: {device.Info.ToString()}");
 
                     Debug.WriteLine("-----------------------------------------------");
@@ -195,7 +212,8 @@ namespace Meadow.CLI.DeviceManagement
                     Debug.WriteLine($" VendordID: 0x{device.Info.Descriptor.VendorID.ToString("x4")}, ProductID: 0x{device.Info.Descriptor.ProductID.ToString("x4")}");
                     Debug.WriteLine($" Config count: {device.Configs.Count}");
 
-                    for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++) {
+                    for (int iConfig = 0; iConfig < device.Configs.Count; iConfig++)
+                    {
                         UsbConfigInfo configInfo = device.Configs[iConfig];
 
                         // get the interfaces
@@ -204,7 +222,8 @@ namespace Meadow.CLI.DeviceManagement
 
 
                         // loop through the interfaces
-                        for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++) {
+                        for (int iInterface = 0; iInterface < interfaceList.Count; iInterface++)
+                        {
                             UsbInterfaceInfo interfaceInfo = interfaceList[iInterface];
 
                             Debug.WriteLine($"  Found Interface: {interfaceInfo.InterfaceString}, w/following descriptors: {{");
@@ -217,9 +236,12 @@ namespace Meadow.CLI.DeviceManagement
                             Debug.WriteLine($"    String Index: {interfaceInfo.Descriptor.StringIndex}");
                             Debug.WriteLine($"  }}");
 
-                            if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1) {
+                            if (interfaceInfo.Descriptor.Class.ToString("x").ToLower() != "fe" || interfaceInfo.Descriptor.SubClass != 0x1)
+                            {
                                 Debug.WriteLine("Not a DFU device");
-                            } else {
+                            }
+                            else
+                            {
                                 Debug.WriteLine("DFU Device");
                             }
 
@@ -238,7 +260,8 @@ namespace Meadow.CLI.DeviceManagement
 
                             // get the endpoints
                             ReadOnlyCollection<UsbEndpointInfo> endpointList = interfaceInfo.EndpointInfoList;
-                            for (int iEndpoint = 0; iEndpoint < endpointList.Count; iEndpoint++) {
+                            for (int iEndpoint = 0; iEndpoint < endpointList.Count; iEndpoint++)
+                            {
                                 Debug.WriteLine($"endpointList[{ iEndpoint}]: {endpointList[iEndpoint].ToString()}");
                             }
                         }
@@ -265,17 +288,20 @@ namespace Meadow.CLI.DeviceManagement
             if (_listeningForDevices) { return new Task(() => { }); }
 
             // spin up a new task
-            Task t = new Task(() => {
+            Task t = new Task(() =>
+            {
                 // state
                 _listeningForDevices = true;
 
                 // loop while _listening is on
-                while (_listeningForDevices) {
+                while (_listeningForDevices)
+                {
 
                     // check for cancel; this is probably redundant because
                     // we're checking for _listening
                     // TODO: someone should review.
-                    if (_listenCancel.IsCancellationRequested) {
+                    if (_listenCancel.IsCancellationRequested)
+                    {
                         _listeningForDevices = false;
                         return;
                     }
@@ -305,8 +331,10 @@ namespace Meadow.CLI.DeviceManagement
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue) {
-                if (disposing) {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
                     // if we don't exit, it leaves a thread open, but calling it here
                     // causes a sigsev
                     //UsbDevice.Exit();

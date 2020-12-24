@@ -6,7 +6,6 @@ using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
 using MeadowCLI.Hcom;
 using static MeadowCLI.DeviceManagement.MeadowFileManager;
@@ -29,8 +28,6 @@ namespace MeadowCLI.DeviceManagement
         internal const int ProtocolHeaderSize = 12;
         internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
 
-        public static MeadowSerialDevice CurrentDevice { get; set; } //short cut for now but may be useful
-
         static HcomMeadowRequestType _meadowRequestType;
         static DebuggingServer debuggingServer;
 
@@ -41,40 +38,27 @@ namespace MeadowCLI.DeviceManagement
             // TODO: wire up listeners for device plug and unplug
         }
 
-        //returns null if we can't detect a Meadow board
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort (string serialPort) //, bool verbose = true)
+        static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
+
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort) //, bool verbose = true)
         {
-            var maxRetries = 15;
-            var attempt = 0;
-
-            MeadowSerialDevice meadow = null;
-
-        connect:
-
-            if (CurrentDevice?.SerialPort != null && CurrentDevice.SerialPort.IsOpen)
-            {
-                CurrentDevice.SerialPort.Dispose();
-            }
-
             try
             {
-                meadow = CurrentDevice = new MeadowSerialDevice(serialPort);
+                if (_connections.ContainsKey(serialPort))
+                {
+                    _connections[serialPort].Dispose();
+                    _connections.Remove(serialPort);
+                    Thread.Sleep(1000);
+                }
+                var meadow = new MeadowSerialDevice(serialPort);
                 meadow.Initialize();
-                await meadow.GetDeviceInfo().ConfigureAwait(false);
+                _connections.Add(serialPort, meadow);
                 return meadow;
+
             }
             catch (Exception ex)
             {
-                // sometimes the serial port needs time to reset
-                if (attempt++ < maxRetries)
-                {
-                    await Task.Delay(500).ConfigureAwait(false);
-                    goto connect;
-                }
-                else
-                {
-                    return null;
-                }
+                throw ex;
             }
         }
 
@@ -147,14 +131,42 @@ namespace MeadowCLI.DeviceManagement
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000);
         }
 
-        public static async Task MonoRunState(MeadowSerialDevice meadow)
+        public static async Task<bool> MonoRunState(MeadowSerialDevice meadow)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE);
+            await new SendTargetData(meadow).SendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE);
+
+            var tcs = new TaskCompletionSource<bool>();
+            var result = false;
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.Data)
+                {
+                    if (e.Message == "On reset, Meadow will start MONO and run app.exe")
+                    {
+                        result = true;
+                        tcs.SetResult(true);
+                    }
+                    else if (e.Message == "On reset, Meadow will not start MONO, therefore app.exe will not run")
+                    {
+                        result = false;
+                        tcs.SetResult(true);
+                    }
+                }
+            };
+
+            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData += handler;
+
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(5000) });
+
+            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
+
+            return result;
         }
 
         public static async Task MonoFlash(MeadowSerialDevice meadow)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e=> e.Message.StartsWith("Mono runtime successfully flashed."));
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e => e.Message.StartsWith("Mono runtime successfully flashed."));
         }
 
         public static async Task<bool> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000)
@@ -266,7 +278,7 @@ namespace MeadowCLI.DeviceManagement
 
             // Start the local Meadow.CLI debugging server
             debuggingServer = new DebuggingServer(vsDebugPort);
-            debuggingServer.StartListening();
+            debuggingServer.StartListening(meadow);
         }
 
         public static void EnterEchoMode(MeadowSerialDevice meadow)
@@ -298,7 +310,7 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
         {
-            if(!File.Exists(applicationFilePath))
+            if (!File.Exists(applicationFilePath))
             {
                 Console.WriteLine($"{applicationFilePath} not found.");
                 return;
@@ -403,7 +415,7 @@ namespace MeadowCLI.DeviceManagement
         }
         public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
         {
-            if(filter == null)
+            if (filter == null)
             {
                 return true;
             }

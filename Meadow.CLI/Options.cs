@@ -27,7 +27,7 @@ namespace MeadowCLI
         public bool FormatFileSystem { get; set; }
         [Option(longName: "ClearCache", Required = false, HelpText = "Clears the CLI's state cache")]
         public bool ClearCache { get; set; }
-        
+
         [Option(longName: "SetDeveloper1", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool SetDeveloper1 { get; set; }
         [Option(longName: "SetDeveloper2", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
@@ -63,7 +63,7 @@ namespace MeadowCLI
         public bool ListFiles { get; set; }
         [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
         public bool ListFilesAndCrcs { get; set; }
-        
+
         [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
         public bool ListPorts { get; set; }
         [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
@@ -119,6 +119,8 @@ namespace MeadowCLI
         public bool DownloadLatest { get; set; }
         [Option(longName: "FlashEsp", Required = false, HelpText = "Flash ESP 32 Coprocessor.")]
         public bool FlashEsp { get; set; }
+        [Option(longName: "InstallDfuUtil", Required = false, HelpText = "Download and install dfu-util.")]
+        public bool InstallDfuUtil { get; set; }
 
     }
 }

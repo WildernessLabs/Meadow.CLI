@@ -32,7 +32,7 @@ namespace MeadowCLI.Hcom
         public string Message { get; private set; }
         public MeadowMessageType MessageType { get; private set; }
 
-        public MeadowMessageEventArgs (MeadowMessageType messageType, string message = "")
+        public MeadowMessageEventArgs(MeadowMessageType messageType, string message = "")
         {
             Message = message;
             MessageType = messageType;
@@ -40,7 +40,7 @@ namespace MeadowCLI.Hcom
     }
 
     public class MeadowSerialDataProcessor
-    {   
+    {
         //collapse to one and use enum
         public EventHandler<MeadowMessageEventArgs> OnReceiveData;
         HostCommBuffer _hostCommBuffer;
@@ -151,11 +151,11 @@ namespace MeadowCLI.Hcom
             {
                 // Add these bytes to the circular buffer
                 result = _hostCommBuffer.AddBytes(buffer, 0, availableBytes);
-                if(result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
+                if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
                 {
                     break;
                 }
-                else if(result == HcomBufferReturn.HCOM_CIR_BUF_ADD_WONT_FIT)
+                else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_WONT_FIT)
                 {
                     // Wasn't possible to put these bytes in the buffer. We need to
                     // process a few packets and then retry to add this data
@@ -164,14 +164,14 @@ namespace MeadowCLI.Hcom
                         result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                         continue;   // There should be room now for the failed add
 
-                    if(result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
+                    if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
                     {
                         // The buffer to receive the message is too small? Probably 
                         // corrupted data in buffer.
                         Debug.Assert(false);
                     }
                 }
-                else if(result == HcomBufferReturn.HCOM_CIR_BUF_ADD_BAD_ARG)
+                else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_BAD_ARG)
                 {
                     // Something wrong with implemenation
                     Debug.Assert(false);
@@ -259,13 +259,13 @@ namespace MeadowCLI.Hcom
 
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
-                    switch(processor.RequestType)
+                    switch (processor.RequestType)
                     {
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
                             ConsoleOut("Request Undefined"); // TESTING
                             break;
 
-                            // This set are responses to request issued by this application
+                        // This set are responses to request issued by this application
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
                             ConsoleOut("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
@@ -275,7 +275,7 @@ namespace MeadowCLI.Hcom
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
                             // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted)); 
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
                             // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
@@ -319,7 +319,7 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
-                            ConsoleOut($"Host Serial Reconnect"); // TESTING
+                            Thread.Sleep(2000); // need to give the device a couple seconds
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
