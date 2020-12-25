@@ -31,6 +31,8 @@ namespace MeadowCLI.DeviceManagement
         static HcomMeadowRequestType _meadowRequestType;
         static DebuggingServer debuggingServer;
 
+        static readonly string _systemHttpNetDllName = "System.Net.Http.dll";
+
         static MeadowDeviceManager()
         {
             // TODO: populate the list of attached devices
@@ -316,8 +318,15 @@ namespace MeadowCLI.DeviceManagement
                 return;
             }
 
-            var deviceFile = await meadow.GetFilesAndCrcs();
             FileInfo fi = new FileInfo(applicationFilePath);
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // for some strange reason, System.Net.Http.dll doesn't get copied to the output folder in VS.
+                // so, we need to copy it over from the meadow assemblies nuget.
+                CopySystemNetHttpDll(fi.DirectoryName);
+            }
+
+            var deviceFile = await meadow.GetFilesAndCrcs();
             var extensions = new List<string> { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
 
             var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
@@ -439,6 +448,48 @@ namespace MeadowCLI.DeviceManagement
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
 
             return result;
+        }
+
+        private static void CopySystemNetHttpDll(string targetDir)
+        {
+            try
+            {
+                var bclNugetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages", "wildernesslabs.meadow.assemblies");
+
+                if (Directory.Exists(bclNugetPath))
+                {
+                    List<Version> versions = new List<Version>();
+
+                    var versionFolders = Directory.EnumerateDirectories(bclNugetPath);
+                    foreach (var versionFolder in versionFolders)
+                    {
+                        var di = new DirectoryInfo(versionFolder);
+                        Version outVersion;
+                        if (Version.TryParse(di.Name, out outVersion))
+                        {
+                            versions.Add(outVersion);
+                        }
+                    }
+
+                    if (versions.Any())
+                    {
+                        versions.Sort();
+
+                        var sourcePath = Path.Combine(bclNugetPath, versions.Last().ToString(), "lib", "net472");
+                        if (Directory.Exists(sourcePath))
+                        {
+                            if (File.Exists(Path.Combine(sourcePath, _systemHttpNetDllName)))
+                            {
+                                File.Copy(Path.Combine(sourcePath, _systemHttpNetDllName), Path.Combine(targetDir, _systemHttpNetDllName));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // eat this for now
+            }
         }
     }
 
