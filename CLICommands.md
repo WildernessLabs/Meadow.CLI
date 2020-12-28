@@ -18,8 +18,8 @@ Note: All commands require the name of the serial port. Once provided it will be
 `Meadow.CLI --MonoFlash`  
 `Meadow.CLI --MonoUpdateRt`
 
-`Meadow.CLI --WriteFile --File | -f [FilePathAndName]`  
-`Meadow.CLI --DeleteFile --TargetFileName App.exe`  
+`Meadow.CLI --WriteFile | -w file[,file,...] [targetFileName[,targetFileName,...]]`
+`Meadow.CLI --DeleteFile | -d file[,file,...]`
 `Meadow.CLI --ListFiles`  
 `Meadow.CLI --ListFilesAndCrcs`  
 `Meadow.CLI --RenewFileSys`  
@@ -69,11 +69,8 @@ The Mono runtime can be prevented from running and re-enabled using the followin
 
 ### Meadow File System
 
-`MeadowCLI.exe --WriteFile --File | -f [NameOfFile] --SerialPort [NameOfSerialPort]` - Writes a single file to the Meadow file system.  
-`MeadowCLI.exe --WriteFile [CSV file info] --SerialPort [NameOfSerialPort]` - Writes multiple files to the Meadow file system in one command. To do this the files to be written are placed in a comma separated list beginning and ending with double quote marks. This list consists of a file's host path and file within the host PC/Mac, a comma, followed by the desired name within the Meadow File System. Add another comma if there are more files.  
-Example:  
-`Meadow.CLI --WriteFile --File "C:\WildernessLabs\Binaries\mscorlib.dll, mscorlib.dll, C:\WildernessLabs\Binaries\System.Core.dll, System.Core.dll, C:\WildernessLabs\Binaries\System.dll, System.dll" --SerialPort [NameOfSerialPort]`  
-`MeadowCLI --DeleteFile --TargetFileName [nameOfFile] --SerialPort [NameOfSerialPort]` - Deletes a file from the Meadow file system.  
+`MeadowCLI.exe --WriteFile | -w file1[,file2,...] [file1TargetFileName[,file2TargetFileName,...]] --SerialPort [NameOfSerialPort]` - Writes a single file or multiple files to the Meadow file system. To write multiple files to the Meadow file system the files to be written are listed comma seperated. Optional it is possible to define the target file name in a comma seperated list for each file. 
+`MeadowCLI --DeleteFile | -d file[,file,...] --SerialPort [NameOfSerialPort]` - Deletes one ore multiple files from the Meadow file system. To delete multiple files from the Meadow file system the files to be deleted are listed comma seperated. 
 `MeadowCLI.exe --ListFiles --SerialPort [NameOfSerialPort]` -Lists all the files in the Meadow file system.
 `MeadowCLI.exe --ListFilesAndCrcs --SerialPort [NameOfSerialPort] --KeepAlive` - List all the files in the Meadow file system and includes each files CRC checksum and size. This command can take several seconds for each file. Suggestion: use with the `--KeepAlive`  
 `MeadowCLI.exe --RenewFileSys --SerialPort [NameOfSerialPort]` - Quickly recreate the Meadow file system.  

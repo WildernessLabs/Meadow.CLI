@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Meadow.CLI;
 using MeadowCLI.Hcom;
 
 namespace MeadowCLI.DeviceManagement
@@ -29,7 +29,7 @@ namespace MeadowCLI.DeviceManagement
             if (csvArray.Length == 1)
             {
                 await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),	
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded));
 
                 // No CSV, just the source file name. So we'll assume the targetFileName is correct
@@ -75,14 +75,12 @@ namespace MeadowCLI.DeviceManagement
             await Task.WhenAll(
                     Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true)),
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000));
-
-            // wait for the flash concluded message
-            await MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000);
         }
 
         public static async Task EraseFlash(MeadowSerialDevice meadow)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, timeoutMs: 200000);
+            // not sure why this responds with a SerialReconnect message
+            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, MeadowMessageType.SerialReconnect, timeoutMs: 200000);
         }
 
         public static async Task VerifyErasedFlash(MeadowSerialDevice meadow)
@@ -113,29 +111,21 @@ namespace MeadowCLI.DeviceManagement
         public static async Task CreateFileSystem(MeadowSerialDevice meadow)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType);
         }
 
         public static async Task FormatFileSystem(MeadowSerialDevice meadow, int partition)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task ListFiles(MeadowSerialDevice meadow, int partition = 0)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES, userData: (uint)partition);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         public static async Task ListFilesAndCrcs(MeadowSerialDevice meadow, int partition = 0)
         {
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC, userData: (uint)partition, timeoutMs: 30000);
-            //meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC;
-            //new SendTargetData(meadow).SendSimpleCommand(meadowRequestType, (uint)partition);
         }
 
         // fileName - is the name of the file on this host PC
@@ -217,13 +207,31 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
+        public static async Task FlashEsp(MeadowSerialDevice device, string sourcePath)
+        {
+            Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
+            await Task.Delay(1000);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
+            await Task.Delay(1000);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
+            await Task.Delay(1000);
+        }
+
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType, string sourceFileName,
                             string targetFileName, int partition, uint mcuAddr,
                             bool deleteFile, bool lastInSeries = false)
         {
             var sw = new Stopwatch();
-            
+
             var sendTargetData = new SendTargetData(meadow, false);
 
             try
@@ -334,16 +342,16 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END = 0x1d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION = 0x1e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_GET_DEVICE_NAME = 0x1f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
-            
+
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_2 = 0xf1 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_3 = 0xf2 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_DEVELOPER_4 = 0xf3 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
-            HCOM_MDOW_REQUEST_S25FL_QSPI_INIT  = 0xf4 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_INIT = 0xf4 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE = 0xf5 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
-            HCOM_MDOW_REQUEST_S25FL_QSPI_READ  = 0xf6 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_S25FL_QSPI_READ = 0xf6 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
             HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
@@ -360,8 +368,8 @@ namespace MeadowCLI.DeviceManagement
 
             // Simple types
             HCOM_HOST_REQUEST_SIMPLE_MESSAGE = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,    // Just the header
-            // Simple with some text message
-            
+                                                                                                                   // Simple with some text message
+
             HCOM_HOST_REQUEST_TEXT_REJECTED = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_ACCEPTED = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_CONCLUDED = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,

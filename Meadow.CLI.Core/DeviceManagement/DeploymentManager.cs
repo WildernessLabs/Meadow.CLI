@@ -21,7 +21,7 @@ namespace MeadowCLI.DeviceManagement
             // 0) TODO: any init checks?
 
             // 1) TODO: enumerate all the files in the output path
-            
+
             // 2) TODO: get a list of the files already present on the device
 
             // 3) TODO: compare file names and sizes/checksums or whatever, and

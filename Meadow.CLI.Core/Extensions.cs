@@ -8,7 +8,7 @@ namespace Meadow.CLI
     {
         public static Version ToVersion(this String s)
         {
-            if(Version.TryParse(s, out var result))
+            if (Version.TryParse(s, out var result))
             {
                 return result;
             }

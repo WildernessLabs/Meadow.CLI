@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Collections.Generic;
+using CommandLine;
 
 namespace MeadowCLI
 {
@@ -6,10 +7,10 @@ namespace MeadowCLI
     {
         [Option("FlashOS", Required = false, HelpText = "DFU flash Meadow OS.")]
         public bool FlashOS { get; set; }
-        [Option(longName: "WriteFile", Required = false, HelpText = "Write an external file to Meadow's internal flash")]
-        public bool WriteFile { get; set; }
-        [Option(longName: "DeleteFile", Required = false, HelpText = "Delete a file in Meadow's internal flash")]
-        public bool DeleteFile { get; set; }
+        [Option('w', longName: "WriteFile", Required = false, Min = 1, Max = 2, HelpText = "Write one or multiple external files to Meadow's internal flash.\n --WriteFile file[,file,...] [targetFileName[,targetFileName,...]]")]
+        public IEnumerable<string> WriteFile { get; set; }
+        [Option('d', longName: "DeleteFile", Required = false, Min = 1, Max = 1, HelpText = "Delete one or multiple files in Meadow's internal flash. /n --DeleteFile file[,file,...]")]
+        public IEnumerable<string> DeleteFile { get; set; }
         [Option(longName: "EraseFlash", Required = false, HelpText = "Delete all content in Meadow flash")]
         public bool EraseFlash { get; set; }
         [Option(longName: "VerifyErasedFlash", Required = false, HelpText = "Verify the contents of the flash were deleted")]
@@ -26,7 +27,7 @@ namespace MeadowCLI
         public bool FormatFileSystem { get; set; }
         [Option(longName: "ClearCache", Required = false, HelpText = "Clears the CLI's state cache")]
         public bool ClearCache { get; set; }
-        
+
         [Option(longName: "SetDeveloper1", Required = false, HelpText = "Set developer1 (0 to 4,294,967,295)")]
         public bool SetDeveloper1 { get; set; }
         [Option(longName: "SetDeveloper2", Required = false, HelpText = "Set developer2 (0 to 4,294,967,295)")]
@@ -62,7 +63,7 @@ namespace MeadowCLI
         public bool ListFiles { get; set; }
         [Option(longName: "ListFilesAndCrcs", Required = false, HelpText = "List all files and CRCs in a Meadow partition")]
         public bool ListFilesAndCrcs { get; set; }
-        
+
         [Option(longName: "ListPorts", Required = false, HelpText = "List all available local serial ports")]
         public bool ListPorts { get; set; }
         [Option('s', longName: "SerialPort", Required = false, HelpText = "Specify the serial port used by Meadow")]
@@ -118,6 +119,8 @@ namespace MeadowCLI
         public bool DownloadLatest { get; set; }
         [Option(longName: "FlashEsp", Required = false, HelpText = "Flash ESP 32 Coprocessor.")]
         public bool FlashEsp { get; set; }
+        [Option(longName: "InstallDfuUtil", Required = false, HelpText = "Download and install dfu-util.")]
+        public bool InstallDfuUtil { get; set; }
 
     }
 }
