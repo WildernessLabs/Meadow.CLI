@@ -43,8 +43,6 @@ namespace MeadowCLI.Hcom
             try
             {
                 // Build and send the header
-                Console.WriteLine("Sending Command...");
-
                 BuildAndSendFileRelatedCommand(requestType,
                     partitionId, (UInt32)fileBytes.Length, payloadCrc32,
                     mcuAddr, md5Hash, destFileName);
@@ -76,7 +74,6 @@ namespace MeadowCLI.Hcom
                 // don't echo the device responses
                 _device.LocalEcho = false;
 
-                Console.WriteLine("Sending File Data...");
                 WriteProgress(-1);
                 while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
                 {
