@@ -121,6 +121,10 @@ namespace MeadowCLI
         public bool FlashEsp { get; set; }
         [Option(longName: "InstallDfuUtil", Required = false, HelpText = "Download and install dfu-util.")]
         public bool InstallDfuUtil { get; set; }
+        [Option(longName: "Login", Required = false, HelpText = "Authenticate CLI")]
+        public bool Login { get; set; }
+        [Option(longName: "Logout", Required = false, HelpText = "Log out of CLI")]
+        public bool Logout { get; set; }
 
     }
 }
