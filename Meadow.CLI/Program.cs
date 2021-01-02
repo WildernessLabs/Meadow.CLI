@@ -343,18 +343,38 @@ namespace MeadowCLI
                     }
                     else if (options.MonoUpdateRt)
                     {
-                        string filename = options.FileName;
-                        if (string.IsNullOrEmpty(options.FileName))
+                        string sourcefilename = options.FileName;
+                        if (string.IsNullOrWhiteSpace(sourcefilename))
                         {
-                            var downloadedRuntimePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.RuntimeFilename);
-                            if (File.Exists(downloadedRuntimePath))
+                            // check local override
+                            sourcefilename = Path.Combine(Directory.GetCurrentDirectory(), DownloadManager.RuntimeFilename);
+                            if (File.Exists(sourcefilename))
                             {
-                                Console.WriteLine("FileName not specified, using latest download.");
-                                filename = downloadedRuntimePath;
-                            }
+                                Console.WriteLine($"Using current directory '{DownloadManager.RuntimeFilename}'");
 
-                            await MeadowFileManager.MonoUpdateRt(device, filename, options.TargetFileName, options.Partition);
+                            }
+                            else
+                            {
+                                sourcefilename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.RuntimeFilename);
+                                if (File.Exists(sourcefilename))
+                                {
+                                    Console.WriteLine("FileName not specified, using latest download.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Unable to locate a runtime file. Either provide a path or download one.");
+                                    return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                                }
+                            }
                         }
+
+                        if (!File.Exists(sourcefilename))
+                        {
+                            Console.WriteLine($"File '{sourcefilename}' not found");
+                            return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                        }
+
+                        await MeadowFileManager.MonoUpdateRt(device, sourcefilename, options.TargetFileName, options.Partition);
                     }
                     else if (options.GetDeviceInfo)
                     {

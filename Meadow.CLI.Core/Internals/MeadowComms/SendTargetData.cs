@@ -6,6 +6,7 @@ using static MeadowCLI.DeviceManagement.MeadowFileManager;
 using MeadowCLI.DeviceManagement;
 using System.Threading.Tasks;
 using Meadow.CLI;
+using System.Threading;
 
 namespace MeadowCLI.Hcom
 {
@@ -14,7 +15,6 @@ namespace MeadowCLI.Hcom
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;         // Used for transmission
         const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
@@ -50,6 +50,7 @@ namespace MeadowCLI.Hcom
                 //--------------------------------------------------------------
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
+                    Console.Write("Erasing ESP23 Flash...");
                     // For the ESP32 file download, the proceeding command will erase
                     // the ESP32 on chip flash memory before we can download. If the
                     // file is large enough, the time to erase the flash will prevent
@@ -62,6 +63,7 @@ namespace MeadowCLI.Hcom
                         // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
                         System.Threading.Thread.Sleep(eraseDelay);
                     }
+                    Console.WriteLine("done.");
                 }
 
                 // Build each data packet
@@ -69,21 +71,35 @@ namespace MeadowCLI.Hcom
                 int numbToSend;
                 UInt16 sequenceNumber = 1;
 
+                // don't echo the device responses
+                _device.LocalEcho = false;
+
+                WriteProgress(-1);
                 while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
                 {
                     if ((fileBufOffset + MeadowDeviceManager.MaxAllowableDataBlock) > (fileBytes.Length - 1))
+                    {
                         numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
+                    }
                     else
+                    {
                         numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
+                    }
 
                     BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
+
+                    var progress = fileBufOffset * 100 / fileBytes.Length;
+                    WriteProgress(progress);
+
                     fileBufOffset += numbToSend;
 
                     sequenceNumber++;
-                    //if (sequenceNumber % 1000 == 0)
-                    //	Console.WriteLine("Have sent {0:N0} bytes out of {1:N0} in {2:N0} packets",
-                    //		fileBufOffset, fileBytes.Length, sequenceNumber);
                 }
+                WriteProgress(101);
+
+                // echo the device responses
+                Thread.Sleep(250); // if we're too fast, we'll finish and the device will still echo a little
+                _device.LocalEcho = true;
 
                 //--------------------------------------------------------------
                 // Build and send the correct trailer
@@ -119,6 +135,24 @@ namespace MeadowCLI.Hcom
             }
         }
 
+        private void WriteProgress(int i)
+        {
+            // 50 characters - 2% each
+            if (i < 0)
+            {
+                Console.Write($"[                                                  ]");
+            }
+            else if(i > 100)
+            {
+                Console.WriteLine($"\r[==================================================]");
+            }
+            else
+            {
+                var p = i / 2;
+//                Console.WriteLine($"{i} | {p}");
+                Console.Write($"\r[{new string('=', p)}{new string(' ', 50 - p)}]");
+            }
+        }
         //==========================================================================
         internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
         {
@@ -222,7 +256,7 @@ namespace MeadowCLI.Hcom
             offset += sizeof(UInt16);
 
             // Protocol version
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
+            Array.Copy(BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
             offset += sizeof(UInt16);
 
             // Command type (2 bytes)

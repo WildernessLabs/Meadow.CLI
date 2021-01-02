@@ -83,7 +83,7 @@ namespace MeadowCLI
 
         [Option(longName: "RenewFileSys", Required = false, HelpText = "Recreate the Meadow File System")]
         public bool RenewFileSys { get; set; }
-        [Option(longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
+        [Option('k', longName: "KeepAlive", Required = false, HelpText = "Keeps MeadowCLI from terminating after sending")]
         public bool KeepAlive { get; set; }
         [Option(longName: "TraceDisable", Required = false, HelpText = "Prevent Meadow from sending internal trace messages (default)")]
         public bool TraceDisable { get; set; }

@@ -10,19 +10,29 @@
     <Authors>Peter Moody, Adrian Stevens, Brian Kim</Authors>
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.12.6</Version>
     <Platforms>AnyCPU;x86;x64</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
     <PackageIconUrl>https://github.com/WildernessLabs/Meadow.Foundation/blob/master/Source/icon.png?raw=true</PackageIconUrl>
     <RepositoryUrl>https://github.com/WildernessLabs/Meadow.CLI</RepositoryUrl>
     <PackageTags>Meadow, Meadow.Foundation, Meadow.CLI</PackageTags>
     <Description>Command-line interface for Meadow</Description>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <AssemblyName>meadow</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Internals\**" />
+    <EmbeddedResource Remove="Internals\**" />
+    <None Remove="Internals\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.6.0" />
@@ -32,10 +42,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Internals\" />
   </ItemGroup>
 
 </Project>
