@@ -67,6 +67,8 @@ namespace MeadowCLI.DeviceManagement
         public static async Task MonoUpdateRt(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
             int partition = 0)
         {
+            Console.WriteLine("Updating runtime...");
+
             if (string.IsNullOrWhiteSpace(targetFileName))
             {
                 targetFileName = Path.GetFileName(fileName);
@@ -231,11 +233,23 @@ namespace MeadowCLI.DeviceManagement
                             bool deleteFile, bool lastInSeries = false)
         {
             var sw = new Stopwatch();
-
-            var sendTargetData = new SendTargetData(meadow, false);
-
             try
             {
+                if(string.IsNullOrWhiteSpace(sourceFileName))
+                {
+                    Console.WriteLine($"No source file name provided");
+                    return;
+                }
+
+                var fi = new FileInfo(sourceFileName);
+                if (!fi.Exists)
+                {
+                    Console.WriteLine($"Can't find source file '{fi.FullName}'");
+                    return;
+                }
+
+                var sendTargetData = new SendTargetData(meadow, false);
+
                 //----------------------------------------------
                 if (deleteFile == true)
                 {

@@ -19,6 +19,7 @@ namespace MeadowCLI.DeviceManagement
         public EventHandler<MeadowMessageEventArgs> OnMeadowMessage;
 
         public bool Verbose { get; protected set; }
+        public bool LocalEcho { get; set; } = true;
 
         public SerialPort SerialPort { get; private set; }
         public Socket Socket { get; private set; }
@@ -343,7 +344,7 @@ namespace MeadowCLI.DeviceManagement
             switch (args.MessageType)
             {
                 case MeadowMessageType.Data:
-                    ConsoleOut("Data: " + args.Message);
+                    ConsoleOutIf(LocalEcho, "Data: " + args.Message);
                     break;
                 case MeadowMessageType.MeadowTrace:
                     ConsoleOut("Trace: " + args.Message);
@@ -494,6 +495,14 @@ namespace MeadowCLI.DeviceManagement
             DeviceInfo.SerialNumber = info[5];
             DeviceInfo.CoProcessor = info[6];
             DeviceInfo.CoProcessorOs = info[7];
+        }
+
+        void ConsoleOutIf(bool condition, string msg)
+        {
+            if(condition)
+            {
+                Console.WriteLine(msg);
+            }
         }
 
         void ConsoleOut(string msg)
