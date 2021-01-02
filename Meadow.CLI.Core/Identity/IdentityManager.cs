@@ -97,6 +97,11 @@ namespace Meadow.CLI.Core.Auth
             {
                 throw new NotSupportedException();
             }
+            else
+            {
+                Console.WriteLine("Unsupported OS detected.");
+                throw new NotSupportedException();
+            }
 
             if (!string.IsNullOrEmpty(refreshToken))
             {
@@ -124,6 +129,10 @@ namespace Meadow.CLI.Core.Auth
                 {
                     return (cred.Username, cred.Password);
                 }
+                else
+                {
+                    return (string.Empty, string.Empty);
+                }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -133,8 +142,11 @@ namespace Meadow.CLI.Core.Auth
             {
                 throw new NotSupportedException();
             }
-
-            return (string.Empty, string.Empty);
+            else
+            {
+                Console.WriteLine("Unsupported OS detected.");
+                throw new NotSupportedException();
+            }   
         }
 
         private OidcClient GetOidcClient()
@@ -166,6 +178,11 @@ namespace Meadow.CLI.Core.Auth
             {
                 throw new NotSupportedException();
             }
+            else
+            {
+                Console.WriteLine("Unsupported OS detected.");
+                throw new NotSupportedException();
+            }
         }
 
         private bool SaveCredential(string credentialName, string username, string password)
@@ -190,8 +207,11 @@ namespace Meadow.CLI.Core.Auth
             {
                 throw new NotSupportedException();
             }
-
-            return false;
+            else
+            {
+                Console.WriteLine("Unsupported OS detected.");
+                throw new NotSupportedException();
+            }
         }
 
         private void OpenBrowser(string url)
@@ -218,7 +238,8 @@ namespace Meadow.CLI.Core.Auth
                 }
                 else
                 {
-                    throw;
+                    Console.WriteLine("Unsupported OS detected.");
+                    throw new NotSupportedException();
                 }
             }
         }
