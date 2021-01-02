@@ -7,7 +7,7 @@ namespace MeadowCLI
 {
     public static class Constants
     {
-        public const string CLI_VERSION = "0.12.7";
-        public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0005;         // Used for transmission
+        public const string CLI_VERSION = "0.12.6";
+        public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;         // Used for transmission
     }
 }
