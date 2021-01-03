@@ -1,5 +1,6 @@
 ﻿using CredentialManagement;
 using IdentityModel.OidcClient;
+using Microsoft.IdentityModel.Logging;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -12,10 +13,10 @@ namespace Meadow.CLI.Core.Auth
     public class IdentityManager
     {
         public readonly string WLRefreshCredentialName = "WL:Identity:Refresh";
-        readonly string authority = "https://auth.wildernesslabs.co";
+        readonly string authority = "https://identity.wildernesslabs.co";
         readonly string redirectUri = "http://localhost:8877/";
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
-        readonly string clientId = "0oa385ak2JyeMizwx5d6";
+        readonly string clientId = "0oa3axsuyupb7J6E15d6";
 
         /// <summary>
         /// Kick off login
@@ -160,6 +161,7 @@ namespace Meadow.CLI.Core.Auth
                 Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode,
                 ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect
             };
+            IdentityModelEventSource.ShowPII = true;
             return new OidcClient(options);
         }
 
