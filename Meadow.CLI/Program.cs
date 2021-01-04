@@ -6,6 +6,8 @@ using System.IO;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using System.Linq;
+using Meadow.CLI.Core.Auth;
+using System.Net;
 
 namespace MeadowCLI
 {
@@ -72,6 +74,21 @@ namespace MeadowCLI
                     else if (options.FlashOS)
                     {
                         DfuUpload.FlashOS(options.FileName);
+                    }
+                    else if (options.Login)
+                    {
+                        IdentityManager identityManager = new IdentityManager();
+                        var result = identityManager.LoginAsync().Result;
+                        if (result)
+                        {
+                            var cred = identityManager.GetCredentials(identityManager.WLRefreshCredentialName);
+                            Console.WriteLine($"Signed in as {cred.username}");
+                        }
+                    }
+                    else if (options.Logout)
+                    {
+                        IdentityManager identityManager = new IdentityManager();
+                        identityManager.Logout();
                     }
                     else if (options.InstallDfuUtil)
                     {

@@ -4,6 +4,14 @@
       "commandName": "Project",
       "commandLineArgs": "--Download"
     },
+    "Login": {
+      "commandName": "Project",
+      "commandLineArgs": "--Login"
+    },
+    "Logout": {
+      "commandName": "Project",
+      "commandLineArgs": "--Logout"
+    },
     "FlashOS": {
       "commandName": "Project",
       "commandLineArgs": "--FlashOS"
