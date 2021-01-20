@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Management;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
@@ -279,28 +280,48 @@ namespace MeadowCLI.DeviceManagement
             debuggingServer.SendToVisualStudio(debuggerData);
         }
 
-        // Enter StartDebugging mode.
-        public static async Task StartDebugging(MeadowSerialDevice meadow, int vsDebugPort)
+        // Creates a DebuggingServer that can listen on the given port on all network interfaces.
+        public static Task<DebuggingServer> CreateDebuggingServer(MeadowSerialDevice meadow, int vsDebugPort = 0)
         {
+            if (vsDebugPort == 0)
+            {
+                Console.WriteLine($"Without '--VSDebugPort' being specified, will assume Visual Studio 2019 using default port {DefaultVS2019DebugPort}");
+                vsDebugPort = DefaultVS2019DebugPort;
+            }
+            return CreateDebuggingServer(meadow, new IPEndPoint(IPAddress.Any, vsDebugPort));
+        }
+
+        // Enter StartDebugging mode.
+        public static async Task<DebuggingServer> CreateDebuggingServer(MeadowSerialDevice meadow, IPEndPoint localEndpoint)
+        {
+            // Create the DebuggingServer first so we aren't racing for it in ForwardMonoDataToVisualStudio after Meadow restarts
+            debuggingServer = new DebuggingServer(localEndpoint);
+
             // Tell meadow to start it's debugging server, after restarting.
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION;
             await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
 
             // The previous command caused Meadow to restart. Therefore, we must reestablish
             // Meadow communication.
-            meadow.AttemptToReconnectToMeadow();
-
-            // Create an instance of the TCP socket send/receiver class and
-            // start it receiving.
-            if (vsDebugPort == 0)
+            var attempts = 0;
+            retry:
+            try
             {
-                Console.WriteLine($"Without '--VSDebugPort' being specified, will assume Visual Studio 2019 using default port {DefaultVS2019DebugPort}");
-                vsDebugPort = DefaultVS2019DebugPort;
+                attempts++;
+                meadow.AttemptToReconnectToMeadow();
+            } catch (IOException)
+            {
+                if (attempts < 5)
+                {
+                    await Task.Yield();
+                    goto retry;
+                } else
+                {
+                    throw;
+                }
             }
 
-            // Start the local Meadow.CLI debugging server
-            debuggingServer = new DebuggingServer(vsDebugPort);
-            debuggingServer.StartListening(meadow);
+            return debuggingServer;
         }
 
         public static void EnterEchoMode(MeadowSerialDevice meadow)
@@ -347,7 +368,7 @@ namespace MeadowCLI.DeviceManagement
             */
       //  }
 
-        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
+        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath, bool includeDebugSymbols = true)
         {
             if (!File.Exists(applicationFilePath))
             {
@@ -371,8 +392,7 @@ namespace MeadowCLI.DeviceManagement
 
             var files = new List<string>();
             var crcs = new List<uint>();
-
-            foreach (var file in paths)
+            void AddFile(string file, bool lookForPDB)
             {
                 using (FileStream fs = File.Open(file, FileMode.Open))
                 {
@@ -388,6 +408,17 @@ namespace MeadowCLI.DeviceManagement
                     files.Add(Path.GetFileName(file));
                     crcs.Add(crc);
                 }
+                if (lookForPDB)
+                {
+                    var pdbFile = Path.ChangeExtension(file, "pdb");
+                    if (File.Exists(pdbFile))
+                        AddFile(pdbFile, false);
+                }
+            }
+
+            foreach (var file in paths)
+            {
+                AddFile(file, includeDebugSymbols);
             }
 
             var dependences = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
@@ -395,20 +426,7 @@ namespace MeadowCLI.DeviceManagement
             //crawl dependences
             foreach (var file in dependences)
             {
-                using (FileStream fs = File.Open(Path.Combine(fi.DirectoryName, file), FileMode.Open))
-                {
-                    var len = (int)fs.Length;
-                    var bytes = new byte[len];
-
-                    fs.Read(bytes, 0, len);
-
-                    //0x
-                    var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
-
-                    Console.WriteLine($"{file} crc is {crc}");
-                    files.Add(Path.GetFileName(file));
-                    crcs.Add(crc);
-                }
+                AddFile(Path.Combine(fi.DirectoryName, file), includeDebugSymbols);
             }
 
             // delete unused files
@@ -461,7 +479,7 @@ namespace MeadowCLI.DeviceManagement
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="meadow"></param>
         /// <param name="filter"></param>

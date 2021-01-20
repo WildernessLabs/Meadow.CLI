@@ -464,7 +464,7 @@ namespace MeadowCLI
                     }
                     else if (options.StartDebugging)
                     {
-                        MeadowDeviceManager.StartDebugging(device, options.VSDebugPort);
+                        (await MeadowDeviceManager.CreateDebuggingServer(device, options.VSDebugPort)).StartListening(device);
                         Console.WriteLine($"Ready for Visual Studio debugging");
                         options.KeepAlive = true;
                     }

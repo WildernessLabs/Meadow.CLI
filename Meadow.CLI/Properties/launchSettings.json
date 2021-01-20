@@ -12,6 +12,10 @@
       "commandName": "Project",
       "commandLineArgs": "--Logout"
     },
+    "StartDebugging": {
+      "commandName": "Project",
+      "commandLineArgs": "--StartDebugging"
+    },
     "FlashOS": {
       "commandName": "Project",
       "commandLineArgs": "--FlashOS"

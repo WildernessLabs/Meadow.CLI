@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;  
 using System.Net.Sockets;  
@@ -16,51 +17,68 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         // VS 2019 - 4024
         // VS 2017 - 4022
         // VS 2015 - 4020
-        int vsPort;
+        public IPEndPoint LocalEndpoint { get; private set; }
         ActiveClient activeClient;
         int activeClientCount = 0;
 
+        List<byte[]> buffers = new List<byte[]>();
+
         // Constructor
-        public DebuggingServer(int visualStudioPort)
+        public DebuggingServer(IPEndPoint localEndpoint)
         {
-            vsPort = visualStudioPort;
+            LocalEndpoint = localEndpoint;
         }
 
         public async void StartListening(MeadowSerialDevice meadow)
         {
             try
             {
-                IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
-                IPAddress ipAddress = ipHostInfo.AddressList[0];
-                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, vsPort);
-
-                TcpListener tcpListener = new TcpListener(localEndPoint);
+                TcpListener tcpListener = new TcpListener(LocalEndpoint);
                 tcpListener.Start();
+                LocalEndpoint = (IPEndPoint)tcpListener.LocalEndpoint;
                 Console.WriteLine("Listening for Visual Studio to connect");
 
                 while(true)
                 {
-                    await Task.Run(async () =>
-                    {
-                        // Wait for client to connect
-                        TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
-
-                        // tcpClient valid after connection
-                        Console.WriteLine("Visual Studio has connected");
-                        if (activeClientCount > 0)
-                        {
-                            Debug.Assert(activeClientCount == 1);
-                            Debug.Assert(activeClient != null);
-                            activeClient.Close();
-                            activeClient = null;
-                            activeClientCount = 0;
-                        }
-                        
-                        activeClient = new ActiveClient(this, tcpClient);
-                        activeClient.ReceiveVSDebug(meadow);
-                        activeClientCount++;
-                    });
+                    // Wait for client to connect
+                    TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
+                    OnConnect(meadow, tcpClient);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+
+        public void Connect(MeadowSerialDevice meadow)
+        {
+            TcpClient tcpClient = new TcpClient();
+            tcpClient.Connect(LocalEndpoint);
+            OnConnect(meadow, tcpClient);
+        }
+
+        void OnConnect(MeadowSerialDevice meadow, TcpClient tcpClient)
+        {
+            try
+            {
+                Console.WriteLine("Visual Studio has connected");
+                if (activeClientCount > 0)
+                {
+                    Debug.Assert(activeClientCount == 1);
+                    Debug.Assert(activeClient != null);
+                    CloseActiveClient();
+                }
+
+                activeClient = new ActiveClient(this, tcpClient);
+                lock (buffers)
+                {
+                    foreach (var buffer in buffers)
+                        activeClient.SendToVisualStudio(buffer);
+                    buffers.Clear();
+                }
+                activeClient.ReceiveVSDebug(meadow);
+                activeClientCount++;
             }
             catch (Exception ex)
             {
@@ -73,11 +91,21 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             activeClient.Close();
             activeClient = null;
             activeClientCount = 0;
+            lock (buffers)
+                buffers.Clear();
         }
 
         public void SendToVisualStudio(byte[] byteData)
         {
-            activeClient.SendToVisualStudio(byteData);
+            if (activeClient is ActiveClient ac)
+            {
+                ac.SendToVisualStudio(byteData);
+                return;
+            }
+
+            // Buffer the data until VS connects
+            lock (buffers)
+                buffers.Add(byteData);
         }
 
         // Imbedded class
@@ -112,25 +140,31 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                     // Receive from Visual Studio and send to Meadow
                     await Task.Run(async () =>
                     {
+                        var recvdBuffer = new byte[490];
+                        var meadowBuffer = Array.Empty<byte>();
                         while (tcpClient.Connected && okayToRun)
                         {
-                            var recvdBuffer = new byte[490];
-                            var bytesRead = await networkStream.ReadAsync(recvdBuffer, 0, recvdBuffer.Length);
-                            if (!okayToRun)
+                            int bytesRead;
+
+                            read:
+                            bytesRead = await networkStream.ReadAsync(recvdBuffer, 0, recvdBuffer.Length);
+                            if (bytesRead == 0 || !okayToRun)
                                 break;
 
-                            if (bytesRead > 0)
-                            {
-                                // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Received {bytesRead} bytes from VS will forward to HCOM");
+                            var destIndex = meadowBuffer.Length;
+                            Array.Resize(ref meadowBuffer, destIndex + bytesRead);
+                            Array.Copy(recvdBuffer, 0, meadowBuffer, destIndex, bytesRead);
 
-                                // Need a buffer the exact size of received data to work with CLI
-                                var meadowBuffer = new byte[bytesRead];
-                                Array.Copy(recvdBuffer, 0, meadowBuffer, 0, bytesRead);
+                            // Ensure we read all the data in this message before passing it along
+                            if (networkStream.DataAvailable)
+                                goto read;
 
-                                // Forward to Meadow
-                                MeadowDeviceManager.ForwardVisualStudioDataToMono(meadowBuffer, meadow, 0);
-                                //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Forwarded {bytesRead} from VS to Meadow");
-                            }
+                            // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Received {bytesRead} bytes from VS will forward to HCOM");
+
+                            // Forward to Meadow
+                            MeadowDeviceManager.ForwardVisualStudioDataToMono(meadowBuffer, meadow, 0);
+                            //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Forwarded {bytesRead} from VS to Meadow");
+                            meadowBuffer = Array.Empty<byte>();
                         }
                     });
                 }
@@ -161,10 +195,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                         return;
                     }
 
-                    await Task.Run(async () =>
-                    {
-                        await networkStream.WriteAsync(byteData, 0, byteData.Length);
-                    });
+                    await networkStream.WriteAsync(byteData, 0, byteData.Length);
                 }
                 catch (Exception e)
                 {
