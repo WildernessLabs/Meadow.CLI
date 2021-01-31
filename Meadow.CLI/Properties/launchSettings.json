@@ -34,7 +34,7 @@
     },
     "MonoEnable": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoEnable"
+      "commandLineArgs": "--monoenable --keepalive"
     },
     "GetDeviceInfo": {
       "commandName": "Project",

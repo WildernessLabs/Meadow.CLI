@@ -44,7 +44,9 @@ namespace MeadowCLI
                 args = new string[] { "--help" };
             }
 
-            Parser.Default.ParseArguments<Options>(args)
+            var parser = new Parser(settings => { settings.CaseSensitive = false; });
+
+            parser.ParseArguments<Options>(args)
             .WithParsed<Options>(options =>
             {
                 if (options.ListPorts)
@@ -106,11 +108,11 @@ namespace MeadowCLI
                         SyncArgsCache(options);
                         try
                         {
-                            behavior = ProcessHcom(options).Result;
+                            ProcessHcom(options).Wait();
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-
+                            Console.WriteLine($"An unexpected error occurred: {ex?.InnerException?.Message}");
                         }
                     }
 
@@ -121,15 +123,6 @@ namespace MeadowCLI
             //{
             //    behavior = CompletionBehavior.KeepConsoleOpen;
             //}
-
-            if ((behavior & CompletionBehavior.KeepConsoleOpen) == CompletionBehavior.KeepConsoleOpen)
-            {
-                Console.Read();
-            }
-            else
-            {
-                Thread.Sleep(500);
-            }
 
             Environment.Exit(0);
         }
@@ -149,23 +142,33 @@ namespace MeadowCLI
 
         //Probably rename
 
-        static async Task<CompletionBehavior> ProcessHcom(Options options)
+        static async Task ProcessHcom(Options options)
         {
             if (string.IsNullOrEmpty(options.SerialPort))
             {
                 Console.WriteLine("Please specify a --SerialPort");
-                return CompletionBehavior.RequestFailed;
+                return;
             }
 
-            Console.WriteLine($"Opening port '{options.SerialPort}'");
-            using (var device = await MeadowDeviceManager.GetMeadowForSerialPort(options.SerialPort))
+            MeadowSerialDevice device = null;
+            try
+            {
+                Console.WriteLine($"Opening port '{options.SerialPort}'");
+                device = await MeadowDeviceManager.GetMeadowForSerialPort(options.SerialPort);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error connecting to device: {ex.Message}");
+                return;
+            }
+
+            using (device)
             {
                 // verify that the port was actually connected
-                if (device.Socket == null &&
-                    device.SerialPort == null)
+                if (device.Socket == null && device.SerialPort == null)
                 {
                     Console.WriteLine($"Port is unavailable.");
-                    return CompletionBehavior.RequestFailed;
+                    return;
                 }
 
                 try
@@ -380,7 +383,7 @@ namespace MeadowCLI
                                 else
                                 {
                                     Console.WriteLine("Unable to locate a runtime file. Either provide a path or download one.");
-                                    return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                                    return; // KeepConsoleOpen?
                                 }
                             }
                         }
@@ -388,7 +391,7 @@ namespace MeadowCLI
                         if (!File.Exists(sourcefilename))
                         {
                             Console.WriteLine($"File '{sourcefilename}' not found");
-                            return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                            return; // KeepConsoleOpen?
                         }
 
                         await MeadowFileManager.MonoUpdateRt(device, sourcefilename, options.TargetFileName, options.Partition);
@@ -507,6 +510,10 @@ namespace MeadowCLI
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
                     }
 
+                    if (options.KeepAlive)
+                    {
+                        Console.Read();
+                    }
                 }
                 catch (IOException ex)
                 {
@@ -520,19 +527,14 @@ namespace MeadowCLI
                         {
                             Console.WriteLine($"Unexpected error occurred: {ex.Message}");
                         }
-                        return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                        return; // KeepConsoleOpen?
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Unexpected error occurred: {ex.Message}");
-                    return CompletionBehavior.RequestFailed | CompletionBehavior.KeepConsoleOpen;
+                    return; // KeepConsoleOpen?
                 }
-
-                if (options.KeepAlive)
-                    return CompletionBehavior.Success | CompletionBehavior.KeepConsoleOpen;
-                else
-                    return CompletionBehavior.Success | CompletionBehavior.ExitConsole;
             }
         }
     }
