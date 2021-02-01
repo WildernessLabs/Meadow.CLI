@@ -431,6 +431,7 @@ namespace MeadowCLI.DeviceManagement
                 bool portOpened = Initialize(true);
                 if (portOpened)
                 {
+                    Console.WriteLine("Device successfully reconnected");
                     Thread.Sleep(2000);
                     return true;
                 }
