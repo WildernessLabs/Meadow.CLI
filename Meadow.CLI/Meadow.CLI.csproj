@@ -20,6 +20,7 @@
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <PackageVersion>0.12.7</PackageVersion>
     <AssemblyName>meadow</AssemblyName>
   </PropertyGroup>
 

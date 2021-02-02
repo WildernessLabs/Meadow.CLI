@@ -171,14 +171,34 @@ namespace MeadowCLI.DeviceManagement
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e => e.Message.StartsWith("Mono runtime successfully flashed."));
         }
 
-        public static async Task<bool> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        public static async Task<(bool isSuccessful, string message)> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
             await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
             return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
         }
 
-        public static async Task<bool> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        public static async Task<string> GetDeviceSerialNumber(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        {
+            _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            var result =  await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+            if (result.isSuccessful)
+            {
+                return ParseDeviceInfo(result.message, "Serial Number: ", ",");
+            }
+
+            return string.Empty;
+        }
+
+        private static string ParseDeviceInfo(string deviceInfo, string value, string endChar)
+        {
+            var start = deviceInfo.IndexOf(value) + value.Length;
+            var end = deviceInfo.IndexOf(endChar, start);
+            return deviceInfo.Substring(start, end-start);
+        }
+
+        public static async Task<(bool isSuccessful, string message)> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME;
             await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
@@ -417,25 +437,27 @@ namespace MeadowCLI.DeviceManagement
         {
             await new SendTargetData(meadow).SendSimpleCommand(requestType, userData, doAcceptedCheck);
             var result = await WaitForResponseMessage(meadow, filter, timeoutMs);
-            if (!result)
+            if (!result.isSuccessful)
             {
                 throw new MeadowDeviceManagerException(requestType);
             }
         }
-        public static async Task<bool> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
+        public static async Task<(bool isSuccessful, string message)> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
         {
             if (filter == null)
             {
-                return true;
+                return (true, string.Empty);
             }
 
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
+            var message = string.Empty;
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
                 if (filter(e))
                 {
+                    message = e?.Message;
                     result = true;
                     tcs.SetResult(true);
                 }
@@ -447,7 +469,7 @@ namespace MeadowCLI.DeviceManagement
 
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
 
-            return result;
+            return (result, message);
         }
 
         private static void CopySystemNetHttpDll(string targetDir)

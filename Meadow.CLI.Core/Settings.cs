@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -40,6 +42,18 @@ namespace Meadow.CLI
 
             var json = JsonSerializer.Serialize(settings);
             File.WriteAllText(path, json);
+        }
+
+        public static string GetAppSetting(string name)
+        {
+            if (ConfigurationManager.AppSettings.AllKeys.Contains(name))
+            {
+                return ConfigurationManager.AppSettings[name];
+            }
+            else
+            {
+                throw new ArgumentException($"{name} setting not found.");
+            }
         }
 
         private static Settings GetSettings()

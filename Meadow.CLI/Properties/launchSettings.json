@@ -67,6 +67,10 @@
     "InstallDfuUtil": {
       "commandName": "Project",
       "commandLineArgs": "--InstallDfuUtil"
+    },
+    "ProvisionDevice": {
+      "commandName": "Project",
+      "commandLineArgs": "--ProvisionDevice"
     }
   }
 }

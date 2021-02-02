@@ -271,7 +271,7 @@ namespace MeadowCLI.DeviceManagement
         public override async Task GetDeviceInfo(int timeoutInMs = 1000)
         {
             var result = await MeadowDeviceManager.GetDeviceInfo(this, timeoutInMs);
-            if (!result)
+            if (!result.isSuccessful)
             {
                 throw new DeviceInfoException();
             }
@@ -282,7 +282,7 @@ namespace MeadowCLI.DeviceManagement
         public override async Task GetDeviceName(int timeoutInMs = 1000)
         {
             var result = await MeadowDeviceManager.GetDeviceName(this, timeoutInMs);
-            if (!result)
+            if (!result.isSuccessful)
             {
                 throw new DeviceInfoException();
             }
