@@ -241,13 +241,6 @@ namespace MeadowCLI.DeviceManagement
                     return;
                 }
 
-                var fi = new FileInfo(sourceFileName);
-                if (!fi.Exists)
-                {
-                    Console.WriteLine($"Can't find source file '{fi.FullName}'");
-                    return;
-                }
-
                 var sendTargetData = new SendTargetData(meadow, false);
 
                 //----------------------------------------------
@@ -256,6 +249,13 @@ namespace MeadowCLI.DeviceManagement
                     // No data packets, no end-of-file message and no mcu address
                     sendTargetData.BuildAndSendFileRelatedCommand(requestType,
                         (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName);
+                    return;
+                }
+
+                var fi = new FileInfo(sourceFileName);
+                if (!fi.Exists)
+                {
+                    Console.WriteLine($"Can't find source file '{fi.FullName}'");
                     return;
                 }
 
