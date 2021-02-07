@@ -9,7 +9,7 @@ namespace Meadow.CLI.Core.CloudServices
 {
     public class DeviceRepository
     {
-        public async Task<bool> AddDevice(string serialNumber)
+        public async Task<(bool isSuccess, string message)> AddDevice(string serialNumber)
         {
             var host = SettingsManager.GetAppSetting("wlApiHost");
             var authToken = await new IdentityManager().GetAccessToken();
@@ -25,7 +25,16 @@ namespace Meadow.CLI.Core.CloudServices
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response  = await client.PostAsync($"{host}/devices", content);
 
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return (response.IsSuccessStatusCode, string.Empty);
+            }
+            else
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                return (false, message);
+            }
+            
         }
     }
 }

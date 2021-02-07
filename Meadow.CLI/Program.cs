@@ -510,7 +510,7 @@ namespace MeadowCLI
                     {
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
                     }
-                    else if (options.ProvisionDevice)
+                    else if (options.RegisterDevice)
                     {
                         var sn = await MeadowDeviceManager.GetDeviceSerialNumber(device);
 
@@ -520,15 +520,17 @@ namespace MeadowCLI
                             return;
                         }
 
+                        Console.WriteLine($"Registering device {sn}");
+
                         DeviceRepository repository = new DeviceRepository();
                         var result = await repository.AddDevice(sn);
-                        if (result)
+                        if (result.isSuccess)
                         {
-                            Console.WriteLine("Device successfully added to your account");
+                            Console.WriteLine("Device registration complete");
                         }
                         else
                         {
-                            Console.WriteLine("Error adding device to your account");
+                            Console.WriteLine(result.message);
                         }
                     }
 

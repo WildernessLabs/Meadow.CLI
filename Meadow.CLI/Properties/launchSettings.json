@@ -68,9 +68,9 @@
       "commandName": "Project",
       "commandLineArgs": "--InstallDfuUtil"
     },
-    "ProvisionDevice": {
+    "RegisterDevice": {
       "commandName": "Project",
-      "commandLineArgs": "--ProvisionDevice"
+      "commandLineArgs": "--RegisterDevice -s COM12"
     }
   }
 }
