@@ -67,6 +67,10 @@
     "InstallDfuUtil": {
       "commandName": "Project",
       "commandLineArgs": "--InstallDfuUtil"
+    },
+    "RegisterDevice": {
+      "commandName": "Project",
+      "commandLineArgs": "--RegisterDevice -s COM12"
     }
   }
 }

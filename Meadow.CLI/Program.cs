@@ -8,6 +8,7 @@ using Meadow.CLI;
 using System.Linq;
 using Meadow.CLI.Core.Auth;
 using System.Net;
+using Meadow.CLI.Core.CloudServices;
 
 namespace MeadowCLI
 {
@@ -508,6 +509,29 @@ namespace MeadowCLI
                     else if (options.DeployApp && !string.IsNullOrEmpty(options.FileName))
                     {
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
+                    }
+                    else if (options.RegisterDevice)
+                    {
+                        var sn = await MeadowDeviceManager.GetDeviceSerialNumber(device);
+
+                        if (string.IsNullOrEmpty(sn)) 
+                        {
+                            Console.WriteLine("Could not get device serial number. Reconnect device and try again.");
+                            return;
+                        }
+
+                        Console.WriteLine($"Registering device {sn}");
+
+                        DeviceRepository repository = new DeviceRepository();
+                        var result = await repository.AddDevice(sn);
+                        if (result.isSuccess)
+                        {
+                            Console.WriteLine("Device registration complete");
+                        }
+                        else
+                        {
+                            Console.WriteLine(result.message);
+                        }
                     }
 
                     if (options.KeepAlive)
