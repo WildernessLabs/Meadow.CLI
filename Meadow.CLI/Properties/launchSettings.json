@@ -4,6 +4,14 @@
       "commandName": "Project",
       "commandLineArgs": "--Download"
     },
+    "Login": {
+      "commandName": "Project",
+      "commandLineArgs": "--Login"
+    },
+    "Logout": {
+      "commandName": "Project",
+      "commandLineArgs": "--Logout"
+    },
     "FlashOS": {
       "commandName": "Project",
       "commandLineArgs": "--FlashOS"
@@ -26,7 +34,7 @@
     },
     "MonoEnable": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoEnable"
+      "commandLineArgs": "--monoenable --keepalive"
     },
     "GetDeviceInfo": {
       "commandName": "Project",
@@ -59,6 +67,10 @@
     "InstallDfuUtil": {
       "commandName": "Project",
       "commandLineArgs": "--InstallDfuUtil"
+    },
+    "RegisterDevice": {
+      "commandName": "Project",
+      "commandLineArgs": "--RegisterDevice -s COM12"
     }
   }
 }

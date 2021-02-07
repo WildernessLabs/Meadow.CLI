@@ -56,6 +56,8 @@ namespace Meadow.CLI
         {
             try
             {
+                Console.WriteLine("Installing dfu-util...");
+
                 if (Directory.Exists(WildernessLabsTemp))
                 {
                     Directory.Delete(WildernessLabsTemp, true);

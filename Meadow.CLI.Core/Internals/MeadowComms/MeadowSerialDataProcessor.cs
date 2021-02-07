@@ -118,6 +118,8 @@ namespace MeadowCLI.Hcom
             {
                 while (true)
                 {
+                    if (!serialPort.IsOpen) break;
+
                     var byteCount = Math.Min(serialPort.BytesToRead, buffer.Length);
 
                     if (byteCount > 0)
