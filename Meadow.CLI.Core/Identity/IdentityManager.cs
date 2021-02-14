@@ -86,15 +86,11 @@ namespace Meadow.CLI.Core.Auth
         {
             string refreshToken = string.Empty;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 refreshToken = GetCredentials(WLRefreshCredentialName).password;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                throw new NotSupportedException();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 throw new NotSupportedException();
             }
@@ -141,7 +137,7 @@ namespace Meadow.CLI.Core.Auth
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new NotSupportedException();
+                return Keychain.Query(credentialName);
             }
             else
             {
@@ -178,7 +174,7 @@ namespace Meadow.CLI.Core.Auth
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new NotSupportedException();
+                Keychain.Delete(credentialName);
             }
             else
             {
@@ -207,7 +203,9 @@ namespace Meadow.CLI.Core.Auth
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new NotSupportedException();
+                // delete first in case it already exists
+                Keychain.Delete(credentialName);
+                return Keychain.Add(credentialName, username, password);
             }
             else
             {
