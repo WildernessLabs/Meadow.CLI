@@ -111,7 +111,7 @@ namespace Meadow.CLI
             }
         }
 
-        public async Task<(bool updateExists, string latestVersion)> CheckForUpdates()
+        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates()
         {
             try
             {
@@ -124,13 +124,13 @@ namespace Meadow.CLI
                 if (!string.IsNullOrEmpty(result?.versions?.LastOrDefault()))
                 {
                     var latest = result.versions.Last();
-                    return (latest.ToVersion() > appVersion.ToVersion(), latest);
+                    return (latest.ToVersion() > appVersion.ToVersion(), latest, appVersion);
                 }
             }
             catch (Exception ex)
             {
             }
-            return (false, string.Empty);
+            return (false, string.Empty, string.Empty);
         }
 
         async Task DownloadFile(Uri uri)

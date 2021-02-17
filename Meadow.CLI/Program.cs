@@ -45,7 +45,10 @@ namespace MeadowCLI
                 args = new string[] { "--help" };
             }
 
-            var parser = new Parser(settings => { settings.CaseSensitive = false; });
+            var parser = new Parser(settings => { 
+                settings.CaseSensitive = false;
+                settings.AutoVersion = false; // needed to supercede the built in --version command
+            });
 
             parser.ParseArguments<Options>(args)
             .WithParsed<Options>(options =>
@@ -103,6 +106,10 @@ namespace MeadowCLI
                         {
                             downloadManager.InstallDfuUtil(Environment.Is64BitOperatingSystem);
                         }
+                    }
+                    else if (options.Version)
+                    {
+                        Console.WriteLine($"Current version: {check.currentVersion}");
                     }
                     else
                     {

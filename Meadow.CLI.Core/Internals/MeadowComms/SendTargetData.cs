@@ -50,7 +50,7 @@ namespace MeadowCLI.Hcom
                 //--------------------------------------------------------------
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
-                    Console.Write("Erasing ESP23 Flash...");
+                    Console.Write("Erasing ESP32 Flash...");
                     // For the ESP32 file download, the proceeding command will erase
                     // the ESP32 on chip flash memory before we can download. If the
                     // file is large enough, the time to erase the flash will prevent

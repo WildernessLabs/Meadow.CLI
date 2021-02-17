@@ -71,6 +71,10 @@
     "RegisterDevice": {
       "commandName": "Project",
       "commandLineArgs": "--RegisterDevice -s COM12"
+    },
+    "Version": {
+      "commandName": "Project",
+      "commandLineArgs": "--Version"
     }
   }
 }
