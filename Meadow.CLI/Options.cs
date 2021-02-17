@@ -125,7 +125,9 @@ namespace MeadowCLI
         public bool Login { get; set; }
         [Option(longName: "Logout", Required = false, HelpText = "Log out of CLI")]
         public bool Logout { get; set; }
-        //[Option(longName: "RegisterDevice", Required = false, HelpText = "Add device to cloud account")]
+        [Option(longName: "RegisterDevice", Required = false, HelpText = "Add device to cloud account")]
         public bool RegisterDevice { get; set; }
+        [Option(longName: "Version", Required = false, HelpText = "Get current CLI version")]
+        public bool Version { get; set; }
     }
 }
