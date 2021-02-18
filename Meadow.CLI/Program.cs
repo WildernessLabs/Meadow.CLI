@@ -1,13 +1,11 @@
 ﻿using CommandLine;
 using System;
 using MeadowCLI.DeviceManagement;
-using System.Threading;
 using System.IO;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using System.Linq;
 using Meadow.CLI.Core.Auth;
-using System.Net;
 using Meadow.CLI.Core.CloudServices;
 
 namespace MeadowCLI
@@ -48,6 +46,8 @@ namespace MeadowCLI
             var parser = new Parser(settings => { 
                 settings.CaseSensitive = false;
                 settings.AutoVersion = false; // needed to supercede the built in --version command
+                settings.HelpWriter = Console.Out;
+                settings.IgnoreUnknownArguments = true;
             });
 
             parser.ParseArguments<Options>(args)
@@ -107,7 +107,7 @@ namespace MeadowCLI
                             downloadManager.InstallDfuUtil(Environment.Is64BitOperatingSystem);
                         }
                     }
-                    else if (options.Version)
+                    else if (args[0].Equals("--version", StringComparison.InvariantCultureIgnoreCase))
                     {
                         Console.WriteLine($"Current version: {check.currentVersion}");
                     }
