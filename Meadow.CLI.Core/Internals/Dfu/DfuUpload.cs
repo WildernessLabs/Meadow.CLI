@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,9 @@ namespace MeadowCLI
 {
     public static class DfuUpload
     {
+        private const int ERROR_FILE_NOT_FOUND = 2;
+        private const int ERROR_PATH_NOT_FOUND = 3;
+
         static int _osAddress = 0x08000000;
         static string _usbStmName = "STM32  BOOTLOADER";
 
@@ -130,16 +134,14 @@ namespace MeadowCLI
                     return string.Empty;
                 }
             }
-            catch (Exception ex)
+            catch (Win32Exception ex)
             {
-                if (ex.Message.Contains("cannot find") || ex.Message.Contains("No such file or directory"))
+                if (ex.NativeErrorCode == ERROR_FILE_NOT_FOUND || ex.NativeErrorCode == ERROR_PATH_NOT_FOUND)
                 {
                     return string.Empty;
                 }
-                else
-                {
-                    throw ex;
-                }
+
+                throw ex;
             }
         }
     }
