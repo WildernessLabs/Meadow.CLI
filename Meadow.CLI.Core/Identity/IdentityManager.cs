@@ -161,7 +161,7 @@ namespace Meadow.CLI.Core.Auth
             return new OidcClient(options);
         }
 
-        private void DeleteCredential(string credentialName)
+        public void DeleteCredential(string credentialName)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -183,7 +183,7 @@ namespace Meadow.CLI.Core.Auth
             }
         }
 
-        private bool SaveCredential(string credentialName, string username, string password)
+        public bool SaveCredential(string credentialName, string username, string password)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
