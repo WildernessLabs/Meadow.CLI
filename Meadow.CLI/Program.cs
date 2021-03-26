@@ -9,6 +9,8 @@ using Meadow.CLI;
 using System.Linq;
 using System.Threading;
 using LibUsbDotNet;
+using LibUsbDotNet.Main;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.Auth;
 using Meadow.CLI.Core.CloudServices;
 
@@ -83,7 +85,7 @@ namespace MeadowCLI
                     }
                     else if (options.FlashOS)
                     {
-                        DfuUpload.FlashOS(options.FileName);
+                        DfuUtils.FlashOS(options.FileName);
                     }
                     else if (options.Login)
                     {
@@ -156,7 +158,7 @@ namespace MeadowCLI
         {
             var endTime = DateTime.UtcNow.AddMilliseconds(timeout);
             bool deviceFound;
-            while ((deviceFound = DfuUpload.CheckForValidDevice()) == false && endTime < DateTime.UtcNow)
+            while ((deviceFound = DfuUtils.CheckForValidDevice()) == false && endTime < DateTime.UtcNow)
             {
                 await Task.Delay(1_000).ConfigureAwait(false);
             }
@@ -195,15 +197,29 @@ namespace MeadowCLI
         private static async Task FlashEverything(Options options)
         {
             // TODO: Add ability to specify serial on command line. This is important for devices that are too old to talk nicely to the CLI and have to be put in DFU mode to start.
-            var serialNumber = string.Empty;
             var dfuAttempts = 0;
-            do
+            UsbRegistry dfuDevice = null;
+            while(true)
             {
                 try
                 {
+                    try
+                    {
+                        dfuDevice = DfuUtils.GetDevice();
+                        break;
+                    }
+                    catch (MultipleDfuDevicesException)
+                    {
+                        throw;
+                    }
+                    catch (DeviceNotFoundException)
+                    {
+                        // eat it.
+                    }
+
+                    // No DFU device found, lets try to set the meadow to DFU mode.
                     using var device =
                         await MeadowDeviceManager.GetMeadowForSerialPort(options.SerialPort);
-                    serialNumber = await GetMeadowSerialNumber(device);
 
                     Console.WriteLine("Entering DFU Mode");
                     await MeadowDeviceManager.ProcessCommand(
@@ -211,10 +227,13 @@ namespace MeadowCLI
                         MeadowFileManager.HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE,
                         null);
                 }
+                catch (FileNotFoundException)
+                {
+                    Debug.WriteLine("Failed to find Serial Port.");
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    Environment.Exit(-1);
                 }
 
                 if (dfuAttempts > 5)
@@ -225,21 +244,26 @@ namespace MeadowCLI
                     Environment.Exit(-1);
                 }
 
+                await Task.Delay(1000).ConfigureAwait(false);
                 dfuAttempts++;
-
-            } while (await DeviceInDfuMode(100)
-                         .ConfigureAwait(false)
-                  == false);
+            }
 
             Console.WriteLine("Device in DFU Mode, flashing OS");
-
-            DfuUpload.FlashOS();
+            var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
+            DfuUtils.FlashOS(device: dfuDevice);
             Console.WriteLine("Device Flashed.");
 
-            
             try
             {
-                var serialPort = await FindMeadow(serialNumber);
+                
+                string serialPort = null;
+                var attempts = 0;
+                while((serialPort = await FindMeadow(serialNumber)) == null && attempts < 10)
+                {
+                    await Task.Delay(1000).ConfigureAwait(false);
+                    attempts++;
+                } 
+
                 using var device =
                     await MeadowDeviceManager.GetMeadowForSerialPort(serialPort);
                 
