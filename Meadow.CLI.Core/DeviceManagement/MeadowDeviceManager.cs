@@ -42,7 +42,7 @@ namespace MeadowCLI.DeviceManagement
 
         static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
 
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort) //, bool verbose = true)
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort)//, bool verbose = true)
         {
             try
             {
@@ -433,7 +433,7 @@ namespace MeadowCLI.DeviceManagement
         }
 
         public static async Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
-            Predicate<MeadowMessageEventArgs> filter, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000)
+                                                Predicate<MeadowMessageEventArgs> filter, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000)
         {
             await new SendTargetData(meadow).SendSimpleCommand(requestType, userData, doAcceptedCheck);
             var result = await WaitForResponseMessage(meadow, filter, timeoutMs);

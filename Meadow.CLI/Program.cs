@@ -1,10 +1,14 @@
 ﻿using CommandLine;
 using System;
+using System.Diagnostics;
 using MeadowCLI.DeviceManagement;
 using System.IO;
+using System.IO.Ports;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using System.Linq;
+using System.Threading;
+using LibUsbDotNet;
 using Meadow.CLI.Core.Auth;
 using Meadow.CLI.Core.CloudServices;
 
@@ -148,6 +152,132 @@ namespace MeadowCLI
             }
         }
 
+        private static async Task<bool> DeviceInDfuMode(int timeout = 5000)
+        {
+            var endTime = DateTime.UtcNow.AddMilliseconds(timeout);
+            bool deviceFound;
+            while ((deviceFound = DfuUpload.CheckForValidDevice()) == false && endTime < DateTime.UtcNow)
+            {
+                await Task.Delay(1_000).ConfigureAwait(false);
+            }
+
+            return deviceFound;
+        }
+
+        private static async Task<string> GetMeadowSerialNumber(MeadowSerialDevice device)
+        {
+            var (success, deviceInfo) = await MeadowDeviceManager.GetDeviceInfo(device);
+            if (success)
+            {
+                const string key = "Serial Number: ";
+                var startIndex = deviceInfo.IndexOf(key, StringComparison.Ordinal) + key.Length;
+                var endIndex = deviceInfo.IndexOf(',', startIndex);
+                return deviceInfo.Substring(startIndex, endIndex - startIndex);
+            }
+
+            throw new Exception("Unable to determine Meadow Serial Number");
+        }
+
+        private static async Task<string> FindMeadow(string serialNumber)
+        {
+            var ports = SerialPort.GetPortNames();
+            foreach (var port in ports)
+            {
+                using var device = await MeadowDeviceManager.GetMeadowForSerialPort(port);
+                var (success, deviceInfo) = await MeadowDeviceManager.GetDeviceInfo(device);
+                if (success && deviceInfo.Contains(serialNumber))
+                    return port;
+            }
+
+            throw new Exception("Meadow not found after DFU flash.");
+        }
+
+        private static async Task FlashEverything(Options options)
+        {
+            // TODO: Add ability to specify serial on command line. This is important for devices that are too old to talk nicely to the CLI and have to be put in DFU mode to start.
+            var serialNumber = string.Empty;
+            var dfuAttempts = 0;
+            do
+            {
+                try
+                {
+                    using var device =
+                        await MeadowDeviceManager.GetMeadowForSerialPort(options.SerialPort);
+                    serialNumber = await GetMeadowSerialNumber(device);
+
+                    Console.WriteLine("Entering DFU Mode");
+                    await MeadowDeviceManager.ProcessCommand(
+                        device,
+                        MeadowFileManager.HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE,
+                        null);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    Environment.Exit(-1);
+                }
+
+                if (dfuAttempts > 5)
+                {
+                    Console.WriteLine(
+                        "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
+
+                    Environment.Exit(-1);
+                }
+
+                dfuAttempts++;
+
+            } while (await DeviceInDfuMode(100)
+                         .ConfigureAwait(false)
+                  == false);
+
+            Console.WriteLine("Device in DFU Mode, flashing OS");
+
+            DfuUpload.FlashOS();
+            Console.WriteLine("Device Flashed.");
+
+            
+            try
+            {
+                var serialPort = await FindMeadow(serialNumber);
+                using var device =
+                    await MeadowDeviceManager.GetMeadowForSerialPort(serialPort);
+                
+                Console.WriteLine("Waiting for Meadow to be ready.");
+                await WaitForReady(device).ConfigureAwait(false);
+
+                Console.WriteLine("Disabling Mono");
+                do
+                {
+                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.MonoDisable(device)).ConfigureAwait(false);
+                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+                } while (await MeadowDeviceManager.MonoRunState(device).ConfigureAwait(false));
+
+                Console.WriteLine("Updating Mono Runtime");
+                await UpdateMonoRt(options, device).ConfigureAwait(false);
+                await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+
+                Console.WriteLine("Flashing ESP");
+                await FlashEsp(device).ConfigureAwait(false);
+                await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+
+                Console.WriteLine("Enabling Mono and Resetting.");
+                do
+                {
+                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.MonoEnable(device)).ConfigureAwait(false);
+                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+                } while (await MeadowDeviceManager.MonoRunState(device).ConfigureAwait(false) == false);
+            
+
+                Environment.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Environment.Exit(-1);
+            }
+        }
+
         //Probably rename
 
         static async Task ProcessHcom(Options options)
@@ -156,6 +286,11 @@ namespace MeadowCLI
             {
                 Console.WriteLine("Please specify a --SerialPort");
                 return;
+            }
+
+            if (options.FlashEverything)
+            {
+                await FlashEverything(options).ConfigureAwait(false);
             }
 
             MeadowSerialDevice device = null;
@@ -371,38 +506,7 @@ namespace MeadowCLI
                     }
                     else if (options.MonoUpdateRt)
                     {
-                        string sourcefilename = options.FileName;
-                        if (string.IsNullOrWhiteSpace(sourcefilename))
-                        {
-                            // check local override
-                            sourcefilename = Path.Combine(Directory.GetCurrentDirectory(), DownloadManager.RuntimeFilename);
-                            if (File.Exists(sourcefilename))
-                            {
-                                Console.WriteLine($"Using current directory '{DownloadManager.RuntimeFilename}'");
-
-                            }
-                            else
-                            {
-                                sourcefilename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.RuntimeFilename);
-                                if (File.Exists(sourcefilename))
-                                {
-                                    Console.WriteLine("FileName not specified, using latest download.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Unable to locate a runtime file. Either provide a path or download one.");
-                                    return; // KeepConsoleOpen?
-                                }
-                            }
-                        }
-
-                        if (!File.Exists(sourcefilename))
-                        {
-                            Console.WriteLine($"File '{sourcefilename}' not found");
-                            return; // KeepConsoleOpen?
-                        }
-
-                        await MeadowFileManager.MonoUpdateRt(device, sourcefilename, options.TargetFileName, options.Partition);
+                        await UpdateMonoRt(options, device).ConfigureAwait(false);
                     }
                     else if (options.GetDeviceInfo)
                     {
@@ -490,20 +594,7 @@ namespace MeadowCLI
                     }
                     else if (options.FlashEsp)
                     {
-                        Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
-                        await MeadowFileManager.WriteFileToEspFlash(device,
-                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
-                        await Task.Delay(1000);
-
-                        Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
-                        await MeadowFileManager.WriteFileToEspFlash(device,
-                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
-                        await Task.Delay(1000);
-
-                        Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
-                        await MeadowFileManager.WriteFileToEspFlash(device,
-                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
-                        await Task.Delay(1000);
+                        await FlashEsp(device).ConfigureAwait(false);
                     }
                     else if (options.Esp32ReadMac)
                     {
@@ -567,6 +658,93 @@ namespace MeadowCLI
                     return; // KeepConsoleOpen?
                 }
             }
+        }
+
+        private static async Task UpdateMonoRt(Options options, MeadowSerialDevice device)
+        {
+            string sourcefilename = options.FileName;
+            if (string.IsNullOrWhiteSpace(sourcefilename))
+            {
+                // check local override
+                sourcefilename = Path.Combine(Directory.GetCurrentDirectory(), DownloadManager.RuntimeFilename);
+                if (File.Exists(sourcefilename))
+                {
+                    Console.WriteLine($"Using current directory '{DownloadManager.RuntimeFilename}'");
+
+                }
+                else
+                {
+                    sourcefilename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.RuntimeFilename);
+                    if (File.Exists(sourcefilename))
+                    {
+                        Console.WriteLine("FileName not specified, using latest download.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unable to locate a runtime file. Either provide a path or download one.");
+                        return; // KeepConsoleOpen?
+                    }
+                }
+            }
+
+            if (!File.Exists(sourcefilename))
+            {
+                Console.WriteLine($"File '{sourcefilename}' not found");
+                return; // KeepConsoleOpen?
+            }
+
+            await MeadowFileManager.MonoUpdateRt(device, sourcefilename, options.TargetFileName, options.Partition);
+        }
+
+        private static async Task FlashEsp(MeadowSerialDevice device)
+        {
+            Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                                                        Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000")
+                                   .ConfigureAwait(false);
+            await Task.Delay(1000).ConfigureAwait(false);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                                                        Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000")
+                                   .ConfigureAwait(false);
+            await Task.Delay(1000).ConfigureAwait(false);
+
+            Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            await MeadowFileManager.WriteFileToEspFlash(device,
+                                                        Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000")
+                                   .ConfigureAwait(false);
+            await Task.Delay(1000).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> SendCommandAndWaitForReady(MeadowSerialDevice device, Func<Task> command, int timeout = 60_000)
+        {
+            Debug.WriteLine("Invoking command.");
+            await command().ConfigureAwait(false);
+            Debug.WriteLine("Command invoked, waiting for Meadow to be ready.");
+
+            return await WaitForReady(device, timeout).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> WaitForReady(MeadowSerialDevice device, int timeout = 60_000)
+        {
+            var now = DateTime.UtcNow;
+            var then = now.AddMilliseconds(timeout);
+            while (DateTime.UtcNow < then)
+            {
+                try
+                {
+                    var (isSuccessful, _) = await MeadowDeviceManager.GetDeviceInfo(device);
+                    if (isSuccessful)
+                        return true;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"An exception occurred. Retrying. Exception: {ex}");
+                }
+            }
+
+            throw new Exception($"Device not ready after {timeout}ms");
         }
     }
 }

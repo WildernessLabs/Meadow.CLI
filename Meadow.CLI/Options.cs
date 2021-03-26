@@ -5,6 +5,8 @@ namespace MeadowCLI
 {
     public class Options
     {
+        [Option("FlashEverything", Required = false, HelpText = "DFU flash Meadow OS.")]
+        public bool FlashEverything { get; set; }
         [Option("FlashOS", Required = false, HelpText = "DFU flash Meadow OS.")]
         public bool FlashOS { get; set; }
         [Option('w', longName: "WriteFile", Required = false, Min = 1, Max = 2, HelpText = "Write one or multiple external files to Meadow's internal flash.\n --WriteFile file[,file,...] [targetFileName[,targetFileName,...]]")]

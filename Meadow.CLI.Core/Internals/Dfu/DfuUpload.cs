@@ -12,6 +12,25 @@ namespace MeadowCLI
         static int _osAddress = 0x08000000;
         static string _usbStmName = "STM32  BOOTLOADER";
 
+        public static bool CheckForValidDevice()
+        {
+            var allDevices = UsbDevice.AllDevices;
+            if (allDevices.Count(x => x.Name == _usbStmName) > 1)
+            {
+                Console.WriteLine("More than one DFU device found, please connect only one and try again.");
+                return false;
+            }
+
+            var device = UsbDevice.AllDevices.SingleOrDefault(x => x.Name == _usbStmName);
+            if (device == null)
+            {
+                Console.WriteLine("Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
+                return false;
+            }
+
+            return true;
+        }
+
         public static void FlashOS(string filename = "")
         {
             var allDevices = UsbDevice.AllDevices;
