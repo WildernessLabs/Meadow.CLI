@@ -180,7 +180,7 @@ namespace MeadowCLI
             throw new Exception("Unable to determine Meadow Serial Number");
         }
 
-        private static async Task<string> FindMeadow(string serialNumber)
+        private static async Task<(string, MeadowSerialDevice)> FindMeadow(string serialNumber)
         {
             var ports = SerialPort.GetPortNames();
             foreach (var port in ports)
@@ -188,7 +188,7 @@ namespace MeadowCLI
                 using var device = await MeadowDeviceManager.GetMeadowForSerialPort(port);
                 var (success, deviceInfo) = await MeadowDeviceManager.GetDeviceInfo(device);
                 if (success && deviceInfo.Contains(serialNumber))
-                    return port;
+                    return (port, device);
             }
 
             throw new Exception("Meadow not found after DFU flash.");
@@ -210,6 +210,7 @@ namespace MeadowCLI
                     }
                     catch (MultipleDfuDevicesException)
                     {
+                        // This is bad, we can't just blindly flash with multiple devices, let the user know
                         throw;
                     }
                     catch (DeviceNotFoundException)
@@ -233,67 +234,116 @@ namespace MeadowCLI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    Debug.WriteLine(ex);
                 }
 
-                if (dfuAttempts > 5)
+                switch (dfuAttempts)
                 {
-                    Console.WriteLine(
-                        "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
+                    case 5:
+                        Console.Write(
+                            "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press any key to try again");
 
-                    Environment.Exit(-1);
+                        Console.ReadKey();
+                        break;
+                    case > 10:
+                        throw new Exception(
+                            "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
                 }
 
+                // Lets give the device a little time to settle in and get picked up
                 await Task.Delay(1000).ConfigureAwait(false);
                 dfuAttempts++;
             }
 
-            Console.WriteLine("Device in DFU Mode, flashing OS");
+            // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
             var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
+            
+            Console.WriteLine("Device in DFU Mode, flashing OS");
             DfuUtils.FlashOS(device: dfuDevice);
             Console.WriteLine("Device Flashed.");
 
             try
             {
-                
-                string serialPort = null;
+                MeadowSerialDevice device;
                 var attempts = 0;
-                while((serialPort = await FindMeadow(serialNumber)) == null && attempts < 10)
+                // Once flashed the meadow may take a minute or two to show up again as a serial port, and may show up under a different serial port than we think
+                while(((_, device) = await FindMeadow(serialNumber)).device == null && attempts < 10)
                 {
                     await Task.Delay(1000).ConfigureAwait(false);
                     attempts++;
-                } 
+                }
 
-                using var device =
-                    await MeadowDeviceManager.GetMeadowForSerialPort(serialPort);
-                
-                Console.WriteLine("Waiting for Meadow to be ready.");
-                await WaitForReady(device).ConfigureAwait(false);
-
-                Console.WriteLine("Disabling Mono");
-                do
+                using (device)
                 {
-                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.MonoDisable(device)).ConfigureAwait(false);
-                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
-                } while (await MeadowDeviceManager.MonoRunState(device).ConfigureAwait(false));
 
-                Console.WriteLine("Updating Mono Runtime");
-                await UpdateMonoRt(options, device).ConfigureAwait(false);
-                await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+                    Console.WriteLine("Waiting for Meadow to be ready.");
+                    await WaitForReady(device)
+                        .ConfigureAwait(false);
 
-                Console.WriteLine("Flashing ESP");
-                await FlashEsp(device).ConfigureAwait(false);
-                await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
+                    Console.WriteLine("Disabling Mono");
+                    do
+                    {
+                        // Send the Mono Disable Command
+                        await SendCommandAndWaitForReady(
+                                device,
+                                () => MeadowDeviceManager.MonoDisable(device))
+                            .ConfigureAwait(false);
 
-                Console.WriteLine("Enabling Mono and Resetting.");
-                do
-                {
-                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.MonoEnable(device)).ConfigureAwait(false);
-                    await SendCommandAndWaitForReady(device, () => MeadowDeviceManager.ResetMeadow(device)).ConfigureAwait(false);
-                } while (await MeadowDeviceManager.MonoRunState(device).ConfigureAwait(false) == false);
-            
+                        // Reset the Meadow
+                        await SendCommandAndWaitForReady(
+                                device,
+                                () => MeadowDeviceManager.ResetMeadow(device))
+                            .ConfigureAwait(false);
+                        // Double check the mono run state to ensure mono is actually disabled
+                    } while (await MeadowDeviceManager.MonoRunState(device)
+                                                      .ConfigureAwait(false));
 
-                Environment.Exit(0);
+                    Debug.Assert(await MeadowDeviceManager.MonoRunState(device)
+                                                          .ConfigureAwait(false), "Meadow was expected to have Mono Disabled");
+
+                    Console.WriteLine("Updating Mono Runtime");
+                    await UpdateMonoRt(options, device)
+                        .ConfigureAwait(false);
+
+                    // Reset the meadow after updating the runtime
+                    await SendCommandAndWaitForReady(
+                            device,
+                            () => MeadowDeviceManager.ResetMeadow(device))
+                        .ConfigureAwait(false);
+
+                    // Again, verify that Mono is disabled
+                    Debug.Assert(await MeadowDeviceManager.MonoRunState(device)
+                                                                 .ConfigureAwait(false), "Meadow was expected to have Mono Disabled");
+
+                    Console.WriteLine("Flashing ESP");
+                    await FlashEsp(device)
+                        .ConfigureAwait(false);
+
+                    // Reset the meadow again to ensure flash worked.
+                    await SendCommandAndWaitForReady(
+                            device,
+                            () => MeadowDeviceManager.ResetMeadow(device))
+                        .ConfigureAwait(false);
+
+                    Console.WriteLine("Enabling Mono and Resetting.");
+                    do
+                    {
+                        await SendCommandAndWaitForReady(
+                                device,
+                                () => MeadowDeviceManager.MonoEnable(device))
+                            .ConfigureAwait(false);
+
+                        await SendCommandAndWaitForReady(
+                                device,
+                                () => MeadowDeviceManager.ResetMeadow(device))
+                            .ConfigureAwait(false);
+                    } while (await MeadowDeviceManager.MonoRunState(device)
+                                                      .ConfigureAwait(false)
+                          == false);
+
+                    // TODO: Verify that the device info returns the expected version
+                    Environment.Exit(0);
+                }
             }
             catch (Exception ex)
             {
@@ -741,6 +791,13 @@ namespace MeadowCLI
             await Task.Delay(1000).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Send a command to the Meadow and wait for the Meadow to be ready
+        /// </summary>
+        /// <param name="device">The <see cref="MeadowSerialDevice"/> to use</param>
+        /// <param name="command">The command to execute against the meadow</param>
+        /// <param name="timeout">How long to wait for the meadow to become ready</param>
+        /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
         private static async Task<bool> SendCommandAndWaitForReady(MeadowSerialDevice device, Func<Task> command, int timeout = 60_000)
         {
             Debug.WriteLine("Invoking command.");
@@ -750,6 +807,12 @@ namespace MeadowCLI
             return await WaitForReady(device, timeout).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Wait for the Meadow to respond to GetDeviceInfo
+        /// </summary>
+        /// <param name="device">The <see cref="MeadowSerialDevice"/> to use</param>
+        /// <param name="timeout">How long to wait for the meadow to become ready</param>
+        /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
         private static async Task<bool> WaitForReady(MeadowSerialDevice device, int timeout = 60_000)
         {
             var now = DateTime.UtcNow;
