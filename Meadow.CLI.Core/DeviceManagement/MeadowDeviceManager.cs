@@ -15,7 +15,7 @@ namespace MeadowCLI.DeviceManagement
     /// <summary>
     /// TODO: put device enumeration and such stuff here.
     /// </summary>
-    public static class MeadowDeviceManager
+    public class MeadowDeviceManager
     {
         internal const UInt16 DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
 
@@ -42,7 +42,7 @@ namespace MeadowCLI.DeviceManagement
 
         static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
 
-        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort)//, bool verbose = true)
+        public static async Task<MeadowSerialDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, CancellationToken cancellationToken = default)//, bool verbose = true)
         {
             try
             {
@@ -50,9 +50,11 @@ namespace MeadowCLI.DeviceManagement
                 {
                     _connections[serialPort].Dispose();
                     _connections.Remove(serialPort);
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000, cancellationToken)
+                              .ConfigureAwait(false);
                 }
-                var meadow = new MeadowSerialDevice(serialPort);
+
+                var meadow = new MeadowSerialDevice(serialPort) {LocalEcho = !silent};
                 meadow.Initialize();
                 _connections.Add(serialPort, meadow);
                 return meadow;
@@ -98,44 +100,45 @@ namespace MeadowCLI.DeviceManagement
         }
 
         //providing a numeric (0 = none, 1 = info and 2 = debug)
-        public static async Task SetTraceLevel(MeadowSerialDevice meadow, int level)
+        public static async Task SetTraceLevel(MeadowSerialDevice meadow, int level, CancellationToken cancellationToken = default)
         {
             if (level < 0 || level > 3)
                 throw new System.ArgumentOutOfRangeException(nameof(level), "Trace level must be between 0 & 3 inclusive");
 
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL, userData: (uint)level);
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL, userData: (uint)level, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task ResetMeadow(MeadowSerialDevice meadow)
+        public static async Task ResetMeadow(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false, filter: null);
+            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, doAcceptedCheck: false, filter: null, cancellationToken: cancellationToken).ConfigureAwait(false);
             // needs some time to complete restart
-            Thread.Sleep(1000);
+            await Task.Delay(1000, cancellationToken)
+                      .ConfigureAwait(false);
         }
 
-        public static async Task EnterDfuMode(MeadowSerialDevice meadow)
+        public static Task EnterDfuMode(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE, cancellationToken: cancellationToken);
         }
 
-        public static async Task NshEnable(MeadowSerialDevice meadow)
+        public static Task NshEnable(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH, userData: (uint)1);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH, userData: (uint)1, cancellationToken: cancellationToken);
         }
 
-        public static async Task MonoDisable(MeadowSerialDevice meadow)
+        public static Task MonoDisable(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000, cancellationToken: cancellationToken);
         }
 
-        public static async Task MonoEnable(MeadowSerialDevice meadow)
+        public static Task MonoEnable(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000, cancellationToken: cancellationToken);
         }
 
-        public static async Task<bool> MonoRunState(MeadowSerialDevice meadow)
+        public static async Task<bool> MonoRunState(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await new SendTargetData(meadow).SendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE);
+            await new SendTargetData(meadow).SendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE, cancellationToken: cancellationToken);
 
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
@@ -159,30 +162,30 @@ namespace MeadowCLI.DeviceManagement
 
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData += handler;
 
-            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(5000) });
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(5000, cancellationToken) }).ConfigureAwait(false);
 
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
 
             return result;
         }
 
-        public static async Task MonoFlash(MeadowSerialDevice meadow)
+        public static Task MonoFlash(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e => e.Message.StartsWith("Mono runtime successfully flashed."));
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH, timeoutMs: 200000, filter: e => e.Message.StartsWith("Mono runtime successfully flashed."), cancellationToken: cancellationToken);
         }
 
-        public static async Task<(bool isSuccessful, string message)> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        public static async Task<(bool isSuccessful, string message)> GetDeviceInfo(MeadowSerialDevice meadow, int timeoutMs = 1000, CancellationToken cancellationToken = default)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
-            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
-            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task<string> GetDeviceSerialNumber(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        public static async Task<string> GetDeviceSerialNumber(MeadowSerialDevice meadow, int timeoutMs = 1000, CancellationToken cancellationToken = default)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
-            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
-            var result =  await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result =  await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (result.isSuccessful)
             {
                 return ParseDeviceInfo(result.message, "Serial Number: ", ",");
@@ -198,78 +201,78 @@ namespace MeadowCLI.DeviceManagement
             return deviceInfo.Substring(start, end-start);
         }
 
-        public static async Task<(bool isSuccessful, string message)> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000)
+        public static async Task<(bool isSuccessful, string message)> GetDeviceName(MeadowSerialDevice meadow, int timeoutMs = 1000, CancellationToken cancellationToken = default)
         {
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME;
-            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
-            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task SetDeveloper1(MeadowSerialDevice meadow, int userData)
+        public static Task SetDeveloper1(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1, userData: (uint)userData, cancellationToken: cancellationToken);
         }
-        public static async Task SetDeveloper2(MeadowSerialDevice meadow, int userData)
+        public static Task SetDeveloper2(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2, userData: (uint)userData, cancellationToken: cancellationToken);
         }
-        public static async Task SetDeveloper3(MeadowSerialDevice meadow, int userData)
+        public static Task SetDeveloper3(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3, userData: (uint)userData);
-        }
-
-        public static async Task SetDeveloper4(MeadowSerialDevice meadow, int userData)
-        {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3, userData: (uint)userData, cancellationToken: cancellationToken);
         }
 
-        public static async Task TraceDisable(MeadowSerialDevice meadow)
+        public static Task SetDeveloper4(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4, userData: (uint)userData, cancellationToken: cancellationToken);
         }
 
-        public static async Task TraceEnable(MeadowSerialDevice meadow)
+        public static Task TraceDisable(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST, cancellationToken: cancellationToken);
         }
 
-        public static async Task Uart1Apps(MeadowSerialDevice meadow)
+        public static Task TraceEnable(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST, cancellationToken: cancellationToken);
         }
 
-        public static async Task Uart1Trace(MeadowSerialDevice meadow)
+        public static Task Uart1Apps(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART, cancellationToken: cancellationToken);
         }
 
-        public static async Task RenewFileSys(MeadowSerialDevice meadow)
+        public static Task Uart1Trace(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART, cancellationToken: cancellationToken);
         }
 
-        public static async Task QspiWrite(MeadowSerialDevice meadow, int userData)
+        public static Task RenewFileSys(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
         }
 
-        public static async Task QspiRead(MeadowSerialDevice meadow, int userData)
+        public static Task QspiWrite(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE, userData: (uint)userData, cancellationToken: cancellationToken);
         }
 
-        public static async Task QspiInit(MeadowSerialDevice meadow, int userData)
+        public static Task QspiRead(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT, userData: (uint)userData);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ, userData: (uint)userData, cancellationToken: cancellationToken);
+        }
+
+        public static Task QspiInit(MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT, userData: (uint)userData, cancellationToken: cancellationToken);
         }
 
         // This method is called to sent to Visual Studio debugging to Mono
-        public static void ForwardVisualStudioDataToMono(byte[] debuggerData, MeadowSerialDevice meadow, int userData)
+        public static Task ForwardVisualStudioDataToMono(byte[] debuggerData, MeadowSerialDevice meadow, int userData, CancellationToken cancellationToken = default)
         {
             // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Forwarding {debuggerData.Length} bytes to Mono via hcom");
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA;
 
-            new SendTargetData(meadow).BuildAndSendSimpleData(debuggerData, _meadowRequestType, (uint)userData);
+            return new SendTargetData(meadow).BuildAndSendSimpleData(debuggerData, _meadowRequestType, (uint)userData);
         }
 
         // This method is called to forward from mono debugging to Visual Studio
@@ -280,15 +283,15 @@ namespace MeadowCLI.DeviceManagement
         }
 
         // Enter StartDebugging mode.
-        public static async Task StartDebugging(MeadowSerialDevice meadow, int vsDebugPort)
+        public static async Task StartDebugging(MeadowSerialDevice meadow, int vsDebugPort, CancellationToken cancellationToken = default)
         {
             // Tell meadow to start it's debugging server, after restarting.
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION;
-            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             // The previous command caused Meadow to restart. Therefore, we must reestablish
             // Meadow communication.
-            meadow.AttemptToReconnectToMeadow();
+            await meadow.AttemptToReconnectToMeadow(cancellationToken).ConfigureAwait(false);
 
             // Create an instance of the TCP socket send/receiver class and
             // start it receiving.
@@ -320,17 +323,17 @@ namespace MeadowCLI.DeviceManagement
             meadow.Initialize(true);
         }
 
-        public static async Task Esp32ReadMac(MeadowSerialDevice meadow)
+        public static Task Esp32ReadMac(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS, cancellationToken: cancellationToken);
         }
 
-        public static async Task Esp32Restart(MeadowSerialDevice meadow)
+        public static Task Esp32Restart(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32);
+            return ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32, cancellationToken: cancellationToken);
         }
 
-        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
+        public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath, CancellationToken cancellationToken = default)
         {
             if (!File.Exists(applicationFilePath))
             {
@@ -362,7 +365,7 @@ namespace MeadowCLI.DeviceManagement
                     var len = (int)fs.Length;
                     var bytes = new byte[len];
 
-                    fs.Read(bytes, 0, len);
+                    await fs.ReadAsync(bytes, 0, len, cancellationToken);
 
                     //0x
                     var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
@@ -383,7 +386,7 @@ namespace MeadowCLI.DeviceManagement
                     var len = (int)fs.Length;
                     var bytes = new byte[len];
 
-                    fs.Read(bytes, 0, len);
+                    await fs.ReadAsync(bytes, 0, len, cancellationToken);
 
                     //0x
                     var crc = CrcTools.Crc32part(bytes, len, 0);// 0x04C11DB7);
@@ -426,23 +429,23 @@ namespace MeadowCLI.DeviceManagement
             Console.WriteLine($"{fi.Name} deploy complete");
         }
 
-        public static async Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
-            MeadowMessageType responseMessageType = MeadowMessageType.Concluded, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000)
+        public static Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
+            MeadowMessageType responseMessageType = MeadowMessageType.Concluded, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000, CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(meadow, requestType, e => e.MessageType == responseMessageType, userData, doAcceptedCheck, timeoutMs);
+            return ProcessCommand(meadow, requestType, e => e.MessageType == responseMessageType, userData, doAcceptedCheck, timeoutMs, cancellationToken);
         }
 
         public static async Task ProcessCommand(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
-                                                Predicate<MeadowMessageEventArgs> filter, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000)
+                                                Predicate<MeadowMessageEventArgs> filter, uint userData = 0, bool doAcceptedCheck = true, int timeoutMs = 10000, CancellationToken cancellationToken = default)
         {
-            await new SendTargetData(meadow).SendSimpleCommand(requestType, userData, doAcceptedCheck);
-            var result = await WaitForResponseMessage(meadow, filter, timeoutMs);
+            await new SendTargetData(meadow).SendSimpleCommand(requestType, userData, doAcceptedCheck, cancellationToken).ConfigureAwait(false);
+            var result = await WaitForResponseMessage(meadow, filter, timeoutMs, cancellationToken).ConfigureAwait(false);
             if (!result.isSuccessful)
             {
                 throw new MeadowDeviceManagerException(requestType);
             }
         }
-        public static async Task<(bool isSuccessful, string message)> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
+        public static async Task<(bool isSuccessful, string message)> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000, CancellationToken cancellationToken = default)
         {
             if (filter == null)
             {
@@ -465,7 +468,7 @@ namespace MeadowCLI.DeviceManagement
 
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData += handler;
 
-            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(millisecondDelay) });
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(millisecondDelay, cancellationToken) }).ConfigureAwait(false);
 
             if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
 

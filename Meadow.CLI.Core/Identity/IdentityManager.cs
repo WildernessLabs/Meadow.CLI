@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.Auth
@@ -18,11 +19,12 @@ namespace Meadow.CLI.Core.Auth
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
 
+        // TODO: Add cancellation support
         /// <summary>
         /// Kick off login
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> LoginAsync()
+        public async Task<bool> LoginAsync(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -34,7 +36,7 @@ namespace Meadow.CLI.Core.Auth
                     http.Start();
 
                     // generated login url with PKCE
-                    var state = await client.PrepareLoginAsync();
+                    var state = await client.PrepareLoginAsync(cancellationToken: cancellationToken);
 
                     OpenBrowser(state.StartUrl);
 
@@ -44,7 +46,7 @@ namespace Meadow.CLI.Core.Auth
                     context.Response.AddHeader("Location", postAuthRedirectUri);
                     context.Response.Close();
 
-                    var result = await client.ProcessResponseAsync(raw, state);
+                    var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
 
                     if (result.IsError)
                     {
@@ -82,7 +84,7 @@ namespace Meadow.CLI.Core.Auth
         /// Get access token through a token refresh
         /// </summary>
         /// <returns></returns>
-        public async Task<string> GetAccessToken()
+        public async Task<string> GetAccessToken(CancellationToken cancellationToken = default)
         {
             string refreshToken = string.Empty;
 
@@ -107,7 +109,7 @@ namespace Meadow.CLI.Core.Auth
             if (!string.IsNullOrEmpty(refreshToken))
             {
                 var client = GetOidcClient();
-                var result = await client.RefreshTokenAsync(refreshToken);
+                var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
                 return result.AccessToken;
             }
             else

@@ -7,8 +7,6 @@ using System.IO.Ports;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using System.Linq;
-using System.Threading;
-using LibUsbDotNet;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.Auth;
@@ -191,7 +189,7 @@ namespace MeadowCLI
                     return (port, device);
             }
 
-            throw new Exception("Meadow not found after DFU flash.");
+            return (null, null);
         }
 
         private static async Task FlashEverything(Options options)
@@ -298,7 +296,7 @@ namespace MeadowCLI
                     } while (await MeadowDeviceManager.MonoRunState(device)
                                                       .ConfigureAwait(false));
 
-                    Debug.Assert(await MeadowDeviceManager.MonoRunState(device)
+                    Trace.Assert(await MeadowDeviceManager.MonoRunState(device)
                                                           .ConfigureAwait(false), "Meadow was expected to have Mono Disabled");
 
                     Console.WriteLine("Updating Mono Runtime");
@@ -312,7 +310,7 @@ namespace MeadowCLI
                         .ConfigureAwait(false);
 
                     // Again, verify that Mono is disabled
-                    Debug.Assert(await MeadowDeviceManager.MonoRunState(device)
+                    Trace.Assert(await MeadowDeviceManager.MonoRunState(device)
                                                                  .ConfigureAwait(false), "Meadow was expected to have Mono Disabled");
 
                     Console.WriteLine("Flashing ESP");
@@ -642,7 +640,7 @@ namespace MeadowCLI
                     }
                     else if (options.StartDebugging)
                     {
-                        MeadowDeviceManager.StartDebugging(device, options.VSDebugPort);
+                        await MeadowDeviceManager.StartDebugging(device, options.VSDebugPort).ConfigureAwait(false);
                         Console.WriteLine($"Ready for Visual Studio debugging");
                         options.KeepAlive = true;
                     }

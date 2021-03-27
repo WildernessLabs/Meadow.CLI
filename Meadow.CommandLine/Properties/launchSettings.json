@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Meadow.CommandLine": {
+      "commandName": "Project",
+      "commandLineArgs": "mono disable -s COM21"
+    }
+  }
+}

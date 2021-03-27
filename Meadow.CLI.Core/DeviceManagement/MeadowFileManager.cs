@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using MeadowCLI.Hcom;
@@ -14,8 +15,9 @@ namespace MeadowCLI.DeviceManagement
 
         static MeadowFileManager() { }
 
+        // TODO: Add cancellation support
         public static async Task<bool> WriteFileToFlash(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
-            int partition = 0)
+            int partition = 0, CancellationToken cancellationToken = default)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
 
@@ -29,8 +31,8 @@ namespace MeadowCLI.DeviceManagement
             if (csvArray.Length == 1)
             {
                 await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true)),
-                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded));
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true, cancellationToken), cancellationToken),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, cancellationToken: cancellationToken)).ConfigureAwait(false);
 
                 // No CSV, just the source file name. So we'll assume the targetFileName is correct
                 //TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
@@ -39,7 +41,7 @@ namespace MeadowCLI.DeviceManagement
             else
             {
                 // At this point, the fileName field should contain a CSV string containing the source
-                // and destionation file names, always in an even number.
+                // and destination file names, always in an even number.
                 if (csvArray.Length % 2 != 0)
                 {
                     Console.WriteLine("Please provide a CSV input with file names \"source, destination, source, destination\"");
@@ -50,22 +52,23 @@ namespace MeadowCLI.DeviceManagement
                 {
                     // Send files one-by-one
                     bool lastFile = i == csvArray.Length - 2 ? true : false;
-                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, csvArray[i].Trim(), csvArray[i + 1].Trim(),
-                        partition, 0, false, lastFile);
+                    await TransmitFileInfoToExtFlash(meadow, meadowRequestType, csvArray[i].Trim(), csvArray[i + 1].Trim(),
+                        partition, 0, false, lastFile,
+                        cancellationToken).ConfigureAwait(false);
                 }
             }
             return false;
         }
 
-        public static async Task DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
+        public static async Task DeleteFile(MeadowSerialDevice meadow, string fileName, int partition = 0, CancellationToken cancellationToken = default)
         {
             await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME, fileName, fileName, partition, 0, true)),
-                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded));
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME, fileName, fileName, partition, 0, true, cancellationToken: cancellationToken), cancellationToken),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         public static async Task MonoUpdateRt(MeadowSerialDevice meadow, string fileName, string targetFileName = null,
-            int partition = 0)
+            int partition = 0, CancellationToken cancellationToken = default)
         {
             Console.WriteLine("Updating runtime...");
 
@@ -75,65 +78,65 @@ namespace MeadowCLI.DeviceManagement
             }
 
             await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true)),
-                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000));
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME, fileName, targetFileName, partition, 0, false, true, cancellationToken), cancellationToken),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 300000, cancellationToken)).ConfigureAwait(false);
         }
 
-        public static async Task EraseFlash(MeadowSerialDevice meadow)
+        public static Task EraseFlash(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
             // not sure why this responds with a SerialReconnect message
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, MeadowMessageType.SerialReconnect, timeoutMs: 200000);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE, MeadowMessageType.SerialReconnect, timeoutMs: 200000, cancellationToken: cancellationToken);
         }
 
-        public static async Task VerifyErasedFlash(MeadowSerialDevice meadow)
+        public static Task VerifyErasedFlash(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH, timeoutMs: 30000);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH, timeoutMs: 30000, cancellationToken: cancellationToken);
         }
 
-        public static async Task PartitionFileSystem(MeadowSerialDevice meadow, int numberOfPartitions = 2)
+        public static Task PartitionFileSystem(MeadowSerialDevice meadow, int numberOfPartitions = 2, CancellationToken cancellationToken = default)
         {
             if (numberOfPartitions < 1 || numberOfPartitions > 8)
             {
                 throw new IndexOutOfRangeException("Number of partitions must be between 1 & 8 inclusive");
             }
 
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS, userData: (uint)numberOfPartitions);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS, userData: (uint)numberOfPartitions, cancellationToken: cancellationToken);
         }
 
-        public static async Task MountFileSystem(MeadowSerialDevice meadow, int partition)
+        public static Task MountFileSystem(MeadowSerialDevice meadow, int partition, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS, userData: (uint)partition);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS, userData: (uint)partition, cancellationToken: cancellationToken);
         }
 
-        public static async Task InitializeFileSystem(MeadowSerialDevice meadow, int partition)
+        public static Task InitializeFileSystem(MeadowSerialDevice meadow, int partition, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS, userData: (uint)partition);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS, userData: (uint)partition, cancellationToken: cancellationToken);
         }
 
-        public static async Task CreateFileSystem(MeadowSerialDevice meadow)
+        public static Task CreateFileSystem(MeadowSerialDevice meadow, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS, cancellationToken: cancellationToken);
         }
 
-        public static async Task FormatFileSystem(MeadowSerialDevice meadow, int partition)
+        public static Task FormatFileSystem(MeadowSerialDevice meadow, int partition, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS, userData: (uint)partition);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS, userData: (uint)partition, cancellationToken: cancellationToken);
         }
 
-        public static async Task ListFiles(MeadowSerialDevice meadow, int partition = 0)
+        public static Task ListFiles(MeadowSerialDevice meadow, int partition = 0, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES, userData: (uint)partition);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES, userData: (uint)partition, cancellationToken: cancellationToken);
         }
 
-        public static async Task ListFilesAndCrcs(MeadowSerialDevice meadow, int partition = 0)
+        public static Task ListFilesAndCrcs(MeadowSerialDevice meadow, int partition = 0, CancellationToken cancellationToken = default)
         {
-            await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC, userData: (uint)partition, timeoutMs: 30000);
+            return MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC, userData: (uint)partition, timeoutMs: 30000, cancellationToken: cancellationToken);
         }
 
         // fileName - is the name of the file on this host PC
         // targetFileName - is the name of the file on the F7
         public static async Task WriteFileToEspFlash(MeadowSerialDevice meadow, string fileName,
-            string targetFileName = null, int partition = 0, string mcuDestAddr = null)
+            string targetFileName = null, int partition = 0, string mcuDestAddr = null, CancellationToken cancellationToken = default)
         {
             meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER;
 
@@ -165,8 +168,8 @@ namespace MeadowCLI.DeviceManagement
                 }
 
                 await Task.WhenAll(
-                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, mcuAddr, false, true)),
-                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded));
+                    Task.Run(() => TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, mcuAddr, false, true, cancellationToken)),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, cancellationToken: cancellationToken)).ConfigureAwait(false);
             }
             else
             {
@@ -204,7 +207,7 @@ namespace MeadowCLI.DeviceManagement
                     bool lastFile = i == fileElement.Length - 2 ? true : false;
 
                     // this may need need to be awaited?
-                    TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileElement[i + 1], targetFileName, partition, mcuAddr, false, lastFile);
+                    await TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileElement[i + 1], targetFileName, partition, mcuAddr, false, lastFile, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -227,10 +230,11 @@ namespace MeadowCLI.DeviceManagement
             await Task.Delay(1000);
         }
 
-        private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
+        private static async Task TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType, string sourceFileName,
                             string targetFileName, int partition, uint mcuAddr,
-                            bool deleteFile, bool lastInSeries = false)
+                            bool deleteFile, bool lastInSeries = false,
+                            CancellationToken cancellationToken = default)
         {
             var sw = new Stopwatch();
             try
@@ -247,8 +251,8 @@ namespace MeadowCLI.DeviceManagement
                 if (deleteFile == true)
                 {
                     // No data packets, no end-of-file message and no mcu address
-                    sendTargetData.BuildAndSendFileRelatedCommand(requestType,
-                        (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName);
+                    await sendTargetData.BuildAndSendFileRelatedCommand(requestType,
+                        (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName).ConfigureAwait(false);
                     return;
                 }
 
@@ -281,8 +285,8 @@ namespace MeadowCLI.DeviceManagement
                 sw.Start();
                 sw.Restart();
 
-                sendTargetData.SendTheEntireFile(requestType, targetFileName, (uint)partition,
-                    fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
+                await sendTargetData.SendTheEntireFile(requestType, targetFileName, (uint)partition,
+                                                       fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries).ConfigureAwait(false);
 
                 sw.Stop();
 

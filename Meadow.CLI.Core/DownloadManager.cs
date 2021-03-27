@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using Meadow.CLI.Core;
 
 namespace Meadow.CLI
@@ -133,13 +134,27 @@ namespace Meadow.CLI
             return (false, string.Empty, string.Empty);
         }
 
-        async Task DownloadFile(Uri uri)
+        async Task DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
             var fileName = uri.Segments.ToList().Last();
 
-            WebClient webClient = new WebClient();
-            webClient.DownloadFile(uri, Path.Combine(FirmwareDownloadsFilePath, fileName));
-            webClient.DownloadFile(_versionCheckUrl, Path.Combine(FirmwareDownloadsFilePath, _versionCheckFile));
+            using var client = new HttpClient();
+            using var firmwareRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+            using var firmwareResponse = await client.SendAsync(firmwareRequest, cancellationToken)
+                        .ConfigureAwait(false);
+
+            firmwareResponse.EnsureSuccessStatusCode();
+            using var firmwareFile = File.OpenWrite(Path.Combine(FirmwareDownloadsFilePath, fileName));
+            await firmwareResponse.Content.CopyToAsync(firmwareFile).ConfigureAwait(false);
+
+            using var versionRequest = new HttpRequestMessage(HttpMethod.Get, _versionCheckUrl);
+            using var versionResponse = await client.SendAsync(versionRequest, cancellationToken)
+                                                    .ConfigureAwait(false);
+
+            versionResponse.EnsureSuccessStatusCode();
+            var versionFile = File.OpenWrite(Path.Combine(FirmwareDownloadsFilePath, _versionCheckFile));
+            await versionResponse.Content.CopyToAsync(versionFile).ConfigureAwait(false);
+
             ZipFile.ExtractToDirectory(Path.Combine(FirmwareDownloadsFilePath, fileName), FirmwareDownloadsFilePath);
         }
     }
