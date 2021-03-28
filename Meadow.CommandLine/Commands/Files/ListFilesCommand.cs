@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Files
 {
@@ -27,15 +27,18 @@ namespace Meadow.CommandLine.Commands.Files
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
                                                         .ConfigureAwait(false);
 
+            var files = await device.GetFilesAndCrcs(Partition, cancellationToken: cancellationToken)
+                                    .ConfigureAwait(false);
+
             if (IncludeCrcs)
             {
-                await MeadowFileManager.ListFilesAndCrcs(device, Partition)
-                                       .ConfigureAwait(false);
+                foreach (var file in files)
+                    await console.Output.WriteLineAsync($"{file.Key}\t\t{file.Value}").ConfigureAwait(false);
             }
             else
             {
-                await MeadowFileManager.ListFiles(device, Partition)
-                                       .ConfigureAwait(false);
+                foreach (var file in files)
+                    await console.Output.WriteLineAsync($"{file.Key}").ConfigureAwait(false);
             }
         }
     }

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.FileSystem
 {
@@ -24,7 +24,7 @@ namespace Meadow.CommandLine.Commands.FileSystem
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
                                                         .ConfigureAwait(false);
 
-            await MeadowFileManager.MountFileSystem(device, Partition)
+            await device.MountFileSystem(Partition, cancellationToken)
                                    .ConfigureAwait(false);
         }
     }

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Mono
 {
@@ -15,7 +15,7 @@ namespace Meadow.CommandLine.Commands.Mono
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
                                                         .ConfigureAwait(false);
 
-            await MeadowDeviceManager.MonoRunState(device)
+            await device.GetMonoRunState(cancellationToken)
                                      .ConfigureAwait(false);
         }
     }

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Storage
 {
@@ -21,10 +21,10 @@ namespace Meadow.CommandLine.Commands.Storage
                              $"Partitioning filesystem into {NumberOfPartitions} partition(s)")
                          .ConfigureAwait(false);
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken: cancellationToken)
                                                         .ConfigureAwait(false);
 
-            await MeadowFileManager.PartitionFileSystem(device, NumberOfPartitions)
+            await device.PartitionFileSystem(NumberOfPartitions, cancellationToken)
                                    .ConfigureAwait(false);
         }
     }

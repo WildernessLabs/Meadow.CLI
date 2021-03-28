@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.DeviceManagement
 {
@@ -10,10 +10,11 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     {
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            var cancellationToken = console.RegisterCancellationHandler();
             using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName).ConfigureAwait(false);
+                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            await MeadowDeviceManager.GetDeviceName(device).ConfigureAwait(false);
+            await device.GetDeviceName(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 }

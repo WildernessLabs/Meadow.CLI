@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.DeviceManagement
 {
@@ -12,7 +12,7 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName).ConfigureAwait(false);
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             await Utils.FlashEsp(console, device, cancellationToken)
                 .ConfigureAwait(false);

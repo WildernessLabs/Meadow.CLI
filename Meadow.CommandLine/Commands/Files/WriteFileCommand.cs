@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Files
 {
@@ -71,11 +71,10 @@ namespace Meadow.CommandLine.Commands.Files
                                      .ConfigureAwait(false);
                     }
 
-                    await MeadowFileManager.WriteFileToFlash(
-                                               device,
-                                               Files[i],
-                                               targetFileName,
-                                               Partition)
+                    await device.WriteFile(Files[i],
+                                           targetFileName,
+                                           Partition,
+                                           cancellationToken)
                                            .ConfigureAwait(false);
                 }
             }

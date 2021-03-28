@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Storage
 {
@@ -14,7 +14,7 @@ namespace Meadow.CommandLine.Commands.Storage
 
             await console.Output.WriteLineAsync("Verifying flash").ConfigureAwait(false);
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName).ConfigureAwait(false);
-            await MeadowFileManager.VerifyErasedFlash(device).ConfigureAwait(false);
+            await device.VerifyErasedFlash(cancellationToken).ConfigureAwait(false);
         }
     }
 }

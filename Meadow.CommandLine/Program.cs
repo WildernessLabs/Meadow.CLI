@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
+using CliFx.Infrastructure;
 using Meadow.CommandLine.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine
 {
@@ -12,6 +14,14 @@ namespace Meadow.CommandLine
         public static async Task<int> Main()
         {
             var services = new ServiceCollection();
+            services.AddLogging(
+                builder =>
+                {
+                    builder.AddProvider(
+                        new CliFxConsoleLoggerProvider(
+                            new CliFxConsoleLoggerProviderConfig(){ LogLevel = LogLevel.Trace},
+                            new SystemConsole()));
+                });
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
             return await new CliApplicationBuilder().AddCommandsFromThisAssembly()

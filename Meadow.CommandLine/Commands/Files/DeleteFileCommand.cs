@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.NewDeviceManagement;
 
 namespace Meadow.CommandLine.Commands.Files
 {
@@ -34,7 +34,7 @@ namespace Meadow.CommandLine.Commands.Files
                           .Output.WriteLineAsync($"Deleting {file} from partition {Partition}")
                           .ConfigureAwait(false);
 
-                    await MeadowFileManager.DeleteFile(device, file, Partition);
+                    await device.DeleteFile(file, Partition, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
