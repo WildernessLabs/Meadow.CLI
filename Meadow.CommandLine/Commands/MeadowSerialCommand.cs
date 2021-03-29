@@ -10,13 +10,11 @@ namespace Meadow.CommandLine.Commands
     public abstract class MeadowSerialCommand : ICommand
     {
         private protected ILoggerFactory LoggerFactory;
-        private protected Utils Utils;
         private protected MeadowDeviceManager MeadowDeviceManager;
 
-        private protected MeadowSerialCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+        private protected MeadowSerialCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
         {
             LoggerFactory = loggerFactory;
-            Utils = utils;
             MeadowDeviceManager = meadowDeviceManager;
         }
 

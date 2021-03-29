@@ -10,9 +10,8 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     public class FlashEspCommand : MeadowSerialCommand
     {
         public FlashEspCommand(ILoggerFactory loggerFactory,
-                               Utils utils,
                                MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
         }
 
@@ -27,10 +26,10 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await Utils.FlashEsp(device, cancellationToken)
+            await device.FlashEsp(cancellationToken)
                        .ConfigureAwait(false);
 
-            await Utils.ResetMeadow(device, cancellationToken)
+            await device.ResetMeadow(cancellationToken)
                        .ConfigureAwait(false);
         }
     }

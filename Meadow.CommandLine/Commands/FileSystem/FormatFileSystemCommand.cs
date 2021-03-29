@@ -18,9 +18,8 @@ namespace Meadow.CommandLine.Commands.FileSystem
         private readonly ILogger<FormatFileSystemCommand> _logger;
 
         public FormatFileSystemCommand(ILoggerFactory loggerFactory,
-                                       Utils utils,
                                        MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<FormatFileSystemCommand>();
         }
@@ -38,7 +37,7 @@ namespace Meadow.CommandLine.Commands.FileSystem
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.CreateFileSystem(cancellationToken: cancellationToken)
+            await device.FormatFileSystem(cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
         }
     }

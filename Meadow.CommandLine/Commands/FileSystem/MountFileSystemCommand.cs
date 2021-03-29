@@ -17,8 +17,8 @@ namespace Meadow.CommandLine.Commands.FileSystem
 
         private readonly ILogger<MountFileSystemCommand> _logger;
 
-        public MountFileSystemCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+        public MountFileSystemCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MountFileSystemCommand>();
         }

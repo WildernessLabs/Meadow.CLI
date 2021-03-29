@@ -36,14 +36,8 @@ namespace Meadow.CommandLine
                         c.SingleLine = true;
                         c.UseUtcTimestamp = true;
                     }).SetMinimumLevel(logLevel);
-
-                    //builder.AddProvider(
-                    //    new CliFxConsoleLoggerProvider(
-                    //        new CliFxConsoleLoggerProviderConfig(){ LogLevel = LogLevel.Trace},
-                    //        new SystemConsole()));
                 });
 
-            services.AddSingleton<Utils>();
             services.AddSingleton<MeadowDeviceManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();

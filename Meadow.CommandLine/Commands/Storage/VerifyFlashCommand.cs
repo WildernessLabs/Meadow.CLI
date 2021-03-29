@@ -10,8 +10,8 @@ namespace Meadow.CommandLine.Commands.Storage
     public class VerifyFlashCommand : MeadowSerialCommand
     {
         private readonly ILogger<VerifyFlashCommand> _logger;
-        public VerifyFlashCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+        public VerifyFlashCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<VerifyFlashCommand>();
         }

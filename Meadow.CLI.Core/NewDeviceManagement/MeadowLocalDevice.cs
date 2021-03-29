@@ -4,20 +4,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.NewDeviceManagement.MeadowComms;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.NewDeviceManagement
 {
     public abstract partial class MeadowLocalDevice : MeadowDevice
     {
         private readonly SendTargetData _sendTargetData;
-        protected readonly ILogger Logger;
 
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
-            : base(dataProcessor)
+            : base(dataProcessor, logger)
         {
             _sendTargetData = new SendTargetData(this);
-            Logger = logger ?? new NullLogger<MeadowSerialDevice>();
         }
 
         public abstract Task Write(byte[] encodedBytes, int encodedToSend);
@@ -32,6 +29,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
         {
             await Initialize(cancellationToken)
                 .ConfigureAwait(false);
+
             await _sendTargetData.SendSimpleCommand(
                                      HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION,
                                      cancellationToken: cancellationToken)
@@ -76,9 +74,13 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             }
         }
 
-        public override async Task<bool> GetMonoRunState(CancellationToken cancellationToken = default)
+        public override async Task<bool> GetMonoRunState(CancellationToken cancellationToken =
+                                                             default)
         {
-            await _sendTargetData.SendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await _sendTargetData.SendSimpleCommand(
+                                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE,
+                                     cancellationToken: cancellationToken)
+                                 .ConfigureAwait(false);
 
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
@@ -92,7 +94,8 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                         result = true;
                         tcs.SetResult(true);
                     }
-                    else if (e.Message == "On reset, Meadow will not start MONO, therefore app.exe will not run")
+                    else if (e.Message
+                          == "On reset, Meadow will not start MONO, therefore app.exe will not run")
                     {
                         result = false;
                         tcs.SetResult(true);
@@ -102,27 +105,75 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
             DataProcessor.OnReceiveData += handler;
 
-            await Task.WhenAny(tcs.Task, Task.Delay(5000, cancellationToken)).ConfigureAwait(false);
+            await Task.WhenAny(tcs.Task, Task.Delay(5000, cancellationToken))
+                      .ConfigureAwait(false);
 
             DataProcessor.OnReceiveData -= handler;
 
             return result;
         }
 
-        public override Task MonoDisable(CancellationToken cancellationToken = default)
+        public override async Task MonoDisable(CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000, cancellationToken: cancellationToken);
+            await ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE,
+                MeadowMessageType.SerialReconnect,
+                timeoutMs: 15000,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            // Give the meadow a little time to cycle
+            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+
+            await Initialize(cancellationToken)
+                .ConfigureAwait(false);
+
+            await WaitForReady(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        public override Task MonoEnable(CancellationToken cancellationToken = default)
+        public override async Task MonoEnable(CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE, MeadowMessageType.SerialReconnect, timeoutMs: 15000, cancellationToken: cancellationToken);
+            await ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE,
+                MeadowMessageType.SerialReconnect,
+                timeoutMs: 15000,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            // Give the meadow a little time to cycle
+            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+
+            await Initialize(cancellationToken)
+                .ConfigureAwait(false);
+
+            await WaitForReady(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        public override Task MonoFlash(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH,
+                timeoutMs: 200000,
+                filter: e => e.Message.StartsWith("Mono runtime successfully flashed."),
+                cancellationToken: cancellationToken);
         }
 
         public override async Task ResetMeadow(CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU, null, doAcceptedCheck:false, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await ProcessCommand(
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU,
+                    null,
+                    doAcceptedCheck: false,
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            // Give the meadow a little time to cycle
+            await Task.Delay(1000,cancellationToken).ConfigureAwait(false);
+
             await Initialize(cancellationToken)
+                .ConfigureAwait(false);
+
+            await WaitForReady(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -135,22 +186,82 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 cancellationToken: cancellationToken);
         }
 
+        public override Task NshEnable(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH,
+                userData: (uint) 1,
+                cancellationToken: cancellationToken);
+        }
+
+        // TODO: Is sending a 0 to HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH correct?
+        public override Task NshDisable(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH,
+                userData: (uint) 0,
+                cancellationToken: cancellationToken);
+        }
+
+        public override Task TraceEnable(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST,
+                cancellationToken: cancellationToken);
+        }
+
+        public override Task TraceDisable(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST,
+                cancellationToken: cancellationToken);
+        }
+
+        public override Task QspiWrite(int value, CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE,
+                userData: (uint) value,
+                cancellationToken: cancellationToken);
+        }
+
+        public override Task QspiRead(int value, CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ,
+                userData: (uint) value,
+                cancellationToken: cancellationToken);
+        }
+
+        public override Task QspiInit(int value, CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT,
+                userData: (uint) value,
+                cancellationToken: cancellationToken);
+        }
+
         private protected async Task<string?> ProcessCommand(HcomMeadowRequestType requestType,
                                                              MeadowMessageType responseMessageType =
                                                                  MeadowMessageType.Concluded,
                                                              uint userData = 0,
                                                              bool doAcceptedCheck = true,
                                                              int timeoutMs = 10000,
-                                                             CancellationToken cancellationToken = default, [CallerMemberName]string? caller = null)
+                                                             CancellationToken cancellationToken =
+                                                                 default,
+                                                             [CallerMemberName] string? caller =
+                                                                 null)
         {
             Logger.LogTrace($"{caller} sent {requestType} waiting for {responseMessageType}");
             var message = await ProcessCommand(
-                requestType,
-                e => e.MessageType == responseMessageType,
-                userData,
-                doAcceptedCheck,
-                timeoutMs,
-                cancellationToken).ConfigureAwait(false);
+                                  requestType,
+                                  e => e.MessageType == responseMessageType,
+                                  userData,
+                                  doAcceptedCheck,
+                                  timeoutMs,
+                                  cancellationToken)
+                              .ConfigureAwait(false);
+
             Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
             return message;
         }
@@ -162,7 +273,9 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                                                              bool doAcceptedCheck = true,
                                                              int timeoutMs = 10000,
                                                              CancellationToken cancellationToken =
-                                                                 default, [CallerMemberName]string? caller = null)
+                                                                 default,
+                                                             [CallerMemberName] string? caller =
+                                                                 null)
         {
             Logger.LogTrace($"{caller} sent {requestType}");
             await _sendTargetData.SendSimpleCommand(
@@ -174,8 +287,10 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
+
             var message = await WaitForResponseMessage(filter, timeoutMs, cancellationToken)
-                           .ConfigureAwait(false);
+                              .ConfigureAwait(false);
+
             Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
             return message;
         }
@@ -183,7 +298,8 @@ namespace Meadow.CLI.Core.NewDeviceManagement
         private protected async Task<string?> WaitForResponseMessage(
             Predicate<MeadowMessageEventArgs>? filter,
             int millisecondDelay = 10000,
-            CancellationToken cancellationToken = default, [CallerMemberName]string? caller = null)
+            CancellationToken cancellationToken = default,
+            [CallerMemberName] string? caller = null)
         {
             Logger.LogTrace($"{caller} waiting for response.");
             if (filter == null)
@@ -229,7 +345,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 return message;
             }
 
-            
+
             throw new MeadowCommandException(message);
         }
     }

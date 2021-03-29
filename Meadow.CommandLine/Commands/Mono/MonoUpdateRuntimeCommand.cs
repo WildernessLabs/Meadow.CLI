@@ -1,18 +1,25 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI;
 using Meadow.CLI.Core.NewDeviceManagement;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Mono
 {
-    [Command("mono state", Description = "Get the Mono Run State on the Meadow Board")]
-    public class MonoRunStateCommand : MeadowSerialCommand
+    [Command("mono update rt", Description = "Get the Mono Run State on the Meadow Board")]
+    public class MonoUpdateRuntimeCommand : MeadowSerialCommand
     {
+        [CommandOption("filename",'f', Description = "The local name of the mono runtime file. Default is empty.")]
+        public string Filename {get; init;}
+
         private readonly ILogger<MonoRunStateCommand> _logger;
 
-        public MonoRunStateCommand(ILoggerFactory loggerFactory,
-                                   MeadowDeviceManager meadowDeviceManager)
+        public MonoUpdateRuntimeCommand(ILoggerFactory loggerFactory,
+                                        MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MonoRunStateCommand>();
@@ -29,10 +36,12 @@ namespace Meadow.CommandLine.Commands.Mono
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            var runState = await device.GetMonoRunState(cancellationToken)
-                                       .ConfigureAwait(false);
+            await device.UpdateMonoRuntime(Filename, cancellationToken: cancellationToken);
 
-            _logger.LogInformation($"Mono Run State: {(runState ? "Enabled" : "Disabled")}");
+            await device.ResetMeadow(cancellationToken)
+                .ConfigureAwait(false);
+
+            _logger.LogInformation($"Mono Flashed Successfully");
         }
     }
 }

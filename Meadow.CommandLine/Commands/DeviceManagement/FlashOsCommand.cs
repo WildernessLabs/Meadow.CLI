@@ -17,7 +17,8 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     {
         private readonly ILogger<FlashOsCommand> _logger;
 
-        public FlashOsCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager) : base(loggerFactory, utils, meadowDeviceManager)
+        public FlashOsCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = loggerFactory.CreateLogger<FlashOsCommand>();
         }
@@ -51,11 +52,14 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                     }
 
                     // No DFU device found, lets try to set the meadow to DFU mode.
-                    using var device =
-                        await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken);
+                    using var device = await MeadowDeviceManager.GetMeadowForSerialPort(
+                                           SerialPortName,
+                                           true,
+                                           cancellationToken);
 
                     _logger.LogInformation("Entering DFU Mode");
-                    await device.EnterDfuMode(cancellationToken).ConfigureAwait(false);
+                    await device.EnterDfuMode(cancellationToken)
+                                .ConfigureAwait(false);
                 }
                 catch (FileNotFoundException)
                 {
@@ -63,7 +67,9 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogDebug("An exception occurred while switching device to DFU Mode. Exception: {0}", ex);
+                    _logger.LogDebug(
+                        "An exception occurred while switching device to DFU Mode. Exception: {0}",
+                        ex);
                 }
 
                 switch (dfuAttempts)
@@ -101,41 +107,52 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
 
             try
             {
-                using var device = await Utils.FindMeadowBySerialNumber(
-                                                        serialNumber,
-                                                        cancellationToken: cancellationToken)
-                                                    .ConfigureAwait(false);
+                using var device = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                                                                serialNumber,
+                                                                cancellationToken:
+                                                                cancellationToken)
+                                                            .ConfigureAwait(false);
 
-                await Utils.UpdateMonoRt(device, BinPath, cancellationToken);
+                Trace.Assert(device != null, "device != null");
+
+                await device.UpdateMonoRuntime(BinPath, cancellationToken: cancellationToken);
 
                 // Again, verify that Mono is disabled
                 Trace.Assert(
                     await device.GetMonoRunState(cancellationToken)
-                                             .ConfigureAwait(false),
+                                .ConfigureAwait(false),
                     "Meadow was expected to have Mono Disabled");
 
                 _logger.LogInformation("Flashing ESP");
-                await Utils.FlashEsp(device, cancellationToken)
-                                 .ConfigureAwait(false);
+                await device.FlashEsp(cancellationToken)
+                            .ConfigureAwait(false);
 
                 // Reset the meadow again to ensure flash worked.
-                await Utils.ResetMeadow(device, cancellationToken)
-                                 .ConfigureAwait(false);
+                await device.ResetMeadow(cancellationToken)
+                           .ConfigureAwait(false);
 
                 _logger.LogInformation("Enabling Mono and Resetting.");
                 while (await device.GetMonoRunState(cancellationToken)
-                                                .ConfigureAwait(false)
+                                   .ConfigureAwait(false)
                     == false)
                 {
-                    await Utils.EnableMono(device, cancellationToken);
+                    await device.MonoEnable(cancellationToken);
                 }
 
                 // TODO: Verify that the device info returns the expected version
-                var deviceInfoString = await device.GetDeviceInfo(cancellationToken: cancellationToken)
-                                                   .ConfigureAwait(false);
+                var deviceInfoString = await device
+                                             .GetDeviceInfo(cancellationToken: cancellationToken)
+                                             .ConfigureAwait(false);
+
+                if (string.IsNullOrWhiteSpace(deviceInfoString))
+                {
+                    throw new Exception("Unable to retrieve device info.");
+                }
 
                 var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
-                _logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOSVersion} ESP: {deviceInfo.CoProcessorOs}");
+                _logger.LogInformation(
+                    $"Updated Meadow to OS: {deviceInfo.MeadowOSVersion} ESP: {deviceInfo.CoProcessorOs}");
+
                 Environment.Exit(0);
             }
             catch (Exception ex)

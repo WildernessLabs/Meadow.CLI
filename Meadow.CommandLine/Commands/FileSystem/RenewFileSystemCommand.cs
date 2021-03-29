@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.FileSystem
 {
-    [Command("filesystem create", Description = "Create a File System on the Meadow Board")]
-    public class CreateFileSystemCommand : MeadowSerialCommand
+    [Command("filesystem renew", Description = "Create a File System on the Meadow Board")]
+    public class RenewFileSystemCommand : MeadowSerialCommand
     {
-        public CreateFileSystemCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+        public RenewFileSystemCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
         }
@@ -19,11 +19,11 @@ namespace Meadow.CommandLine.Commands.FileSystem
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync("Creating a file system on the Meadow.");
+            await console.Output.WriteLineAsync("Renewing file system on the Meadow.");
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
 
-            await device.CreateFileSystem(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await device.RenewFileSystem(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 }

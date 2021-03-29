@@ -273,11 +273,11 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            // _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
+                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            // _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
+                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
@@ -288,12 +288,12 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            //_logger.LogTrace("protocol-Request Information"); // TESTING
+                            _logger.LogTrace("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            //_logger.LogTrace("protocol-Request File List Header received"); // TESTING
+                            _logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
@@ -318,6 +318,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
+                            // TODO: CANNOT BLOCK THREAD HERE
                             Thread.Sleep(2000); // need to give the device a couple seconds
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;

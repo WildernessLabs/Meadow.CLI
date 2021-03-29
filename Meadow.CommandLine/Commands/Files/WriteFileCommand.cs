@@ -35,9 +35,8 @@ namespace Meadow.CommandLine.Commands.Files
         private readonly ILogger<WritesFileCommand> _logger;
 
         public WritesFileCommand(ILoggerFactory loggerFactory,
-                                 Utils utils,
                                  MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<WritesFileCommand>();
         }

@@ -11,9 +11,8 @@ namespace Meadow.CommandLine.Commands.Mono
     {
         private readonly ILogger<MonoEnableCommand> _logger;
         public MonoEnableCommand(ILoggerFactory loggerFactory,
-                                 Utils utils,
                                  MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MonoEnableCommand>();
         }
@@ -29,7 +28,7 @@ namespace Meadow.CommandLine.Commands.Mono
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await Utils.EnableMono(device, cancellationToken)
+            await device.MonoEnable(cancellationToken)
                        .ConfigureAwait(false);
         }
     }

@@ -12,8 +12,8 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     {
         private readonly ILogger<GetDeviceInfoCommand> _logger;
 
-        public GetDeviceInfoCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+        public GetDeviceInfoCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<GetDeviceInfoCommand>();
         }
@@ -26,6 +26,8 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken).ConfigureAwait(false);
 
             var deviceInfoString = await device.GetDeviceInfo(cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(deviceInfoString))
+                throw new Exception("Unable to retrieve device info");
             var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
             _logger.LogInformation(deviceInfo.ToString());
         }

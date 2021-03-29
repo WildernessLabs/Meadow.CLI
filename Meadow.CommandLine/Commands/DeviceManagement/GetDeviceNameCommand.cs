@@ -12,9 +12,8 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
         private readonly ILogger<GetDeviceNameCommand> _logger;
 
         public GetDeviceNameCommand(ILoggerFactory loggerFactory,
-                                    Utils utils,
                                     MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
+            : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<GetDeviceNameCommand>();
         }

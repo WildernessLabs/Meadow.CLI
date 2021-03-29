@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Management;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,7 +15,6 @@ namespace Meadow.CLI.Core.NewDeviceManagement
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
-        //private static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
         internal const int MaxAllowableDataBlock = 512;
         internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
@@ -38,17 +39,8 @@ namespace Meadow.CLI.Core.NewDeviceManagement
         {
             try
             {
-                //if (_connections.ContainsKey(serialPort))
-                //{
-                //    _connections[serialPort].Dispose();
-                //    _connections.Remove(serialPort);
-                //    await Task.Delay(1000, cancellationToken)
-                //              .ConfigureAwait(false);
-                //}
-
                 var meadow = new MeadowSerialDevice(serialPort, logger ?? new NullLogger<MeadowSerialDevice>());
                 await meadow.Initialize(cancellationToken).ConfigureAwait(false);
-                //_connections.Add(serialPort, meadow);
                 return meadow;
 
             }
@@ -56,6 +48,53 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             {
                 throw ex;
             }
+        }
+
+        public async Task<MeadowDevice?> FindMeadowBySerialNumber(
+            string serialNumber,
+            int maxAttempts = 10,
+            CancellationToken cancellationToken = default)
+        {
+            var attempts = 0;
+            while (attempts < maxAttempts)
+            {
+                var ports = SerialPort.GetPortNames();
+                foreach (var port in ports)
+                {
+                    try
+                    {
+                        var device = await GetMeadowForSerialPort(
+                                         port,
+                                         true,
+                                         cancellationToken);
+
+                        var deviceInfo =
+                            await device.GetDeviceInfo(cancellationToken: cancellationToken);
+
+                        if (!string.IsNullOrWhiteSpace(deviceInfo) && deviceInfo!.Contains(serialNumber))
+                        {
+                            return device;
+                        }
+
+                        device.Dispose();
+                    }
+                    catch (MeadowDeviceException meadowDeviceException)
+                    {
+                        // eat it for now
+                        _logger.LogTrace(
+                            meadowDeviceException,
+                            "This error can be safely ignored.");
+                    }
+                }
+
+                await Task.Delay(1000, cancellationToken)
+                          .ConfigureAwait(false);
+
+                attempts++;
+            }
+
+            throw new DeviceNotFoundException(
+                $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
         //we'll move this soon

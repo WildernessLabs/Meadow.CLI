@@ -7,10 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.NewDeviceManagement.MeadowComms;
 using Meadow.CLI.Core.NewDeviceManagement.Tools;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.NewDeviceManagement
 {
-    public partial class MeadowLocalDevice
+    public abstract partial class MeadowLocalDevice
     {
         public override async Task<IDictionary<string, UInt32>> GetFilesAndCrcs(
             int timeoutInMs = 60000,
@@ -192,12 +193,69 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 cancellationToken: cancellationToken);
         }
 
+        public override Task RenewFileSystem(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
+        }
+
 
         public override async Task UpdateMonoRuntime(string fileName,
                                                      string? targetFileName = null,
                                                      int partition = 0,
                                                      CancellationToken cancellationToken = default)
         {
+            Logger.LogInformation("Waiting for Meadow to be ready.");
+            await WaitForReady(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            await MonoDisable(cancellationToken)
+                .ConfigureAwait(false);
+
+            Trace.Assert(
+                await GetMonoRunState(cancellationToken)
+                            .ConfigureAwait(false),
+                "Meadow was expected to have Mono Disabled");
+            Logger.LogInformation("Updating Mono Runtime");
+            
+            var sourceFilename = fileName;
+            if (string.IsNullOrWhiteSpace(sourceFilename))
+            {
+                // check local override
+                sourceFilename = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    DownloadManager.RuntimeFilename);
+
+                if (File.Exists(sourceFilename))
+                {
+                    Logger.LogInformation(
+                        $"Using current directory '{DownloadManager.RuntimeFilename}'");
+                }
+                else
+                {
+                    sourceFilename = Path.Combine(
+                        DownloadManager.FirmwareDownloadsFilePath,
+                        DownloadManager.RuntimeFilename);
+
+                    if (File.Exists(sourceFilename))
+                    {
+                        Logger.LogInformation("FileName not specified, using latest download.");
+                    }
+                    else
+                    {
+                        Logger.LogInformation(
+                            "Unable to locate a runtime file. Either provide a path or download one.");
+
+                        return; // KeepConsoleOpen?
+                    }
+                }
+            }
+
+            if (!File.Exists(sourceFilename))
+            {
+                Logger.LogInformation($"File '{sourceFilename}' not found");
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(targetFileName))
             {
                 targetFileName = Path.GetFileName(fileName);
@@ -206,7 +264,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             await TransmitFileInfoToExtFlash(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
                     fileName,
-                    targetFileName,
+                    targetFileName!,
                     partition,
                     0,
                     false,

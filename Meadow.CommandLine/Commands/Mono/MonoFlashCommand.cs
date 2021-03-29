@@ -4,25 +4,24 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CommandLine.Commands.Storage
+namespace Meadow.CommandLine.Commands.Mono
 {
-    [Command("flash erase", Description = "Erase the flash on the Meadow Board")]
-    public class EraseFlashCommand : MeadowSerialCommand
+    [Command("mono flash", Description = "Get the Mono Run State on the Meadow Board")]
+    public class MonoFlashCommand : MeadowSerialCommand
     {
-        private readonly ILogger<EraseFlashCommand> _logger;
+        private readonly ILogger<MonoRunStateCommand> _logger;
 
-        public EraseFlashCommand(ILoggerFactory loggerFactory,
-                                   MeadowDeviceManager meadowDeviceManager)
+        public MonoFlashCommand(ILoggerFactory loggerFactory,
+                                MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
-            _logger = LoggerFactory.CreateLogger<EraseFlashCommand>();
+            _logger = LoggerFactory.CreateLogger<MonoRunStateCommand>();
         }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            _logger.LogInformation("Erasing flash.");
             using var device = await MeadowDeviceManager
                                      .GetMeadowForSerialPort(
                                          SerialPortName,
@@ -30,8 +29,10 @@ namespace Meadow.CommandLine.Commands.Storage
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.EraseFlash(cancellationToken)
-                        .ConfigureAwait(false);
+            await device.MonoFlash(cancellationToken)
+                                       .ConfigureAwait(false);
+
+            _logger.LogInformation($"Mono Flashed Successfully");
         }
     }
 }

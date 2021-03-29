@@ -16,9 +16,6 @@ namespace Meadow.CLI.Core.NewDeviceManagement
         */
         public MeadowDeviceInfo(string deviceInfoString)
         {
-            if (string.IsNullOrWhiteSpace(deviceInfoString))
-                throw new ArgumentNullException(nameof(deviceInfoString));
-
             RawDeviceInfo = deviceInfoString;
             Name = deviceInfoString.Substring(0, deviceInfoString.IndexOf(' '));
             Model = ParseValue("Model: ",                          deviceInfoString);
