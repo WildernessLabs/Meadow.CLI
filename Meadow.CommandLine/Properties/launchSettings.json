@@ -2,7 +2,7 @@
   "profiles": {
     "Meadow.CommandLine": {
       "commandName": "Project",
-      "commandLineArgs": "device info -s COM21"
+      "commandLineArgs": "files list -s COM21 -i"
     }
   }
 }

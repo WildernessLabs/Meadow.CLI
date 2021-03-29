@@ -9,6 +9,13 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     [Command("flash esp", Description = "Flash the ESP co-processor")]
     public class FlashEspCommand : MeadowSerialCommand
     {
+        public FlashEspCommand(ILoggerFactory loggerFactory,
+                               Utils utils,
+                               MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -25,13 +32,6 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
 
             await Utils.ResetMeadow(device, cancellationToken)
                        .ConfigureAwait(false);
-        }
-
-        internal FlashEspCommand(ILoggerFactory loggerFactory,
-                                 Utils utils,
-                                 MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
         }
     }
 }

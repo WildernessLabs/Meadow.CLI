@@ -15,23 +15,25 @@ namespace Meadow.CommandLine.Commands.FileSystem
 #endif
         public int Partition { get; init; } = 0;
 
+        private readonly ILogger<MountFileSystemCommand> _logger;
+
+        public MountFileSystemCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<MountFileSystemCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync($"Mounting partition {Partition}")
-                         .ConfigureAwait(false);
+            _logger.LogInformation($"Mounting partition {Partition}");
 
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
 
             await device.MountFileSystem(Partition, cancellationToken)
                                    .ConfigureAwait(false);
-        }
-
-        internal MountFileSystemCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
         }
     }
 }

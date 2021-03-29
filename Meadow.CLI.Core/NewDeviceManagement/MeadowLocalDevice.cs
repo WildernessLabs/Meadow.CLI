@@ -26,9 +26,9 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<string> GetDeviceInfo(int timeoutMs = 5000,
-                                                         CancellationToken cancellationToken =
-                                                             default)
+        public override async Task<string?> GetDeviceInfo(int timeoutMs = 5000,
+                                                          CancellationToken cancellationToken =
+                                                              default)
         {
             await Initialize(cancellationToken)
                 .ConfigureAwait(false);
@@ -53,9 +53,9 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
         //device name is processed when the message is received
         //this will request the device name and return true it was successfully
-        public override async Task<string> GetDeviceName(int timeoutMs = 500,
-                                                         CancellationToken cancellationToken =
-                                                             default)
+        public override async Task<string?> GetDeviceName(int timeoutMs = 500,
+                                                          CancellationToken cancellationToken =
+                                                              default)
         {
             await _sendTargetData.SendSimpleCommand(
                                      HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME,
@@ -180,7 +180,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             return message;
         }
 
-        private protected async Task<string> WaitForResponseMessage(
+        private protected async Task<string?> WaitForResponseMessage(
             Predicate<MeadowMessageEventArgs>? filter,
             int millisecondDelay = 10000,
             CancellationToken cancellationToken = default, [CallerMemberName]string? caller = null)
@@ -208,10 +208,20 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
             DataProcessor.OnReceiveData += handler;
 
-            await Task.WhenAny(tcs.Task, Task.Delay(millisecondDelay, cancellationToken))
-                      .ConfigureAwait(false);
-
-            DataProcessor.OnReceiveData -= handler;
+            try
+            {
+                using var cts = new CancellationTokenSource(10_000);
+                cts.Token.Register(() => tcs.TrySetCanceled());
+                await tcs.Task.ConfigureAwait(false);
+            }
+            catch (TaskCanceledException e)
+            {
+                throw new MeadowCommandException("Command timeout waiting for response.", e);
+            }
+            finally
+            {
+                DataProcessor.OnReceiveData -= handler;
+            }
 
             if (result)
             {

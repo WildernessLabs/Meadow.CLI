@@ -92,8 +92,8 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             DataProcessor.OnReceiveData += handler;
 
             await WriteFileInternal(
-                Path.Combine(path, filename),
                 filename,
+                path,
                 timeout: timeoutInMs,
                 cancellationToken: cancellationToken);
 

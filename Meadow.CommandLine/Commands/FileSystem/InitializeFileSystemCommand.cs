@@ -15,11 +15,20 @@ namespace Meadow.CommandLine.Commands.FileSystem
 #endif
         public int Partition { get; init; } = 0;
 
+        private readonly ILogger<InitializeFileSystemCommand> _logger;
+        public InitializeFileSystemCommand(ILoggerFactory loggerFactory,
+                                             Utils utils,
+                                             MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<InitializeFileSystemCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync($"Initializing filesystem in partition {Partition}").ConfigureAwait(false);
+            _logger.LogInformation($"Initializing filesystem in partition {Partition}");
 
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
@@ -27,9 +36,6 @@ namespace Meadow.CommandLine.Commands.FileSystem
             await device.InitializeFileSystem(Partition, cancellationToken).ConfigureAwait(false);
         }
 
-        internal InitializeFileSystemCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
-        }
+        
     }
 }

@@ -152,12 +152,6 @@ namespace Meadow.CommandLine
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
-                // Reset the Meadow
-                //await SendCommandAndWaitForReady(
-                //        device,
-                //        () => device.ResetMeadow(cancellationToken),
-                //        cancellationToken: cancellationToken)
-                //    .ConfigureAwait(false);
                 // Double check the mono run state to ensure mono is actually disabled
             } while (await device.GetMonoRunState(cancellationToken)
                                  .ConfigureAwait(false));
@@ -179,12 +173,6 @@ namespace Meadow.CommandLine
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
-                // Reset the Meadow
-                //await SendCommandAndWaitForReady(
-                //        device,
-                //        () => device.ResetMeadow(cancellationToken),
-                //        cancellationToken: cancellationToken)
-                //    .ConfigureAwait(false);
                 // Double check the mono run state to ensure mono is actually disabled
             } while (await device.GetMonoRunState(cancellationToken)
                                  .ConfigureAwait(false)

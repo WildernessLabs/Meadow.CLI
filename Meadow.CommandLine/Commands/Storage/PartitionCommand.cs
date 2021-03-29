@@ -14,13 +14,19 @@ namespace Meadow.CommandLine.Commands.Storage
 #endif
         public int NumberOfPartitions { get; init; } = 1;
 
+        private readonly ILogger<PartitionCommand> _logger;
+        public PartitionCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<PartitionCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync(
-                             $"Partitioning filesystem into {NumberOfPartitions} partition(s)")
-                         .ConfigureAwait(false);
+            _logger.LogInformation(
+                $"Partitioning filesystem into {NumberOfPartitions} partition(s)");
 
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
@@ -29,9 +35,6 @@ namespace Meadow.CommandLine.Commands.Storage
                                    .ConfigureAwait(false);
         }
 
-        internal PartitionCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
-        }
+        
     }
 }

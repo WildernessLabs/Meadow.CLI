@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.NewDeviceManagement.Tools;
 using Meadow.CLI.Internals.MeadowComms.RecvClasses;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
 {
@@ -28,6 +30,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
+        private readonly ILogger<MeadowSerialDataProcessor> _logger;
         //collapse to one and use enum
         private readonly SerialPort SerialPort;
         private readonly Task _dataProcessorTask;
@@ -44,21 +47,21 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
 
         //-------------------------------------------------------------
         // Constructor
-        private MeadowSerialDataProcessor()
+        private MeadowSerialDataProcessor(ILogger<MeadowSerialDataProcessor> logger)
         {
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
             _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
-
+            _logger = logger;
         }
 
-        public MeadowSerialDataProcessor(SerialPort serialPort) : this()
+        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             SerialPort = serialPort;
             _dataProcessorTask = ReadSerialPortAsync();
         }
 
-        public MeadowSerialDataProcessor(Socket socket) : this()
+        public MeadowSerialDataProcessor(Socket socket, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this.socket = socket;
             _dataProcessorTask = ReadSocketAsync();
@@ -93,7 +96,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
             }
         }
 
@@ -135,7 +138,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
             }
         }
 
@@ -221,7 +224,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
                 // any others that were queued along the usb serial pipe line.
                 if (packetLength == 1)
                 {
-                    //ConsoleOut("Throwing out 0x00 from buffer");
+                    //_logger.LogTrace("Throwing out 0x00 from buffer");
                     continue;
                 }
 
@@ -258,39 +261,39 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
                     switch (processor.RequestType)
                     {
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
-                            ConsoleOut("Request Undefined"); // TESTING
+                            _logger.LogTrace("Request Undefined"); // TESTING
                             break;
 
                         // This set are responses to request issued by this application
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                            ConsoleOut("Request Rejected"); // TESTING
+                            _logger.LogTrace("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
+                            // _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
+                            // _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            ConsoleOut("Request Error"); // TESTING
+                            _logger.LogTrace("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            //ConsoleOut("protocol-Request Information"); // TESTING
+                            //_logger.LogTrace("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            //ConsoleOut("protocol-Request File List Header received"); // TESTING
+                            //_logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
@@ -321,7 +324,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
 
                         // Debug message from Meadow for Visual Studio
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
-                            ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
+                            _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
                             // TODO: Refactor to expose this without needing a MeadowDevice
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
@@ -336,16 +339,9 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex}");
+                _logger.LogTrace($"Exception: {ex}");
                 return false;
             }
-        }
-
-        void ConsoleOut(string msg)
-        {
-#if DEBUG
-            Console.WriteLine(msg);
-#endif
         }
 
         /*
@@ -355,7 +351,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
         // Test the message and if it fails it's trashed.
         if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
         {
-            ConsoleOut("Corrupted message, first 2 bytes not 0x00");
+            _logger.LogTrace("Corrupted message, first 2 bytes not 0x00");
             continue;
         }
 
@@ -366,7 +362,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
         {
             if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
             {
-                ConsoleOut($"Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]}");
+                _logger.LogTrace($"Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]}");
                 break;
             }
         }

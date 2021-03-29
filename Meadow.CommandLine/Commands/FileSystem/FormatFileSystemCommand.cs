@@ -14,21 +14,32 @@ namespace Meadow.CommandLine.Commands.FileSystem
         [CommandOption("Partition", 'p', Description = "The partition to write to on the Meadow")]
 #endif
         public int Partition { get; init; } = 0;
+
+        private readonly ILogger<FormatFileSystemCommand> _logger;
+
+        public FormatFileSystemCommand(ILoggerFactory loggerFactory,
+                                       Utils utils,
+                                       MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<FormatFileSystemCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync($"Formatting file system on partition {Partition}")
-                         .ConfigureAwait(false);
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
-                                                        .ConfigureAwait(false);
+            _logger.LogInformation($"Formatting file system on partition {Partition}");
 
-            await device.CreateFileSystem(cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
+            using var device = await MeadowDeviceManager
+                                     .GetMeadowForSerialPort(
+                                         SerialPortName,
+                                         true,
+                                         cancellationToken)
+                                     .ConfigureAwait(false);
 
-        internal FormatFileSystemCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
+            await device.CreateFileSystem(cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
         }
     }
 }

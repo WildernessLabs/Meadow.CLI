@@ -11,7 +11,7 @@ namespace Meadow.CommandLine.Commands.Storage
     {
         private readonly ILogger<EraseFlashCommand> _logger;
 
-        internal EraseFlashCommand(ILoggerFactory loggerFactory,
+        public EraseFlashCommand(ILoggerFactory loggerFactory,
                                    Utils utils,
                                    MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, utils, meadowDeviceManager)

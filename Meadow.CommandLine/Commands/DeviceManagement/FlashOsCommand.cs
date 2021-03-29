@@ -16,6 +16,7 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     public class FlashOsCommand : MeadowSerialCommand
     {
         private readonly ILogger<FlashOsCommand> _logger;
+
         public FlashOsCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager) : base(loggerFactory, utils, meadowDeviceManager)
         {
             _logger = loggerFactory.CreateLogger<FlashOsCommand>();

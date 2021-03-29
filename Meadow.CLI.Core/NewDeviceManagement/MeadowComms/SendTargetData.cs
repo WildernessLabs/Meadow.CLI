@@ -176,9 +176,20 @@ namespace Meadow.CLI.Core.NewDeviceManagement.MeadowComms
 
             await BuildAndSendSimpleCommand(requestType, userData).ConfigureAwait(false);
 
-            await Task.WhenAny(tcs.Task, Task.Delay(10000, cancellationToken)).ConfigureAwait(false);
-
-            _device.DataProcessor.OnReceiveData -= handler;
+            try
+            {
+                using var cts = new CancellationTokenSource(10_000);
+                cts.Token.Register(() => tcs.TrySetCanceled());
+                await tcs.Task.ConfigureAwait(false);
+            }
+            catch (TaskCanceledException e)
+            {
+                throw new MeadowCommandException("Command timeout waiting for response.", e);
+            }
+            finally
+            {
+                _device.DataProcessor.OnReceiveData -= handler;
+            }
 
             if (!received)
             {

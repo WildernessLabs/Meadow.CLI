@@ -6,12 +6,19 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Utility
 {
     [Command("install dfu-util", Description = "Install the DfuUtil utility")]
     public class InstallDfuUtilCommand : ICommand
     {
+        private readonly ILogger<InstallDfuUtilCommand> _logger;
+        public InstallDfuUtilCommand(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
+        }
+
         public ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -23,10 +30,10 @@ namespace Meadow.CommandLine.Commands.Utility
             }
             else if (OperatingSystem.IsMacOS())
             {
-                console.Output.WriteLineAsync("To install on macOS, run: brew install dfu-util");
+                _logger.LogInformation("To install on macOS, run: brew install dfu-util");
             } else if (OperatingSystem.IsLinux())
             {
-                console.Output.WriteLineAsync(
+                _logger.LogInformation(
                     "To install on Linux, use the package manager to install the dfu-util package");
             }
             return ValueTask.CompletedTask;
