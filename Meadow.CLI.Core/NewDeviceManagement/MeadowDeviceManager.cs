@@ -26,7 +26,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             _logger = _loggerFactory.CreateLogger<MeadowDeviceManager>();
         }
 
-        public Task<MeadowLocalDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, CancellationToken cancellationToken = default)//, bool verbose = true)
+        public Task<MeadowDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, CancellationToken cancellationToken = default)//, bool verbose = true)
         {
             return GetMeadowForSerialPort(
                 serialPort,
@@ -35,7 +35,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 cancellationToken);
         }
 
-        public async Task<MeadowLocalDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, ILogger<MeadowSerialDevice>? logger = null, CancellationToken cancellationToken = default)//, bool verbose = true)
+        public async Task<MeadowDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, ILogger<MeadowSerialDevice>? logger = null, CancellationToken cancellationToken = default)//, bool verbose = true)
         {
             try
             {
