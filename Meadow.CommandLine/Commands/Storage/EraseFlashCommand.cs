@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Storage
 {
@@ -13,8 +14,13 @@ namespace Meadow.CommandLine.Commands.Storage
             var cancellationToken = console.RegisterCancellationHandler();
 
             await console.Output.WriteLineAsync("Erasing flash.").ConfigureAwait(false);
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName).ConfigureAwait(false);
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken).ConfigureAwait(false);
             await device.EraseFlash(cancellationToken).ConfigureAwait(false);
+        }
+
+        internal EraseFlashCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }

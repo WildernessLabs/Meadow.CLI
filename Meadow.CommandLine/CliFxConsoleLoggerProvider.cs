@@ -30,7 +30,7 @@ namespace Meadow.CommandLine
         }
 
         public bool IsEnabled(LogLevel logLevel) =>
-            logLevel == _config.LogLevel;
+            logLevel >= _config.LogLevel;
 
         public IDisposable BeginScope<TState>(TState state) => default;
     }

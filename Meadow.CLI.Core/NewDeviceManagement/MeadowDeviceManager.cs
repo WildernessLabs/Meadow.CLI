@@ -11,17 +11,33 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 {
     public class MeadowDeviceManager
     {
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
         //private static Dictionary<string, MeadowSerialDevice> _connections = new Dictionary<string, MeadowSerialDevice>();
         internal const int MaxAllowableDataBlock = 512;
         internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
         internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
 
-        public static async Task<MeadowLocalDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, ILoggerFactory? loggerFactory = null, CancellationToken cancellationToken = default)//, bool verbose = true)
+        public MeadowDeviceManager(ILoggerFactory loggerFactory)
+        {
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<MeadowDeviceManager>();
+        }
+
+        public Task<MeadowLocalDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, CancellationToken cancellationToken = default)//, bool verbose = true)
+        {
+            return GetMeadowForSerialPort(
+                serialPort,
+                silent,
+                _loggerFactory.CreateLogger<MeadowSerialDevice>(),
+                cancellationToken);
+        }
+
+        public async Task<MeadowLocalDevice> GetMeadowForSerialPort(string serialPort, bool silent = false, ILogger<MeadowSerialDevice>? logger = null, CancellationToken cancellationToken = default)//, bool verbose = true)
         {
             try
             {
-                loggerFactory ??= new NullLoggerFactory();
                 //if (_connections.ContainsKey(serialPort))
                 //{
                 //    _connections[serialPort].Dispose();
@@ -30,7 +46,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 //              .ConfigureAwait(false);
                 //}
 
-                var meadow = new MeadowSerialDevice(serialPort, loggerFactory.CreateLogger<MeadowSerialDevice>());
+                var meadow = new MeadowSerialDevice(serialPort, logger ?? new NullLogger<MeadowSerialDevice>());
                 await meadow.Initialize(cancellationToken).ConfigureAwait(false);
                 //_connections.Add(serialPort, meadow);
                 return meadow;

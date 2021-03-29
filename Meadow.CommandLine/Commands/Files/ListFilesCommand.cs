@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Files
 {
@@ -24,7 +25,7 @@ namespace Meadow.CommandLine.Commands.Files
                              $"Partitioning filesystem into {Partition} partition(s)")
                          .ConfigureAwait(false);
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
 
             var files = await device.GetFilesAndCrcs(Partition, cancellationToken: cancellationToken)
@@ -40,6 +41,11 @@ namespace Meadow.CommandLine.Commands.Files
                 foreach (var file in files)
                     await console.Output.WriteLineAsync($"{file.Key}").ConfigureAwait(false);
             }
+        }
+
+        internal ListFilesCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }

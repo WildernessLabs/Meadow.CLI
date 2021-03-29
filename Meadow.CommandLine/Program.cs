@@ -1,27 +1,50 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
-using CliFx.Infrastructure;
+using Meadow.CLI.Core.NewDeviceManagement;
 using Meadow.CommandLine.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Meadow.CommandLine
 {
     public class Program
     {
-        public static async Task<int> Main()
+        public static async Task<int> Main(string[] args)
         {
             var services = new ServiceCollection();
             services.AddLogging(
                 builder =>
                 {
-                    builder.AddProvider(
-                        new CliFxConsoleLoggerProvider(
-                            new CliFxConsoleLoggerProviderConfig(){ LogLevel = LogLevel.Trace},
-                            new SystemConsole()));
+                    var logLevel = LogLevel.Information;
+                    var logModifier = args.FirstOrDefault(a => a.Contains("-v"))
+                        ?.Count(x => x == 'v') ?? 0;
+
+                    logLevel -= logModifier;
+                    if (logLevel < 0)
+                    {
+                        logLevel = 0;
+                    }
+                    
+                    Console.WriteLine($"Using log level {logLevel}");
+                    builder.AddSimpleConsole(c =>
+                    {
+                        c.ColorBehavior = LoggerColorBehavior.Enabled;
+                        c.SingleLine = true;
+                        c.UseUtcTimestamp = true;
+                    }).SetMinimumLevel(logLevel);
+
+                    //builder.AddProvider(
+                    //    new CliFxConsoleLoggerProvider(
+                    //        new CliFxConsoleLoggerProviderConfig(){ LogLevel = LogLevel.Trace},
+                    //        new SystemConsole()));
                 });
+
+            services.AddSingleton<Utils>();
+            services.AddSingleton<MeadowDeviceManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
             return await new CliApplicationBuilder().AddCommandsFromThisAssembly()

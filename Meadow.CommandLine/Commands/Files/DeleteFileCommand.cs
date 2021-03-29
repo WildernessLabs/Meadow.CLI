@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Files
 {
@@ -25,7 +26,7 @@ namespace Meadow.CommandLine.Commands.Files
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName);
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken).ConfigureAwait(false);
             foreach (var file in Files.Where(file => string.IsNullOrWhiteSpace(file) == false))
             {
                 if (!string.IsNullOrEmpty(file))
@@ -37,6 +38,11 @@ namespace Meadow.CommandLine.Commands.Files
                     await device.DeleteFile(file, Partition, cancellationToken).ConfigureAwait(false);
                 }
             }
+        }
+
+        internal DeleteFileCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }

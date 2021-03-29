@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Storage
 {
@@ -21,11 +22,16 @@ namespace Meadow.CommandLine.Commands.Storage
                              $"Partitioning filesystem into {NumberOfPartitions} partition(s)")
                          .ConfigureAwait(false);
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken: cancellationToken)
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
 
             await device.PartitionFileSystem(NumberOfPartitions, cancellationToken)
                                    .ConfigureAwait(false);
+        }
+
+        internal PartitionCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }

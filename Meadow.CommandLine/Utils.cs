@@ -14,6 +14,17 @@ namespace Meadow.CommandLine
 {
     public class Utils
     {
+        private readonly MeadowDeviceManager _meadowDeviceManager;
+        private readonly ILogger<Utils> _logger;
+        private readonly ILoggerFactory _loggerFactory;
+
+        public Utils(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+        {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<Utils>();
+            _meadowDeviceManager = meadowDeviceManager;
+        }
+
         /// <summary>
         /// Send a command to the Meadow and wait for the Meadow to be ready
         /// </summary>
@@ -22,18 +33,18 @@ namespace Meadow.CommandLine
         /// <param name="timeout">How long to wait for the meadow to become ready</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public static async Task<bool> SendCommandAndWaitForReady(
-            MeadowDevice device,
-            Func<Task> command,
-            int timeout = 60_000,
-            CancellationToken cancellationToken = default)
+        public async Task<bool> SendCommandAndWaitForReady(MeadowDevice device,
+                                                           Func<Task> command,
+                                                           int timeout = 60_000,
+                                                           CancellationToken cancellationToken =
+                                                               default)
         {
-            Trace.WriteLine("Invoking command.");
+            _logger.LogTrace("Invoking command.");
             await command()
                 .ConfigureAwait(false);
 
-            Trace.WriteLine("Command invoked, waiting for Meadow to be ready.");
-            
+            _logger.LogTrace("Command invoked, waiting for Meadow to be ready.");
+
             return await WaitForReady(device, timeout, cancellationToken)
                        .ConfigureAwait(false);
         }
@@ -45,10 +56,13 @@ namespace Meadow.CommandLine
         /// <param name="timeout">How long to wait for the meadow to become ready</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public static async Task<bool> WaitForReady(MeadowDevice device,
-                                                    int timeout = 60_000,
-                                                    CancellationToken cancellationToken = default)
+        public async Task<bool> WaitForReady(MeadowDevice device,
+                                             int timeout = 60_000,
+                                             CancellationToken cancellationToken = default)
         {
+            if (device == null)
+                throw new ArgumentNullException(nameof(device));
+
             var now = DateTime.UtcNow;
             var then = now.AddMilliseconds(timeout);
             while (DateTime.UtcNow < then)
@@ -63,11 +77,11 @@ namespace Meadow.CommandLine
                 }
                 catch (MeadowCommandException meadowCommandException)
                 {
-                    Trace.WriteLine(meadowCommandException.ToString());
+                    _logger.LogTrace(meadowCommandException.ToString());
                 }
                 catch (Exception ex)
                 {
-                    Trace.WriteLine($"An exception occurred. Retrying. Exception: {ex}");
+                    _logger.LogTrace($"An exception occurred. Retrying. Exception: {ex}");
                 }
 
                 await Task.Delay(1000, cancellationToken)
@@ -78,9 +92,8 @@ namespace Meadow.CommandLine
         }
 
         // Once flashed the meadow may take a minute or two to show up again as a serial port, and may show up under a different serial port than we think
-        public static async Task<MeadowDevice> FindMeadowBySerialNumber(
+        public async Task<MeadowDevice> FindMeadowBySerialNumber(
             string serialNumber,
-            ILoggerFactory loggerFactory,
             int maxAttempts = 10,
             CancellationToken cancellationToken = default)
         {
@@ -92,11 +105,10 @@ namespace Meadow.CommandLine
                 {
                     try
                     {
-                        var device = await MeadowDeviceManager.GetMeadowForSerialPort(
+                        var device = await _meadowDeviceManager.GetMeadowForSerialPort(
                                          port,
                                          true,
-                                         loggerFactory,
-                                         cancellationToken:cancellationToken);
+                                         cancellationToken);
 
                         var deviceInfo =
                             await device.GetDeviceInfo(cancellationToken: cancellationToken);
@@ -111,7 +123,9 @@ namespace Meadow.CommandLine
                     catch (MeadowDeviceException meadowDeviceException)
                     {
                         // eat it for now
-                        Trace.WriteLine(meadowDeviceException);
+                        _logger.LogTrace(
+                            meadowDeviceException,
+                            "This error can be safely ignored.");
                     }
                 }
 
@@ -124,27 +138,10 @@ namespace Meadow.CommandLine
             return null;
         }
 
-        public static async Task DisableMono(IConsole console,
-                                             MeadowDevice device,
-                                             CancellationToken cancellationToken = default)
+        public async Task DisableMono(MeadowDevice device,
+                                      CancellationToken cancellationToken = default)
         {
-            var done = false;
-            await console.Output.WriteAsync("Disabling Mono")
-                         .ConfigureAwait(false);
-
-            var task = Task.Factory.StartNew(
-                async () =>
-                {
-                    while (!done)
-                    {
-                        //await console.Output.WriteAsync(".")
-                        //             .ConfigureAwait(false);
-
-                        await Task.Delay(1000, cancellationToken)
-                                  .ConfigureAwait(false);
-                    }
-                },
-                cancellationToken);
+            _logger.LogInformation("Disabling Mono");
 
             do
             {
@@ -165,33 +162,13 @@ namespace Meadow.CommandLine
             } while (await device.GetMonoRunState(cancellationToken)
                                  .ConfigureAwait(false));
 
-            done = true;
-            await task;
-            await console.Output.WriteLineAsync(
-                "Disabled Mono Successfully, app.exe will not run.");
+            _logger.LogInformation("Disabled Mono Successfully, app.exe will not run.");
         }
 
-        public static async Task EnableMono(IConsole console,
-                                            MeadowDevice device,
-                                            CancellationToken cancellationToken = default)
+        public async Task EnableMono(MeadowDevice device,
+                                     CancellationToken cancellationToken = default)
         {
-            var done = false;
-            await console.Output.WriteAsync("Enabling Mono")
-                         .ConfigureAwait(false);
-
-            var task = Task.Factory.StartNew(
-                async () =>
-                {
-                    while (!done)
-                    {
-                        //await console.Output.WriteAsync(".")
-                        //             .ConfigureAwait(false);
-
-                        await Task.Delay(1000, cancellationToken)
-                                  .ConfigureAwait(false);
-                    }
-                },
-                cancellationToken);
+            _logger.LogInformation("Enabling Mono");
 
             do
             {
@@ -213,33 +190,13 @@ namespace Meadow.CommandLine
                                  .ConfigureAwait(false)
                   == false);
 
-            done = true;
-            await task;
-
-            await console.Output.WriteLineAsync("Enabled Mono Successfully, app.exe will run.");
+            _logger.LogInformation("Enabled Mono Successfully, app.exe will run.");
         }
 
-        public static async Task ResetMeadow(IConsole console,
-                                             MeadowDevice device,
-                                             CancellationToken cancellationToken = default)
+        public async Task ResetMeadow(MeadowDevice device,
+                                      CancellationToken cancellationToken = default)
         {
-            var done = false;
-            await console.Output.WriteAsync("Resetting meadow")
-                         .ConfigureAwait(false);
-
-            var task = Task.Factory.StartNew(
-                async () =>
-                {
-                    while (!done)
-                    {
-                        await console.Output.WriteAsync(".")
-                                     .ConfigureAwait(false);
-
-                        await Task.Delay(1000, cancellationToken)
-                                  .ConfigureAwait(false);
-                    }
-                },
-                cancellationToken);
+            _logger.LogInformation("Resetting meadow");
 
             await SendCommandAndWaitForReady(
                     device,
@@ -247,22 +204,18 @@ namespace Meadow.CommandLine
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            done = true;
-            await task;
-
-            await console.Output.WriteLineAsync("Successfully reset meadow.");
+            _logger.LogInformation("Successfully reset meadow.");
         }
 
-        public static async Task UpdateMonoRt(IConsole console,
-                                              MeadowDevice device,
-                                              string sourceFilename,
-                                              CancellationToken cancellationToken = default)
+        public async Task UpdateMonoRt(MeadowDevice device,
+                                       string sourceFilename,
+                                       CancellationToken cancellationToken = default)
         {
-            await console.Output.WriteLineAsync("Waiting for Meadow to be ready.");
+            _logger.LogInformation("Waiting for Meadow to be ready.");
             await WaitForReady(device, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await DisableMono(console, device, cancellationToken)
+            await DisableMono(device, cancellationToken)
                 .ConfigureAwait(false);
 
             Trace.Assert(
@@ -270,7 +223,7 @@ namespace Meadow.CommandLine
                             .ConfigureAwait(false),
                 "Meadow was expected to have Mono Disabled");
 
-            await console.Output.WriteLineAsync("Updating Mono Runtime");
+            _logger.LogInformation("Updating Mono Runtime");
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
                 // check local override
@@ -280,7 +233,7 @@ namespace Meadow.CommandLine
 
                 if (File.Exists(sourceFilename))
                 {
-                    await console.Output.WriteLineAsync(
+                    _logger.LogInformation(
                         $"Using current directory '{DownloadManager.RuntimeFilename}'");
                 }
                 else
@@ -291,12 +244,11 @@ namespace Meadow.CommandLine
 
                     if (File.Exists(sourceFilename))
                     {
-                        await console.Output.WriteLineAsync(
-                            "FileName not specified, using latest download.");
+                        _logger.LogInformation("FileName not specified, using latest download.");
                     }
                     else
                     {
-                        await console.Output.WriteLineAsync(
+                        _logger.LogInformation(
                             "Unable to locate a runtime file. Either provide a path or download one.");
 
                         return; // KeepConsoleOpen?
@@ -306,56 +258,33 @@ namespace Meadow.CommandLine
 
             if (!File.Exists(sourceFilename))
             {
-                await console.Output.WriteLineAsync($"File '{sourceFilename}' not found");
+                _logger.LogInformation($"File '{sourceFilename}' not found");
                 return; // KeepConsoleOpen?
             }
 
             await device.UpdateMonoRuntime(sourceFilename, cancellationToken: cancellationToken);
 
-            // Reset the meadow after updating the runtime
-            await SendCommandAndWaitForReady(
-                    device,
-                    () => device.ResetMeadow(cancellationToken),
-                    cancellationToken: cancellationToken)
+            await ResetMeadow(device, cancellationToken)
                 .ConfigureAwait(false);
         }
 
-        public static async Task FlashEsp(IConsole console,
-                                          MeadowDevice device,
-                                          CancellationToken cancellationToken = default)
+        public async Task FlashEsp(MeadowDevice device,
+                                   CancellationToken cancellationToken = default)
         {
             await WaitForReady(device, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await console.Output.WriteLineAsync("Disabling Mono");
-            do
-            {
-                // Send the Mono Disable Command
-                await SendCommandAndWaitForReady(
-                        device,
-                        () => device.MonoDisable(cancellationToken),
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-
-                // Reset the Meadow
-                await SendCommandAndWaitForReady(
-                        device,
-                        () => device.ResetMeadow(cancellationToken),
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-                // Double check the mono run state to ensure mono is actually disabled
-            } while (await device.GetMonoRunState(cancellationToken)
-                                 .ConfigureAwait(false));
+            await DisableMono(device, cancellationToken)
+                .ConfigureAwait(false);
 
             Trace.Assert(
                 await device.GetMonoRunState(cancellationToken)
                             .ConfigureAwait(false),
                 "Meadow was expected to have Mono Disabled");
 
-            await console.Output.WriteLineAsync("Flashing ESP");
+            _logger.LogInformation("Flashing ESP");
 
-            await console.Output.WriteLineAsync(
-                $"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            _logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
 
             await device.WriteFileToEspFlash(
                             Path.Combine(
@@ -368,8 +297,7 @@ namespace Meadow.CommandLine
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            await console.Output.WriteLineAsync(
-                $"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            _logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
 
             await device.WriteFileToEspFlash(
                             Path.Combine(
@@ -382,8 +310,7 @@ namespace Meadow.CommandLine
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            await console.Output.WriteLineAsync(
-                $"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            _logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
 
             await device.WriteFileToEspFlash(
                             Path.Combine(

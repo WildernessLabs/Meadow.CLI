@@ -15,10 +15,10 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
     public class FlashOsCommand : MeadowSerialCommand
     {
-        private readonly ILoggerFactory _loggerFactory;
-        public FlashOsCommand(ILoggerFactory loggerFactory)
+        private readonly ILogger<FlashOsCommand> _logger;
+        public FlashOsCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager) : base(loggerFactory, utils, meadowDeviceManager)
         {
-            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger<FlashOsCommand>();
         }
 
         [CommandOption("BinPath", 'b', Description = "Path to the Meadow OS binary")]
@@ -51,30 +51,30 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
 
                     // No DFU device found, lets try to set the meadow to DFU mode.
                     using var device =
-                        await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, _loggerFactory, cancellationToken);
+                        await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken);
 
-                    await console.Output.WriteLineAsync("Entering DFU Mode");
+                    _logger.LogInformation("Entering DFU Mode");
                     await device.EnterDfuMode(cancellationToken).ConfigureAwait(false);
                 }
                 catch (FileNotFoundException)
                 {
-                    Debug.WriteLine("Failed to find Serial Port.");
+                    _logger.LogError("Failed to find Serial Port.");
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex);
+                    _logger.LogDebug("An exception occurred while switching device to DFU Mode. Exception: {0}", ex);
                 }
 
                 switch (dfuAttempts)
                 {
                     case 5:
-                        await console.Output.WriteAsync(
+                        _logger.LogInformation(
                             "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
 
                         await console.Input.ReadLineAsync();
                         break;
                     case 10:
-                        await console.Output.WriteAsync(
+                        _logger.LogInformation(
                             "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
 
                         await console.Input.ReadLineAsync();
@@ -94,19 +94,18 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
             // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
             var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
-            await console.Output.WriteLineAsync("Device in DFU Mode, flashing OS");
+            _logger.LogInformation("Device in DFU Mode, flashing OS");
             //DfuUtils.FlashOS(device: dfuDevice);
-            await console.Output.WriteLineAsync("Device Flashed.");
+            _logger.LogInformation("Device Flashed.");
 
             try
             {
                 using var device = await Utils.FindMeadowBySerialNumber(
-                                                  serialNumber,
-                                                  _loggerFactory,
-                                                  cancellationToken: cancellationToken)
-                                              .ConfigureAwait(false);
+                                                        serialNumber,
+                                                        cancellationToken: cancellationToken)
+                                                    .ConfigureAwait(false);
 
-                await Utils.UpdateMonoRt(console, device, BinPath, cancellationToken);
+                await Utils.UpdateMonoRt(device, BinPath, cancellationToken);
 
                 // Again, verify that Mono is disabled
                 Trace.Assert(
@@ -114,20 +113,20 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                                              .ConfigureAwait(false),
                     "Meadow was expected to have Mono Disabled");
 
-                await console.Output.WriteLineAsync("Flashing ESP");
-                await Utils.FlashEsp(console, device, cancellationToken)
-                           .ConfigureAwait(false);
+                _logger.LogInformation("Flashing ESP");
+                await Utils.FlashEsp(device, cancellationToken)
+                                 .ConfigureAwait(false);
 
                 // Reset the meadow again to ensure flash worked.
-                await Utils.ResetMeadow(console, device, cancellationToken)
-                           .ConfigureAwait(false);
+                await Utils.ResetMeadow(device, cancellationToken)
+                                 .ConfigureAwait(false);
 
-                await console.Output.WriteLineAsync("Enabling Mono and Resetting.");
+                _logger.LogInformation("Enabling Mono and Resetting.");
                 while (await device.GetMonoRunState(cancellationToken)
                                                 .ConfigureAwait(false)
                     == false)
                 {
-                    await Utils.EnableMono(console, device, cancellationToken);
+                    await Utils.EnableMono(device, cancellationToken);
                 }
 
                 // TODO: Verify that the device info returns the expected version

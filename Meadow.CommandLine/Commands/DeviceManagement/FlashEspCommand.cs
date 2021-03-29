@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.DeviceManagement
 {
@@ -12,13 +13,25 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            using var device = await MeadowDeviceManager
+                                     .GetMeadowForSerialPort(
+                                         SerialPortName,
+                                         true,
+                                         cancellationToken)
+                                     .ConfigureAwait(false);
 
-            await Utils.FlashEsp(console, device, cancellationToken)
-                .ConfigureAwait(false);
+            await Utils.FlashEsp(device, cancellationToken)
+                       .ConfigureAwait(false);
 
-            await Utils.ResetMeadow(console, device, cancellationToken).ConfigureAwait(false);
+            await Utils.ResetMeadow(device, cancellationToken)
+                       .ConfigureAwait(false);
+        }
 
+        internal FlashEspCommand(ILoggerFactory loggerFactory,
+                                 Utils utils,
+                                 MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }

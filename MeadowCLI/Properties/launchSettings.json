@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Meadow.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "--GetDeviceInfo -s COM3"
+    }
+  }
+}

@@ -3,11 +3,27 @@ using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands
 {
     public abstract class MeadowSerialCommand : ICommand
     {
+        private protected ILoggerFactory LoggerFactory;
+        private protected Utils Utils;
+        private protected MeadowDeviceManager MeadowDeviceManager;
+
+        private protected MeadowSerialCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+        {
+            LoggerFactory = loggerFactory;
+            Utils = utils;
+            MeadowDeviceManager = meadowDeviceManager;
+        }
+
+        [CommandOption('v', Description = "Log verbosity")]
+        public string[] Verbosity { get; init; }
+
         [CommandOption("port", 's', Description = "Meadow COM port", IsRequired = true)]
         public string SerialPortName { get; init; }
 

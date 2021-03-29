@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.NewDeviceManagement;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Mono
 {
@@ -12,11 +13,16 @@ namespace Meadow.CommandLine.Commands.Mono
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName)
+            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken)
                                                         .ConfigureAwait(false);
 
             await device.GetMonoRunState(cancellationToken)
                                      .ConfigureAwait(false);
+        }
+
+        internal MonoRunStateCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
         }
     }
 }
