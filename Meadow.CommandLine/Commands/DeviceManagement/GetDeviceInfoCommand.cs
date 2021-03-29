@@ -10,6 +10,14 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
     [Command("device info", Description = "Get the device info")]
     public class GetDeviceInfoCommand : MeadowSerialCommand
     {
+        private readonly ILogger<GetDeviceInfoCommand> _logger;
+
+        public GetDeviceInfoCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<GetDeviceInfoCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -17,13 +25,9 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken).ConfigureAwait(false);
 
-            var deviceInfo = await device.GetDeviceInfo(cancellationToken: cancellationToken).ConfigureAwait(false);
-            await console.Output.WriteLineAsync(deviceInfo).ConfigureAwait(false);
-        }
-
-        internal GetDeviceInfoCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
+            var deviceInfoString = await device.GetDeviceInfo(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
+            _logger.LogInformation(deviceInfo.ToString());
         }
     }
 }

@@ -130,6 +130,11 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
                 }
 
                 // TODO: Verify that the device info returns the expected version
+                var deviceInfoString = await device.GetDeviceInfo(cancellationToken: cancellationToken)
+                                                   .ConfigureAwait(false);
+
+                var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
+                _logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOSVersion} ESP: {deviceInfo.CoProcessorOs}");
                 Environment.Exit(0);
             }
             catch (Exception ex)

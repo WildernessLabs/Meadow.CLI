@@ -26,7 +26,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
             DataProcessor = dataProcessor;
         }
 
-        public MeadowDeviceInfo DeviceInfo { get; protected set; } = new MeadowDeviceInfo();
+        public MeadowDeviceInfo DeviceInfo { get; protected set; }
 
         public IDictionary<string, UInt32> FilesOnDevice { get; protected set; } =
             new Dictionary<string, uint>();
