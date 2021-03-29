@@ -95,7 +95,7 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
             var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             _logger.LogInformation("Device in DFU Mode, flashing OS");
-            //DfuUtils.FlashOS(device: dfuDevice);
+            DfuUtils.FlashOS(device: dfuDevice);
             _logger.LogInformation("Device Flashed.");
 
             try

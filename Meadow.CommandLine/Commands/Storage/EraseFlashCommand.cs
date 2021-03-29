@@ -9,18 +9,30 @@ namespace Meadow.CommandLine.Commands.Storage
     [Command("flash erase", Description = "Erase the flash on the Meadow Board")]
     public class EraseFlashCommand : MeadowSerialCommand
     {
+        private readonly ILogger<EraseFlashCommand> _logger;
+
+        internal EraseFlashCommand(ILoggerFactory loggerFactory,
+                                   Utils utils,
+                                   MeadowDeviceManager meadowDeviceManager)
+            : base(loggerFactory, utils, meadowDeviceManager)
+        {
+            _logger = LoggerFactory.CreateLogger<EraseFlashCommand>();
+        }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await console.Output.WriteLineAsync("Erasing flash.").ConfigureAwait(false);
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, true, cancellationToken).ConfigureAwait(false);
-            await device.EraseFlash(cancellationToken).ConfigureAwait(false);
-        }
+            _logger.LogInformation("Erasing flash.");
+            using var device = await MeadowDeviceManager
+                                     .GetMeadowForSerialPort(
+                                         SerialPortName,
+                                         true,
+                                         cancellationToken)
+                                     .ConfigureAwait(false);
 
-        internal EraseFlashCommand(ILoggerFactory loggerFactory, Utils utils, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, utils, meadowDeviceManager)
-        {
+            await device.EraseFlash(cancellationToken)
+                        .ConfigureAwait(false);
         }
     }
 }
