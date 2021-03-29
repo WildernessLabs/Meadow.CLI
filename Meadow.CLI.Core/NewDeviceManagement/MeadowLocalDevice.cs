@@ -135,13 +135,13 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        private protected async Task ProcessCommand(HcomMeadowRequestType requestType,
-                                              MeadowMessageType responseMessageType =
-                                                  MeadowMessageType.Concluded,
-                                              uint userData = 0,
-                                              bool doAcceptedCheck = true,
-                                              int timeoutMs = 10000,
-                                              CancellationToken cancellationToken = default, [CallerMemberName]string? caller = null)
+        private protected async Task<string?> ProcessCommand(HcomMeadowRequestType requestType,
+                                                             MeadowMessageType responseMessageType =
+                                                                 MeadowMessageType.Concluded,
+                                                             uint userData = 0,
+                                                             bool doAcceptedCheck = true,
+                                                             int timeoutMs = 10000,
+                                                             CancellationToken cancellationToken = default, [CallerMemberName]string? caller = null)
         {
             Logger.LogTrace($"{caller} sent {requestType} waiting for {responseMessageType}");
             var message = await ProcessCommand(
@@ -151,17 +151,18 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                 doAcceptedCheck,
                 timeoutMs,
                 cancellationToken).ConfigureAwait(false);
-            Logger.LogTrace($"Returning to {caller} with {message}");
+            Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
+            return message;
         }
 
-        private protected async Task<string> ProcessCommand(HcomMeadowRequestType requestType,
-                                                            Predicate<MeadowMessageEventArgs>?
-                                                                filter,
-                                                            uint userData = 0,
-                                                            bool doAcceptedCheck = true,
-                                                            int timeoutMs = 10000,
-                                                            CancellationToken cancellationToken =
-                                                                default, [CallerMemberName]string? caller = null)
+        private protected async Task<string?> ProcessCommand(HcomMeadowRequestType requestType,
+                                                             Predicate<MeadowMessageEventArgs>?
+                                                                 filter,
+                                                             uint userData = 0,
+                                                             bool doAcceptedCheck = true,
+                                                             int timeoutMs = 10000,
+                                                             CancellationToken cancellationToken =
+                                                                 default, [CallerMemberName]string? caller = null)
         {
             Logger.LogTrace($"{caller} sent {requestType}");
             await _sendTargetData.SendSimpleCommand(
@@ -175,7 +176,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
                       .ConfigureAwait(false);
             var message = await WaitForResponseMessage(filter, timeoutMs, cancellationToken)
                            .ConfigureAwait(false);
-            Logger.LogTrace($"Returning to {caller} with {message}");
+            Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
             return message;
         }
 
@@ -214,7 +215,7 @@ namespace Meadow.CLI.Core.NewDeviceManagement
 
             if (result)
             {
-                Logger.LogTrace($"Returning to {caller} with {message}");
+                Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
                 return message;
             }
 
