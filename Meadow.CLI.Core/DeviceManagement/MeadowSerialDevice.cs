@@ -18,22 +18,20 @@ namespace MeadowCLI.DeviceManagement
     {
         public EventHandler<MeadowMessageEventArgs> OnMeadowMessage;
 
-        private bool _disposed;
-
         public bool Verbose { get; protected set; }
         public bool LocalEcho { get; set; } = true;
 
         public SerialPort SerialPort { get; private set; }
         public Socket Socket { get; private set; }
 
-        private readonly string _serialPortName;
-        public string PortName => SerialPort == null ? _serialPortName : SerialPort.PortName;
+        private string serialPortName;
+        public string PortName => SerialPort == null ? serialPortName : SerialPort.PortName;
 
         public MeadowSerialDataProcessor DataProcessor { get; private set; }
 
         public MeadowSerialDevice(string serialPortName, bool verbose = true)
         {
-            this._serialPortName = serialPortName;
+            this.serialPortName = serialPortName;
             Verbose = verbose;
         }
 
@@ -69,7 +67,7 @@ namespace MeadowCLI.DeviceManagement
 
         public bool Initialize(bool listen = true)
         {
-            if (TryCreateIPEndPoint(_serialPortName, out IPEndPoint endpoint))
+            if (TryCreateIPEndPoint(serialPortName, out IPEndPoint endpoint))
             {
                 Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -91,7 +89,7 @@ namespace MeadowCLI.DeviceManagement
                     SerialPort = null;
                 }
 
-                if (OpenSerialPort(_serialPortName) == false)
+                if (OpenSerialPort(serialPortName) == false)
                     return false;
             }
 
@@ -106,7 +104,7 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort == null)
             {
-                throw new Exception("SerialPort not initialized");
+                throw new Exception("SerialPort not intialized");
             }
 
             bool result = false;
@@ -139,7 +137,7 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort == null)
             {
-                throw new Exception("SerialPort not initialized");
+                throw new Exception("SerialPort not intialized");
             }
 
             bool result = false;
@@ -172,7 +170,7 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort == null)
             {
-                throw new Exception("SerialPort not initialized");
+                throw new Exception("SerialPort not intialized");
             }
 
             var timeOutTask = Task.Delay(timeoutInMs);
@@ -221,7 +219,7 @@ namespace MeadowCLI.DeviceManagement
         {
             if (SerialPort == null)
             {
-                throw new Exception("SerialPort not initialized");
+                throw new Exception("SerialPort not intialized");
             }
 
             if (FilesOnDevice.Count == 0 || refresh == true)
@@ -363,10 +361,10 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.DeviceInfo:
                     //ToDo move this
                     SetDeviceIdFromMessage(args.Message);
-                    ConsoleOutIf(LocalEcho, "ID: " + args.Message);
+                    ConsoleOut("ID: " + args.Message);
                     break;
                 case MeadowMessageType.SerialReconnect:
-                    AttemptToReconnectToMeadow().GetAwaiter().GetResult();
+                    AttemptToReconnectToMeadow();
                     break;
                 // The last 2 types received text straight from mono' stdout / stderr
                 // via hcom and may not be packetized at the end of a lines.
@@ -423,20 +421,18 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        internal async Task<bool> AttemptToReconnectToMeadow(CancellationToken cancellationToken = default)
+        internal bool AttemptToReconnectToMeadow()
         {
             int delayCount = 20;    // 10 seconds
             while (true)
             {
-                await Task.Delay(500, cancellationToken)
-                          .ConfigureAwait(false);
+                System.Threading.Thread.Sleep(500);
 
                 bool portOpened = Initialize(true);
                 if (portOpened)
                 {
-                    ConsoleOutIf(LocalEcho, "Device successfully reconnected");
-                    await Task.Delay(2000, cancellationToken)
-                              .ConfigureAwait(false);
+                    Console.WriteLine("Device successfully reconnected");
+                    Thread.Sleep(2000);
                     return true;
                 }
 
@@ -532,17 +528,7 @@ namespace MeadowCLI.DeviceManagement
 
         public void Dispose()
         {
-            if (!_disposed)
-            {
-                _disposed = true;
-                this.SerialPort?.Dispose();
-            }
-        }
-
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(MeadowSerialDevice));
+            this.SerialPort?.Dispose();
         }
     }
 

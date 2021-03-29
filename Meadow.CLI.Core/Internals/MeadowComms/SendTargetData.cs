@@ -7,7 +7,6 @@ using MeadowCLI.DeviceManagement;
 using System.Threading.Tasks;
 using Meadow.CLI;
 using System.Threading;
-using Meadow.CLI.Core;
 
 namespace MeadowCLI.Hcom
 {
@@ -35,7 +34,7 @@ namespace MeadowCLI.Hcom
 
         public bool Verbose { get; protected set; }
 
-        public async Task SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
+        public void SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
             uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
             string md5Hash, bool lastInSeries)
         {
@@ -44,7 +43,7 @@ namespace MeadowCLI.Hcom
             try
             {
                 // Build and send the header
-                await BuildAndSendFileRelatedCommand(requestType,
+                BuildAndSendFileRelatedCommand(requestType,
                     partitionId, (UInt32)fileBytes.Length, payloadCrc32,
                     mcuAddr, md5Hash, destFileName);
 
@@ -87,7 +86,7 @@ namespace MeadowCLI.Hcom
                         numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
                     }
 
-                    await BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber).ConfigureAwait(false);
+                    BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
 
                     var progress = fileBufOffset * 100 / fileBytes.Length;
                     WriteProgress(progress);
@@ -109,16 +108,16 @@ namespace MeadowCLI.Hcom
                     // Provide the correct message end depending on the reason the file
                     // is being downloaded to the F7 file system.
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER:
-                        await BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
-                                                        lastInSeries ? (uint)1 : (uint)0).ConfigureAwait(false);      // set UserData
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
                         break;
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME:
-                        await BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
-                                                        lastInSeries ? (uint)1 : (uint)0).ConfigureAwait(false);      // set UserData
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
                         break;
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER:
-                        await BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
-                                                        lastInSeries ? (uint)1 : (uint)0).ConfigureAwait(false);      // set UserData
+                        BuildAndSendSimpleCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
+                            lastInSeries ? (uint)1 : (uint)0);      // set UserData
                         break;
                     default:
                         Console.WriteLine($"File end Meadow request type of {requestType} not defined");
@@ -155,14 +154,14 @@ namespace MeadowCLI.Hcom
             }
         }
         //==========================================================================
-        internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true, CancellationToken cancellationToken = default)
+        internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true)
         {
             var tcs = new TaskCompletionSource<bool>();
             var received = false;
 
             if (!doAcceptedCheck)
             {
-                await BuildAndSendSimpleCommand(requestType, userData).ConfigureAwait(false);
+                BuildAndSendSimpleCommand(requestType, userData);
                 return true;
             }
 
@@ -177,22 +176,22 @@ namespace MeadowCLI.Hcom
 
             if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData += handler;
 
-            await BuildAndSendSimpleCommand(requestType, userData).ConfigureAwait(false);
+            BuildAndSendSimpleCommand(requestType, userData);
 
-            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(10000, cancellationToken) });
+            await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(10000) });
 
             if (_device.DataProcessor != null) _device.DataProcessor.OnReceiveData -= handler;
 
             if (!received)
             {
-                throw new MeadowCommandException("Command not accepted.");
+                throw new Exception("Command not accepted.");
             }
             return received;
         }
 
         //==========================================================================
         // Prepare a data packet for sending
-        private async Task BuildAndSendDataPacketRequest(byte[] messageBytes, int messageOffset,
+        private void BuildAndSendDataPacketRequest(byte[] messageBytes, int messageOffset,
             int messageSize, UInt16 seqNumb)
         {
             try
@@ -205,7 +204,7 @@ namespace MeadowCLI.Hcom
                 Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
                 Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(UInt16), messageSize);
 
-                await EncodeAndSendPacket(fullMsg, 0, xmitSize).ConfigureAwait(false);
+                EncodeAndSendPacket(fullMsg, 0, xmitSize);
             }
             catch (Exception except)
             {
@@ -217,7 +216,7 @@ namespace MeadowCLI.Hcom
         //==========================================================================
         // Build and send a "simple" message with data
         // Added for Visual Studio Debugging
-        internal async Task BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
+        internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
         {
             int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
             var messageBytes = new byte[totalMsgLength];
@@ -229,18 +228,18 @@ namespace MeadowCLI.Hcom
             Array.Copy(additionalData, 0, messageBytes,
                 HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH, additionalData.Length);
 
-            await EncodeAndSendPacket(messageBytes, 0, totalMsgLength).ConfigureAwait(false);
+            EncodeAndSendPacket(messageBytes, 0, totalMsgLength);
         }
 
         //==========================================================================
         // Build and send a "simple" message with only a header
-        internal async Task BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
+        internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
         {
             var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
             // Populate the header
             BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
-            await EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH).ConfigureAwait(false);
+            EncodeAndSendPacket(messageBytes, 0, HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
         }
 
         //==========================================================================
@@ -276,7 +275,7 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        internal async Task BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
+        internal void BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
             UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, UInt32 mcuAddr,
             string md5Hash, string destFileName)
         {
@@ -317,12 +316,12 @@ namespace MeadowCLI.Hcom
             offset += targetFileName.Length;
 
             Debug.Assert(offset == optionalDataLength + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH);
-            await EncodeAndSendPacket(messageBytes, 0, offset).ConfigureAwait(false);
+            EncodeAndSendPacket(messageBytes, 0, offset);
         }
 
         //==========================================================================
         // Last stop before transmitting information
-        private async Task EncodeAndSendPacket(byte[] messageBytes, int messageOffset, int messageSize)
+        private void EncodeAndSendPacket(byte[] messageBytes, int messageOffset, int messageSize)
         {
             try
             {
@@ -364,7 +363,7 @@ namespace MeadowCLI.Hcom
 
                         if (!_device.SerialPort.IsOpen)
                         {
-                            await _device.AttemptToReconnectToMeadow().ConfigureAwait(false);
+                            _device.AttemptToReconnectToMeadow();
                         }
 
                         _device.SerialPort.Write(encodedBytes, 0, encodedToSend);

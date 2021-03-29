@@ -7,7 +7,7 @@ namespace MeadowCLI.DeviceManagement
     //is this needed?
     public class MeadowDeviceException : Exception
     {
-        public MeadowDeviceException(string message, Exception? innerException = null)
+        public MeadowDeviceException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
