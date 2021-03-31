@@ -9,6 +9,8 @@ namespace Meadow.CLI.Core.Auth
 		const string SecurityFramework = "/System/Library/Frameworks/Security.framework/Security";
 		const string CoreFoundationFramework = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
 
+		const uint kCFStringEncodingUTF8 = 0x08000100;
+
 		static IntPtr securityHandle;
 		static IntPtr kSecClass;
 		static IntPtr kSecClassGenericPassword;
@@ -20,6 +22,8 @@ namespace Meadow.CLI.Core.Auth
 
 		static IntPtr cfHandle;
 		static IntPtr kCFBooleanTrue;
+		static IntPtr kCFTypeDictionaryKeyCallBacks;
+		static IntPtr kCFTypeDictionaryValueCallBacks;
 
 		static void Init()
 		{
@@ -43,43 +47,50 @@ namespace Meadow.CLI.Core.Auth
 			kSecReturnData = GetConstant(securityHandle, "kSecReturnData");
 
 			kCFBooleanTrue = GetConstant(cfHandle, "kCFBooleanTrue");
+			kCFTypeDictionaryKeyCallBacks = GetConstant(cfHandle, "kCFTypeDictionaryKeyCallBacks", false);
+			kCFTypeDictionaryValueCallBacks = GetConstant(cfHandle, "kCFTypeDictionaryValueCallBacks", false);
 		}
 
-		static IntPtr GetConstant(IntPtr handle, string symbol)
+		static IntPtr GetConstant(IntPtr handle, string symbol, bool deref = true)
 		{
 			var ptr = dlsym(handle, symbol);
 			if (ptr == IntPtr.Zero)
 				throw new EntryPointNotFoundException(symbol);
-			return Marshal.ReadIntPtr(ptr);
+			return deref ? Marshal.ReadIntPtr(ptr) : ptr;
 		}
 
 		public static unsafe bool Add(string label, string username, string password)
 		{
 			Init();
-			var cfLabel = CFStringCreateWithCharacters (IntPtr.Zero, label, (IntPtr)label.Length);
+			var cfLabel = CFStringCreateWithCharacters(IntPtr.Zero, label, (IntPtr)label.Length);
 			try {
-				var cfUsername = CFStringCreateWithCharacters (IntPtr.Zero, username, (IntPtr)username.Length);
+				var cfUsername = CFStringCreateWithCharacters(IntPtr.Zero, username, (IntPtr)username.Length);
 				try {
-					var cfPassword = CFStringCreateWithCharacters (IntPtr.Zero, password, (IntPtr)password.Length);
+					var cfPassword = CFStringCreateWithCharacters(IntPtr.Zero, password, (IntPtr)password.Length);
 					try {
-						var keys = stackalloc IntPtr [4];
-						var values = stackalloc IntPtr [4];
-						keys[0] = kSecClass;
-						values[0] = kSecClassGenericPassword;
-						keys[1] = kSecAttrLabel;
-						values[1] = cfLabel;
-						keys[2] = kSecAttrAccount;
-						values [2] = cfUsername;
-						keys [3] = kSecValueData;
-						values [3] = cfPassword;
-						var dict = CFDictionaryCreate(IntPtr.Zero, keys, values, 4, IntPtr.Zero, IntPtr.Zero);
+						var cfPasswordData = CFStringCreateExternalRepresentation(IntPtr.Zero, cfPassword, kCFStringEncodingUTF8, 0);
 						try {
-							var result = SecItemAdd(dict, IntPtr.Zero);
-							//if (result != 0)
-							//	throw new Exception($"SecItemAdd failed with {result}");
-							return result == 0;
+							var keys = stackalloc IntPtr [4];
+							var values = stackalloc IntPtr [4];
+							keys[0] = kSecClass;
+							values[0] = kSecClassGenericPassword;
+							keys[1] = kSecAttrLabel;
+							values[1] = cfLabel;
+							keys[2] = kSecAttrAccount;
+							values [2] = cfUsername;
+							keys [3] = kSecValueData;
+							values [3] = cfPasswordData;
+							var dict = CFDictionaryCreate(IntPtr.Zero, keys, values, 4, kCFTypeDictionaryKeyCallBacks, kCFTypeDictionaryValueCallBacks);
+							try {
+								var result = SecItemAdd(dict, IntPtr.Zero);
+								//if (result != 0)
+								//	throw new Exception($"SecItemAdd failed with {result}");
+								return result == 0;
+							} finally {
+								CFRelease(dict);
+							}
 						} finally {
-							CFRelease(dict);
+							CFRelease(cfPasswordData);
 						}
 					} finally {
 						CFRelease(cfPassword);
@@ -94,7 +105,7 @@ namespace Meadow.CLI.Core.Auth
 
 		static unsafe IntPtr CreateQueryDict(string label)
 		{
-			Init ();
+			Init();
 			var cfLabel = CFStringCreateWithCharacters(IntPtr.Zero, label, (IntPtr)label.Length);
 			try {
 				var keys = stackalloc IntPtr [4];
@@ -107,7 +118,7 @@ namespace Meadow.CLI.Core.Auth
 				values [2] = kCFBooleanTrue;
 				keys [3] = kSecReturnData;
 				values [3] = kCFBooleanTrue;
-				return CFDictionaryCreate(IntPtr.Zero, keys, values, 4, IntPtr.Zero, IntPtr.Zero);
+				return CFDictionaryCreate(IntPtr.Zero, keys, values, 4, kCFTypeDictionaryKeyCallBacks, kCFTypeDictionaryValueCallBacks);
 			} finally {
 				CFRelease(cfLabel);
 			}
@@ -124,10 +135,15 @@ namespace Meadow.CLI.Core.Auth
 				if (result != 0)
 					throw new Exception($"SecItemCopyMatching failed with {result}");
 				var cfUsername = CFDictionaryGetValue(data, kSecAttrAccount);
-				var cfPassword = CFDictionaryGetValue(data, kSecValueData);
-				var username = cfUsername == IntPtr.Zero ? string.Empty : GetCFString(cfUsername);
-				var password = cfPassword == IntPtr.Zero ? string.Empty : GetCFString(cfPassword);
-				return (username, password);
+				var cfPasswordData = CFDictionaryGetValue(data, kSecValueData);
+				var cfPassword = CFStringCreateFromExternalRepresentation(IntPtr.Zero, cfPasswordData, kCFStringEncodingUTF8);
+				try {
+					var username = cfUsername == IntPtr.Zero ? string.Empty : GetCFString(cfUsername);
+					var password = cfPassword == IntPtr.Zero ? string.Empty : GetCFString(cfPassword);
+					return (username, password);
+				} finally {
+					CFRelease(cfPassword);
+				}
 			} finally {
 				CFRelease(dict);
 			}
@@ -135,7 +151,7 @@ namespace Meadow.CLI.Core.Auth
 
 		public static bool Delete(string label)
 		{
-			var dict = CreateQueryDict (label);
+			var dict = CreateQueryDict(label);
 			try {
 				return SecItemDelete(dict) == 0;
 			} finally {
@@ -165,16 +181,16 @@ namespace Meadow.CLI.Core.Auth
 
 		#region CoreFoundation
 		[DllImport(CoreFoundationFramework)]
-		unsafe static extern IntPtr/*CFDictionaryRef*/ CFDictionaryCreate (IntPtr/*CFAllocatorRef*/ allocator, IntPtr* keys, IntPtr* values, long numValues, IntPtr/*const CFDictionaryKeyCallBacks**/ keyCallBacks, IntPtr/*const CFDictionaryValueCallBacks**/ valueCallBacks);
+		unsafe static extern IntPtr/*CFDictionaryRef*/ CFDictionaryCreate(IntPtr/*CFAllocatorRef*/ allocator, IntPtr* keys, IntPtr* values, long numValues, IntPtr/*const CFDictionaryKeyCallBacks**/ keyCallBacks, IntPtr/*const CFDictionaryValueCallBacks**/ valueCallBacks);
 
 		[DllImport(CoreFoundationFramework)]
 		static extern IntPtr/*const void**/ CFDictionaryGetValue(IntPtr/*CFDictionaryRef*/ theDict, IntPtr/*const void**/ key);
 
 		[DllImport(CoreFoundationFramework, CharSet = CharSet.Unicode)]
-		extern static IntPtr CFStringCreateWithCharacters (IntPtr/*CFAllocatorRef*/ allocator, string str, IntPtr count);
+		extern static IntPtr CFStringCreateWithCharacters(IntPtr/*CFAllocatorRef*/ allocator, string str, IntPtr count);
 
 		[DllImport(CoreFoundationFramework)]
-		extern static IntPtr CFStringGetLength (IntPtr handle);
+		extern static IntPtr CFStringGetLength(IntPtr handle);
 
 		[StructLayout(LayoutKind.Sequential)]
 		struct CFRange
@@ -184,10 +200,16 @@ namespace Meadow.CLI.Core.Auth
 		}
 
 		[DllImport(CoreFoundationFramework)]
-		extern static IntPtr CFStringGetCharacters (IntPtr handle, CFRange range, IntPtr buffer);
+		extern static IntPtr CFStringGetCharacters(IntPtr handle, CFRange range, IntPtr buffer);
 
 		[DllImport(CoreFoundationFramework)]
-		extern static void CFRelease (IntPtr obj);
+		extern static IntPtr/*CFDataRef*/ CFStringCreateExternalRepresentation(IntPtr/*CFAllocatorRef*/ alloc, IntPtr/*CFStringRef*/ theString, uint encoding, byte lossByte);
+
+		[DllImport(CoreFoundationFramework)]
+		extern static IntPtr/*CFStringRef*/ CFStringCreateFromExternalRepresentation(IntPtr/*CFAllocatorRef*/ alloc, IntPtr/*CFDataRef*/ data, uint encoding);
+
+		[DllImport (CoreFoundationFramework)]
+		extern static void CFRelease(IntPtr obj);
 		#endregion
 
 		#region Keychain
