@@ -309,7 +309,7 @@ namespace MeadowCLI.DeviceManagement
             {
                 attempts++;
                 meadow.AttemptToReconnectToMeadow();
-            } catch (IOException)
+            } catch (Exception ex) when (ex is IOException || ex.InnerException is IOException)
             {
                 if (attempts < 5)
                 {
