@@ -523,5 +523,10 @@ namespace MeadowCLI.DeviceManagement
         }
 
         public HcomMeadowRequestType HcomMeadowRequestType { get; set; }
+
+        public override string ToString()
+        {
+            return $"A {GetType()} exception has occurred while making a {nameof(HcomMeadowRequestType)} of {HcomMeadowRequestType}.";
+        }
     }
 }
