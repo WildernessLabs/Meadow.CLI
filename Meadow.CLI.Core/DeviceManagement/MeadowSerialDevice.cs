@@ -366,7 +366,7 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.SerialReconnect:
                     AttemptToReconnectToMeadow();
                     break;
-                // The last 2 types received text straight from mono' stdout / stderr
+                // The next 2 types received text straight from mono' stdout / stderr
                 // via hcom and may not be packetized at the end of a lines.
                 case MeadowMessageType.ErrOutput:
                     ParseAndOutputStdioText(args.Message, "Err: ");
@@ -374,6 +374,16 @@ namespace MeadowCLI.DeviceManagement
                 case MeadowMessageType.AppOutput:
                     ParseAndOutputStdioText(args.Message, "App: ");
                     break;
+
+                  case MeadowMessageType.DownloadStartFail:
+                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received MeadowMessageType.DownloadStartFail");
+                    break;
+                  case MeadowMessageType.DownloadStartOkay:
+                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received MeadowMessageType.DownloadStartOkay");
+                    break;
+                                  default:
+                  Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received unprocessed message from F7 {args.MessageType}");
+                  break;
             }
         }
 

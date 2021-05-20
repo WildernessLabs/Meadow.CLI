@@ -31,23 +31,71 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-
         public bool Verbose { get; protected set; }
 
-        public void SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
-            uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
+        // Build and send the Start, Data packets and the End
+        public async Task SendTheEntireFileAsync(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
+            string destFileName, uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
             string md5Hash, bool lastInSeries)
         {
             _packetCrc32 = 0;
 
             try
             {
-                // Build and send the header
-                BuildAndSendFileRelatedCommand(requestType,
-                    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                    mcuAddr, md5Hash, destFileName);
+                Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Sending START to Meadow");    // TESTING
+                
+                (bool, string, MeadowMessageType) result;
 
-                //--------------------------------------------------------------
+                await Task.WhenAll(
+                    Task.Run(() => BuildAndSendFileRelatedCommand(requestType,
+                                        partitionId, (UInt32)fileBytes.Length, payloadCrc32,
+                                        mcuAddr, md5Hash, destFileName)),
+                                        
+                    result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
+                                        (p.MessageType == MeadowMessageType.Concluded ||
+                                        p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                                        p.MessageType == MeadowMessageType.DownloadStartFail),
+                                        4000));
+
+                // // Build and send the header
+                // BuildAndSendFileRelatedCommand(requestType,
+                //    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
+                //    mcuAddr, md5Hash, destFileName);
+
+                // // Wait for indication of success or failure for the start request before
+                // // proceeding to send data.
+                // var result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
+                //     (p.MessageType == MeadowMessageType.Concluded ||
+                //     p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                //     p.MessageType == MeadowMessageType.DownloadStartFail),
+                //     4000);
+                
+                // var result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
+                //         (p.MessageType == MeadowMessageType.DownloadStartOkay));
+                
+                Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-WaitForResponseMessage responded");    // TESTING
+                if (! result.isSuccessful)
+                {
+                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-WaitForResponseMessage responded but (! result.isSuccessful)");    // TESTING
+                    return;
+                }
+
+                if(result.messageType != MeadowMessageType.DownloadStartOkay)
+                {
+                  if(result.messageType == MeadowMessageType.DownloadStartFail)
+                    Console.WriteLine("Halting download due to an error while preparing Meadow for download");
+                  else if(result.messageType == MeadowMessageType.Concluded)
+                    Console.WriteLine("Halting download due to an unexpectedly Meadow 'concluded' received prematurely");
+                  else
+                    Console.WriteLine($"Halting download due to an unexpected Meadow message type {result.messageType} received");
+
+                  Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Response was an ERROR");    // TESTING
+                  return;
+                }
+
+                // Since the start was OK we can sent the data
+                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Response was OKAY, will send data to F7");    // TESTING
+
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
                     Console.Write("Erasing ESP32 Flash...");
@@ -66,7 +114,7 @@ namespace MeadowCLI.Hcom
                     Console.WriteLine("done.");
                 }
 
-                // Build each data packet
+                // Build and send the file as a group of data packets
                 int fileBufOffset = 0;
                 int numbToSend;
                 UInt16 sequenceNumber = 1;
@@ -86,6 +134,7 @@ namespace MeadowCLI.Hcom
                         numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
                     }
 
+                    // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Sending file data packet {sequenceNumber}");    // TESTING
                     BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
 
                     var progress = fileBufOffset * 100 / fileBytes.Length;
@@ -102,7 +151,7 @@ namespace MeadowCLI.Hcom
                 _device.LocalEcho = true;
 
                 //--------------------------------------------------------------
-                // Build and send the correct trailer
+                // Build and send the correct File End request
                 switch (requestType)
                 {
                     // Provide the correct message end depending on the reason the file
@@ -215,7 +264,7 @@ namespace MeadowCLI.Hcom
 
         //==========================================================================
         // Build and send a "simple" message with data
-        // Added for Visual Studio Debugging
+        // Added for Visual Studio Debugging but used by others
         internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
         {
             int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;

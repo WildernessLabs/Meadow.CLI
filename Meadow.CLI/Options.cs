@@ -127,5 +127,7 @@ namespace MeadowCLI
         public bool Logout { get; set; }
         [Option(longName: "RegisterDevice", Required = false, HelpText = "Add device to cloud account")]
         public bool RegisterDevice { get; set; }
+        [Option(longName: "GetInitialFileBytes", Required = false, HelpText = "Read the initial bytes of a file, up to 500")]
+        public bool GetInitialFileBytes { get; set; }
     }
 }
