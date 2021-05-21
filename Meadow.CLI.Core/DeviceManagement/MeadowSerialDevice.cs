@@ -376,14 +376,9 @@ namespace MeadowCLI.DeviceManagement
                     break;
 
                   case MeadowMessageType.DownloadStartFail:
-                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received MeadowMessageType.DownloadStartFail");
                     break;
                   case MeadowMessageType.DownloadStartOkay:
-                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received MeadowMessageType.DownloadStartOkay");
                     break;
-                                  default:
-                  Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received unprocessed message from F7 {args.MessageType}");
-                  break;
             }
         }
 

@@ -195,7 +195,6 @@ namespace MeadowCLI.Hcom
 //             while (true)
 //             {
 //                 // Add these bytes to the circular buffer
-// Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-**Calling AddBytes to add {availableBytes} bytes to Circular buffer");
 //                 result = _hostCommBuffer.AddBytes(buffer, 0, availableBytes);
 //                 if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
 //                 {
@@ -294,7 +293,7 @@ namespace MeadowCLI.Hcom
                 }
 
                 int decodedSize = CobsTools.CobsDecoding(packetBuffer, --packetLength, ref decodedBuffer);
-Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Pulled {packetLength + 1} byte msg from cirBuf, Decoded length:{decodedSize}");
+
                 // If a message is too short it is ignored
                 if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
@@ -304,7 +303,6 @@ Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Pulled {packetLength + 1} by
                 // Process the received packet
                 if (decodedSize > 0)
                 {
-Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Processing decoded message");
                     bool procResult = ParseAndProcessReceivedPacket(decodedBuffer, decodedSize);
                     if (procResult)
                         continue;   // See if there's another packet ready
@@ -321,7 +319,6 @@ Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Processing decoded message")
                 IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg, receivedMsgLen);
                 if (processor == null)
                 {
-                  Console.WriteLine($"==>{DateTime.Now:HH:mm:ss.fff}-packet but rejected by factory" );
                     return false;
                 }
 

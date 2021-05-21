@@ -34,7 +34,7 @@ namespace MeadowCLI.Hcom
         public bool Verbose { get; protected set; }
 
         // Build and send the Start, Data packets and the End
-        public async Task SendTheEntireFileAsync(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
+        public void SendTheEntireFile(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
             string destFileName, uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
             string md5Hash, bool lastInSeries)
         {
@@ -42,60 +42,42 @@ namespace MeadowCLI.Hcom
 
             try
             {
-                Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Sending START to Meadow");    // TESTING
-                
+                // Build and send the header
+                BuildAndSendFileRelatedCommand(requestType,
+                   partitionId, (UInt32)fileBytes.Length, payloadCrc32,
+                   mcuAddr, md5Hash, destFileName);
+
                 (bool, string, MeadowMessageType) result;
+                result = MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
+                                (p.MessageType == MeadowMessageType.Concluded ||
+                                p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                                p.MessageType == MeadowMessageType.DownloadStartFail),
+                                4000).GetAwaiter().GetResult();
 
-                await Task.WhenAll(
-                    Task.Run(() => BuildAndSendFileRelatedCommand(requestType,
-                                        partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                                        mcuAddr, md5Hash, destFileName)),
-                                        
-                    result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
-                                        (p.MessageType == MeadowMessageType.Concluded ||
-                                        p.MessageType == MeadowMessageType.DownloadStartOkay ||
-                                        p.MessageType == MeadowMessageType.DownloadStartFail),
-                                        4000));
+                // For documentation
+                bool isSuccessful = result.Item1;
+                string message = result.Item2;
+                MeadowMessageType messageType = result.Item3;
 
-                // // Build and send the header
-                // BuildAndSendFileRelatedCommand(requestType,
-                //    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                //    mcuAddr, md5Hash, destFileName);
-
-                // // Wait for indication of success or failure for the start request before
-                // // proceeding to send data.
-                // var result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
-                //     (p.MessageType == MeadowMessageType.Concluded ||
-                //     p.MessageType == MeadowMessageType.DownloadStartOkay ||
-                //     p.MessageType == MeadowMessageType.DownloadStartFail),
-                //     4000);
-                
-                // var result = await MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
-                //         (p.MessageType == MeadowMessageType.DownloadStartOkay));
-                
-                Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-WaitForResponseMessage responded");    // TESTING
-                if (! result.isSuccessful)
+                if (!isSuccessful)
                 {
-                    Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-WaitForResponseMessage responded but (! result.isSuccessful)");    // TESTING
                     return;
                 }
 
-                if(result.messageType != MeadowMessageType.DownloadStartOkay)
+                if (messageType != MeadowMessageType.DownloadStartOkay)
                 {
-                  if(result.messageType == MeadowMessageType.DownloadStartFail)
-                    Console.WriteLine("Halting download due to an error while preparing Meadow for download");
-                  else if(result.messageType == MeadowMessageType.Concluded)
-                    Console.WriteLine("Halting download due to an unexpectedly Meadow 'concluded' received prematurely");
-                  else
-                    Console.WriteLine($"Halting download due to an unexpected Meadow message type {result.messageType} received");
+                    if (messageType == MeadowMessageType.DownloadStartFail)
+                        Console.WriteLine("Halting download due to an error while preparing Meadow for download");
+                    else if (messageType == MeadowMessageType.Concluded)
+                        Console.WriteLine("Halting download due to an unexpectedly Meadow 'concluded' received prematurely");
+                    else
+                        Console.WriteLine($"Halting download due to an unexpected Meadow message type {messageType} received");
 
-                  Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Response was an ERROR");    // TESTING
-                  return;
+                    Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Response was an ERROR");    // TESTING
+                    return;
                 }
 
-                // Since the start was OK we can sent the data
-                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Response was OKAY, will send data to F7");    // TESTING
-
+                // Since the start was Successful we can sent the data
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
                     Console.Write("Erasing ESP32 Flash...");

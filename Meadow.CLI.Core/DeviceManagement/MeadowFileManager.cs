@@ -238,7 +238,7 @@ namespace MeadowCLI.DeviceManagement
                     MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 5000));
         }
 
-        private static async void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
+        private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType, string sourceFileName,
                             string targetFileName, int partition, uint mcuAddr,
                             bool useSourceAsTarget, bool lastInSeries = false)
@@ -251,8 +251,6 @@ namespace MeadowCLI.DeviceManagement
                     Console.WriteLine($"No source file name provided");
                     return;
                 }
-
-                Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Setting up to send file from {sourceFileName} to {targetFileName}"); // TESTING
 
                 var sendTargetData = new SendTargetData(meadow, false);
 
@@ -296,16 +294,9 @@ namespace MeadowCLI.DeviceManagement
                 sw.Restart();
 
                 // Now send the Start, Data packets and End
-Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-**Calling send entire file async");
-
-                var ignore = sendTargetData.SendTheEntireFileAsync(meadow, requestType, targetFileName,
+                sendTargetData.SendTheEntireFile(meadow, requestType, targetFileName,
                     (uint)partition, fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
-
-                //await sendTargetData.SendTheEntireFileAsync(meadow, requestType, targetFileName, (uint)partition,
-                //    fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
                     
-Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-**Returned from sending entire file async");
-
                 sw.Stop();
 
                 if (sendTargetData.Verbose) Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");

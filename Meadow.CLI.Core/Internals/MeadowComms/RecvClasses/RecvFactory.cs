@@ -48,7 +48,6 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             try
             {
                 rqstType = FindRequestTypeValue(recvdMsg);
-            Console.WriteLine($"==> {DateTime.Now:HH:mm:ss.fff}-Received message type '{rqstType}'");
                 RecvMessageFactory factory = _factories[rqstType];
                 return factory.Create(recvdMsg, receivedMsgLen);
             }
