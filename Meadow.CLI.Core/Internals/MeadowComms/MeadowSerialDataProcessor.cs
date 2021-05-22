@@ -336,12 +336,12 @@ namespace MeadowCLI.Hcom
                             break;
 
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
-                            ConsoleOut("protocol-File Start OKAY received"); // TESTING
+                            // ConsoleOut("protocol-File Start OKAY received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartOkay));
                             break;
 
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
-                            ConsoleOut("protocol-File Start FAIL received"); // TESTING
+                            // ConsoleOut("protocol-File Start FAIL received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartFail));
                             break;
 

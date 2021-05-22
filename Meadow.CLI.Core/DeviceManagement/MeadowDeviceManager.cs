@@ -278,7 +278,7 @@ namespace MeadowCLI.DeviceManagement
             // Console.WriteLine($"As UTF8: '{utf8String}'");
 
             // Just length and hex-hex-hex....
-            // Console.WriteLine($"Received {fileData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(fileData)}");
+            Console.WriteLine($"Received {fileData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(fileData)}");
         }
 
         // This method is called to sent to Visual Studio debugging to Mono
