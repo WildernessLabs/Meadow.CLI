@@ -229,7 +229,7 @@ namespace MeadowCLI.DeviceManagement
 
         public static async Task GetInitialBytesFromFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
         {
-            Console.WriteLine($"Get initial bytes from {fileName}...");
+            Console.WriteLine($"Getting initial bytes from {fileName}...");
             Byte[] encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
 
             await Task.WhenAll(
@@ -296,7 +296,7 @@ namespace MeadowCLI.DeviceManagement
                 // Now send the Start, Data packets and End
                 sendTargetData.SendTheEntireFile(meadow, requestType, targetFileName,
                     (uint)partition, fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
-                    
+
                 sw.Stop();
 
                 if (sendTargetData.Verbose) Console.WriteLine($"It took {sw.ElapsedMilliseconds:N0} millisec to send {fileLength:N0} bytes. FileCrc:{fileCrc32:x08}");

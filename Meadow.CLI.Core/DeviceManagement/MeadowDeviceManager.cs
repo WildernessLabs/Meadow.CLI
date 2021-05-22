@@ -23,10 +23,11 @@ namespace MeadowCLI.DeviceManagement
         // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
         // maxmimum data block size an even multiple of 256 we insure that each packet received
         // can be immediately written to the s25fl QSPI flash chip.
-        internal const int MaxAllowableDataBlock = 512;
-        internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
+
+        internal const int MaxAllowableMsgPacketLength = 512;
+        internal const int MaxEstimatedSizeOfEncodedPayload = MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
-        internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
+        internal const int MaxAllowableMsgPayloadLength = MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         static HcomMeadowRequestType _meadowRequestType;
         static DebuggingServer debuggingServer;
@@ -275,6 +276,9 @@ namespace MeadowCLI.DeviceManagement
             // SINCE THE TEST FILE CONTAINED TEXT WITH CR/LF AT THE END, THIS WAS OKAY
             // string utf8String = System.Text.Encoding.UTF8.GetString(fileData);
             // Console.WriteLine($"As UTF8: '{utf8String}'");
+
+            // Just length and hex-hex-hex....
+            // Console.WriteLine($"Received {fileData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(fileData)}");
         }
 
         // This method is called to sent to Visual Studio debugging to Mono

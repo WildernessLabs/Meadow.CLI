@@ -49,8 +49,6 @@ namespace MeadowCLI.Hcom
         RecvFactoryManager _recvFactoryManager;
         readonly SerialPort serialPort;
         readonly Socket socket;
-        Thread thread;
-        readonly AutoResetEvent are = new AutoResetEvent(false);
 
         // It seems that the .Net SerialPort class is not all it could be.
         // To acheive reliable operation some SerialPort class methods must
@@ -63,10 +61,8 @@ namespace MeadowCLI.Hcom
         {
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
+            _hostCommBuffer.Init(MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload * 4);
 
-            thread = new Thread(new ThreadStart(PullAndProcessThread));
-            thread.Start();
         }
 
         public MeadowSerialDataProcessor(SerialPort serialPort) : this()
@@ -85,7 +81,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSocketAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
             try
             {
@@ -118,7 +114,7 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSerialPortAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
             try
             {
@@ -151,8 +147,8 @@ namespace MeadowCLI.Hcom
             }
         }
 
-          void AddAndProcessData(byte[] buffer, int availableBytes)
-          {
+        void AddAndProcessData(byte[] buffer, int availableBytes)
+        {
             HcomBufferReturn result;
             while (true)
             {
@@ -160,25 +156,27 @@ namespace MeadowCLI.Hcom
                 result = _hostCommBuffer.AddBytes(buffer, 0, availableBytes);
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
                 {
-                    are.Set();    // Wake up read thread
                     break;
                 }
                 else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_WONT_FIT)
                 {
                     // Wasn't possible to put these bytes in the buffer. We need to
-                    // wait for room to be cleared
-                    Thread.Sleep(1);
-                    continue;
+                    // process a few packets and then retry to add this data
+                    result = PullAndProcessAllPackets();
+                    if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
+                        result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
+                        continue;   // There should be room now for the failed add
+
+                    if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
+                    {
+                        // The buffer to receive the message is too small? Probably 
+                        // corrupted data in buffer.
+                        Debug.Assert(false);
+                    }
                 }
                 else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_BAD_ARG)
                 {
                     // Something wrong with implemenation
-                    Debug.Assert(false);
-                }
-                else if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
-                {
-                    // The buffer to receive the message is too small? Probably 
-                    // corrupted data in buffer.
                     Debug.Assert(false);
                 }
                 else
@@ -187,82 +185,25 @@ namespace MeadowCLI.Hcom
                     Debug.Assert(false);
                 }
             }
-          }
 
-//         void AddAndProcessData(byte[] buffer, int availableBytes)
-//         {
-//             HcomBufferReturn result;
-//             while (true)
-//             {
-//                 // Add these bytes to the circular buffer
-//                 result = _hostCommBuffer.AddBytes(buffer, 0, availableBytes);
-//                 if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_SUCCESS)
-//                 {
-//                     break;
-//                 }
-//                 else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_WONT_FIT)
-//                 {
-//                     // Wasn't possible to put these bytes in the buffer. We need to
-//                     // process a few packets and then retry to add this data
-//                     result = PullAndProcessAllPackets();
-//                     if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
-//                         result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
-//                         continue;   // There should be room now for the failed add
+            result = PullAndProcessAllPackets();
 
-//                     if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM)
-//                     {
-//                         // The buffer to receive the message is too small? Probably 
-//                         // corrupted data in buffer.
-//                         Debug.Assert(false);
-//                     }
-//                 }
-//                 else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_BAD_ARG)
-//                 {
-//                     // Something wrong with implemenation
-//                     Debug.Assert(false);
-//                 }
-//                 else
-//                 {
-//                     // Undefined return value????
-//                     Debug.Assert(false);
-//                 }
-//             }
-
-//             result = PullAndProcessAllPackets();
-
-//             // Any other response is an error
-//             Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
-//                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
-//         }
-
-        public void PullAndProcessThread()
-        {
-            HcomBufferReturn result;
-
-            // Stay in loop forever
-            while (true)
-            {
-                // Wait to be signaled that something is ready
-                are.WaitOne();
-
-                result = PullAndProcessAllPackets();
-                if(result != HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
-                {
-                    Console.WriteLine($"PullAndProcess returned:{result}");
-                }
-            }
+            // Any other response is an error
+            Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
+                result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
         }
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
-            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
-            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
+            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
+            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableMsgPacketLength];
             int packetLength;
             HcomBufferReturn result;
 
             while (true)
             {
-                result = _hostCommBuffer.GetNextPacket(packetBuffer, MeadowDeviceManager.MaxAllowableDataBlock, out packetLength);
+                result = _hostCommBuffer.GetNextPacket(packetBuffer,
+                                MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload, out packetLength);
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                     break;      // We've emptied buffer of all messages
 
@@ -272,7 +213,7 @@ namespace MeadowCLI.Hcom
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfPacketBuffer}");
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload}");
                     Thread.Sleep(1);
                     Debug.Assert(false);
                 }
@@ -298,7 +239,7 @@ namespace MeadowCLI.Hcom
                 if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
 
-                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableDataBlock);
+                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
 
                 // Process the received packet
                 if (decodedSize > 0)
