@@ -525,9 +525,7 @@ namespace MeadowCLI
                         }
                         else
                         {
-                            Console.WriteLine("Getting initial file bytes...");
                             await MeadowFileManager.GetInitialBytesFromFile(device, options.FileName);
-                            Console.WriteLine("Returned from call");
                         }
                     }
                     else if (options.RegisterDevice)
