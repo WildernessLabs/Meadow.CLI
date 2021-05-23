@@ -31,42 +31,94 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-
         public bool Verbose { get; protected set; }
 
-        public void SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
-            uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
+        // Build and send the Start, Data packets and the End
+        public void SendTheEntireFile(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
+            string destFileName, uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
             string md5Hash, bool lastInSeries)
         {
             _packetCrc32 = 0;
 
             try
             {
+
                 // Build and send the header
                 BuildAndSendFileRelatedCommand(requestType,
-                    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                    mcuAddr, md5Hash, destFileName);
+                   partitionId, (UInt32)fileBytes.Length, payloadCrc32,
+                   mcuAddr, md5Hash, destFileName);
 
-                //--------------------------------------------------------------
+                int ResponseWaitTime;
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
-                    Console.Write("Erasing ESP32 Flash...");
-                    // For the ESP32 file download, the proceeding command will erase
-                    // the ESP32 on chip flash memory before we can download. If the
-                    // file is large enough, the time to erase the flash will prevent
-                    // data from being downloaded and the 'semaphore timeout' error
-                    // will cause the CLI to disconnect.
-                    if ((UInt32)fileBytes.Length > 1024 * 200)
-                    {
-                        // Using 6 ms / kbyte
-                        int eraseDelay = (6 * fileBytes.Length) / 1000;
-                        // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
-                        System.Threading.Thread.Sleep(eraseDelay);
-                    }
-                    Console.WriteLine("done.");
+                    ResponseWaitTime = 30000; // 30 seconds because ESP32 Startup can take longer
+                    Console.Write($"Erasing ESP32 Flash...");
+                }
+                else
+                {
+                    ResponseWaitTime = 10000; // 10 seconds is the default
                 }
 
-                // Build each data packet
+                // Wait for response from Meadow
+                (bool, string, MeadowMessageType) result;
+                result = MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
+                                (p.MessageType == MeadowMessageType.Concluded ||
+                                p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                                p.MessageType == MeadowMessageType.DownloadStartFail),
+                                ResponseWaitTime).GetAwaiter().GetResult();
+
+                // Provide names so meaning is more clear
+                bool isSuccessful = result.Item1;
+                // string message = result.Item2;   // not used
+                MeadowMessageType messageType = result.Item3;
+
+                if (!isSuccessful)
+                    return;
+
+                if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
+                                    messageType == MeadowMessageType.DownloadStartOkay)
+                    Console.WriteLine($"done");
+                else if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
+                                    messageType == MeadowMessageType.DownloadStartFail)
+                    Console.WriteLine("failed.");
+
+                if (messageType != MeadowMessageType.DownloadStartOkay)
+                {
+                    if (messageType == MeadowMessageType.DownloadStartFail)
+                        Console.WriteLine("Halting download due to an error while preparing Meadow for download");
+                    else if (messageType == MeadowMessageType.Concluded)
+                        Console.WriteLine("Halting download due to an unexpectedly Meadow 'Concluded' received prematurely");
+                    else
+                        Console.WriteLine($"Halting download due to an unexpected Meadow message type {messageType} received");
+
+                    return;
+                }
+
+                // 22 May 21 Peter - not sure how the following prevented the 'semaphore timeout' error.
+                // With the addition of file start handshaking we are notified when the file start has
+                // completed so the following Sleep is probably not necessary. Leaving code just incase
+                // it's needed by someone else.
+                //
+                // if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
+                // {
+                //     // For the ESP32 file download, the proceeding command will erase
+                //     // the ESP32 on chip flash memory before we can download. If the
+                //     // file is large enough, the time to erase the flash will prevent
+                //     // data from being downloaded and the 'semaphore timeout' error
+                //     // will cause the CLI to disconnect.
+                    
+                //     if ((UInt32)fileBytes.Length > 1024 * 200)
+                //     {
+                //         // Using 6 ms / kbyte
+                //         int eraseDelay = (6 * fileBytes.Length) / 1000;
+                //         // Console.WriteLine($"Large file download delay:{eraseDelay} mSec");
+                //         System.Threading.Thread.Sleep(eraseDelay);
+                //     }
+                //     Console.WriteLine("done.");
+                // }
+
+                // Since the Start was Successful we can sent the data
+                // Build and send the file as a group of data packets
                 int fileBufOffset = 0;
                 int numbToSend;
                 UInt16 sequenceNumber = 1;
@@ -77,15 +129,16 @@ namespace MeadowCLI.Hcom
                 WriteProgress(-1);
                 while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
                 {
-                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableDataBlock) > (fileBytes.Length - 1))
+                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength) > (fileBytes.Length - 1))
                     {
                         numbToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
                     }
                     else
                     {
-                        numbToSend = MeadowDeviceManager.MaxAllowableDataBlock;
+                        numbToSend = MeadowDeviceManager.MaxAllowableMsgPacketLength;
                     }
 
+                    // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Sending file data packet {sequenceNumber}");    // TESTING
                     BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numbToSend, sequenceNumber);
 
                     var progress = fileBufOffset * 100 / fileBytes.Length;
@@ -102,7 +155,7 @@ namespace MeadowCLI.Hcom
                 _device.LocalEcho = true;
 
                 //--------------------------------------------------------------
-                // Build and send the correct trailer
+                // Build and send the correct File End request
                 switch (requestType)
                 {
                     // Provide the correct message end depending on the reason the file
@@ -215,7 +268,7 @@ namespace MeadowCLI.Hcom
 
         //==========================================================================
         // Build and send a "simple" message with data
-        // Added for Visual Studio Debugging
+        // Added for Visual Studio Debugging but used by others
         internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
         {
             int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
@@ -329,7 +382,7 @@ namespace MeadowCLI.Hcom
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
                 // Add 2, first to account for start delimiter and second for end
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer + 2];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload + 2];
                 // Skip first byte so it can be a start delimiter
                 int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes, 1);
 

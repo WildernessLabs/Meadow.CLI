@@ -227,10 +227,21 @@ namespace MeadowCLI.DeviceManagement
             await Task.Delay(1000);
         }
 
+        public static async Task GetInitialBytesFromFile(MeadowSerialDevice meadow, string fileName, int partition = 0)
+        {
+            Console.WriteLine($"Getting initial bytes from {fileName}...");
+            Byte[] encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
+
+            await Task.WhenAll(
+                    Task.Run(() => new SendTargetData(meadow).BuildAndSendSimpleData(encodedFileName,
+                                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES, 0)),
+                    MeadowDeviceManager.WaitForResponseMessage(meadow, x => x.MessageType == MeadowMessageType.Concluded, 5000));
+        }
+
         private static void TransmitFileInfoToExtFlash(MeadowSerialDevice meadow,
                             HcomMeadowRequestType requestType, string sourceFileName,
                             string targetFileName, int partition, uint mcuAddr,
-                            bool deleteFile, bool lastInSeries = false)
+                            bool useSourceAsTarget, bool lastInSeries = false)
         {
             var sw = new Stopwatch();
             try
@@ -244,9 +255,10 @@ namespace MeadowCLI.DeviceManagement
                 var sendTargetData = new SendTargetData(meadow, false);
 
                 //----------------------------------------------
-                if (deleteFile == true)
+                if (useSourceAsTarget == true)
                 {
                     // No data packets, no end-of-file message and no mcu address
+                    // Currently only used by delete
                     sendTargetData.BuildAndSendFileRelatedCommand(requestType,
                         (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName);
                     return;
@@ -281,8 +293,9 @@ namespace MeadowCLI.DeviceManagement
                 sw.Start();
                 sw.Restart();
 
-                sendTargetData.SendTheEntireFile(requestType, targetFileName, (uint)partition,
-                    fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
+                // Now send the Start, Data packets and End
+                sendTargetData.SendTheEntireFile(meadow, requestType, targetFileName,
+                    (uint)partition, fileBytes, mcuAddr, fileCrc32, md5Hash, lastInSeries);
 
                 sw.Stop();
 
@@ -356,6 +369,7 @@ namespace MeadowCLI.DeviceManagement
             HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END = 0x1d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION = 0x1e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
             HCOM_MDOW_REQUEST_GET_DEVICE_NAME = 0x1f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+            HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES = 0x20 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
             // Only used for testing
             HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
@@ -380,10 +394,7 @@ namespace MeadowCLI.DeviceManagement
         {
             HCOM_HOST_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
 
-            // Simple types
-            HCOM_HOST_REQUEST_SIMPLE_MESSAGE = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,    // Just the header
-                                                                                                                   // Simple with some text message
-
+           // Simple with some text message
             HCOM_HOST_REQUEST_TEXT_REJECTED = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_ACCEPTED = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_CONCLUDED = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
@@ -397,8 +408,12 @@ namespace MeadowCLI.DeviceManagement
             HCOM_HOST_REQUEST_TEXT_TRACE_MSG = 0x0B | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_RECONNECT = 0x0C | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
             HCOM_HOST_REQUEST_TEXT_MONO_STDERR = 0x0d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_FILE_START_OKAY = 0x0e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+            HCOM_HOST_REQUEST_FILE_START_FAIL = 0x0f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+
             // Simple with debugger message from Meadow
             HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,
+            HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,
         }
     }
 }

@@ -517,6 +517,17 @@ namespace MeadowCLI
                     {
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
                     }
+                    else if (options.GetInitialFileBytes)
+                    {
+                        if (string.IsNullOrEmpty(options.FileName))
+                        {
+                            Console.WriteLine($"option --GetInitialFileBytes requires option --File (the Meadow file you wish to read)");
+                        }
+                        else
+                        {
+                            await MeadowFileManager.GetInitialBytesFromFile(device, options.FileName);
+                        }
+                    }
                     else if (options.RegisterDevice)
                     {
                         var sn = await MeadowDeviceManager.GetDeviceSerialNumber(device);
