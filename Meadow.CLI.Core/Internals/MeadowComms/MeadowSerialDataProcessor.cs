@@ -21,13 +21,14 @@ namespace MeadowCLI.Hcom
         FileListMember,
         FileListCrcMember,
         Data,
+        InitialFileData,
         MeadowTrace,
         SerialReconnect,
         Accepted,
         Concluded,
         DownloadStartOkay,
         DownloadStartFail,
-  }
+    }
 
     public class MeadowMessageEventArgs : EventArgs
     {
@@ -346,7 +347,14 @@ namespace MeadowCLI.Hcom
                             break;
 
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
-                            MeadowDeviceManager.ReceiveInitialFileBytes(processor.MessageData);
+                            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Received Initial {processor.MessageData.Length} bytes from file");
+
+                            // Just length and hex-hex-hex....
+                            Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
+
+                            var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
+
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
                             break;
                     }
                     return true;

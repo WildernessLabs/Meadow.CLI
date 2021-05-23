@@ -266,6 +266,38 @@ namespace MeadowCLI.DeviceManagement
             return FilesOnDevice;
         }
 
+        public override async Task<string> GetInitialFileData(string filename, int timeoutInMs = 1000)
+        {
+            var timeOutTask = Task.Delay(timeoutInMs);
+
+            EventHandler<MeadowMessageEventArgs> handler = null;
+
+            var tcs = new TaskCompletionSource<bool>();
+            bool started = false;
+
+            string msg = string.Empty;
+
+            handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.InitialFileData)
+                {
+                    msg = e.Message;
+                }
+
+            };
+
+            DataProcessor.OnReceiveData += handler;
+
+           // await MeadowFileManager.ListFiles(this);
+
+            await MeadowFileManager.GetInitialBytesFromFile(this, filename);
+
+            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
+            DataProcessor.OnReceiveData -= handler;
+
+            return msg;
+        }
+
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
         public override async Task GetDeviceInfo(int timeoutInMs = 1000)
@@ -442,7 +474,9 @@ namespace MeadowCLI.DeviceManagement
                 }
 
                 if (delayCount-- == 0)
+                {
                     throw new NotConnectedException();
+                }
             }
         }
 
@@ -453,7 +487,7 @@ namespace MeadowCLI.DeviceManagement
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
             if (fileNameStart == 0 && crcStart == 0)
-                return;     // No files found
+            { return; }    // No files found
 
             Debug.Assert(crcStart > fileNameStart);
 
@@ -469,7 +503,7 @@ namespace MeadowCLI.DeviceManagement
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;
             int crcStart = fileListMember.IndexOf('[') + 1;
             if (fileNameStart == 0 && crcStart == 0)
-                return;     // No files found
+            { return; }   // No files found
 
             Debug.Assert(crcStart == 0);
 
@@ -491,7 +525,7 @@ namespace MeadowCLI.DeviceManagement
             var info = message.Split(',');
 
             if (info.Length < 8)
-                return;
+            { return; }
 
             DeviceInfo.Name = info[0];
             DeviceInfo.Model = info[1];
