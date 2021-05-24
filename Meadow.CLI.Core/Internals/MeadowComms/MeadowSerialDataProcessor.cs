@@ -347,10 +347,8 @@ namespace MeadowCLI.Hcom
                             break;
 
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
-                            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Received Initial {processor.MessageData.Length} bytes from file");
-
                             // Just length and hex-hex-hex....
-                            Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
+                           // Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
 
                             var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
 

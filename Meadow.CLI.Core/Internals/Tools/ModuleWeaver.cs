@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Mono.Cecil;
 
-namespace Meadow.Sdks.IdeExtensions.Vs4Mac
+namespace MeadowCLI
 {
     public class WeaverCRC
     {
