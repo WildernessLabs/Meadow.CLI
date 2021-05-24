@@ -31,6 +31,8 @@ namespace MeadowCLI.DeviceManagement
 
         public abstract Task GetDeviceName(int timeoutInMs = 500);
 
+        public abstract Task<string> GetInitialFileData(string fileName, int timeoutInMs);
+
         public Task<bool> IsFileOnDevice(string filename)
         {
             return Task.FromResult(FilesOnDevice.Contains(filename));

@@ -264,23 +264,6 @@ namespace MeadowCLI.DeviceManagement
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT, userData: (uint)userData);
         }
 
-        public static void ReceiveInitialFileBytes(byte[] fileData)
-        {
-            // THIS IS FAR AS I KNOW WHAT TO DO WITH THIS DATA
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-MDM-Received Initial {fileData.Length} bytes from file");
-
-            // SHOW THE RETURNED BYTES. THE LENGTH OF THE RETURNED DATA WILL BE THE
-            // LENGTH OF THE FILE'S CONTENTS, BUT <= 500 BYTES.
-            // Console.WriteLine("[{0:x}]", string.Join(", ", fileData)); // TESTING
-
-            // SINCE THE TEST FILE CONTAINED TEXT WITH CR/LF AT THE END, THIS WAS OKAY
-            // string utf8String = System.Text.Encoding.UTF8.GetString(fileData);
-            // Console.WriteLine($"As UTF8: '{utf8String}'");
-
-            // Just length and hex-hex-hex....
-            Console.WriteLine($"Received {fileData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(fileData)}");
-        }
-
         // This method is called to sent to Visual Studio debugging to Mono
         public static void ForwardVisualStudioDataToMono(byte[] debuggerData, MeadowSerialDevice meadow, int userData)
         {
@@ -347,10 +330,22 @@ namespace MeadowCLI.DeviceManagement
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32);
         }
 
-        public static async Task GetInitialFileBytes(MeadowSerialDevice meadow, string fileName)
-        {
+        //public static async Task
+        //    GetInitialFileBytes(MeadowSerialDevice meadow, string fileName)
+       // {
+        //    await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES);
+
+         //   _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES;
+         //   await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+         //   return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.Data, millisecondDelay: 1000);
+
+            /*
             await ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES);
-        }
+
+            await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
+            return await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
+            */
+      //  }
 
         public static async Task DeployApp(MeadowSerialDevice meadow, string applicationFilePath)
         {
