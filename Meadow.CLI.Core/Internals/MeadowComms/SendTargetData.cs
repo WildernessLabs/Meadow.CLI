@@ -15,7 +15,7 @@ namespace MeadowCLI.Hcom
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
+        const ushort HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
         MeadowSerialDevice _device; //refactor this .... 
@@ -33,20 +33,37 @@ namespace MeadowCLI.Hcom
         //==========================================================================
         public bool Verbose { get; protected set; }
 
-        // Build and send the Start, Data packets and the End
-        public void SendTheEntireFile(MeadowSerialDevice meadow, HcomMeadowRequestType requestType,
-            string destFileName, uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
-            string md5Hash, bool lastInSeries)
+        /// <summary>
+        /// Build and send the Start, Data packets and the End
+        /// </summary>
+        /// <param name="meadow"></param>
+        /// <param name="requestType"></param>
+        /// <param name="destFileName"></param>
+        /// <param name="partitionId"></param>
+        /// <param name="fileBytes"></param>
+        /// <param name="mcuAddr"></param>
+        /// <param name="payloadCrc32"></param>
+        /// <param name="md5Hash"></param>
+        /// <param name="lastInSeries"></param>
+        public void SendTheEntireFile(
+            MeadowSerialDevice meadow,
+            HcomMeadowRequestType requestType,
+            string destFileName,
+            uint partitionId,
+            byte[] fileBytes,
+            uint mcuAddr,
+            uint payloadCrc32,
+            string md5Hash,
+            bool lastInSeries)
         {
             _packetCrc32 = 0;
 
             try
             {
-
                 // Build and send the header
-                BuildAndSendFileRelatedCommand(requestType,
-                   partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                   mcuAddr, md5Hash, destFileName);
+                BuildAndSendFileRelatedCommand(requestType, partitionId,
+                    (uint)fileBytes.Length, payloadCrc32, mcuAddr, md5Hash,
+                    destFileName);
 
                 int ResponseWaitTime;
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
@@ -59,38 +76,42 @@ namespace MeadowCLI.Hcom
                     ResponseWaitTime = 10000; // 10 seconds is the default
                 }
 
-                // Wait for response from Meadow
-                (bool, string, MeadowMessageType) result;
-                result = MeadowDeviceManager.WaitForResponseMessage(meadow, p =>
-                                (p.MessageType == MeadowMessageType.Concluded ||
-                                p.MessageType == MeadowMessageType.DownloadStartOkay ||
-                                p.MessageType == MeadowMessageType.DownloadStartFail),
-                                ResponseWaitTime).GetAwaiter().GetResult();
+                //==== Wait for response from Meadow
+                // create our message filter.
+                Predicate<MeadowMessageEventArgs> filter = p => (
+                    p.MessageType == MeadowMessageType.Concluded ||
+                    p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                    p.MessageType == MeadowMessageType.DownloadStartFail);
+                // await the response
+                var result = MeadowDeviceManager.WaitForResponseMessage(meadow,
+                    filter, ResponseWaitTime).GetAwaiter().GetResult();
 
-                // Provide names so meaning is more clear
-                bool isSuccessful = result.Item1;
-                // string message = result.Item2;   // not used
-                MeadowMessageType messageType = result.Item3;
+                // if it failed, bail out
+                if (!result.Success) { return; }
 
-                if (!isSuccessful)
-                    return;
-
-                if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
-                                    messageType == MeadowMessageType.DownloadStartOkay)
+                // if it's an ESP start file transfer and the download started ok.
+                if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                                   &&
+                                   result.MessageType == MeadowMessageType.DownloadStartOkay) {
                     Console.WriteLine($"done");
+                }
+                // if it's an ESP file transfer statrt and it failed to start
                 else if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
-                                    messageType == MeadowMessageType.DownloadStartFail)
+                                      result.MessageType == MeadowMessageType.DownloadStartFail) {
                     Console.WriteLine("failed.");
+                }
 
-                if (messageType != MeadowMessageType.DownloadStartOkay)
+                // if the download didn't start ok.
+                if (result.MessageType != MeadowMessageType.DownloadStartOkay)
                 {
-                    if (messageType == MeadowMessageType.DownloadStartFail)
+                    if (result.MessageType == MeadowMessageType.DownloadStartFail) {
                         Console.WriteLine("Halting download due to an error while preparing Meadow for download");
-                    else if (messageType == MeadowMessageType.Concluded)
+                    } else if (result.MessageType == MeadowMessageType.Concluded) {
                         Console.WriteLine("Halting download due to an unexpectedly Meadow 'Concluded' received prematurely");
-                    else
-                        Console.WriteLine($"Halting download due to an unexpected Meadow message type {messageType} received");
-
+                    } else {
+                        Console.WriteLine($"Halting download due to an unexpected Meadow message type {result.MessageType} received");
+                    }
+                    // bail out
                     return;
                 }
 
@@ -107,7 +128,7 @@ namespace MeadowCLI.Hcom
                 //     // data from being downloaded and the 'semaphore timeout' error
                 //     // will cause the CLI to disconnect.
                     
-                //     if ((UInt32)fileBytes.Length > 1024 * 200)
+                //     if ((uint)fileBytes.Length > 1024 * 200)
                 //     {
                 //         // Using 6 ms / kbyte
                 //         int eraseDelay = (6 * fileBytes.Length) / 1000;
@@ -121,7 +142,7 @@ namespace MeadowCLI.Hcom
                 // Build and send the file as a group of data packets
                 int fileBufOffset = 0;
                 int numbToSend;
-                UInt16 sequenceNumber = 1;
+                ushort sequenceNumber = 1;
 
                 // don't echo the device responses
                 _device.LocalEcho = false;
@@ -202,7 +223,7 @@ namespace MeadowCLI.Hcom
             else
             {
                 var p = i / 2;
-//                Console.WriteLine($"{i} | {p}");
+                //Console.WriteLine($"{i} | {p}");
                 Console.Write($"\r[{new string('=', p)}{new string(' ', 50 - p)}]");
             }
         }
@@ -245,17 +266,17 @@ namespace MeadowCLI.Hcom
         //==========================================================================
         // Prepare a data packet for sending
         private void BuildAndSendDataPacketRequest(byte[] messageBytes, int messageOffset,
-            int messageSize, UInt16 seqNumb)
+            int messageSize, ushort seqNumb)
         {
             try
             {
                 // Need to prepend the sequence number to the packet
-                int xmitSize = messageSize + sizeof(UInt16);
+                int xmitSize = messageSize + sizeof(ushort);
                 byte[] fullMsg = new byte[xmitSize];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
-                Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
-                Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(UInt16), messageSize);
+                Array.Copy(seqBytes, fullMsg, sizeof(ushort));
+                Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(ushort), messageSize);
 
                 EncodeAndSendPacket(fullMsg, 0, xmitSize);
             }
@@ -269,7 +290,7 @@ namespace MeadowCLI.Hcom
         //==========================================================================
         // Build and send a "simple" message with data
         // Added for Visual Studio Debugging but used by others
-        internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
+        internal void BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, uint userData)
         {
             int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
             var messageBytes = new byte[totalMsgLength];
@@ -286,7 +307,7 @@ namespace MeadowCLI.Hcom
 
         //==========================================================================
         // Build and send a "simple" message with only a header
-        internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
+        internal void BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, uint userData)
         {
             var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
@@ -296,49 +317,73 @@ namespace MeadowCLI.Hcom
         }
 
         //==========================================================================
-        // This is most of the mandatory part of every non-data packet
-        private int BuildMeadowBoundSimpleCommand(HcomMeadowRequestType requestType,
-            UInt32 userData, ref byte[] messageBytes)
+        /// <summary>
+        /// Convenience method to build the core part of the command packet.
+        /// </summary>
+        /// <param name="requestType"></param>
+        /// <param name="userData"></param>
+        /// <param name="messageBytes">The actual message that got gets built.</param>
+        /// <returns>The size of the message</returns>
+        private int BuildMeadowBoundSimpleCommand(
+            HcomMeadowRequestType requestType,
+            uint userData,
+            ref byte[] messageBytes)
         {
             // Note: Could use the StructLayout attribute to build
             int offset = 0;
 
             // Two byte seq numb
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
-                messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
+                messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Protocol version
-            Array.Copy(BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Command type (2 bytes)
-            Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)requestType), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Extra Data
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // User Data
-            Array.Copy(BitConverter.GetBytes((UInt32)userData), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes((uint)userData), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             return offset;
         }
 
         //==========================================================================
-        internal void BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
-            UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, UInt32 mcuAddr,
-            string md5Hash, string destFileName)
+        /// <summary>
+        /// Builds up a file command from the parameters and then sends it off to
+        /// the Meadow device.
+        /// </summary>
+        /// <param name="requestType">The type of request to build.</param>
+        /// <param name="userData"></param>
+        /// <param name="fileSize"></param>
+        /// <param name="fileCheckSum"></param>
+        /// <param name="mcuAddr"></param>
+        /// <param name="md5Hash"></param>
+        /// <param name="destFileName"></param>
+        internal void BuildAndSendFileRelatedCommand(
+            HcomMeadowRequestType requestType,
+            uint userData,
+            uint fileSize,
+            uint fileCheckSum,
+            uint mcuAddr,
+            string md5Hash,
+            string destFileName)
         {
             // Future: Try to use the StructLayout attribute
             Debug.Assert(md5Hash.Length == 0 || md5Hash.Length == HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH);
 
             // Allocate the correctly size message buffers
-            byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
+            byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName); // Using UTF-8 works for ASCII but should be Unicode in nuttx
             byte[] md5HashBytes = Encoding.UTF8.GetBytes(md5Hash);
-            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) +
+            int optionalDataLength = sizeof(uint) + sizeof(uint) + sizeof(uint) +
                 HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH + targetFileName.Length;
             byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
@@ -346,16 +391,16 @@ namespace MeadowCLI.Hcom
             int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
 
             // File Size
-            Array.Copy(BitConverter.GetBytes(fileSize), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(fileSize), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // CRC32 checksum or delete file partition number
-            Array.Copy(BitConverter.GetBytes(fileCheckSum), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(fileCheckSum), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // MCU address for this file. Used for ESP32 file downloads
-            Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // Include ESP32 MD5 hash if it's needed
             if (string.IsNullOrEmpty(md5Hash))

@@ -17,7 +17,7 @@ namespace MeadowCLI.DeviceManagement
     /// </summary>
     public static class MeadowDeviceManager
     {
-        internal const UInt16 DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
+        internal const ushort DefaultVS2019DebugPort = 4024;  // Port used by VS 2019
 
         // Note: While not truly important, it can be noted that size of the s25fl QSPI flash
         // chip's "Page" (i.e. the smallest size it can program) is 256 bytes. By making the
@@ -184,9 +184,9 @@ namespace MeadowCLI.DeviceManagement
             _meadowRequestType = HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION;
             await new SendTargetData(meadow).SendSimpleCommand(_meadowRequestType);
             var result =  await WaitForResponseMessage(meadow, p => p.MessageType == MeadowMessageType.DeviceInfo, millisecondDelay: timeoutMs);
-            if (result.isSuccessful)
+            if (result.Success)
             {
-                return ParseDeviceInfo(result.message, "Serial Number: ", ",");
+                return ParseDeviceInfo(result.Message, "Serial Number: ", ",");
             }
 
             return string.Empty;
@@ -375,7 +375,7 @@ namespace MeadowCLI.DeviceManagement
             .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new List<string>();
-            var crcs = new List<UInt32>();
+            var crcs = new List<uint>();
 
             foreach (var file in paths)
             {
@@ -459,15 +459,27 @@ namespace MeadowCLI.DeviceManagement
         {
             await new SendTargetData(meadow).SendSimpleCommand(requestType, userData, doAcceptedCheck);
             var result = await WaitForResponseMessage(meadow, filter, timeoutMs);
-            if (!result.isSuccessful)
+            if (!result.Success)
             {
                 throw new MeadowDeviceManagerException(requestType);
             }
         }
-        public static async Task<(bool isSuccessful, string message, MeadowMessageType messageType)> WaitForResponseMessage(MeadowSerialDevice meadow, Predicate<MeadowMessageEventArgs> filter, int millisecondDelay = 10000)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="meadow"></param>
+        /// <param name="filter"></param>
+        /// <param name="millisecondDelay"></param>
+        /// <returns></returns>
+        public static async Task<(bool Success, string Message, MeadowMessageType MessageType)>
+            WaitForResponseMessage(
+                MeadowSerialDevice meadow,
+                Predicate<MeadowMessageEventArgs> filter,
+                int millisecondDelay = 10000)
         {
-            if (filter == null)
-            {
+            // if there's no filter, 
+            if (filter == null) {
                 return (true, string.Empty, MeadowMessageType.ErrOutput);
             }
 
@@ -475,7 +487,8 @@ namespace MeadowCLI.DeviceManagement
             var result = false;
             var message = string.Empty;
             var messageType = MeadowMessageType.ErrOutput;
-            
+
+            // anonmyous handler so we can unsubscribe
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
                 if (filter(e))
@@ -487,12 +500,22 @@ namespace MeadowCLI.DeviceManagement
                 }
             };
 
-            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData += handler;
+            // wire up the handler
+            if (meadow.DataProcessor != null)
+            {
+                meadow.DataProcessor.OnReceiveData += handler;
+            }
 
+            // wait for it to finish
             await Task.WhenAny(new Task[] { tcs.Task, Task.Delay(millisecondDelay) });
 
-            if (meadow.DataProcessor != null) meadow.DataProcessor.OnReceiveData -= handler;
+            // cleanup the handler
+            if (meadow.DataProcessor != null)
+            {
+                meadow.DataProcessor.OnReceiveData -= handler;
+            }
 
+            // return the result
             return (result, message, messageType);
         }
 

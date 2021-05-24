@@ -130,8 +130,15 @@ namespace MeadowCLI.DeviceManagement
             await MeadowDeviceManager.ProcessCommand(meadow, HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC, userData: (uint)partition, timeoutMs: 30000);
         }
 
-        // fileName - is the name of the file on this host PC
-        // targetFileName - is the name of the file on the F7
+        /// <summary>
+        /// Writes a file to the ESP's flash.
+        /// </summary>
+        /// <param name="meadow"></param>
+        /// <param name="fileName">the name of the file on this host PC</param>
+        /// <param name="targetFileName">the name of the file on the F7</param>
+        /// <param name="partition"></param>
+        /// <param name="mcuDestAddr"></param>
+        /// <returns></returns>
         public static async Task WriteFileToEspFlash(MeadowSerialDevice meadow, string fileName,
             string targetFileName = null, int partition = 0, string mcuDestAddr = null)
         {
@@ -153,10 +160,10 @@ namespace MeadowCLI.DeviceManagement
 
                 // Convert mcuDestAddr from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
-                UInt32 mcuAddr = 0;
+                uint mcuAddr = 0;
                 if (mcuDestAddr.StartsWith("0x") || mcuDestAddr.StartsWith("0X"))
                 {
-                    mcuAddr = UInt32.Parse(mcuDestAddr.Substring(2), System.Globalization.NumberStyles.HexNumber);
+                    mcuAddr = uint.Parse(mcuDestAddr.Substring(2), System.Globalization.NumberStyles.HexNumber);
                 }
                 else
                 {
@@ -180,7 +187,7 @@ namespace MeadowCLI.DeviceManagement
                     return;
                 }
 
-                UInt32 mcuAddr;
+                uint mcuAddr;
                 for (int i = 0; i < fileElement.Length; i += 2)
                 {
                     // Trim any white space from this mcu addr and file name
@@ -190,7 +197,7 @@ namespace MeadowCLI.DeviceManagement
                     if (fileElement[i].StartsWith("0x") || fileElement[i].StartsWith("0X"))
                     {
                         // Fill in the Mcu Addr
-                        mcuAddr = UInt32.Parse(fileElement[i].Substring(2), System.Globalization.NumberStyles.HexNumber);
+                        mcuAddr = uint.Parse(fileElement[i].Substring(2), System.Globalization.NumberStyles.HexNumber);
                     }
                     else
                     {
@@ -260,7 +267,7 @@ namespace MeadowCLI.DeviceManagement
                     // No data packets, no end-of-file message and no mcu address
                     // Currently only used by delete
                     sendTargetData.BuildAndSendFileRelatedCommand(requestType,
-                        (UInt32)partition, 0, 0, 0, string.Empty, sourceFileName);
+                        (uint)partition, 0, 0, 0, string.Empty, sourceFileName);
                     return;
                 }
 
@@ -308,7 +315,7 @@ namespace MeadowCLI.DeviceManagement
             }
         }
 
-        public enum HcomProtocolHeaderTypes : UInt16
+        public enum HcomProtocolHeaderTypes : ushort
         {
             HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED = 0x0000,
             // Simple request types, include 4-byte user data
@@ -334,7 +341,7 @@ namespace MeadowCLI.DeviceManagement
         }
 
         // Messages to be sent to Meadow board from host
-        public enum HcomMeadowRequestType : UInt16
+        public enum HcomMeadowRequestType : ushort
         {
             HCOM_MDOW_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
 
@@ -390,7 +397,7 @@ namespace MeadowCLI.DeviceManagement
         }
 
         // Messages sent from meadow to host
-        public enum HcomHostRequestType : UInt16
+        public enum HcomHostRequestType : ushort
         {
             HCOM_HOST_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
 
