@@ -98,6 +98,7 @@ namespace MeadowCLI.Hcom
 
         //------------------------------------------------------------------------------
         // Caller must supply packetBuffer and the buffers size
+        // Note: These message are longer because they are encoded
         public HcomBufferReturn GetNextPacket(byte[] packetBuffer,
                 int packetBufferSize, out int packetLength)
         {
@@ -132,7 +133,7 @@ namespace MeadowCLI.Hcom
                     if (sizeFoundTop > packetBufferSize)
                     {
                         packetLength = sizeFoundTop;
-                        Console.WriteLine($"1. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                        Console.WriteLine($"1. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload}");
                         //Debug.Assert(false);
                         return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
                     }
@@ -154,7 +155,7 @@ namespace MeadowCLI.Hcom
                 if (sizeFoundBottom + sizeFoundTop > packetBufferSize)
                 {
                     packetLength = sizeFoundTop;
-                    Console.WriteLine($"2. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                    Console.WriteLine($"2. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxAllowableMsgPayloadLength}");
                     //Debug.Assert(false);
                     return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
                 }
