@@ -38,7 +38,10 @@ namespace MeadowCLI.DeviceManagement
 
             if (Path.GetExtension(fileName) != ".exe")
             {
-                fileName += ".dll";
+                if (fileName.Contains(".dll") == false)
+                {
+                    fileName += ".dll";
+                }
             }
 
             Collection<AssemblyNameReference> references;
