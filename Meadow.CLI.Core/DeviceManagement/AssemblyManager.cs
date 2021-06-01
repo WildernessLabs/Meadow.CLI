@@ -36,7 +36,7 @@ namespace MeadowCLI.DeviceManagement
                 fileName = Path.Combine(path, fileName);
             }
 
-            if (Path.GetExtension(fileName) != ".exe")
+            if (Path.GetExtension(fileName) != ".exe" && Path.GetExtension(fileName) != ".dll")
             {
                 fileName += ".dll";
             }
