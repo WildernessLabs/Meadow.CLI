@@ -666,7 +666,22 @@ namespace MeadowCLI
                     }
                     else if (options.FlashEsp)
                     {
-                        await FlashEsp(device).ConfigureAwait(false);
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkMeadowCommsFilename), mcuDestAddr: "0x10000");
+                        // BC 2021.05.23 - Updated to 5seconds otherwise we're getting the concluded message
+                        // when the next file tries to upload, causing an error.
+                        await Task.Delay(5000);
+
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkBootloaderFilename), mcuDestAddr: "0x1000");
+                        await Task.Delay(1000);
+
+                        Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+                        await MeadowFileManager.WriteFileToEspFlash(device,
+                            Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.NetworkPartitionTableFilename), mcuDestAddr: "0x8000");
+                        await Task.Delay(2000);
                     }
                     else if (options.Esp32ReadMac)
                     {
@@ -679,6 +694,17 @@ namespace MeadowCLI
                     else if (options.DeployApp && !string.IsNullOrEmpty(options.FileName))
                     {
                         await MeadowDeviceManager.DeployApp(device, options.FileName);
+                    }
+                    else if (options.GetInitialFileBytes)
+                    {
+                        if (string.IsNullOrEmpty(options.FileName))
+                        {
+                            Console.WriteLine($"option --GetInitialFileBytes requires option --File (the Meadow file you wish to read)");
+                        }
+                        else
+                        {
+                            await MeadowFileManager.GetInitialBytesFromFile(device, options.FileName);
+                        }
                     }
                     else if (options.RegisterDevice)
                     {

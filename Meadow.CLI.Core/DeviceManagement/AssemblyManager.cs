@@ -38,10 +38,20 @@ namespace MeadowCLI.DeviceManagement
 
             if (Path.GetExtension(fileName) != ".exe")
             {
-                fileName += ".dll";
+                if (fileName.Contains(".dll") == false)
+                {
+                    fileName += ".dll";
+                }
             }
 
             Collection<AssemblyNameReference> references;
+
+            if (File.Exists(fileName) == false)
+            {
+                Console.WriteLine($"Could not find {fileName}");
+                return null;
+            }
+
             using (var definition = AssemblyDefinition.ReadAssembly(fileName))
             {
                 references = definition.MainModule.AssemblyReferences;
@@ -55,9 +65,16 @@ namespace MeadowCLI.DeviceManagement
             {
                 if (!dependencyMap.Contains(ar.Name))
                 {
+                    var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+
+                    if (namedRefs == null)
+                    {
+                        continue;
+                    }
+
                     dependencyMap.Add(ar.Name);
 
-                    GetDependencies(GetAssemblyNameReferences(ar.Name, folderPath), dependencyMap);
+                    GetDependencies(namedRefs, dependencyMap);
                 }
             }
 
