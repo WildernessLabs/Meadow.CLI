@@ -64,7 +64,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         var device = await GetMeadowForSerialPort(port, cancellationToken);
 
                         var deviceInfo =
-                            await device.GetDeviceInfo(cancellationToken: cancellationToken);
+                            await device.GetDeviceInfoAsync(cancellationToken: cancellationToken);
 
                         if (!string.IsNullOrWhiteSpace(deviceInfo)
                          && deviceInfo!.Contains(serialNumber))

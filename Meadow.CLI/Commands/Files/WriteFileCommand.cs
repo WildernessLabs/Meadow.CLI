@@ -80,7 +80,7 @@ namespace Meadow.CLI.Commands.Files
                     _logger.LogInformation(
                         $"Writing {Files[i]} as {targetFileName} to partition {Partition}");
 
-                    var result = await device.WriteFile(Files[i], targetFileName, Partition, cancellationToken)
+                    var result = await device.WriteFileAsync(Files[i], targetFileName, Partition, cancellationToken)
                                 .ConfigureAwait(false);
 
                     _logger.LogDebug($"File written successfully? {result}");

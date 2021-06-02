@@ -23,7 +23,7 @@ namespace Meadow.CLI.Commands.Mono
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
 
-            await device.MonoDisable(cancellationToken).ConfigureAwait(false);
+            await device.MonoDisableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

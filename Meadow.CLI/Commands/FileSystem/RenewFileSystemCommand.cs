@@ -22,7 +22,7 @@ namespace Meadow.CLI.Commands.FileSystem
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken)
                                                         .ConfigureAwait(false);
 
-            await device.RenewFileSystem(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await device.RenewFileSystemAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 }

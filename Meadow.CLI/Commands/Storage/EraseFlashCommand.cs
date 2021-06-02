@@ -29,7 +29,7 @@ namespace Meadow.CLI.Commands.Storage
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.EraseFlash(cancellationToken)
+            await device.EraseFlashAsync(cancellationToken)
                         .ConfigureAwait(false);
         }
     }

@@ -22,7 +22,7 @@ namespace Meadow.CLI.Commands.Storage
 
             _logger.LogInformation("Verifying flash");
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-            await device.VerifyErasedFlash(cancellationToken).ConfigureAwait(false);
+            await device.VerifyErasedFlashAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

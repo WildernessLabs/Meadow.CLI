@@ -23,7 +23,7 @@ namespace Meadow.CLI.Commands.TraceCommands
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
             
-            await device.TraceEnable(cancellationToken).ConfigureAwait(false);
+            await device.TraceEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

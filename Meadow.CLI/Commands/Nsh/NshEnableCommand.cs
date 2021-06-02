@@ -23,7 +23,7 @@ namespace Meadow.CLI.Commands.Nsh
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
             
-            await device.NshEnable(cancellationToken).ConfigureAwait(false);
+            await device.NshEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -7,6 +7,7 @@ using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using MeadowCLI;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowComms
 {
@@ -15,27 +16,26 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
         const int HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH = 12;
         const int HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH = 32;
         const int HCOM_PROTOCOL_COMMAND_SEQ_NUMBER = 0;
-        const UInt16 HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
+        const ushort HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE = 0x0000;       // Currently not used field
 
         //questioning if this class should send or just create the message
         private readonly MeadowLocalDevice _device; //refactor this .... 
+        private readonly ILogger _logger;
 
         uint _packetCrc32;
 
         //==========================================================================
         // Constructor
-        public SendTargetData(MeadowLocalDevice device, bool verbose = true)
+        public SendTargetData(MeadowLocalDevice device, ILogger logger)
         {
             _device = device;
-            this.Verbose = verbose;
+            _logger = logger;
         }
 
         //==========================================================================
 
-        public bool Verbose { get; protected set; }
-
         public async Task SendTheEntireFile(HcomMeadowRequestType requestType, string destFileName,
-            uint partitionId, byte[] fileBytes, UInt32 mcuAddr, UInt32 payloadCrc32,
+            uint partitionId, byte[] fileBytes, uint mcuAddr, uint payloadCrc32,
             string md5Hash, bool lastInSeries)
         {
             _packetCrc32 = 0;
@@ -44,32 +44,66 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
             {
                 // Build and send the header
                 await BuildAndSendFileRelatedCommand(requestType,
-                    partitionId, (UInt32)fileBytes.Length, payloadCrc32,
-                    mcuAddr, md5Hash, destFileName);
+                    partitionId, (uint)fileBytes.Length, payloadCrc32,
+                    mcuAddr,     md5Hash,                destFileName);
+
 
                 //--------------------------------------------------------------
+                int responseWaitTime;
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
-                    Console.Write("Erasing ESP32 Flash...");
-                    // For the ESP32 file download, the proceeding command will erase
-                    // the ESP32 on chip flash memory before we can download. If the
-                    // file is large enough, the time to erase the flash will prevent
-                    // data from being downloaded and the 'semaphore timeout' error
-                    // will cause the CLI to disconnect.
-                    if ((UInt32)fileBytes.Length > 1024 * 200)
+                    _logger.LogDebug("Erasing ESP32 Flash...");
+                    responseWaitTime = 30_000;
+                }
+                else
+                {
+                    responseWaitTime = 10_000;
+                }
+
+                //==== Wait for response from Meadow
+                // create our message filter.
+                Predicate<MeadowMessageEventArgs> filter = p => (
+                    p.MessageType == MeadowMessageType.Concluded ||
+                    p.MessageType == MeadowMessageType.DownloadStartOkay ||
+                    p.MessageType == MeadowMessageType.DownloadStartFail);
+                // await the response
+
+                var (success, _, messageType) = await _device.WaitForResponseMessage(filter, responseWaitTime)
+                    .ConfigureAwait(false);
+
+                // if it failed, bail out
+                if (!success) { return; }
+
+                // if it's an ESP start file transfer and the download started ok.
+                if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                                   &&
+                                   messageType == MeadowMessageType.DownloadStartOkay) {
+                    _logger.LogDebug("Request complete");
+                }
+                // if it's an ESP file transfer start and it failed to start
+                else if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
+                                      messageType == MeadowMessageType.DownloadStartFail) {
+                    _logger.LogDebug("Request failed.");
+                }
+
+                // if the download didn't start ok.
+                if (messageType != MeadowMessageType.DownloadStartOkay)
+                {
+                    throw messageType switch
                     {
-                        // Using 6 ms / kbyte
-                        int eraseDelay = (6 * fileBytes.Length) / 1000;
-                        // Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Large file download delay:{eraseDelay} mSec");
-                        System.Threading.Thread.Sleep(eraseDelay);
-                    }
-                    Console.WriteLine("done.");
+                        MeadowMessageType.DownloadStartFail => new MeadowCommandException(
+                            "Halting download due to an error while preparing Meadow for download"),
+                        MeadowMessageType.Concluded => new MeadowCommandException(
+                            "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely"),
+                        _ => new MeadowCommandException(
+                            $"Halting download due to an unexpected Meadow message type {messageType} received")
+                    };
                 }
 
                 // Build each data packet
-                int fileBufOffset = 0;
+                var fileBufOffset = 0;
                 int numbToSend;
-                UInt16 sequenceNumber = 1;
+                ushort sequenceNumber = 1;
 
                 // don't echo the device responses
                 //_device.LocalEcho = false;
@@ -98,8 +132,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
                 WriteProgress(101);
 
                 // echo the device responses
-                Thread.Sleep(250); // if we're too fast, we'll finish and the device will still echo a little
-                //_device.LocalEcho = true;
+                await Task.Delay(250); // if we're too fast, we'll finish and the device will still echo a little
 
                 //--------------------------------------------------------------
                 // Build and send the correct trailer
@@ -126,15 +159,16 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == fileBytes.Length);
-                if (Verbose) Console.WriteLine($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
+                _logger.LogTrace($"Total bytes sent {fileBufOffset:N0} in {sequenceNumber:N0} packets. PacketCRC:{_packetCrc32:x08}");
             }
             catch (Exception except)
             {
-                Debug.WriteLine("{DateTime.Now:HH:mm:ss.fff}-Exception sending to Meadow:{0}", except);
+                _logger.LogError(except, "Exception sending to Meadow");
                 throw;
             }
         }
 
+        // TODO: Make sure this doesn't mess up other logging
         private void WriteProgress(int i)
         {
             // 50 characters - 2% each
@@ -153,6 +187,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
                 Console.Write($"\r[{new string('=', p)}{new string(' ', 50 - p)}]");
             }
         }
+
         //==========================================================================
         internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true, CancellationToken cancellationToken = default)
         {
@@ -203,17 +238,17 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
         //==========================================================================
         // Prepare a data packet for sending
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes, int messageOffset,
-            int messageSize, UInt16 seqNumb)
+            int messageSize, ushort seqNumb)
         {
             try
             {
                 // Need to prepend the sequence number to the packet
-                int xmitSize = messageSize + sizeof(UInt16);
+                int xmitSize = messageSize + sizeof(ushort);
                 byte[] fullMsg = new byte[xmitSize];
 
                 byte[] seqBytes = BitConverter.GetBytes(seqNumb);
-                Array.Copy(seqBytes, fullMsg, sizeof(UInt16));
-                Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(UInt16), messageSize);
+                Array.Copy(seqBytes, fullMsg, sizeof(ushort));
+                Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(ushort), messageSize);
 
                 await EncodeAndSendPacket(fullMsg, 0, xmitSize).ConfigureAwait(false);
             }
@@ -227,7 +262,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
         //==========================================================================
         // Build and send a "simple" message with data
         // Added for Visual Studio Debugging
-        internal async Task BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, UInt32 userData)
+        internal async Task BuildAndSendSimpleData(byte[] additionalData, HcomMeadowRequestType requestType, uint userData)
         {
             int totalMsgLength = additionalData.Length + HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH;
             var messageBytes = new byte[totalMsgLength];
@@ -244,7 +279,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
 
         //==========================================================================
         // Build and send a "simple" message with only a header
-        internal async Task BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, UInt32 userData)
+        internal async Task BuildAndSendSimpleCommand(HcomMeadowRequestType requestType, uint userData)
         {
             var messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH];
 
@@ -256,38 +291,38 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
         //==========================================================================
         // This is most of the mandatory part of every non-data packet
         private int BuildMeadowBoundSimpleCommand(HcomMeadowRequestType requestType,
-            UInt32 userData, ref byte[] messageBytes)
+                                                  uint userData, ref byte[] messageBytes)
         {
             // Note: Could use the StructLayout attribute to build
             int offset = 0;
 
             // Two byte seq numb
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
-                messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)HCOM_PROTOCOL_COMMAND_SEQ_NUMBER), 0,
+                messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Protocol version
-            Array.Copy(BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Command type (2 bytes)
-            Array.Copy(BitConverter.GetBytes((UInt16)requestType), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)requestType), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // Extra Data
-            Array.Copy(BitConverter.GetBytes((UInt16)HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE), 0, messageBytes, offset, sizeof(UInt16));
-            offset += sizeof(UInt16);
+            Array.Copy(BitConverter.GetBytes((ushort)HCOM_PROTOCOL_EXTRA_DATA_DEFAULT_VALUE), 0, messageBytes, offset, sizeof(ushort));
+            offset += sizeof(ushort);
 
             // User Data
-            Array.Copy(BitConverter.GetBytes((UInt32)userData), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes((uint)userData), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             return offset;
         }
 
         //==========================================================================
         internal async Task BuildAndSendFileRelatedCommand(HcomMeadowRequestType requestType,
-            UInt32 userData, UInt32 fileSize, UInt32 fileCheckSum, UInt32 mcuAddr,
+                                                           uint userData, uint fileSize, uint fileCheckSum, uint mcuAddr,
             string md5Hash, string destFileName)
         {
             // Future: Try to use the StructLayout attribute
@@ -296,7 +331,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
             // Allocate the correctly size message buffers
             byte[] targetFileName = Encoding.UTF8.GetBytes(destFileName);           // Using UTF-8 works for ASCII but should be Unicode in nuttx
             byte[] md5HashBytes = Encoding.UTF8.GetBytes(md5Hash);
-            int optionalDataLength = sizeof(UInt32) + sizeof(UInt32) + sizeof(UInt32) +
+            int optionalDataLength = sizeof(uint) + sizeof(uint) + sizeof(uint) +
                 HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH + targetFileName.Length;
             byte[] messageBytes = new byte[HCOM_PROTOCOL_COMMAND_REQUIRED_HEADER_LENGTH + optionalDataLength];
 
@@ -304,16 +339,16 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
             int offset = BuildMeadowBoundSimpleCommand(requestType, userData, ref messageBytes);
 
             // File Size
-            Array.Copy(BitConverter.GetBytes(fileSize), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(fileSize), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // CRC32 checksum or delete file partition number
-            Array.Copy(BitConverter.GetBytes(fileCheckSum), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(fileCheckSum), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // MCU address for this file. Used for ESP32 file downloads
-            Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(UInt32));
-            offset += sizeof(UInt32);
+            Array.Copy(BitConverter.GetBytes(mcuAddr), 0, messageBytes, offset, sizeof(uint));
+            offset += sizeof(uint);
 
             // Include ESP32 MD5 hash if it's needed
             if (string.IsNullOrEmpty(md5Hash))

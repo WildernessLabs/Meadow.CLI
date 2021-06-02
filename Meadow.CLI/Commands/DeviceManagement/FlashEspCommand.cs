@@ -25,10 +25,10 @@ namespace Meadow.CLI.Commands.DeviceManagement
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.FlashEsp(cancellationToken)
+            await device.FlashEspAsync(cancellationToken)
                        .ConfigureAwait(false);
 
-            await device.ResetMeadow(cancellationToken)
+            await device.ResetMeadowAsync(cancellationToken)
                        .ConfigureAwait(false);
         }
     }

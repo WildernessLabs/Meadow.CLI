@@ -7,7 +7,7 @@ namespace Meadow.CLI.Core.DeviceManagement
     /// <summary>
     /// Messages to be sent to Meadow board from host
     /// </summary>
-    public enum HcomMeadowRequestType : UInt16
+    public enum HcomMeadowRequestType : ushort
     {
         HCOM_MDOW_REQUEST_UNDEFINED_REQUEST = 0x00 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED,
 
@@ -42,6 +42,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END = 0x1d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
         HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION = 0x1e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
         HCOM_MDOW_REQUEST_GET_DEVICE_NAME = 0x1f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
+        HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES = 0x20 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,
 
         // Only used for testing
         HCOM_MDOW_REQUEST_DEVELOPER_1 = 0xf0 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE,

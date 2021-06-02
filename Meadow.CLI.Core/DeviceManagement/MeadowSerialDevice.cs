@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Ports;
-using System.Security.Cryptography;
+﻿using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowComms;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {

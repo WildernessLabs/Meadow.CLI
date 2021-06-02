@@ -23,6 +23,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms
         FileListMember,
         FileListCrcMember,
         Data,
+        InitialFileData,
         MeadowTrace,
         SerialReconnect,
         Accepted,

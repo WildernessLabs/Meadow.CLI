@@ -32,7 +32,7 @@ namespace Meadow.CLI.Commands.FileSystem
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken)
                                                         .ConfigureAwait(false);
 
-            await device.PartitionFileSystem(NumberOfPartitions, cancellationToken)
+            await device.PartitionFileSystemAsync(NumberOfPartitions, cancellationToken)
                         .ConfigureAwait(false);
         }
     }

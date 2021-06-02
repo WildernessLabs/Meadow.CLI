@@ -48,7 +48,7 @@ namespace Meadow.CLI.Commands.Files
                 {
                     _logger.LogInformation($"Deleting {file} from partition {Partition}");
 
-                    await device.DeleteFile(file, Partition, cancellationToken)
+                    await device.DeleteFileAsync(file, Partition, cancellationToken)
                                 .ConfigureAwait(false);
                 }
             }

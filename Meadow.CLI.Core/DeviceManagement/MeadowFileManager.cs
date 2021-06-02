@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +14,10 @@ namespace Meadow.CLI.Core.DeviceManagement
 {
     public abstract partial class MeadowLocalDevice
     {
-        public override async Task<IDictionary<string, UInt32>> GetFilesAndCrcs(
-            int timeoutInMs = 60000,
+        private protected static readonly string SystemHttpNetDllName = "System.Net.Http.dll";
+
+        public override async Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(
+            int timeoutInMs = 10000,
             int partition = 0,
             CancellationToken cancellationToken = default)
         {
@@ -63,7 +66,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return FilesOnDevice;
         }
 
-        public override async Task<bool> WriteFile(string filename,
+        public override async Task<bool> WriteFileAsync(string filename,
                                                    string path,
                                                    int timeoutInMs = 200000,
                                                    CancellationToken cancellationToken = default)
@@ -105,7 +108,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return result;
         }
 
-        public override async Task DeleteFile(string fileName,
+        public override async Task DeleteFileAsync(string fileName,
                                               int partition = 0,
                                               CancellationToken cancellationToken = default)
         {
@@ -125,7 +128,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 .ConfigureAwait(false);
         }
 
-        public override Task EraseFlash(CancellationToken cancellationToken = default)
+        public override Task EraseFlashAsync(CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE,
@@ -134,7 +137,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task VerifyErasedFlash(CancellationToken cancellationToken = default)
+        public override Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH,
@@ -143,7 +146,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task PartitionFileSystem(int numberOfPartitions = 2,
+        public override Task PartitionFileSystemAsync(int numberOfPartitions = 2,
                                                  CancellationToken cancellationToken = default)
         {
             if (numberOfPartitions < 1 || numberOfPartitions > 8)
@@ -158,7 +161,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task MountFileSystem(int partition = 0,
+        public override Task MountFileSystemAsync(int partition = 0,
                                              CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
@@ -167,7 +170,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task InitializeFileSystem(int partition = 0,
+        public override Task InitializeFileSystemAsync(int partition = 0,
                                                   CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
@@ -176,7 +179,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task CreateFileSystem(int partition = 0,
+        public override Task CreateFileSystemAsync(int partition = 0,
                                               CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
@@ -184,7 +187,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task FormatFileSystem(int partition = 0,
+        public override Task FormatFileSystemAsync(int partition = 0,
                                               CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
@@ -193,26 +196,26 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task RenewFileSystem(CancellationToken cancellationToken = default)
+        public override Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
         {
             return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
         }
 
 
-        public override async Task UpdateMonoRuntime(string fileName,
+        public override async Task UpdateMonoRuntimeAsync(string fileName,
                                                      string? targetFileName = null,
                                                      int partition = 0,
                                                      CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Waiting for Meadow to be ready.");
-            await WaitForReady(cancellationToken: cancellationToken)
+            await WaitForReadyAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await MonoDisable(cancellationToken)
+            await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             Trace.Assert(
-                await GetMonoRunState(cancellationToken)
+                await GetMonoRunStateAsync(cancellationToken)
                             .ConfigureAwait(false),
                 "Meadow was expected to have Mono Disabled");
             Logger.LogInformation("Updating Mono Runtime");
@@ -279,7 +282,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 .ConfigureAwait(false);
         }
 
-        public override async Task WriteFileToEspFlash(string fileName,
+        public override async Task WriteFileToEspFlashAsync(string fileName,
                                                        string? targetFileName = null,
                                                        int partition = 0,
                                                        string? mcuDestAddr = null,
@@ -395,11 +398,11 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public override async Task FlashEsp(string sourcePath,
+        public override async Task FlashEspAsync(string sourcePath,
                                             CancellationToken cancellationToken = default)
         {
             Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
-            await WriteFileToEspFlash(
+            await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddr: "0x10000",
                     cancellationToken: cancellationToken)
@@ -409,7 +412,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                       .ConfigureAwait(false);
 
             Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
-            await WriteFileToEspFlash(
+            await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddr: "0x1000",
                     cancellationToken: cancellationToken)
@@ -419,7 +422,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                       .ConfigureAwait(false);
 
             Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
-            await WriteFileToEspFlash(
+            await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddr: "0x8000",
                     cancellationToken: cancellationToken)
@@ -429,7 +432,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                       .ConfigureAwait(false);
         }
 
-        public override Task ForwardVisualStudioDataToMono(byte[] debuggerData,
+        public override Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
                                                            int userData,
                                                            CancellationToken cancellationToken = default)
         {
@@ -437,6 +440,178 @@ namespace Meadow.CLI.Core.DeviceManagement
                 debuggerData,
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA,
                 (uint) userData);
+        }
+
+        public override async Task DeployAppAsync(string applicationFilePath, CancellationToken cancellationToken = default)
+        {
+            if (!File.Exists(applicationFilePath))
+            {
+                Console.WriteLine($"{applicationFilePath} not found.");
+                return;
+            }
+
+            var fi = new FileInfo(applicationFilePath);
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // for some strange reason, System.Net.Http.dll doesn't get copied to the output folder in VS.
+                // so, we need to copy it over from the meadow assemblies nuget.
+                CopySystemNetHttpDll(fi.DirectoryName);
+            }
+
+            var deviceFiles = await GetFilesAndCrcsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var extensions = new List<string> { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+
+            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(s => extensions.Contains(new FileInfo(s).Extension));
+
+            var files = new List<string>();
+            var crcs = new List<uint>();
+
+            foreach (var file in paths)
+            {
+                using FileStream fs = File.Open(file, FileMode.Open);
+                var len = (int)fs.Length;
+                var bytes = new byte[len];
+
+                await fs.ReadAsync(bytes, 0, len, cancellationToken);
+
+                //0x
+                var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
+
+                //Console.WriteLine($"{file} crc is {crc}");
+                files.Add(Path.GetFileName(file));
+                crcs.Add(crc);
+            }
+
+            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
+
+            //crawl dependencies
+            foreach (var file in dependencies)
+            {
+                using FileStream fs = File.Open(Path.Combine(fi.DirectoryName, file), FileMode.Open);
+                var len = (int)fs.Length;
+                var bytes = new byte[len];
+
+                await fs.ReadAsync(bytes, 0, len, cancellationToken);
+
+                //0x
+                var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
+
+                Logger.LogInformation("{file} crc is {checksum}", file, crc);
+                files.Add(Path.GetFileName(file));
+                crcs.Add(crc);
+            }
+
+            // delete unused files
+            foreach (var file in deviceFiles.Keys)
+            {
+                if (files.Contains(file) == false)
+                {
+                    await DeleteFileAsync(file, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    Logger.LogInformation("Removing file: {file}", file);
+                }
+            }
+
+            // write new files
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (deviceFiles.Values.Contains(crcs[i]))
+                {
+                    Logger.LogInformation("Skipping file: {file}", files[i]);
+                    continue;
+                }
+
+                if (!File.Exists(Path.Combine(fi.DirectoryName, files[i])))
+                {
+                    Logger.LogInformation("{file} not found", files[i]);
+                    continue;
+                }
+
+                await WriteFileAsync(files[i], fi.DirectoryName, cancellationToken: cancellationToken).ConfigureAwait(false);
+                Logger.LogInformation("Writing file: {file}", files[i]);
+            }
+
+            Logger.LogInformation("{file} deploy complete", fi.Name);
+        }
+
+        public override async Task<string> GetInitialFileDataAsync(string filename, int timeoutInMs = 1000, CancellationToken cancellationToken = default)
+        {
+            var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            string msg = string.Empty;
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.InitialFileData)
+                {
+                    msg = e.Message;
+                }
+            };
+
+            DataProcessor.OnReceiveData += handler;
+
+            // await MeadowFileManager.ListFiles(this);
+
+            await GetInitialBytesFromFile(filename);
+
+            await Task.WhenAny(timeOutTask, tcs.Task);
+            DataProcessor.OnReceiveData -= handler;
+
+            return msg;
+        }
+
+        public async Task GetInitialBytesFromFile(string fileName, int partition = 0)
+        {
+            Console.WriteLine($"Getting initial bytes from {fileName}...");
+            byte[] encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
+
+            await Task.WhenAll(
+                Task.Run(() => _sendTargetData.BuildAndSendSimpleData(encodedFileName,
+                             HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES, 0)),
+                WaitForResponseMessage(x => x.MessageType == MeadowMessageType.Concluded, 5000));
+        }
+
+        private protected void CopySystemNetHttpDll(string targetDir)
+        {
+            try
+            {
+                var bclNugetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages", "wildernesslabs.meadow.assemblies");
+
+                if (Directory.Exists(bclNugetPath))
+                {
+                    List<Version> versions = new List<Version>();
+
+                    var versionFolders = Directory.EnumerateDirectories(bclNugetPath);
+                    foreach (var versionFolder in versionFolders)
+                    {
+                        var di = new DirectoryInfo(versionFolder);
+                        if (Version.TryParse(di.Name, out Version outVersion))
+                        {
+                            versions.Add(outVersion);
+                        }
+                    }
+
+                    if (versions.Any())
+                    {
+                        versions.Sort();
+
+                        var sourcePath = Path.Combine(bclNugetPath, versions.Last().ToString(), "lib", "net472");
+                        if (Directory.Exists(sourcePath))
+                        {
+                            if (File.Exists(Path.Combine(sourcePath, SystemHttpNetDllName)))
+                            {
+                                File.Copy(Path.Combine(sourcePath, SystemHttpNetDllName), Path.Combine(targetDir, SystemHttpNetDllName));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // eat this for now
+            }
         }
 
         private protected async Task<bool> WriteFileInternal(

@@ -27,7 +27,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            var deviceName = await device.GetDeviceName(cancellationToken: cancellationToken)
+            var deviceName = await device.GetDeviceNameAsync(cancellationToken: cancellationToken)
                                          .ConfigureAwait(false);
 
             _logger.LogInformation($"Device Name: {deviceName}");

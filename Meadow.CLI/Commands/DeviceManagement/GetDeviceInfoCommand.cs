@@ -25,7 +25,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
 
-            var deviceInfoString = await device.GetDeviceInfo(cancellationToken: cancellationToken).ConfigureAwait(false);
+            var deviceInfoString = await device.GetDeviceInfoAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(deviceInfoString))
                 throw new Exception("Unable to retrieve device info");
             var deviceInfo = new MeadowDeviceInfo(deviceInfoString);

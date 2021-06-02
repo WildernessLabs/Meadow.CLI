@@ -35,7 +35,7 @@ namespace Meadow.CLI.Commands.FileSystem
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.FormatFileSystem(cancellationToken: cancellationToken)
+            await device.FormatFileSystemAsync(cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
         }
     }

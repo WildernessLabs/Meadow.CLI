@@ -29,32 +29,32 @@ namespace Meadow.CLI.Test
             using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
                 Assert.IsNotNull(meadow, "Initial connection");
-                await meadow.MonoDisable(cts.Token);
-                var isEnabled = await meadow.GetMonoRunState(cts.Token);
+                await meadow.MonoDisableAsync(cts.Token);
+                var isEnabled = await meadow.GetMonoRunStateAsync(cts.Token);
                 // try to disable one more time
                 if (isEnabled)
                 {
-                    await meadow.MonoDisable(cts.Token);
-                    isEnabled = await meadow.GetMonoRunState(cts.Token);
+                    await meadow.MonoDisableAsync(cts.Token);
+                    isEnabled = await meadow.GetMonoRunStateAsync(cts.Token);
                 }
                 Assert.IsFalse(isEnabled, "Disable mono");
             }
 
             using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
-                await meadow.UpdateMonoRuntime(Path.Combine(fixturesPath.FullName, runtimeFilename), cancellationToken: cts.Token);
+                await meadow.UpdateMonoRuntimeAsync(Path.Combine(fixturesPath.FullName, runtimeFilename), cancellationToken: cts.Token);
             }
 
             using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
-                await meadow.FlashEsp(fixturesPath.FullName, cts.Token);
+                await meadow.FlashEspAsync(fixturesPath.FullName, cts.Token);
             }
 
             using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
                 Assert.IsNotNull(meadow);
-                await meadow.MonoEnable(cts.Token);
-                var isEnabled = await meadow.GetMonoRunState(cts.Token);
+                await meadow.MonoEnableAsync(cts.Token);
+                var isEnabled = await meadow.GetMonoRunStateAsync(cts.Token);
                 Assert.IsTrue(isEnabled);
             }
         }

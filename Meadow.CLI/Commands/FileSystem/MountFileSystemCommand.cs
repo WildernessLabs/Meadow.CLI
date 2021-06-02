@@ -31,7 +31,7 @@ namespace Meadow.CLI.Commands.FileSystem
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken)
                                                         .ConfigureAwait(false);
 
-            await device.MountFileSystem(Partition, cancellationToken)
+            await device.MountFileSystemAsync(Partition, cancellationToken)
                                    .ConfigureAwait(false);
         }
     }

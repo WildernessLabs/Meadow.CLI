@@ -4,34 +4,34 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.Mono
+namespace Meadow.CLI.Commands.App
 {
-    [Command("mono flash", Description = "Get the Mono Run State on the Meadow Board")]
-    public class MonoFlashCommand : MeadowSerialCommand
+    [Command("app deploy", Description = "Deploy the specified app to the Meadow")]
+    public class DeployAppCommand : MeadowSerialCommand
     {
-        private readonly ILogger<MonoRunStateCommand> _logger;
+        [CommandOption(
+            "file",
+            'f',
+            Description = "The path to the application to deploy to the app",
+            IsRequired = true)]
+        public string File { get; init; }
 
-        public MonoFlashCommand(ILoggerFactory loggerFactory,
-                                MeadowDeviceManager meadowDeviceManager)
+        public DeployAppCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
-            _logger = LoggerFactory.CreateLogger<MonoRunStateCommand>();
         }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
-
             using var device = await MeadowDeviceManager
                                      .GetMeadowForSerialPort(
                                          SerialPortName,
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.MonoFlashAsync(cancellationToken)
-                                       .ConfigureAwait(false);
-
-            _logger.LogInformation($"Mono Flashed Successfully");
+            await device.DeployAppAsync(File, cancellationToken)
+                  .ConfigureAwait(false);
         }
     }
 }

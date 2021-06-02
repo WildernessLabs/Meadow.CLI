@@ -39,7 +39,7 @@ namespace Meadow.CLI.Commands.Files
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            var files = await device.GetFilesAndCrcs(
+            var files = await device.GetFilesAndCrcsAsync(
                                         Partition,
                                         cancellationToken: cancellationToken)
                                     .ConfigureAwait(false);

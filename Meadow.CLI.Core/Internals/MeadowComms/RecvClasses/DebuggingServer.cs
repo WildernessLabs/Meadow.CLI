@@ -128,7 +128,7 @@ namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
                                 Array.Copy(recvdBuffer, 0, meadowBuffer, 0, bytesRead);
 
                                 // Forward to Meadow
-                                await meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0).ConfigureAwait(false);
+                                await meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0).ConfigureAwait(false);
                                 //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Forwarded {bytesRead} from VS to Meadow");
                             }
                         }

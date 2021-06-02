@@ -57,7 +57,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                                            cancellationToken);
 
                     _logger.LogInformation("Entering DFU Mode");
-                    await device.EnterDfuMode(cancellationToken)
+                    await device.EnterDfuModeAsync(cancellationToken)
                                 .ConfigureAwait(false);
                 }
                 catch (FileNotFoundException)
@@ -114,33 +114,33 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                 Trace.Assert(device != null, "device != null");
 
-                await device.UpdateMonoRuntime(BinPath, cancellationToken: cancellationToken);
+                await device.UpdateMonoRuntimeAsync(BinPath, cancellationToken: cancellationToken);
 
                 // Again, verify that Mono is disabled
                 Trace.Assert(
-                    await device.GetMonoRunState(cancellationToken)
+                    await device.GetMonoRunStateAsync(cancellationToken)
                                 .ConfigureAwait(false),
                     "Meadow was expected to have Mono Disabled");
 
                 _logger.LogInformation("Flashing ESP");
-                await device.FlashEsp(cancellationToken)
+                await device.FlashEspAsync(cancellationToken)
                             .ConfigureAwait(false);
 
                 // Reset the meadow again to ensure flash worked.
-                await device.ResetMeadow(cancellationToken)
+                await device.ResetMeadowAsync(cancellationToken)
                            .ConfigureAwait(false);
 
                 _logger.LogInformation("Enabling Mono and Resetting.");
-                while (await device.GetMonoRunState(cancellationToken)
+                while (await device.GetMonoRunStateAsync(cancellationToken)
                                    .ConfigureAwait(false)
                     == false)
                 {
-                    await device.MonoEnable(cancellationToken);
+                    await device.MonoEnableAsync(cancellationToken);
                 }
 
                 // TODO: Verify that the device info returns the expected version
                 var deviceInfoString = await device
-                                             .GetDeviceInfo(cancellationToken: cancellationToken)
+                                             .GetDeviceInfoAsync(cancellationToken: cancellationToken)
                                              .ConfigureAwait(false);
 
                 if (string.IsNullOrWhiteSpace(deviceInfoString))

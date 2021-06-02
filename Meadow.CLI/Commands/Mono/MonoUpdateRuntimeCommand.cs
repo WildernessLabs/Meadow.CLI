@@ -31,9 +31,9 @@ namespace Meadow.CLI.Commands.Mono
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.UpdateMonoRuntime(Filename, cancellationToken: cancellationToken);
+            await device.UpdateMonoRuntimeAsync(Filename, cancellationToken: cancellationToken);
 
-            await device.ResetMeadow(cancellationToken)
+            await device.ResetMeadowAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             _logger.LogInformation($"Mono Flashed Successfully");

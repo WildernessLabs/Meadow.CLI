@@ -27,7 +27,7 @@ namespace Meadow.CLI.Commands.Qspi
             using var device =
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
             
-            await device.QspiRead(Value, cancellationToken).ConfigureAwait(false);
+            await device.QspiReadAsync(Value, cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Meadow.CLI.Commands.Mono
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            var runState = await device.GetMonoRunState(cancellationToken)
+            var runState = await device.GetMonoRunStateAsync(cancellationToken)
                                        .ConfigureAwait(false);
 
             _logger.LogInformation($"Mono Run State: {(runState ? "Enabled" : "Disabled")}");
