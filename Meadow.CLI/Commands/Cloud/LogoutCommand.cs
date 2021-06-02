@@ -22,7 +22,7 @@ namespace Meadow.CLI.Commands.Cloud
             var cancellationToken = console.RegisterCancellationHandler();
 
             await Task.Yield();
-            var identityManager = new IdentityManager();
+            var identityManager = new IdentityManager(_logger);
             identityManager.Logout();
 
             _logger.LogInformation($"Signed out of Meadow Service");
