@@ -15,7 +15,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
             : base(dataProcessor, logger)
         {
-            _sendTargetData = new SendTargetData(this, logger);
+            _sendTargetData = new SendTargetData(this, Logger);
         }
 
         public abstract Task Write(byte[] encodedBytes, int encodedToSend);

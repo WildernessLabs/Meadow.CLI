@@ -55,20 +55,18 @@ namespace Meadow.CLI.Core
             }
         }
 
-        private static Settings? GetSettings()
+        private static Settings GetSettings()
         {
-            Settings? settings;
-
             if (File.Exists(Path))
             {
                 var json = File.ReadAllText(Path); 
-                settings = JsonSerializer.Deserialize<Settings>(json);
+                var settings = JsonSerializer.Deserialize<Settings>(json);
+                return settings ?? new Settings();
             }
             else
             {
-                settings = new Settings();
+                return new Settings();
             }
-            return settings;
         }
     }
 

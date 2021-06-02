@@ -5,15 +5,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
     public class ReceiveHeader : IReceivedMessage
     {
         // Header 12 bytes for Header plus message data
-        public ushort SeqNumber { get; private set; }
-        public ushort VersionNumber { get; private set; }
-        public ushort RequestType { get; private set; }
-        public ushort ExtraData { get; private set; }
-        public uint UserData { get; private set; }
-        public int HeaderLength { get ; private set; }
+        public ushort SeqNumber { get; }
+        public ushort VersionNumber { get; }
+        public ushort RequestType { get; }
+        public ushort ExtraData { get; }
+        public uint UserData { get; }
+        public int HeaderLength { get ; }
 
-        public byte[] MessageData { get; private set; }
-        public int MessageDataLength { get; private set; }
+        public byte[]? MessageData { get; }
+        public int MessageDataLength { get; }
 
 
         public ReceiveHeader(byte[] receivedMessage, int receivedMessageLength)

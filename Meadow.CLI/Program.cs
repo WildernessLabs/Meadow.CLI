@@ -5,12 +5,11 @@ using System.Threading.Tasks;
 using CliFx;
 using Meadow.CLI.Commands;
 using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CommandLine.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
-namespace Meadow.CommandLine
+namespace Meadow.CLI
 {
     public class Program
     {

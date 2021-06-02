@@ -6,15 +6,15 @@ using System.Security.Cryptography;
 using System.Text;
 using Mono.Cecil;
 
-namespace MeadowCLI
+namespace Meadow.CLI.Core.Internals.Tools
 {
     public class WeaverCRC
     {
         public Action<string> LogDebug { get; set; }
         public Action<string> LogInfo { get; set; }
 
-        public ModuleDefinition ModuleDefinition { get; set; }
-        public IAssemblyResolver AssemblyResolver { get; set; }
+        public ModuleDefinition? ModuleDefinition { get; set; }
+        public IAssemblyResolver? AssemblyResolver { get; set; }
 
         public WeaverCRC()
         {

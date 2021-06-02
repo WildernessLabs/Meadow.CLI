@@ -33,7 +33,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger = logger ?? new NullLogger<MeadowDevice>();
         }
 
-        public MeadowDeviceInfo DeviceInfo { get; protected set; }
+        public MeadowDeviceInfo? DeviceInfo { get; protected set; }
 
         public IDictionary<string, uint> FilesOnDevice { get; protected set; } =
             new Dictionary<string, uint>();

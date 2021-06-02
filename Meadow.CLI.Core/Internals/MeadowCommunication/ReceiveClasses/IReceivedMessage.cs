@@ -18,6 +18,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         uint UserData { get; }
         int HeaderLength { get; }
 
-        byte[] MessageData { get; }
+        byte[]? MessageData { get; }
     }
 }

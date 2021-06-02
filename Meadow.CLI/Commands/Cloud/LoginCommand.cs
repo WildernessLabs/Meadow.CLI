@@ -5,7 +5,7 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core.Identity;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CommandLine.Commands.Cloud
+namespace Meadow.CLI.Commands.Cloud
 {
     [Command("cloud login", Description = "Log into the Meadow Service")]
     public class LoginCommand : ICommand
@@ -21,13 +21,13 @@ namespace Meadow.CommandLine.Commands.Cloud
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var identityManager = new IdentityManager();
+            var identityManager = new IdentityManager(_logger);
             var loginResult = await identityManager.LoginAsync(cancellationToken)
                                                    .ConfigureAwait(false);
 
             if (loginResult)
             {
-                var cred = identityManager.GetCredentials(identityManager.WLRefreshCredentialName);
+                var cred = identityManager.GetCredentials(identityManager.WlRefreshCredentialName);
                 _logger.LogInformation($"Signed in as {cred.username}");
             }
         }

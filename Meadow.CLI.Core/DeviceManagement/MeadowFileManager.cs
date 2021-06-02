@@ -23,12 +23,10 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
 
-            EventHandler<MeadowMessageEventArgs> handler = null;
-
             var tcs = new TaskCompletionSource<bool>();
             var started = false;
 
-            handler = (s, e) =>
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
                 if (e.MessageType == MeadowMessageType.FileListTitle)
                 {
@@ -80,11 +78,9 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
 
-            EventHandler<MeadowMessageEventArgs> handler = null;
-
             var tcs = new TaskCompletionSource<bool>();
 
-            handler = (s, e) =>
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
                 if (e.MessageType == MeadowMessageType.Concluded)
                 {

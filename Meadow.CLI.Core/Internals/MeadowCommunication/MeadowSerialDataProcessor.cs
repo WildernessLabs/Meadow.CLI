@@ -34,13 +34,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
-        private readonly ILogger<MeadowSerialDataProcessor> _logger;
+        private readonly ILogger _logger;
         //collapse to one and use enum
-        private readonly SerialPort SerialPort;
+        private readonly SerialPort _serialPort;
         private readonly Task _dataProcessorTask;
-        
-        HostCommBuffer _hostCommBuffer;
-        ReceiveMessageFactoryManager _receiveMessageFactoryManager;
+
+        private readonly HostCommBuffer _hostCommBuffer;
+        private readonly ReceiveMessageFactoryManager _receiveMessageFactoryManager;
         
         readonly Socket socket;
 
@@ -51,7 +51,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         //-------------------------------------------------------------
         // Constructor
-        private MeadowSerialDataProcessor(ILogger<MeadowSerialDataProcessor> logger)
+        private MeadowSerialDataProcessor(ILogger logger)
         {
             _receiveMessageFactoryManager = new ReceiveMessageFactoryManager(logger);
             _hostCommBuffer = new HostCommBuffer();
@@ -59,13 +59,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             _logger = logger;
         }
 
-        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
-            SerialPort = serialPort;
+            _serialPort = serialPort;
             _dataProcessorTask = ReadSerialPortAsync();
         }
 
-        public MeadowSerialDataProcessor(Socket socket, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this.socket = socket;
             _dataProcessorTask = ReadSocketAsync();
@@ -114,18 +114,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             {
                 while (true)
                 {
-                    if (!SerialPort.IsOpen)
+                    if (!_serialPort.IsOpen)
                     {
                         await Task.Delay(500)
                                   .ConfigureAwait(false);
                         continue;
                     }
 
-                    var byteCount = Math.Min(SerialPort.BytesToRead, buffer.Length);
+                    var byteCount = Math.Min(_serialPort.BytesToRead, buffer.Length);
 
                     if (byteCount > 0)
                     {
-                        var receivedLength = await SerialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
+                        var receivedLength = await _serialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
                         AddAndProcessData(buffer, receivedLength);
                     }
                     await Task.Delay(50).ConfigureAwait(false);
@@ -133,7 +133,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
             catch (ThreadAbortException)
             {
-                //ignoring for now until we wire cancelation ...
+                //ignoring for now until we wire cancellation ...
                 //this blocks the thread abort exception when the console app closes
             }
             catch (InvalidOperationException)
@@ -256,7 +256,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         {
             try
             {
-                IReceivedMessage processor = _receiveMessageFactoryManager.CreateProcessor(receivedMsg, receivedMsgLen);
+                var processor = _receiveMessageFactoryManager.CreateProcessor(receivedMsg, receivedMsgLen);
                 if (processor == null)
                     return false;
 

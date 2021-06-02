@@ -54,7 +54,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
         private static bool TryCreateIPEndPoint(string address,
-                                               out IPEndPoint endpoint)
+                                               out IPEndPoint? endpoint)
         {
             if (string.IsNullOrEmpty(address))
             {

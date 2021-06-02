@@ -9,9 +9,9 @@ namespace Meadow.CLI.Core.DeviceManagement
 
     public static class AssemblyManager
     {
-        static List<string> dependencyMap = new List<string>();
-        static string folderPath;
-        static string fileName;
+        private static readonly List<string> dependencyMap = new List<string>();
+        private static string folderPath;
+        private static string fileName;
 
         public static List<string> GetDependencies(string file, string path)
         {

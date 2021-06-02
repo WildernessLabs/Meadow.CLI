@@ -69,7 +69,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             // if filename isn't specified fallback to download path
             if (string.IsNullOrEmpty(filename))
             {
-                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OSFilename);
+                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
             }
 
             if (!File.Exists(filename))
@@ -143,7 +143,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             // if filename isn't specified fallback to download path
             if (string.IsNullOrEmpty(filename))
             {
-                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OSFilename);
+                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
             }
 
             if (!File.Exists(filename))

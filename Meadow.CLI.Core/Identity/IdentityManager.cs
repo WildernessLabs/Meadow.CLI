@@ -7,19 +7,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using CredentialManagement;
 using IdentityModel.OidcClient;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 
 namespace Meadow.CLI.Core.Identity
 {
     public class IdentityManager
     {
-        public readonly string WLRefreshCredentialName = "WL:Identity:Refresh";
+        public readonly string WlRefreshCredentialName = "WL:Identity:Refresh";
         readonly string authority = "https://identity.wildernesslabs.co";
         readonly string redirectUri = "http://localhost:8877/";
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
+        private readonly ILogger _logger;
 
-        // TODO: Add cancellation support
+        public IdentityManager(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         /// <summary>
         /// Kick off login
         /// </summary>
@@ -50,19 +56,19 @@ namespace Meadow.CLI.Core.Identity
 
                     if (result.IsError)
                     {
-                        Console.WriteLine(result.Error);
+                        _logger.LogError(result.Error);
                     }
                     else
                     {
                         var email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
-                        if (string.IsNullOrEmpty(email))
+                        if (string.IsNullOrWhiteSpace(email))
                         {
-                            Console.WriteLine("Unable to get email address");
+                            _logger.LogWarning("Unable to get email address");
                         }
                         else
                         {
                             // saving only the refresh token since the access token is too large
-                            SaveCredential(WLRefreshCredentialName, email, result.RefreshToken);
+                            SaveCredential(WlRefreshCredentialName, email!, result.RefreshToken);
                         }
                     }
                     return !result.IsError;
@@ -70,14 +76,14 @@ namespace Meadow.CLI.Core.Identity
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex, "An error occurred");
                 return false;
             }
         }
 
         public void Logout()
         {
-            DeleteCredential(WLRefreshCredentialName);
+            DeleteCredential(WlRefreshCredentialName);
         }
 
         /// <summary>
@@ -90,7 +96,7 @@ namespace Meadow.CLI.Core.Identity
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                refreshToken = GetCredentials(WLRefreshCredentialName).password;
+                refreshToken = GetCredentials(WlRefreshCredentialName).password;
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -98,7 +104,7 @@ namespace Meadow.CLI.Core.Identity
             }
             else
             {
-                Console.WriteLine("Unsupported OS detected.");
+                _logger.LogWarning("Unsupported OS detected.");
                 throw new NotSupportedException();
             }
 
@@ -143,7 +149,7 @@ namespace Meadow.CLI.Core.Identity
             }
             else
             {
-                Console.WriteLine("Unsupported OS detected.");
+                _logger.LogWarning("Unsupported OS detected.");
                 throw new NotSupportedException();
             }   
         }
@@ -180,7 +186,7 @@ namespace Meadow.CLI.Core.Identity
             }
             else
             {
-                Console.WriteLine("Unsupported OS detected.");
+                _logger.LogWarning("Unsupported OS detected.");
                 throw new NotSupportedException();
             }
         }
@@ -211,7 +217,7 @@ namespace Meadow.CLI.Core.Identity
             }
             else
             {
-                Console.WriteLine("Unsupported OS detected.");
+                _logger.LogWarning("Unsupported OS detected.");
                 throw new NotSupportedException();
             }
         }
@@ -240,7 +246,7 @@ namespace Meadow.CLI.Core.Identity
                 }
                 else
                 {
-                    Console.WriteLine("Unsupported OS detected.");
+                    _logger.LogWarning("Unsupported OS detected.");
                     throw new NotSupportedException();
                 }
             }
