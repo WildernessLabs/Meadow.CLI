@@ -1,7 +1,7 @@
 ﻿using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.Internals.MeadowComms;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.DeviceManagement
@@ -11,14 +11,14 @@ namespace Meadow.CLI.Core.DeviceManagement
         private readonly string _serialPortName;
         public SerialPort SerialPort { get; private set; }
 
-        public MeadowSerialDevice(string serialPortName, ILogger<MeadowSerialDevice>? logger = null)
+        public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
         }
 
         private MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
-                                   ILogger<MeadowSerialDevice>? logger = null)
+                                   ILogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort), logger)
         {
             SerialPort = serialPort;
@@ -86,13 +86,13 @@ namespace Meadow.CLI.Core.DeviceManagement
         internal async Task<bool> AttemptToReconnectToMeadow(
             CancellationToken cancellationToken = default)
         {
-            int delayCount = 20; // 10 seconds
+            var delayCount = 20; // 10 seconds
             while (true)
             {
                 await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
 
-                bool portOpened = await Initialize(cancellationToken)
+                var portOpened = await Initialize(cancellationToken)
                                       .ConfigureAwait(false);
 
                 if (portOpened)

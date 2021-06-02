@@ -28,11 +28,11 @@ namespace Meadow.CLI.Core.DeviceManagement
             return dependencies;
         }
 
-        static Collection<AssemblyNameReference> GetAssemblyNameReferences(string fileName, string path = null)
+        static Collection<AssemblyNameReference> GetAssemblyNameReferences(string fileName, string? path = null)
         {
             if (!string.IsNullOrWhiteSpace(path))
             {
-                fileName = Path.Combine(path, fileName);
+                fileName = Path.Combine(path!, fileName);
             }
 
             if (Path.GetExtension(fileName) != ".exe")

@@ -1,5 +1,5 @@
 ﻿using System;
-using Meadow.CLI.Core.Internals.MeadowComms;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {

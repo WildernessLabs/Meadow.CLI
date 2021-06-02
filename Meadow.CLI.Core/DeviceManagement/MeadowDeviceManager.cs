@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
+using Meadow.CLI.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

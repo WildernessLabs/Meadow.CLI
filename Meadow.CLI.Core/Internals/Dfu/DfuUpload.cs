@@ -115,28 +115,32 @@ namespace Meadow.CLI.Core.Internals.Dfu
         {
             try
             {
-                using (var process = new Process())
+                using var process = new Process
+                                    {
+                                        StartInfo =
+                                        {
+                                            FileName = "dfu-util",
+                                            Arguments = $"--version",
+                                            UseShellExecute = false,
+                                            RedirectStandardOutput = true
+                                        }
+                                    };
+
+                process.Start();
+
+                var reader = process.StandardOutput;
+                var output = reader.ReadLine();
+                if (output.StartsWith("dfu-util"))
                 {
-                    process.StartInfo.FileName = "dfu-util";
-                    process.StartInfo.Arguments = $"--version";
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.Start();
-
-                    var reader = process.StandardOutput;
-                    string output = reader.ReadLine();
-                    if (output.StartsWith("dfu-util"))
+                    var split = output.Split(new char[] { ' ' });
+                    if (split.Length == 2)
                     {
-                        var split = output.Split(new char[] { ' ' });
-                        if (split.Length == 2)
-                        {
-                            return split[1];
-                        }
+                        return split[1];
                     }
-
-                    process.WaitForExit();
-                    return string.Empty;
                 }
+
+                process.WaitForExit();
+                return string.Empty;
             }
             catch (Win32Exception ex)
             {

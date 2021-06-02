@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Meadow.CLI.Core
+namespace Meadow.CLI.Core.Exceptions
 {
     public class MultipleDfuDevicesException : DeviceNotFoundException
     {
-        public MultipleDfuDevicesException(string message, Exception innerException = null)
+        public MultipleDfuDevicesException(string message, Exception? innerException = null)
             : base(message, innerException)
         {
         }

@@ -7,6 +7,7 @@ using CliFx.Infrastructure;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
 

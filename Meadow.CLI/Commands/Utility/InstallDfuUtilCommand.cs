@@ -6,6 +6,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI;
+using Meadow.CLI.Core;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CommandLine.Commands.Utility

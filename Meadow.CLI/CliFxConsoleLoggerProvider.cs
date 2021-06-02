@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CommandLine
+namespace Meadow.CLI
 {
     public class CliFxConsoleLogger : ILogger
     {
