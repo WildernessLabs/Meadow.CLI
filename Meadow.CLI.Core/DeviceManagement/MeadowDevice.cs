@@ -107,7 +107,6 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task QspiWriteAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
-        public abstract Task<string> GetInitialFileDataAsync(string fileName, int timeoutInMs, CancellationToken cancellationToken = default);
         public abstract Task DeployAppAsync(string fileName, CancellationToken cancellationToken = default);
 
         public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,

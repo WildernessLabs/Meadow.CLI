@@ -534,45 +534,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogInformation("{file} deploy complete", fi.Name);
         }
 
-        public override async Task<string> GetInitialFileDataAsync(string filename, int timeoutInMs = 1000, CancellationToken cancellationToken = default)
-        {
-            var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
-
-            var tcs = new TaskCompletionSource<bool>();
-
-            string msg = string.Empty;
-
-            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
-            {
-                if (e.MessageType == MeadowMessageType.InitialFileData)
-                {
-                    msg = e.Message;
-                }
-            };
-
-            DataProcessor.OnReceiveData += handler;
-
-            // await MeadowFileManager.ListFiles(this);
-
-            await GetInitialBytesFromFile(filename);
-
-            await Task.WhenAny(timeOutTask, tcs.Task);
-            DataProcessor.OnReceiveData -= handler;
-
-            return msg;
-        }
-
-        public async Task GetInitialBytesFromFile(string fileName, int partition = 0)
-        {
-            Console.WriteLine($"Getting initial bytes from {fileName}...");
-            byte[] encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
-
-            await Task.WhenAll(
-                Task.Run(() => _sendTargetData.BuildAndSendSimpleData(encodedFileName,
-                             HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES, 0)),
-                WaitForResponseMessage(x => x.MessageType == MeadowMessageType.Concluded, 5000));
-        }
-
         private protected void CopySystemNetHttpDll(string targetDir)
         {
             try
