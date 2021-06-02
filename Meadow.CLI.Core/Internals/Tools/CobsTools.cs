@@ -1,5 +1,4 @@
-﻿using System;
-namespace MeadowCLI.Hcom
+﻿namespace Meadow.CLI.Core.DeviceManagement.Tools
 {
     public static class CobsTools
     {

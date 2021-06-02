@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
+namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
 {
     // Factory class
     public class RecvSimpleBinaryFactory : RecvMessageFactory

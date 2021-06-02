@@ -1,15 +1,15 @@
-﻿using CredentialManagement;
-using IdentityModel.OidcClient;
-using Microsoft.IdentityModel.Logging;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CredentialManagement;
+using IdentityModel.OidcClient;
+using Microsoft.IdentityModel.Logging;
 
-namespace Meadow.CLI.Core.Auth
+namespace Meadow.CLI.Core.Identity
 {
     public class IdentityManager
     {

@@ -1,5 +1,5 @@
 ﻿using System;
-using Meadow.CLI.Core.Auth;
+using Meadow.CLI.Core.Identity;
 using NUnit.Framework;
 
 namespace Meadow.CLI.Test

@@ -6,6 +6,7 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core;
+using Meadow.CLI.Core.Internals.Dfu;
 using MeadowCLI;
 using Meadow.CLI.Core.NewDeviceManagement;
 using Microsoft.Extensions.Logging;
@@ -102,7 +103,7 @@ namespace Meadow.CommandLine.Commands.DeviceManagement
             var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             _logger.LogInformation("Device in DFU Mode, flashing OS");
-            DfuUtils.FlashOS(device: dfuDevice);
+            await DfuUtils.FlashOsAsync(device: dfuDevice, logger: _logger);
             _logger.LogInformation("Device Flashed.");
 
             try

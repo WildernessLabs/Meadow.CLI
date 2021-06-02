@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using static MeadowCLI.DeviceManagement.MeadowFileManager;
 
-namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
+namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
 {
     public interface IReceivedMessage
     {

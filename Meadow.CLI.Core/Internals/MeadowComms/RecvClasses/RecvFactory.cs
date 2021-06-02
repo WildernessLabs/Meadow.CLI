@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MeadowCLI.DeviceManagement;
-using static MeadowCLI.DeviceManagement.MeadowFileManager;
+using Meadow.CLI.Core.DeviceManagement;
 
-namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
+namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
 {
     public abstract class RecvMessageFactory
     {
@@ -18,11 +14,10 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
         private readonly Dictionary<HcomHostRequestType, RecvMessageFactory> _factories;
         public RecvFactoryManager()
         {
-          // A factory for each received unique request type
+          // A factory for each unique request type
             _factories = new Dictionary<HcomHostRequestType, RecvMessageFactory>
             {
                 {HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA, new RecvSimpleBinaryFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES, new RecvSimpleBinaryFactory() },
 
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED, new RecvSimpleTextFactory() },
@@ -37,8 +32,6 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT, new RecvSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR, new RecvSimpleTextFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY, new RecvSimpleTextFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL, new RecvSimpleTextFactory() },
             };
         }
 

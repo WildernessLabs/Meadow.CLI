@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement;
 
-namespace Meadow.CLI.Core
+namespace Meadow.CLI.Core.Exceptions
 {
     public class MeadowCommandException : MeadowDeviceException
     {

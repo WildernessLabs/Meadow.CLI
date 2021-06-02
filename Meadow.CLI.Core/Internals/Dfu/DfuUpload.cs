@@ -4,9 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using LibUsbDotNet;
-using Meadow.CLI;
 
-namespace MeadowCLI
+namespace Meadow.CLI.Core.Internals.Dfu
 {
     public static class DfuUpload
     {
@@ -90,14 +89,19 @@ namespace MeadowCLI
 
                 try
                 {
-                    using (var process = new Process())
-                    {
-                        process.StartInfo.FileName = "dfu-util";
-                        process.StartInfo.Arguments = $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave";
-                        process.StartInfo.UseShellExecute = false;
-                        process.Start();
-                        process.WaitForExit();
-                    }
+                    using var process = new Process
+                                        {
+                                            StartInfo =
+                                            {
+                                                FileName = "dfu-util",
+                                                Arguments =
+                                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave",
+                                                UseShellExecute = false
+                                            }
+                                        };
+
+                    process.Start();
+                    process.WaitForExit();
                 }
                 catch (Exception ex)
                 {

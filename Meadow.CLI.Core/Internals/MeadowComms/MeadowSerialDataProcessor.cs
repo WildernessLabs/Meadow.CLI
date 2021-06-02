@@ -4,11 +4,13 @@ using System.IO.Ports;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Internals.MeadowComms.RecvClasses;
-using MeadowCLI.DeviceManagement;
-using static MeadowCLI.DeviceManagement.MeadowFileManager;
+using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement.Tools;
+using Meadow.CLI.Core.Internals.MeadowComms.RecvClasses;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
-namespace MeadowCLI.Hcom
+namespace Meadow.CLI.Core.Internals.MeadowComms
 {
     // For data received due to a CLI request these provide a secondary
     // type of identification. The primary being the protocol request value
@@ -21,7 +23,6 @@ namespace MeadowCLI.Hcom
         FileListMember,
         FileListCrcMember,
         Data,
-        InitialFileData,
         MeadowTrace,
         SerialReconnect,
         Accepted,
@@ -30,25 +31,16 @@ namespace MeadowCLI.Hcom
         DownloadStartFail,
     }
 
-    public class MeadowMessageEventArgs : EventArgs
+    public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
-        public string Message { get; private set; }
-        public MeadowMessageType MessageType { get; private set; }
-
-        public MeadowMessageEventArgs(MeadowMessageType messageType, string message = "")
-        {
-            Message = message;
-            MessageType = messageType;
-        }
-    }
-
-    public class MeadowSerialDataProcessor
-    {
+        private readonly ILogger<MeadowSerialDataProcessor> _logger;
         //collapse to one and use enum
-        public EventHandler<MeadowMessageEventArgs> OnReceiveData;
+        private readonly SerialPort SerialPort;
+        private readonly Task _dataProcessorTask;
+        
         HostCommBuffer _hostCommBuffer;
         RecvFactoryManager _recvFactoryManager;
-        readonly SerialPort serialPort;
+        
         readonly Socket socket;
 
         // It seems that the .Net SerialPort class is not all it could be.
@@ -58,31 +50,31 @@ namespace MeadowCLI.Hcom
 
         //-------------------------------------------------------------
         // Constructor
-        public MeadowSerialDataProcessor()
+        private MeadowSerialDataProcessor(ILogger<MeadowSerialDataProcessor> logger)
         {
             _recvFactoryManager = new RecvFactoryManager();
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload * 4);
-
+            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
+            _logger = logger;
         }
 
-        public MeadowSerialDataProcessor(SerialPort serialPort) : this()
+        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
-            this.serialPort = serialPort;
-            var t = ReadSerialPortAsync();
+            SerialPort = serialPort;
+            _dataProcessorTask = ReadSerialPortAsync();
         }
 
-        public MeadowSerialDataProcessor(Socket socket) : this()
+        public MeadowSerialDataProcessor(Socket socket, ILogger<MeadowSerialDataProcessor>? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this.socket = socket;
-            var t = ReadSocketAsync();
+            _dataProcessorTask = ReadSocketAsync();
         }
 
         //-------------------------------------------------------------
         // All received data handled here
         private async Task ReadSocketAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
@@ -107,7 +99,7 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
             }
         }
 
@@ -115,19 +107,24 @@ namespace MeadowCLI.Hcom
         // All received data handled here
         private async Task ReadSerialPortAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
 
             try
             {
                 while (true)
                 {
-                    if (!serialPort.IsOpen) break;
+                    if (!SerialPort.IsOpen)
+                    {
+                        await Task.Delay(500)
+                                  .ConfigureAwait(false);
+                        continue;
+                    }
 
-                    var byteCount = Math.Min(serialPort.BytesToRead, buffer.Length);
+                    var byteCount = Math.Min(SerialPort.BytesToRead, buffer.Length);
 
                     if (byteCount > 0)
                     {
-                        var receivedLength = await serialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
+                        var receivedLength = await SerialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
                         AddAndProcessData(buffer, receivedLength);
                     }
                     await Task.Delay(50).ConfigureAwait(false);
@@ -144,13 +141,14 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex} may mean the target connection dropped");
+                _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
             }
         }
 
         void AddAndProcessData(byte[] buffer, int availableBytes)
         {
             HcomBufferReturn result;
+
             while (true)
             {
                 // Add these bytes to the circular buffer
@@ -196,15 +194,14 @@ namespace MeadowCLI.Hcom
 
         HcomBufferReturn PullAndProcessAllPackets()
         {
-            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
-            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableMsgPacketLength];
+            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
+            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
             int packetLength;
             HcomBufferReturn result;
 
             while (true)
             {
-                result = _hostCommBuffer.GetNextPacket(packetBuffer,
-                                MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload, out packetLength);
+                result = _hostCommBuffer.GetNextPacket(packetBuffer, MeadowDeviceManager.MaxAllowableDataBlock, out packetLength);
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                     break;      // We've emptied buffer of all messages
 
@@ -214,7 +211,7 @@ namespace MeadowCLI.Hcom
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload}");
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfPacketBuffer}");
                     Thread.Sleep(1);
                     Debug.Assert(false);
                 }
@@ -230,7 +227,7 @@ namespace MeadowCLI.Hcom
                 // any others that were queued along the usb serial pipe line.
                 if (packetLength == 1)
                 {
-                    //ConsoleOut("Throwing out 0x00 from buffer");
+                    //_logger.LogTrace("Throwing out 0x00 from buffer");
                     continue;
                 }
 
@@ -240,7 +237,7 @@ namespace MeadowCLI.Hcom
                 if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
 
-                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
+                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableDataBlock);
 
                 // Process the received packet
                 if (decodedSize > 0)
@@ -260,48 +257,46 @@ namespace MeadowCLI.Hcom
             {
                 IReceivedMessage processor = _recvFactoryManager.CreateProcessor(receivedMsg, receivedMsgLen);
                 if (processor == null)
-                {
                     return false;
-                }
 
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
                     switch (processor.RequestType)
                     {
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
-                            ConsoleOut("Request Undefined"); // TESTING
+                            _logger.LogTrace("Request Undefined"); // TESTING
                             break;
 
                         // This set are responses to request issued by this application
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                            ConsoleOut("Request Rejected"); // TESTING
+                            _logger.LogTrace("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
+                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                            // ConsoleOut($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
+                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            ConsoleOut("Request Error"); // TESTING
+                            _logger.LogTrace("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            //ConsoleOut("protocol-Request Information"); // TESTING
+                            _logger.LogTrace("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            //ConsoleOut("protocol-Request File List Header received"); // TESTING
+                            _logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
@@ -326,34 +321,18 @@ namespace MeadowCLI.Hcom
                             }
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
+                            // TODO: CANNOT BLOCK THREAD HERE
                             Thread.Sleep(2000); // need to give the device a couple seconds
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
                         // Debug message from Meadow for Visual Studio
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
-                            ConsoleOut($"Debugging message from Meadow for Visual Studio"); // TESTING
-                            MeadowDeviceManager.ForwardMonoDataToVisualStudio(processor.MessageData);
+                            _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
+                            // TODO: Refactor to expose this without needing a MeadowDevice
+                            //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
 
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
-                            // ConsoleOut("protocol-File Start OKAY received"); // TESTING
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartOkay));
-                            break;
-
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
-                            // ConsoleOut("protocol-File Start FAIL received"); // TESTING
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartFail));
-                            break;
-
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
-                            // Just length and hex-hex-hex....
-                           // Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
-
-                            var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
-
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
-                            break;
                     }
                     return true;
                 }
@@ -364,16 +343,9 @@ namespace MeadowCLI.Hcom
             }
             catch (Exception ex)
             {
-                ConsoleOut($"Exception: {ex}");
+                _logger.LogTrace($"Exception: {ex}");
                 return false;
             }
-        }
-
-        void ConsoleOut(string msg)
-        {
-#if DEBUG
-            Console.WriteLine(msg);
-#endif
         }
 
         /*
@@ -383,7 +355,7 @@ namespace MeadowCLI.Hcom
         // Test the message and if it fails it's trashed.
         if(decodedBuffer[0] != 0x00 || decodedBuffer[1] != 0x00)
         {
-            ConsoleOut("Corrupted message, first 2 bytes not 0x00");
+            _logger.LogTrace("Corrupted message, first 2 bytes not 0x00");
             continue;
         }
 
@@ -394,7 +366,7 @@ namespace MeadowCLI.Hcom
         {
             if(decodedBuffer[buffOffset] < 0x20 || decodedBuffer[buffOffset] > 0x7e)
             {
-                ConsoleOut($"Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]}");
+                _logger.LogTrace($"Corrupted message, non-ascii at offset:{buffOffset} value:{decodedBuffer[buffOffset]}");
                 break;
             }
         }

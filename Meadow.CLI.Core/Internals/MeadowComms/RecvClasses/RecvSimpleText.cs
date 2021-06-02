@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
+namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
 {
     // Factory class
     public class RecvSimpleTextFactory : RecvMessageFactory

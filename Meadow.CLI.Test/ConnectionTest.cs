@@ -1,6 +1,8 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 
 namespace Meadow.CLI.Test
@@ -21,37 +23,38 @@ namespace Meadow.CLI.Test
         [Test]
         public async Task FlashOSTest()
         {
+            var cts = new CancellationTokenSource();
             //DfuUpload.FlashOS(Path.Combine(fixturesPath.FullName, osFilename));
-
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
+            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
+            using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
                 Assert.IsNotNull(meadow, "Initial connection");
-                await MeadowDeviceManager.MonoDisable(meadow);
-                var isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
+                await meadow.MonoDisable(cts.Token);
+                var isEnabled = await meadow.GetMonoRunState(cts.Token);
                 // try to disable one more time
                 if (isEnabled)
                 {
-                    await MeadowDeviceManager.MonoDisable(meadow);
-                    isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
+                    await meadow.MonoDisable(cts.Token);
+                    isEnabled = await meadow.GetMonoRunState(cts.Token);
                 }
                 Assert.IsFalse(isEnabled, "Disable mono");
             }
 
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
+            using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
-                await MeadowFileManager.MonoUpdateRt(meadow, Path.Combine(fixturesPath.FullName, runtimeFilename));
+                await meadow.UpdateMonoRuntime(Path.Combine(fixturesPath.FullName, runtimeFilename), cancellationToken: cts.Token);
             }
 
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
+            using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
-                await MeadowFileManager.FlashEsp(meadow, fixturesPath.FullName);
+                await meadow.FlashEsp(fixturesPath.FullName, cts.Token);
             }
 
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
+            using (var meadow = await deviceManager.GetMeadowForSerialPort(port, cts.Token))
             {
                 Assert.IsNotNull(meadow);
-                await MeadowDeviceManager.MonoEnable(meadow);
-                var isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
+                await meadow.MonoEnable(cts.Token);
+                var isEnabled = await meadow.GetMonoRunState(cts.Token);
                 Assert.IsTrue(isEnabled);
             }
         }

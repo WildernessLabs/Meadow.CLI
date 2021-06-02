@@ -2,12 +2,13 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using LibUsbDotNet;
 using LibUsbDotNet.Main;
-using Meadow.CLI;
-using Meadow.CLI.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
-namespace MeadowCLI
+namespace Meadow.CLI.Core.Internals.Dfu
 {
     public static class DfuUtils
     {
@@ -59,7 +60,7 @@ namespace MeadowCLI
             }
         }
 
-        public static void FlashOS(string filename = "", UsbRegistry device = null)
+        public static void FlashOS(string filename = "", UsbRegistry? device = null)
         {
             if (device == null)
                 device = GetDevice();
@@ -111,18 +112,143 @@ namespace MeadowCLI
 
             try
             {
-                using (var process = new Process())
-                {
-                    process.StartInfo.FileName = "dfu-util";
-                    process.StartInfo.Arguments = $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave";
-                    process.StartInfo.UseShellExecute = false;
-                    process.Start();
-                    process.WaitForExit();
-                }
+                var startInfo = new ProcessStartInfo(
+                                    "dfu-util",
+                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
+                                {
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                    RedirectStandardInput = false
+                                };
+                using var process = Process.Start(startInfo);
+                if (process == null)
+                    throw new Exception("Failed to start dfu-util");
+                process.WaitForExit();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"There was a problem executing dfu-util: {ex.Message}");
+                return;
+            }
+        }
+
+        public static async Task FlashOsAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
+        {
+            logger ??= NullLogger.Instance;
+            if (device == null)
+                device = GetDevice();
+
+            // if filename isn't specified fallback to download path
+            if (string.IsNullOrEmpty(filename))
+            {
+                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OSFilename);
+            }
+
+            if (!File.Exists(filename))
+            {
+                logger.LogError("Please specify valid --File or --Download latest");
+                return;
+            }
+            else
+            {
+                logger.LogInformation($"Flashing OS with {filename}");
+            }
+
+            var serial = GetDeviceSerial(device);
+
+            var dfuUtilVersion = GetDfuUtilVersion();
+
+            if (string.IsNullOrEmpty(dfuUtilVersion))
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
+                }
+                else
+                {
+                    logger.LogError("dfu-util not found. To install run: brew install dfu-util");
+                }
+                return;
+            }
+            else if (dfuUtilVersion != "0.10")
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    logger.LogError("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
+                }
+                else
+                {
+                    logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
+                }
+                return;
+            }
+
+            try
+            {
+                var startInfo = new ProcessStartInfo(
+                                    "dfu-util",
+                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
+                                {
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                    RedirectStandardInput = false
+                                };
+                using var process = Process.Start(startInfo);
+                if (process == null)
+                    throw new Exception("Failed to start dfu-util");
+
+                var informationLogger = logger != null
+                                     ? Task.Factory.StartNew(
+                                         () =>
+                                         {
+                                             while (process.HasExited == false)
+                                             {
+                                                 var logLine = process.StandardOutput.ReadLine();
+                                                 if (logLine == null)
+                                                 {
+                                                     logger.LogInformation(string.Empty);
+                                                 }
+                                                 else if (logLine.Contains("%"))
+                                                 {
+                                                     var operation = logLine.Substring(
+                                                         0,
+                                                         logLine.IndexOf(
+                                                             "\t",
+                                                             StringComparison.Ordinal)).Trim();
+                                                     var progressBarEnd = logLine.IndexOf(
+                                                         "]",
+                                                         StringComparison.Ordinal) + 1;
+                                                     var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
+                                                     Console.SetCursorPosition(0, Console.CursorTop);
+                                                     if (progress != "100%")
+                                                        Console.Write($"{operation} {progress}");
+                                                 }
+                                                 else
+                                                 {
+                                                     logger.LogInformation(logLine);
+                                                 }
+                                             }
+                                         }) : Task.CompletedTask;
+
+                var errorLogger = logger != null
+                                            ? Task.Factory.StartNew(
+                                                () =>
+                                                {
+                                                    while (process.HasExited == false)
+                                                    {
+                                                        var logLine = process.StandardError.ReadLine();
+                                                        logger.LogError(logLine);
+                                                    }
+                                                }) : Task.CompletedTask;
+                await informationLogger;
+                await errorLogger;
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"There was a problem executing dfu-util: {ex.Message}");
                 return;
             }
         }

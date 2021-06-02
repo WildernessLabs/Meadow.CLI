@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI.Test", "Meadow.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "TestApp\TestApp.csproj", "{77078963-7FF2-4949-A8C2-1C36009D5FD6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CommandLine", "Meadow.CommandLine\Meadow.CommandLine.csproj", "{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,18 +69,6 @@ Global
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x64.Build.0 = Release|x64
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x86.ActiveCfg = Release|x86
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x86.Build.0 = Release|x86
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|x64.Build.0 = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Debug|x86.Build.0 = Debug|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|x64.ActiveCfg = Release|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|x64.Build.0 = Release|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|x86.ActiveCfg = Release|Any CPU
-		{94DFE2F0-DB00-4961-BA31-3A4AA85E4EB2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net;  
-using System.Net.Sockets;  
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement;
 
-namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
+namespace Meadow.CLI.Core.Internals.MeadowComms.RecvClasses
 {
     // This TCP server directly interacts with Visual Studio debugging.
     // What it receives from Visual Studio it forwards to Meadow.
@@ -75,9 +75,9 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
             activeClientCount = 0;
         }
 
-        public void SendToVisualStudio(byte[] byteData)
+        public async Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken = default)
         {
-            activeClient.SendToVisualStudio(byteData);
+            await activeClient.SendToVisualStudio(byteData, cancellationToken).ConfigureAwait(false);
         }
 
         // Imbedded class
@@ -128,7 +128,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                                 Array.Copy(recvdBuffer, 0, meadowBuffer, 0, bytesRead);
 
                                 // Forward to Meadow
-                                MeadowDeviceManager.ForwardVisualStudioDataToMono(meadowBuffer, meadow, 0);
+                                await meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0).ConfigureAwait(false);
                                 //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff}-Forwarded {bytesRead} from VS to Meadow");
                             }
                         }
@@ -149,7 +149,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                 }
             }
 
-            public async void SendToVisualStudio(byte[] byteData)
+            public async Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken = default)
             {
                 //Console.WriteLine($"Forwarding {byteData.Length} bytes to VS");
                 try
@@ -161,10 +161,7 @@ namespace Meadow.CLI.Internals.MeadowComms.RecvClasses
                         return;
                     }
 
-                    await Task.Run(async () =>
-                    {
-                        await networkStream.WriteAsync(byteData, 0, byteData.Length);
-                    });
+                    await networkStream.WriteAsync(byteData, 0, byteData.Length, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
