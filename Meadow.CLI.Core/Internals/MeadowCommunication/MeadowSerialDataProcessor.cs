@@ -62,13 +62,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
-            _dataProcessorTask = ReadSerialPortAsync();
+            _dataProcessorTask = Task.Factory.StartNew(() => ReadSerialPortAsync(), TaskCreationOptions.LongRunning);
         }
 
         public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this.socket = socket;
-            _dataProcessorTask = ReadSocketAsync();
+            _dataProcessorTask = Task.Factory.StartNew(() => ReadSocketAsync(), TaskCreationOptions.LongRunning);
         }
 
         //-------------------------------------------------------------
@@ -146,7 +146,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        void AddAndProcessData(byte[] buffer, int availableBytes)
+        private void AddAndProcessData(byte[] buffer, int availableBytes)
         {
             HcomBufferReturn result;
 
@@ -176,7 +176,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 }
                 else if (result == HcomBufferReturn.HCOM_CIR_BUF_ADD_BAD_ARG)
                 {
-                    // Something wrong with implemenation
+                    // Something wrong with implementation
                     Debug.Assert(false);
                 }
                 else
@@ -193,7 +193,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
         }
 
-        HcomBufferReturn PullAndProcessAllPackets()
+        private HcomBufferReturn PullAndProcessAllPackets()
         {
             byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
@@ -252,7 +252,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             return result;
         }
 
-        bool ParseAndProcessReceivedPacket(byte[] receivedMsg, int receivedMsgLen)
+        private bool ParseAndProcessReceivedPacket(byte[] receivedMsg, int receivedMsgLen)
         {
             try
             {
@@ -262,6 +262,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
+                    _logger.LogTrace("Received message {messageType}", processor.RequestType);
                     switch (processor.RequestType)
                     {
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
@@ -333,7 +334,24 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             // TODO: Refactor to expose this without needing a MeadowDevice
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
+                            // ConsoleOut("protocol-File Start OKAY received"); // TESTING
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartOkay));
+                            break;
 
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
+                            // ConsoleOut("protocol-File Start FAIL received"); // TESTING
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartFail));
+                            break;
+
+                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
+                            // Just length and hex-hex-hex....
+                            // Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
+
+                            var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
+
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+                            break;
                     }
                     return true;
                 }
@@ -344,7 +362,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
             catch (Exception ex)
             {
-                _logger.LogTrace($"Exception: {ex}");
+                _logger.LogDebug(ex, "An error occurred parsing a received packet");
                 return false;
             }
         }

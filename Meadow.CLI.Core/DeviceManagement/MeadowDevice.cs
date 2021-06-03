@@ -49,14 +49,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                                              CancellationToken cancellationToken = default);
 
         public abstract Task DeleteFileAsync(string fileName,
-                                        int partition = 0,
+                                        uint partition = 0,
                                         CancellationToken cancellationToken = default);
 
         public abstract Task EraseFlashAsync(CancellationToken cancellationToken = default);
 
         public abstract Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default);
 
-        public abstract Task FormatFileSystemAsync(int partition = 0,
+        public abstract Task FormatFileSystemAsync(uint partition = 0,
                                               CancellationToken cancellationToken = default);
 
         // TODO: Should this also take a partition parameter?
@@ -64,13 +64,13 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public abstract Task UpdateMonoRuntimeAsync(string fileName,
                                                string? targetFileName = null,
-                                               int partition = 0,
+                                               uint partition = 0,
                                                CancellationToken cancellationToken = default);
 
         public abstract Task WriteFileToEspFlashAsync(string fileName,
                                                  string? targetFileName = null,
-                                                 int partition = 0,
-                                                 string? mcuDestAddr = null,
+                                                 uint partition = 0,
+                                                 string? mcuDestAddress = null,
                                                  CancellationToken cancellationToken = default);
 
         public abstract Task FlashEspAsync(string sourcePath,
@@ -123,7 +123,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     Path.Combine(
                         DownloadManager.FirmwareDownloadsFilePath,
                         DownloadManager.NetworkMeadowCommsFilename),
-                    mcuDestAddr: "0x10000",
+                    mcuDestAddress: "0x10000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -136,7 +136,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     Path.Combine(
                         DownloadManager.FirmwareDownloadsFilePath,
                         DownloadManager.NetworkBootloaderFilename),
-                    mcuDestAddr: "0x1000",
+                    mcuDestAddress: "0x1000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -149,7 +149,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     Path.Combine(
                         DownloadManager.FirmwareDownloadsFilePath,
                         DownloadManager.NetworkPartitionTableFilename),
-                    mcuDestAddr: "0x8000",
+                    mcuDestAddress: "0x8000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -179,11 +179,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
                 catch (MeadowCommandException meadowCommandException)
                 {
-                    Logger.LogTrace(meadowCommandException.ToString());
+                    Logger.LogDebug(meadowCommandException, "Caught exception while waiting for device to be ready");
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogTrace($"An exception occurred. Retrying. Exception: {ex}");
+                    Logger.LogDebug(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
 
                 await Task.Delay(1000, cancellationToken)

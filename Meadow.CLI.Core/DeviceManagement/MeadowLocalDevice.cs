@@ -18,7 +18,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             _sendTargetData = new SendTargetData(this, Logger);
         }
 
-        public abstract Task Write(byte[] encodedBytes, int encodedToSend);
+        public abstract Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default);
 
         public abstract Task<bool> Initialize(CancellationToken cancellationToken = default);
 
@@ -86,7 +86,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public override async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken =
                                                              default)
         {
-            Logger.LogTrace("Sending Mono Run State Request");
+            Logger.LogDebug("Sending Mono Run State Request");
             await _sendTargetData.SendSimpleCommand(
                                      HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE,
                                      cancellationToken: cancellationToken)
@@ -120,7 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             DataProcessor.OnReceiveData -= handler;
 
-            Logger.LogTrace("Run State: {runState}", result);
+            Logger.LogDebug("Run State: {runState}", result);
             return result;
         }
 
@@ -131,7 +131,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             while ((monoRunState = await GetMonoRunStateAsync(cancellationToken)
                        .ConfigureAwait(false)) && endTime > DateTime.UtcNow)
             {
-                Logger.LogTrace("Sending Mono Disable Request");
+                Logger.LogDebug("Sending Mono Disable Request");
                 await ProcessCommand(
                         HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE,
                         MeadowMessageType.SerialReconnect,
@@ -139,16 +139,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
-                Logger.LogTrace("Waiting for Meadow to cycle");
+                Logger.LogDebug("Waiting for Meadow to cycle");
                 // Give the meadow a little time to cycle
                 await Task.Delay(1000, cancellationToken)
                           .ConfigureAwait(false);
 
-                Logger.LogTrace("Re-initialize the COM device");
+                Logger.LogDebug("Re-initialize the device");
                 await Initialize(cancellationToken)
                     .ConfigureAwait(false);
 
-                Logger.LogTrace("Waiting for the Meadow to be ready");
+                Logger.LogDebug("Waiting for the Meadow to be ready");
                 await WaitForReadyAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -278,7 +278,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                                              [CallerMemberName] string? caller =
                                                                  null)
         {
-            Logger.LogTrace($"{caller} sent {requestType} waiting for {responseMessageType}");
+            Logger.LogTrace($"{caller} sent {requestType} waiting for {responseMessageType.ToString() ?? "[empty]"}");
             var message = await ProcessCommand(
                                   requestType,
                                   e => e.MessageType == responseMessageType,
@@ -340,7 +340,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                Logger.LogTrace($"Received {e.MessageType}, matches filter? {filter(e)}");
+                Logger.LogTrace($"Received {e.MessageType} {e.Message}, matches filter? {filter(e)}");
                 if (filter(e))
                 {
                     message = e.Message;
@@ -354,8 +354,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                using var cts = new CancellationTokenSource(10_000);
-                cts.Token.Register(() => tcs.TrySetCanceled());
+                //using var cts = new CancellationTokenSource(millisecondDelay);
+                //cts.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task.ConfigureAwait(false);
             }
             catch (TaskCanceledException e)

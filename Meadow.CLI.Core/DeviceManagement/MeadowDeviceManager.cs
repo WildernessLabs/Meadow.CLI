@@ -99,14 +99,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                     catch (FileNotFoundException fileNotFoundException)
                     {
                         // eat it for now
-                        _logger.LogTrace(
+                        _logger.LogDebug(
                             fileNotFoundException,
                             "This error can be safely ignored.");
                     }
                     catch (MeadowDeviceException meadowDeviceException)
                     {
                         // eat it for now
-                        _logger.LogTrace(
+                        _logger.LogDebug(
                             meadowDeviceException,
                             "This error can be safely ignored.");
                     }

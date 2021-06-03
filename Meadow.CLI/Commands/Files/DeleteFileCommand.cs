@@ -21,7 +21,7 @@ namespace Meadow.CLI.Commands.Files
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to write to on the Meadow")]
 #endif
-        public int Partition { get; init; } = 0;
+        public uint Partition { get; init; } = 0;
 
         private readonly ILogger<DeleteFileCommand> _logger;
 

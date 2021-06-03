@@ -15,6 +15,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             _factories = new Dictionary<HcomHostRequestType, ReceiveMessageFactory>
             {
                 {HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA, new ReceiveSimpleBinaryFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES, new ReceiveSimpleBinaryFactory() },
+
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED, new ReceiveSimpleTextFactory() },
@@ -28,6 +30,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR, new ReceiveSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY, new ReceiveSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL, new ReceiveSimpleTextFactory() },
             };
         }
 

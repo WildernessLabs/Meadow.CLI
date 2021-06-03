@@ -105,7 +105,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
         public override async Task DeleteFileAsync(string fileName,
-                                              int partition = 0,
+                                              uint partition = 0,
                                               CancellationToken cancellationToken = default)
         {
             await TransmitFileInfoToExtFlash(
@@ -142,12 +142,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task FormatFileSystemAsync(int partition = 0,
+        public override Task FormatFileSystemAsync(uint partition = 0,
                                                    CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS,
-                userData: (uint) partition,
+                userData: partition,
                 cancellationToken: cancellationToken);
         }
 
@@ -159,19 +159,20 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override async Task UpdateMonoRuntimeAsync(string fileName,
                                                      string? targetFileName = null,
-                                                     int partition = 0,
+                                                     uint partition = 0,
                                                      CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Waiting for Meadow to be ready.");
             await WaitForReadyAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            Logger.LogTrace("Calling Mono Disable");
+            Logger.LogDebug("Calling Mono Disable");
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                          "Meadow was expected to have Mono Disabled");
+
             Logger.LogInformation("Updating Mono Runtime");
             
             var sourceFilename = fileName;
@@ -218,7 +219,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 targetFileName = Path.GetFileName(sourceFilename);
             }
 
-            Logger.LogTrace("Sending Mono Update Runtime Request");
+            Logger.LogDebug("Sending Mono Update Runtime Request");
             await TransmitFileInfoToExtFlash(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
                     sourceFilename,
@@ -230,26 +231,26 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            Logger.LogTrace("Waiting for Mono Update to complete");
+            Logger.LogDebug("Waiting for Mono Update to complete");
             await WaitForResponseMessage(
                     x => x.MessageType == MeadowMessageType.Concluded,
                     300000,
                     cancellationToken)
                 .ConfigureAwait(false);
-            Logger.LogTrace("Received Mono Update complete response");
+            Logger.LogDebug("Received Mono Update complete response");
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,
                                                        string? targetFileName = null,
-                                                       int partition = 0,
-                                                       string? mcuDestAddr = null,
+                                                       uint partition = 0,
+                                                       string? mcuDestAddress = null,
                                                        CancellationToken cancellationToken =
                                                            default)
         {
             // For the ESP32 on the meadow, we don't need the target file name, we just need the
             // MCU's destination address and the file's binary.
             // Assume if no mcuDestAddr that the fileName is a CSV with both file names and Mcu Addr
-            if (mcuDestAddr != null)
+            if (mcuDestAddress != null)
             {
                 // Since the mcuDestAddr is used we'll assume the fileName field just contains
                 // a single file.
@@ -263,10 +264,10 @@ namespace Meadow.CLI.Core.DeviceManagement
                 // Convert mcuDestAddr from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
                 UInt32 mcuAddr = 0;
-                if (mcuDestAddr.StartsWith("0x") || mcuDestAddr.StartsWith("0X"))
+                if (mcuDestAddress.StartsWith("0x") || mcuDestAddress.StartsWith("0X"))
                 {
                     mcuAddr = UInt32.Parse(
-                        mcuDestAddr.Substring(2),
+                        mcuDestAddress.Substring(2),
                         System.Globalization.NumberStyles.HexNumber);
                 }
                 else
@@ -361,7 +362,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
-                    mcuDestAddr: "0x10000",
+                    mcuDestAddress: "0x10000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -371,7 +372,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
-                    mcuDestAddr: "0x1000",
+                    mcuDestAddress: "0x1000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -381,7 +382,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
-                    mcuDestAddr: "0x8000",
+                    mcuDestAddress: "0x8000",
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -396,7 +397,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return _sendTargetData.BuildAndSendSimpleData(
                 debuggerData,
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA,
-                (uint) userData);
+                (uint) userData, cancellationToken);
         }
 
         public override async Task DeployAppAsync(string applicationFilePath, CancellationToken cancellationToken = default)
@@ -535,7 +536,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         private protected async Task<bool> WriteFileInternal(
             string filename,
             string? targetFileName = null,
-            int partition = 0,
+            uint partition = 0,
             int timeout = 200000,
             CancellationToken cancellationToken = default)
         {
@@ -606,8 +607,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             HcomMeadowRequestType requestType,
             string sourceFileName,
             string targetFileName,
-            int partition,
-            uint mcuAddr,
+            uint partition,
+            uint mcuAddress,
             bool deleteFile,
             bool lastInSeries = false,
             CancellationToken cancellationToken = default)
@@ -621,17 +622,18 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 //----------------------------------------------
-                if (deleteFile == true)
+                if (deleteFile)
                 {
                     // No data packets, no end-of-file message and no mcu address
                     await _sendTargetData.BuildAndSendFileRelatedCommand(
                                              requestType,
-                                             (UInt32) partition,
+                                             partition,
                                              0,
                                              0,
                                              0,
                                              string.Empty,
-                                             sourceFileName)
+                                             sourceFileName, 
+                                             cancellationToken)
                                          .ConfigureAwait(false);
 
                     return FileTransferResult.EmptyResult;
@@ -645,7 +647,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 // If ESP32 file we must also send the MD5 has of the file
                 string md5Hash = string.Empty;
-                if (mcuAddr != 0)
+                if (mcuAddress != 0)
                 {
                     using var md5 = MD5.Create();
                     using var stream = File.OpenRead(sourceFileName);
@@ -666,12 +668,13 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await _sendTargetData.SendTheEntireFile(
                                          requestType,
                                          targetFileName,
-                                         (uint) partition,
+                                         partition,
                                          fileBytes,
-                                         mcuAddr,
+                                         mcuAddress,
                                          fileCrc32,
                                          md5Hash,
-                                         lastInSeries)
+                                         lastInSeries, 
+                                         cancellationToken)
                                      .ConfigureAwait(false);
 
                 sw.Stop();

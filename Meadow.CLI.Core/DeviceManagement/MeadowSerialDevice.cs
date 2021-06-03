@@ -35,16 +35,18 @@ namespace Meadow.CLI.Core.DeviceManagement
             SerialPort.Dispose();
         }
 
-        public override async Task Write(byte[] encodedBytes, int encodedToSend)
+        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
         {
             if (SerialPort == null)
                 throw new NotConnectedException();
 
             if (SerialPort.IsOpen == false)
             {
-                await AttemptToReconnectToMeadow();
+                Logger.LogDebug("Port is not open, attempting reconnect.");
+                await AttemptToReconnectToMeadow(cancellationToken);
             }
 
+            Logger.LogTrace("Writing {count} bytes to device", encodedToSend);
             SerialPort.Write(encodedBytes, 0, encodedToSend);
         }
 

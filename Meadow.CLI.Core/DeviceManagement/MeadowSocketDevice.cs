@@ -30,7 +30,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Socket.Dispose();
         }
 
-        public override async Task Write(byte[] encodedBytes, int encodedToSend)
+        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken)
         {
             await Task.Yield();
             Socket.Send(encodedBytes, encodedToSend,

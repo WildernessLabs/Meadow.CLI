@@ -36,7 +36,7 @@ namespace Meadow.CLI.Commands.Mono
             await device.ResetMeadowAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            _logger.LogInformation($"Mono Flashed Successfully");
+            _logger.LogInformation("Mono Flashed Successfully");
         }
     }
 }
