@@ -45,7 +45,7 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
-        public async Task DownloadLatest()
+        public async Task DownloadLatestAsync()
         {
             var payload = await Client.GetStringAsync(_versionCheckUrl);
             var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
@@ -163,7 +163,7 @@ namespace Meadow.CLI.Core
         }
 
         public async Task<(bool updateExists, string latestVersion, string currentVersion)>
-            CheckForUpdates()
+            CheckForUpdatesAsync()
         {
             try
             {
@@ -193,16 +193,13 @@ namespace Meadow.CLI.Core
 
         private async Task DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
-            var fileName = uri.Segments.ToList()
-                              .Last();
-
             using var firmwareRequest = new HttpRequestMessage(HttpMethod.Get, uri);
             using var firmwareResponse = await Client.SendAsync(firmwareRequest, cancellationToken)
                                                      .ConfigureAwait(false);
 
             firmwareResponse.EnsureSuccessStatusCode();
-            using var firmwareFile =
-                File.OpenWrite(Path.Combine(FirmwareDownloadsFilePath, fileName));
+            var downloadFileName = Path.GetTempFileName();
+            using var firmwareFile = File.OpenWrite(downloadFileName);
 
             await firmwareResponse.Content.CopyToAsync(firmwareFile)
                                   .ConfigureAwait(false);
@@ -219,7 +216,7 @@ namespace Meadow.CLI.Core
                                  .ConfigureAwait(false);
 
             ZipFile.ExtractToDirectory(
-                Path.Combine(FirmwareDownloadsFilePath, fileName),
+                downloadFileName,
                 FirmwareDownloadsFilePath);
         }
     }

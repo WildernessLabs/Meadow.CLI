@@ -55,7 +55,7 @@ namespace Meadow.CLI
 
             var commands = types.Where(
                                        x => x.IsAssignableTo(typeof(MeadowSerialCommand))
-                                         || x.IsAssignableTo(typeof(ICommand)))
+                                            || x.IsAssignableTo(typeof(MeadowCommand)))
                                    .Where(x => !x.IsAbstract);
 
             foreach (var command in commands)
