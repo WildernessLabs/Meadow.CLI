@@ -41,6 +41,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             try
             {
+                _logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 var meadow = new MeadowSerialDevice(serialPort, logger ?? new NullLogger<MeadowSerialDevice>());
                 await meadow.Initialize(cancellationToken).ConfigureAwait(false);
                 return meadow;
@@ -48,6 +49,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to connect to Meadow on {serialPort}", serialPort);
                 throw ex;
             }
         }

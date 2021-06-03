@@ -207,6 +207,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await WaitForReadyAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
+            Logger.LogTrace("Calling Mono Disable");
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -260,6 +261,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 targetFileName = Path.GetFileName(sourceFilename);
             }
 
+            Logger.LogTrace("Sending Mono Update Runtime Request");
             await TransmitFileInfoToExtFlash(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
                     sourceFilename,
@@ -271,11 +273,13 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            Logger.LogTrace("Waiting for Mono Update to complete");
             await WaitForResponseMessage(
                     x => x.MessageType == MeadowMessageType.Concluded,
                     300000,
                     cancellationToken)
                 .ConfigureAwait(false);
+            Logger.LogTrace("Received Mono Update complete response");
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,

@@ -129,6 +129,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             while ((monoRunState = await GetMonoRunStateAsync(cancellationToken)
                        .ConfigureAwait(false)) && endTime > DateTime.UtcNow)
             {
+                Logger.LogTrace("Sending Mono Disable Request");
                 await ProcessCommand(
                         HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE,
                         MeadowMessageType.SerialReconnect,
@@ -136,13 +137,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
+                Logger.LogTrace("Waiting for Meadow to cycle");
                 // Give the meadow a little time to cycle
                 await Task.Delay(1000, cancellationToken)
                           .ConfigureAwait(false);
 
+                Logger.LogTrace("Re-initialize the COM device");
                 await Initialize(cancellationToken)
                     .ConfigureAwait(false);
 
+                Logger.LogTrace("Waiting for the Meadow to be ready");
                 await WaitForReadyAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
