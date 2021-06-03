@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Nsh
 {
-    [Command("nsh enable", Description = "Disable Mono on the Meadow")]
+    [Command("nsh enable", Description = "Enables NSH on the Meadow device.")]
     public class NshEnableCommand : MeadowSerialCommand
     {
         private readonly ILogger<NshEnableCommand> _logger;

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono enable", Description = "Enable Mono on the Meadow Board")]
+    [Command("mono enable", Description = "Sets mono to run on the Meadow board and then resets it.")]
     public class MonoEnableCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoEnableCommand> _logger;
