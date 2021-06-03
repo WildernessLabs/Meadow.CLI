@@ -263,17 +263,17 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 // Convert mcuDestAddr from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
-                UInt32 mcuAddr = 0;
+                uint mcuAddress = 0;
                 if (mcuDestAddress.StartsWith("0x") || mcuDestAddress.StartsWith("0X"))
                 {
-                    mcuAddr = UInt32.Parse(
+                    mcuAddress = uint.Parse(
                         mcuDestAddress.Substring(2),
                         System.Globalization.NumberStyles.HexNumber);
                 }
                 else
                 {
                     Console.WriteLine(
-                        $"The '--McuDestAddr' argument must be followed with an address in the form '0x1800'");
+                        $"The '--McuDestAddress' argument must be followed with an address in the form '0x1800'");
 
                     return;
                 }
@@ -283,7 +283,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         fileName,
                         targetFileName!,
                         partition,
-                        mcuAddr,
+                        mcuAddress,
                         false,
                         true,
                         cancellationToken)
@@ -359,7 +359,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public override async Task FlashEspAsync(string sourcePath,
                                             CancellationToken cancellationToken = default)
         {
-            Console.WriteLine($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddress: "0x10000",
@@ -369,7 +369,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            Console.WriteLine($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddress: "0x1000",
@@ -379,7 +379,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            Console.WriteLine($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddress: "0x8000",

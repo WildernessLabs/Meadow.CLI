@@ -37,51 +37,19 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public IDictionary<string, uint> FilesOnDevice { get; protected set; } =
             new Dictionary<string, uint>();
-
-        public abstract Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(
-            int timeoutInMs = 10000,
-            int partition = 0,
-            CancellationToken cancellationToken = default);
-
-        public abstract Task<bool> WriteFileAsync(string filename,
-                                             string path,
-                                             int timeoutInMs = 200000,
-                                             CancellationToken cancellationToken = default);
-
-        public abstract Task DeleteFileAsync(string fileName,
-                                        uint partition = 0,
-                                        CancellationToken cancellationToken = default);
-
+        public abstract Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(int timeoutInMs = 10000, int partition = 0, CancellationToken cancellationToken = default);
+        public abstract Task<bool> WriteFileAsync(string filename, string path, int timeoutInMs = 200000, CancellationToken cancellationToken = default);
+        public abstract Task DeleteFileAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public abstract Task EraseFlashAsync(CancellationToken cancellationToken = default);
-
         public abstract Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default);
-
-        public abstract Task FormatFileSystemAsync(uint partition = 0,
-                                              CancellationToken cancellationToken = default);
-
+        public abstract Task FormatFileSystemAsync(uint partition = 0, CancellationToken cancellationToken = default);
         // TODO: Should this also take a partition parameter?
         public abstract Task RenewFileSystemAsync(CancellationToken cancellationToken = default);
-
-        public abstract Task UpdateMonoRuntimeAsync(string fileName,
-                                               string? targetFileName = null,
-                                               uint partition = 0,
-                                               CancellationToken cancellationToken = default);
-
-        public abstract Task WriteFileToEspFlashAsync(string fileName,
-                                                 string? targetFileName = null,
-                                                 uint partition = 0,
-                                                 string? mcuDestAddress = null,
-                                                 CancellationToken cancellationToken = default);
-
-        public abstract Task FlashEspAsync(string sourcePath,
-                                      CancellationToken cancellationToken = default);
-
-        public abstract Task<string?> GetDeviceInfoAsync(int timeoutInMs = 5000,
-                                                    CancellationToken cancellationToken = default);
-
-        public abstract Task<string?> GetDeviceNameAsync(int timeoutInMs = 5000,
-                                                    CancellationToken cancellationToken = default);
-
+        public abstract Task UpdateMonoRuntimeAsync(string fileName, string? targetFileName = null, uint partition = 0, CancellationToken cancellationToken = default);
+        public abstract Task WriteFileToEspFlashAsync(string fileName, string? targetFileName = null, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
+        public abstract Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetDeviceInfoAsync(int timeoutInMs = 5000, CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetDeviceNameAsync(int timeoutInMs = 5000, CancellationToken cancellationToken = default);
         public abstract Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default);
         public abstract Task MonoDisableAsync(CancellationToken cancellationToken = default);
         public abstract Task MonoEnableAsync(CancellationToken cancellationToken = default);
@@ -96,11 +64,11 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task DeployAppAsync(string fileName, CancellationToken cancellationToken = default);
+        public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, int userData, CancellationToken cancellationToken = default);
 
-        public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
-                                                           int userData,
-                                                           CancellationToken cancellationToken =
-                                                               default);
+        // TODO: This is very Meadow Local Device Specific...
+        public abstract Task RestartEsp32Async(CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetDeviceMacAddressAsync(CancellationToken cancellationToken = default);
 
         public virtual async Task FlashEspAsync(CancellationToken cancellationToken = default)
         {

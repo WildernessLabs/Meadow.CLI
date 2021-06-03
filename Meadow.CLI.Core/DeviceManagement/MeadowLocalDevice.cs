@@ -267,6 +267,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
+        public override Task RestartEsp32Async(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32, cancellationToken: cancellationToken);
+        }
+
+        public override Task<string?> GetDeviceMacAddressAsync(CancellationToken cancellationToken = default)
+        {
+            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS, cancellationToken: cancellationToken);
+        }
+
         private protected async Task<string?> ProcessCommand(HcomMeadowRequestType requestType,
                                                              MeadowMessageType responseMessageType =
                                                                  MeadowMessageType.Concluded,
