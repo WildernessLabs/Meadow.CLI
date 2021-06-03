@@ -10,8 +10,8 @@ namespace Meadow.CLI.Core.DeviceManagement
     public static class AssemblyManager
     {
         private static readonly List<string> dependencyMap = new List<string>();
-        private static string folderPath;
-        private static string fileName;
+        private static string? folderPath;
+        private static string? fileName;
 
         public static List<string> GetDependencies(string file, string path)
         {
@@ -35,12 +35,19 @@ namespace Meadow.CLI.Core.DeviceManagement
                 fileName = Path.Combine(path!, fileName);
             }
 
-            if (Path.GetExtension(fileName) != ".exe")
+            if (Path.GetExtension(fileName) != ".exe" &&
+                Path.GetExtension(fileName) != ".dll")
             {
                 fileName += ".dll";
             }
 
             Collection<AssemblyNameReference> references;
+
+            if(File.Exists(fileName) == false)
+            {
+                return null;
+            }
+
             using (var definition = AssemblyDefinition.ReadAssembly(fileName))
             {
                 references = definition.MainModule.AssemblyReferences;
@@ -54,9 +61,14 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 if (!dependencyMap.Contains(ar.Name))
                 {
+                    var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+
+                    if (namedRefs == null)
+                        continue;
+
                     dependencyMap.Add(ar.Name);
 
-                    GetDependencies(GetAssemblyNameReferences(ar.Name, folderPath), dependencyMap);
+                    GetDependencies(namedRefs, dependencyMap);
                 }
             }
 
