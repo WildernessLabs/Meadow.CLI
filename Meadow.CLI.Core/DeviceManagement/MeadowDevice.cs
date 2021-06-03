@@ -56,18 +56,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public abstract Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default);
 
-        public abstract Task PartitionFileSystemAsync(int numberOfPartitions = 2,
-                                                 CancellationToken cancellationToken = default);
-
-        public abstract Task MountFileSystemAsync(int partition = 0,
-                                             CancellationToken cancellationToken = default);
-
-        public abstract Task InitializeFileSystemAsync(int partition = 0,
-                                                  CancellationToken cancellationToken = default);
-
-        public abstract Task CreateFileSystemAsync(int partition = 0,
-                                              CancellationToken cancellationToken = default);
-
         public abstract Task FormatFileSystemAsync(int partition = 0,
                                               CancellationToken cancellationToken = default);
 

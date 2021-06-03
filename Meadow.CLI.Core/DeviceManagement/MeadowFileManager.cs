@@ -142,49 +142,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken: cancellationToken);
         }
 
-        public override Task PartitionFileSystemAsync(int numberOfPartitions = 2,
-                                                 CancellationToken cancellationToken = default)
-        {
-            if (numberOfPartitions < 1 || numberOfPartitions > 8)
-            {
-                throw new IndexOutOfRangeException(
-                    "Number of partitions must be between 1 & 8 inclusive");
-            }
-
-            return ProcessCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_PARTITION_FLASH_FS,
-                userData: (uint) numberOfPartitions,
-                cancellationToken: cancellationToken);
-        }
-
-        public override Task MountFileSystemAsync(int partition = 0,
-                                             CancellationToken cancellationToken = default)
-        {
-            return ProcessCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MOUNT_FLASH_FS,
-                userData: (uint) partition,
-                cancellationToken: cancellationToken);
-        }
-
-        public override Task InitializeFileSystemAsync(int partition = 0,
-                                                  CancellationToken cancellationToken = default)
-        {
-            return ProcessCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_INITIALIZE_FLASH_FS,
-                userData: (uint) partition,
-                cancellationToken: cancellationToken);
-        }
-
-        public override Task CreateFileSystemAsync(int partition = 0,
-                                              CancellationToken cancellationToken = default)
-        {
-            return ProcessCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_CREATE_ENTIRE_FLASH_FS,
-                cancellationToken: cancellationToken);
-        }
-
         public override Task FormatFileSystemAsync(int partition = 0,
-                                              CancellationToken cancellationToken = default)
+                                                   CancellationToken cancellationToken = default)
         {
             return ProcessCommand(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS,
