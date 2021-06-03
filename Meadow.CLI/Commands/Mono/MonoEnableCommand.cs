@@ -29,6 +29,7 @@ namespace Meadow.CLI.Commands.Mono
 
             await device.MonoEnableAsync(cancellationToken)
                        .ConfigureAwait(false);
+            _logger.LogInformation("Mono Enabled Successfully");
         }
     }
 }

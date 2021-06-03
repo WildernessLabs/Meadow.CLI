@@ -24,6 +24,7 @@ namespace Meadow.CLI.Commands.Mono
                 await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
 
             await device.MonoDisableAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("Mono Disabled Successfully");
         }
     }
 }
