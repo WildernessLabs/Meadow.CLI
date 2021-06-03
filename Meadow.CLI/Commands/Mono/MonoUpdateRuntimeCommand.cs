@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono update rt", Description = "Get the Mono Run State on the Meadow Board")]
+    [Command("mono update rt", Description = "Uploads the mono runtime files to the Meadow device and moves them into place.")]
     public class MonoUpdateRuntimeCommand : MeadowSerialCommand
     {
         [CommandOption("filename",'f', Description = "The local name of the mono runtime file. Default is empty.")]
