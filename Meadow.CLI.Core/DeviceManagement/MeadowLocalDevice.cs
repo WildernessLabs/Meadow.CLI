@@ -86,6 +86,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public override async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken =
                                                              default)
         {
+            Logger.LogTrace("Sending Mono Run State Request");
             await _sendTargetData.SendSimpleCommand(
                                      HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE,
                                      cancellationToken: cancellationToken)
@@ -98,13 +99,13 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 if (e.MessageType == MeadowMessageType.Data)
                 {
+                    Logger.LogTrace("Received Message: {message}", e.Message);
                     if (e.Message == "On reset, Meadow will start MONO and run app.exe")
                     {
                         result = true;
                         tcs.SetResult(true);
                     }
-                    else if (e.Message
-                          == "On reset, Meadow will not start MONO, therefore app.exe will not run")
+                    else if (e.Message == "On reset, Meadow will not start MONO, therefore app.exe will not run")
                     {
                         result = false;
                         tcs.SetResult(true);
@@ -119,6 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             DataProcessor.OnReceiveData -= handler;
 
+            Logger.LogTrace("Run State: {runState}", result);
             return result;
         }
 
