@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement
 {
-    [Command("device mac", Description = "Get the device info")]
+    [Command("device mac", Description = "Read the ESP32's MAC address")]
     public class GetDeviceMacAddressCommand : MeadowSerialCommand
     {
         private readonly ILogger<GetDeviceInfoCommand> _logger;
