@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Meadow.CLI.Core.Exceptions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -57,7 +60,23 @@ namespace Meadow.CLI.Core.DeviceManagement
             var attempts = 0;
             while (attempts < maxAttempts)
             {
-                var ports = SerialPort.GetPortNames();
+                string[]? ports;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    ports = Directory.GetFiles("/dev", "tty.usb*");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    ports = Directory.GetFiles("/dev", "tty.usb*");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    ports = SerialPort.GetPortNames();
+                }
+                else
+                {
+                    throw new Exception("Unknown operating system.");
+                }
                 foreach (var port in ports)
                 {
                     try
