@@ -1,4 +1,5 @@
 ﻿using System.IO.Ports;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
@@ -47,7 +48,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await AttemptToReconnectToMeadow(cancellationToken);
             }
 
-            Logger.LogTrace("Writing {count} bytes to device", encodedToSend);
             SerialPort.Write(encodedBytes, 0, encodedToSend);
         }
 

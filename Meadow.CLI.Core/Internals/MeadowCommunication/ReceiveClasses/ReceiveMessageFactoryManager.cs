@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using Meadow.CLI.Core.DeviceManagement;
+
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
@@ -61,7 +63,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private static HcomHostRequestType FindRequestTypeValue(IReadOnlyList<byte> receivedMessage)
         {
             const int requestTypeOffset = (int)HcomProtocolHeaderOffsets.HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET;
-            return (HcomHostRequestType) Convert.ToUInt16(receivedMessage[requestTypeOffset] + (receivedMessage[requestTypeOffset + 1] << 8));
+            return (HcomHostRequestType)Convert.ToUInt16(receivedMessage[requestTypeOffset] + (receivedMessage[requestTypeOffset + 1] << 8));
         }
     }
 }

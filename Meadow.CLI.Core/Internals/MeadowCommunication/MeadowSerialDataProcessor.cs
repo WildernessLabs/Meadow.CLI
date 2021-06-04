@@ -92,7 +92,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
             catch (ThreadAbortException)
             {
-                //ignoring for now until we wire cancelation ...
+                //ignoring for now until we wire cancellation ...
                 //this blocks the thread abort exception when the console app closes
             }
             catch (InvalidOperationException)
@@ -337,8 +337,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
                             _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
                             // TODO: Refactor to expose this without needing a MeadowDevice
-                            await ForwardDebuggingData(processor.MessageData, cancellationToken)
-                                .ConfigureAwait(false);
+                            if (ForwardDebuggingData != null)
+                                await ForwardDebuggingData(processor.MessageData, cancellationToken)
+                                    .ConfigureAwait(false);
+
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
