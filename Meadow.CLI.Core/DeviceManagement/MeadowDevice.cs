@@ -160,9 +160,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             throw new Exception($"Device not ready after {timeout}ms");
         }
 
-        public virtual Task ForwardMonoDataToVisualStudioAsync(byte[] debuggerData,
-                                                          CancellationToken cancellationToken =
-                                                              default)
+        public virtual Task ForwardMonoDataToVisualStudioAsync(byte[] debuggerData, CancellationToken cancellationToken = default)
         {
             return DebuggingServer.SendToVisualStudio(debuggerData, cancellationToken);
         }

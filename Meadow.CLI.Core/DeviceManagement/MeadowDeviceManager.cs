@@ -43,7 +43,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 _logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 var meadow = new MeadowSerialDevice(serialPort, logger ?? new NullLogger<MeadowSerialDevice>());
-                await meadow.Initialize(cancellationToken).ConfigureAwait(false);
+                await meadow.InitializeAsync(cancellationToken).ConfigureAwait(false);
                 return meadow;
 
             }

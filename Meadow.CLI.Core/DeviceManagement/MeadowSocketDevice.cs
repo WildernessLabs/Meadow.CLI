@@ -37,7 +37,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         SocketFlags.None);
         }
 
-        public override Task<bool> Initialize(CancellationToken cancellationToken = default)
+        public override Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
             //Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

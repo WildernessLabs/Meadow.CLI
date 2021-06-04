@@ -23,16 +23,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private ActiveClient? _activeClient;
         private int _activeClientCount = 0;
         private readonly ILogger _logger;
+        private readonly MeadowDevice _device;
 
         // Constructor
-        public DebuggingServer(int visualStudioPort, ILogger? logger = null)
+        public DebuggingServer(MeadowDevice device, int visualStudioPort, ILogger? logger = null)
         {
+            _device = device;
             _vsPort = visualStudioPort;
             _logger = logger ?? NullLogger.Instance;
         }
 
-        public async void StartListening(MeadowSerialDevice meadow,
-                                         CancellationToken cancellationToken)
+        public async Task StartListening(CancellationToken cancellationToken)
         {
             try
             {
@@ -64,7 +65,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             }
 
                             _activeClient = new ActiveClient(this, tcpClient, _logger);
-                            _activeClient.ReceiveVsDebug(meadow);
+                            _activeClient.ReceiveVsDebug(_device);
                             _activeClientCount++;
                         },
                         cancellationToken);
@@ -125,7 +126,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _tcpClient.Close(); // Closes NetworkStream too
             }
 
-            internal async void ReceiveVsDebug(MeadowSerialDevice meadow)
+            internal async void ReceiveVsDebug(MeadowDevice meadow)
             {
                 // Console.WriteLine("ActiveClient:Start receiving from VS");
                 try

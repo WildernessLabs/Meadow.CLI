@@ -50,7 +50,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             SerialPort.Write(encodedBytes, 0, encodedToSend);
         }
 
-        public override async Task<bool> Initialize(CancellationToken cancellationToken = default)
+        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             if (!SerialPort.IsOpen)
@@ -85,8 +85,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return port;
         }
 
-        internal async Task<bool> AttemptToReconnectToMeadow(
-            CancellationToken cancellationToken = default)
+        internal async Task<bool> AttemptToReconnectToMeadow(CancellationToken cancellationToken = default)
         {
             var delayCount = 20; // 10 seconds
             while (true)
@@ -94,7 +93,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
 
-                var portOpened = await Initialize(cancellationToken)
+                var portOpened = await InitializeAsync(cancellationToken)
                                       .ConfigureAwait(false);
 
                 if (portOpened)

@@ -20,13 +20,13 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public abstract Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default);
 
-        public abstract Task<bool> Initialize(CancellationToken cancellationToken = default);
+        public abstract Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
         public override async Task<string?> GetDeviceInfoAsync(int timeoutMs = 5000, CancellationToken cancellationToken = default)
         {
-            await Initialize(cancellationToken)
+            await InitializeAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             await _sendTargetData.SendSimpleCommand(
@@ -138,7 +138,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .ConfigureAwait(false);
 
                 Logger.LogDebug("Re-initialize the device");
-                await Initialize(cancellationToken)
+                await InitializeAsync(cancellationToken)
                     .ConfigureAwait(false);
 
                 Logger.LogDebug("Waiting for the Meadow to be ready");
@@ -169,7 +169,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .ConfigureAwait(false);
 
                 Logger.LogDebug("Re-initialize the device");
-                await Initialize(cancellationToken)
+                await InitializeAsync(cancellationToken)
                     .ConfigureAwait(false);
 
                 Logger.LogDebug("Waiting for the Meadow to be ready");
@@ -202,7 +202,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             // Give the meadow a little time to cycle
             await Task.Delay(1000,cancellationToken).ConfigureAwait(false);
 
-            await Initialize(cancellationToken)
+            await InitializeAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             await WaitForReadyAsync(cancellationToken: cancellationToken)

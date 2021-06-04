@@ -32,17 +32,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         DownloadStartFail,
     }
 
-    public class MeadowSerialDataProcessor : MeadowDataProcessor
+    public class MeadowSerialDataProcessor : MeadowDataProcessor, IDisposable
     {
         private readonly ILogger _logger;
         //collapse to one and use enum
         private readonly SerialPort _serialPort;
+        readonly Socket _socket;
         private readonly Task _dataProcessorTask;
 
         private readonly HostCommBuffer _hostCommBuffer;
         private readonly ReceiveMessageFactoryManager _receiveMessageFactoryManager;
-        
-        readonly Socket socket;
+        private readonly CancellationTokenSource _cts;
 
         // It seems that the .Net SerialPort class is not all it could be.
         // To acheive reliable operation some SerialPort class methods must
@@ -53,6 +53,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         // Constructor
         private MeadowSerialDataProcessor(ILogger logger)
         {
+            _cts = new CancellationTokenSource();
             _receiveMessageFactoryManager = new ReceiveMessageFactoryManager(logger);
             _hostCommBuffer = new HostCommBuffer();
             _hostCommBuffer.Init(MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload * 4);
@@ -62,13 +63,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
-            _dataProcessorTask = Task.Factory.StartNew(() => ReadSerialPortAsync(), TaskCreationOptions.LongRunning);
+            _dataProcessorTask = Task.Factory.StartNew(ReadSerialPortAsync, TaskCreationOptions.LongRunning);
         }
 
         public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
-            this.socket = socket;
-            _dataProcessorTask = Task.Factory.StartNew(() => ReadSocketAsync(), TaskCreationOptions.LongRunning);
+            this._socket = socket;
+            _dataProcessorTask = Task.Factory.StartNew(ReadSocketAsync, TaskCreationOptions.LongRunning);
         }
 
         //-------------------------------------------------------------
@@ -82,9 +83,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 while (true)
                 {
                     var segment = new ArraySegment<byte>(buffer);
-                    var receivedLength = await socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
+                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
 
-                    AddAndProcessData(buffer, receivedLength);
+                    await AddAndProcessData(buffer, receivedLength, _cts.Token).ConfigureAwait(false);
 
                     await Task.Delay(50).ConfigureAwait(false);
                 }
@@ -126,7 +127,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     if (byteCount > 0)
                     {
                         var receivedLength = await _serialPort.BaseStream.ReadAsync(buffer, 0, byteCount).ConfigureAwait(false);
-                        AddAndProcessData(buffer, receivedLength);
+                        await AddAndProcessData(buffer, receivedLength, _cts.Token).ConfigureAwait(false);
                     }
                     await Task.Delay(50).ConfigureAwait(false);
                 }
@@ -146,7 +147,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        private void AddAndProcessData(byte[] buffer, int availableBytes)
+        private async Task AddAndProcessData(byte[] buffer, int availableBytes, CancellationToken cancellationToken)
         {
             HcomBufferReturn result;
 
@@ -162,7 +163,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 {
                     // Wasn't possible to put these bytes in the buffer. We need to
                     // process a few packets and then retry to add this data
-                    result = PullAndProcessAllPackets();
+                    result = await PullAndProcessAllPackets(cancellationToken).ConfigureAwait(false);
                     if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
                         result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                         continue;   // There should be room now for the failed add
@@ -186,14 +187,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 }
             }
 
-            result = PullAndProcessAllPackets();
+            result = await PullAndProcessAllPackets(cancellationToken).ConfigureAwait(false);
 
             // Any other response is an error
             Debug.Assert(result == HcomBufferReturn.HCOM_CIR_BUF_GET_FOUND_MSG ||
                 result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND);
         }
 
-        private HcomBufferReturn PullAndProcessAllPackets()
+        private async Task<HcomBufferReturn> PullAndProcessAllPackets(CancellationToken cancellationToken)
         {
             byte[] packetBuffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
             byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableMsgPacketLength];
@@ -243,7 +244,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 // Process the received packet
                 if (decodedSize > 0)
                 {
-                    bool procResult = ParseAndProcessReceivedPacket(decodedBuffer, decodedSize);
+                    bool procResult = await ParseAndProcessReceivedPacket(decodedBuffer, decodedSize, cancellationToken).ConfigureAwait(false);
                     if (procResult)
                         continue;   // See if there's another packet ready
                 }
@@ -252,7 +253,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             return result;
         }
 
-        private bool ParseAndProcessReceivedPacket(byte[] receivedMsg, int receivedMsgLen)
+        private async Task<bool> ParseAndProcessReceivedPacket(byte[] receivedMsg, int receivedMsgLen, CancellationToken cancellationToken)
         {
             try
             {
@@ -324,8 +325,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
-                            // TODO: CANNOT BLOCK THREAD HERE
-                            Thread.Sleep(2000); // need to give the device a couple seconds
+                            await Task.Delay(2000, cancellationToken).ConfigureAwait(false); // need to give the device a couple seconds
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
@@ -333,6 +333,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
                             _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
                             // TODO: Refactor to expose this without needing a MeadowDevice
+                            await ForwardDebuggingData(processor.MessageData, cancellationToken)
+                                .ConfigureAwait(false);
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
@@ -393,5 +395,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         if (buffOffset < decodedSize)
             continue;
         */
+        public void Dispose()
+        {
+            try
+            {
+                _cts.Cancel();
+                _dataProcessorTask?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogTrace(ex, "Exception during disposal");
+            }
+        }
     }
 }
