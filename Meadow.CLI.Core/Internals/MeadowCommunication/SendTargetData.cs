@@ -208,7 +208,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                _logger.LogTrace("FOO: Received MessageType: {messageType} Message: {message}", e.MessageType, string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
+                _logger.LogTrace("Received MessageType: {messageType} Message: {message}", e.MessageType, string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
                 if (e.MessageType == MeadowMessageType.Accepted)
                 {
                     received = true;
