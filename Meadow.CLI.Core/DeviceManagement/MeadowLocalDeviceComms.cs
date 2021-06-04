@@ -496,6 +496,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 var res = e.MessageType switch
                 {
+                    MeadowMessageType.SerialReconnect   => true,
                     MeadowMessageType.Concluded         => true,
                     MeadowMessageType.DownloadStartOkay => true,
                     MeadowMessageType.DownloadStartFail => true,

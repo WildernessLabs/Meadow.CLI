@@ -120,7 +120,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 Trace.Assert(await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                              "Meadow was expected to have Mono Disabled");
 
-                _logger.LogInformation("Flashing ESP");
+                _logger.LogInformation("Updating ESP");
                 await device.FlashEspAsync(cancellationToken)
                             .ConfigureAwait(false);
 
@@ -128,7 +128,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 await device.ResetMeadowAsync(cancellationToken)
                            .ConfigureAwait(false);
 
-                _logger.LogInformation("Enabling Mono and Resetting.");
+                _logger.LogInformation("Enabling Mono and Resetting");
                 while (await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false)
                 {
                     await device.MonoEnableAsync(cancellationToken);

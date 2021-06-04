@@ -162,7 +162,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                                                      uint partition = 0,
                                                      CancellationToken cancellationToken = default)
         {
-            Logger.LogInformation("Waiting for Meadow to be ready.");
+            Logger.LogInformation("Starting Mono Runtime Update");
+            Logger.LogInformation("Waiting for Meadow to be ready");
             await WaitForReadyAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -237,7 +238,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     300000,
                     cancellationToken)
                 .ConfigureAwait(false);
-            Logger.LogDebug("Received Mono Update complete response");
+            Logger.LogInformation("Mono Runtime Update Complete");
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,
