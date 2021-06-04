@@ -43,11 +43,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             try
             {
-                // Build and send the header
-                await BuildAndSendFileRelatedCommand(requestType,
-                    partitionId, (uint)fileBytes.Length, payloadCrc32,
-                    mcuAddress, md5Hash, destFileName, cancellationToken);
-
                 //--------------------------------------------------------------
                 int responseWaitTime;
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
@@ -59,6 +54,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 {
                     responseWaitTime = 10_000;
                 }
+
+                // Build and send the header
+                await BuildAndSendFileRelatedCommand(requestType,
+                    partitionId, (uint)fileBytes.Length, payloadCrc32,
+                    mcuAddress, md5Hash, destFileName, cancellationToken);
 
                 //==== Wait for response from Meadow
                 // create our message filter.
@@ -74,7 +74,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 // if it failed, bail out
                 if (!success)
                 {
-                    _logger.LogTrace("Message response indicates failure.");
+                    _logger.LogDebug("Message response indicates failure");
                     return;
                 }
 
@@ -82,13 +82,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
                                    && messageType == MeadowMessageType.DownloadStartOkay)
                 {
-                    _logger.LogDebug("Request complete");
+                    _logger.LogDebug("ESP32 download request accepted");
                 }
                 // if it's an ESP file transfer start and it failed to start
                 else if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER &&
                                       messageType == MeadowMessageType.DownloadStartFail)
                 {
-                    _logger.LogDebug("Request failed.");
+                    _logger.LogDebug("ESP32 download request rejected");
                 }
 
                 // if the download didn't start ok.
@@ -330,7 +330,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             HcomMeadowRequestType requestType, uint userData, uint fileSize, uint fileCheckSum, 
             uint mcuAddress, string md5Hash, string destFileName, CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Building file related command");
+            _logger.LogTrace("Building {requestType} command", requestType);
             // Future: Try to use the StructLayout attribute
             Debug.Assert(md5Hash.Length == 0 || md5Hash.Length == HCOM_PROTOCOL_REQUEST_MD5_HASH_LENGTH);
 
@@ -410,28 +410,28 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 }
                 catch (InvalidOperationException ioe)  // Port not opened
                 {
-                    Console.WriteLine("Write but port not opened. Exception: {0}", ioe);
+                    _logger.LogError(ioe, "Write but port not opened");
                     throw;
                 }
                 catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
                 {
-                    Console.WriteLine("Write buffer, offset and count don't line up. Exception: {0}", aore);
+                    _logger.LogError(aore, "Write buffer, offset and count don't line up");
                     throw;
                 }
                 catch (ArgumentException ae)  // offset plus count > buffer length
                 {
-                    Console.WriteLine("Write offset plus count > buffer length. Exception: {0}", ae);
+                    _logger.LogError(ae, "Write offset plus count > buffer length");
                     throw;
                 }
                 catch (TimeoutException te) // Took too long to send
                 {
-                    Console.WriteLine("Write took too long to send. Exception: {0}", te);
+                    _logger.LogError(te, "Write took too long to send");
                     throw;
                 }
             }
             catch (Exception except)
             {
-                Debug.WriteLine($"EncodeAndSendPacket threw: {except}");
+                _logger.LogTrace(except, "EncodeAndSendPacket threw");
                 throw;
             }
         }

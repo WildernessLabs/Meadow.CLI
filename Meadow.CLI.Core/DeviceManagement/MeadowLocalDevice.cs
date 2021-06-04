@@ -343,7 +343,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
-            Logger.LogTrace($"{caller} waiting for response.");
+            Logger.LogTrace("{caller} is waiting for response.", caller);
             if (filter == null)
             {
                 return (true, string.Empty, MeadowMessageType.ErrOutput);
@@ -356,7 +356,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                Logger.LogTrace("Received {messageType} {message}, matches filter? {isFilterMatch}", e.MessageType, e.Message, filter(e));
+                Logger.LogTrace("Received MessageType: {messageType} Message: {message}, matches filter? {isFilterMatch}", e.MessageType, string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message, filter(e));
                 if (filter(e))
                 {
                     message = e.Message;

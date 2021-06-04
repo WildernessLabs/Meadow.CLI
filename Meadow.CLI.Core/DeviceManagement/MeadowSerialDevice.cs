@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         private MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
                                    ILogger? logger = null)
-            : base(new MeadowSerialDataProcessor(serialPort), logger)
+            : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
         {
             SerialPort = serialPort;
             _serialPortName = serialPortName;

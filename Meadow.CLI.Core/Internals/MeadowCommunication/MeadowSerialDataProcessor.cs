@@ -262,87 +262,88 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                 if (processor.Execute(receivedMsg, receivedMsgLen))
                 {
-                    _logger.LogTrace("Received message {messageType}", processor.RequestType);
-                    switch (processor.RequestType)
+                    var requestType = (HcomHostRequestType)processor.RequestType;
+                    _logger.LogTrace("Received message {messageType}", requestType);
+                    switch (requestType)
                     {
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
                             _logger.LogTrace("Request Undefined"); // TESTING
                             break;
 
                         // This set are responses to request issued by this application
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
                             _logger.LogTrace("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Accepted"); // TESTING
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
+                             _logger.LogTrace("Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                             _logger.LogTrace($"{DateTime.Now:HH:mm:ss.fff}-Request Concluded"); // TESTING
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
+                             _logger.LogTrace("Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
                             _logger.LogTrace("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
                             _logger.LogTrace("protocol-Request Information"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
                             _logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListMember, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.ErrOutput, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DeviceInfo, processor.ToString()));
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG:
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.MeadowTrace, processor.ToString()));
                             }
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
                             // TODO: CANNOT BLOCK THREAD HERE
                             Thread.Sleep(2000); // need to give the device a couple seconds
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.SerialReconnect, null));
                             break;
 
                         // Debug message from Meadow for Visual Studio
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
                             _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
                             // TODO: Refactor to expose this without needing a MeadowDevice
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartOkay));
                             break;
 
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartFail));
                             break;
 
-                        case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
                             // Just length and hex-hex-hex....
                             // Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
 

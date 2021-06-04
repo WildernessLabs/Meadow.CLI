@@ -94,7 +94,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken)
+            await Task.Delay(5000, cancellationToken)
                       .ConfigureAwait(false);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
@@ -107,7 +107,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken)
+            await Task.Delay(5000, cancellationToken)
                       .ConfigureAwait(false);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
@@ -120,7 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken)
+            await Task.Delay(5000, cancellationToken)
                       .ConfigureAwait(false);
         }
 
