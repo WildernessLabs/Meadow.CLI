@@ -131,7 +131,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     if (sizeFoundTop > packetBufferSize)
                     {
                         packetLength = sizeFoundTop;
-                        Console.WriteLine($"1. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                        Console.WriteLine($"1. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxAllowableMsgPayloadLength}");
                         //Debug.Assert(false);
                         return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
                     }
@@ -153,7 +153,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 if (sizeFoundBottom + sizeFoundTop > packetBufferSize)
                 {
                     packetLength = sizeFoundTop;
-                    Console.WriteLine($"2. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxDataSizeInProtocolMsg}");
+                    Console.WriteLine($"2. Need buffer with {packetLength} bytes, max:{MeadowDeviceManager.MaxAllowableMsgPayloadLength}");
                     //Debug.Assert(false);
                     return HcomBufferReturn.HCOM_CIR_BUF_GET_BUF_NO_ROOM;
                 }

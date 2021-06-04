@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;

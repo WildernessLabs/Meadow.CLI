@@ -118,7 +118,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await WaitForResponseMessage(
+            await WaitForResponseMessageAsync(
                     x => x.MessageType == MeadowMessageType.Concluded,
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
@@ -232,7 +232,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 .ConfigureAwait(false);
 
             Logger.LogDebug("Waiting for Mono Update to complete");
-            await WaitForResponseMessage(
+            await WaitForResponseMessageAsync(
                     x => x.MessageType == MeadowMessageType.Concluded,
                     300000,
                     cancellationToken)
@@ -289,7 +289,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         cancellationToken)
                     .ConfigureAwait(false);
 
-                await WaitForResponseMessage(
+                await WaitForResponseMessageAsync(
                         x => x.MessageType == MeadowMessageType.Concluded,
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
@@ -356,8 +356,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public override async Task FlashEspAsync(string sourcePath,
-                                            CancellationToken cancellationToken = default)
+        public override async Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default)
         {
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
@@ -388,6 +387,30 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
+        }
+
+        public override async Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
+        {
+            Logger.LogDebug("Getting initial bytes from {fileName}", fileName);
+            var encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
+
+            await _sendTargetData.BuildAndSendSimpleData(
+                encodedFileName,
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES,
+                0,
+                cancellationToken);
+
+            var (success, message, _) = await WaitForResponseMessageAsync(
+                x => x.MessageType == MeadowMessageType.Concluded,
+                5000,
+                cancellationToken);
+
+            if (!success)
+            {
+                Logger.LogWarning("No bytes found for file.");
+            }
+
+            return message;
         }
 
         public override Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
@@ -560,7 +583,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         cancellationToken)
                     .ConfigureAwait(false);
 
-                await WaitForResponseMessage(
+                await WaitForResponseMessageAsync(
                         x => x.MessageType == MeadowMessageType.Concluded,
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
@@ -609,7 +632,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             string targetFileName,
             uint partition,
             uint mcuAddress,
-            bool deleteFile,
+            bool useSourceAsTarget,
             bool lastInSeries = false,
             CancellationToken cancellationToken = default)
         {
@@ -622,7 +645,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 //----------------------------------------------
-                if (deleteFile)
+                if (useSourceAsTarget)
                 {
                     // No data packets, no end-of-file message and no mcu address
                     await _sendTargetData.BuildAndSendFileRelatedCommand(

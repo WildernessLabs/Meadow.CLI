@@ -55,7 +55,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         {
             _receiveMessageFactoryManager = new ReceiveMessageFactoryManager(logger);
             _hostCommBuffer = new HostCommBuffer();
-            _hostCommBuffer.Init(MeadowDeviceManager.MaxSizeOfPacketBuffer * 4);
+            _hostCommBuffer.Init(MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload * 4);
             _logger = logger;
         }
 
@@ -75,7 +75,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         // All received data handled here
         private async Task ReadSocketAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
             try
             {
@@ -108,7 +108,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         // All received data handled here
         private async Task ReadSerialPortAsync()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
+            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
             try
             {
@@ -195,14 +195,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         private HcomBufferReturn PullAndProcessAllPackets()
         {
-            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer];
-            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableDataBlock];
+            byte[] packetBuffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
+            byte[] decodedBuffer = new byte[MeadowDeviceManager.MaxAllowableMsgPacketLength];
             int packetLength;
             HcomBufferReturn result;
 
             while (true)
             {
-                result = _hostCommBuffer.GetNextPacket(packetBuffer, MeadowDeviceManager.MaxAllowableDataBlock, out packetLength);
+                result = _hostCommBuffer.GetNextPacket(packetBuffer, MeadowDeviceManager.MaxAllowableMsgPacketLength, out packetLength);
                 if (result == HcomBufferReturn.HCOM_CIR_BUF_GET_NONE_FOUND)
                     break;      // We've emptied buffer of all messages
 
@@ -212,7 +212,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     // corrupted data in buffer.
                     // I don't know why but without the following 2 lines the Debug.Assert will
                     // assert eventhough the following line is not executed?
-                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxSizeOfPacketBuffer}");
+                    Console.WriteLine($"Need a buffer with {packetLength} bytes, not {MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload}");
                     Thread.Sleep(1);
                     Debug.Assert(false);
                 }
@@ -238,7 +238,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                     continue;
 
-                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableDataBlock);
+                Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
 
                 // Process the received packet
                 if (decodedSize > 0)
@@ -335,12 +335,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             //_device.ForwardMonoDataToVisualStudio(processor.MessageData);
                             break;
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY:
-                            // ConsoleOut("protocol-File Start OKAY received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartOkay));
                             break;
 
                         case (ushort)HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL:
-                            // ConsoleOut("protocol-File Start FAIL received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadStartFail));
                             break;
 

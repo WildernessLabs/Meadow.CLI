@@ -61,84 +61,10 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static void FlashOS(string filename = "", UsbRegistry? device = null)
-        {
-            if (device == null)
-                device = GetDevice();
-
-            // if filename isn't specified fallback to download path
-            if (string.IsNullOrEmpty(filename))
-            {
-                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
-            }
-
-            if (!File.Exists(filename))
-            {
-                Console.WriteLine("Please specify valid --File or --Download latest");
-                return;
-            }
-            else
-            {
-                Console.WriteLine($"Flashing OS with {filename}");
-            }
-
-            var serial = GetDeviceSerial(device);
-
-            var dfuUtilVersion = GetDfuUtilVersion();
-
-            if (string.IsNullOrEmpty(dfuUtilVersion))
-            {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                {
-                    Console.WriteLine("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
-                }
-                else
-                {
-                    Console.WriteLine("dfu-util not found. To install run: brew install dfu-util");
-                }
-                return;
-            }
-            else if (dfuUtilVersion != "0.10")
-            {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                {
-                    Console.WriteLine("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
-                }
-                else
-                {
-                    Console.WriteLine("dfu-util update required. To install, run: brew upgrade dfu-util");
-                }
-                return;
-            }
-
-            try
-            {
-                var startInfo = new ProcessStartInfo(
-                                    "dfu-util",
-                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
-                                {
-                                    UseShellExecute = false,
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                    RedirectStandardInput = false
-                                };
-                using var process = Process.Start(startInfo);
-                if (process == null)
-                    throw new Exception("Failed to start dfu-util");
-                process.WaitForExit();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"There was a problem executing dfu-util: {ex.Message}");
-                return;
-            }
-        }
-
         public static async Task FlashOsAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
-            if (device == null)
-                device = GetDevice();
+            device ??= GetDevice();
 
             // if filename isn't specified fallback to download path
             if (string.IsNullOrEmpty(filename))

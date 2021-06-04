@@ -18,10 +18,10 @@ namespace Meadow.CLI.Core.DeviceManagement
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
-        internal const int MaxAllowableDataBlock = 512;
-        internal const int MaxSizeOfPacketBuffer = MaxAllowableDataBlock + (MaxAllowableDataBlock / 254) + 8;
+        internal const int MaxAllowableMsgPacketLength = 512;
+        internal const int MaxEstimatedSizeOfEncodedPayload = MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
         internal const int ProtocolHeaderSize = 12;
-        internal const int MaxDataSizeInProtocolMsg = MaxAllowableDataBlock - ProtocolHeaderSize;
+        internal const int MaxAllowableMsgPayloadLength = MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         public MeadowDeviceManager(ILoggerFactory loggerFactory)
         {

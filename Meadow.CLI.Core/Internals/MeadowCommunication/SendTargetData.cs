@@ -48,7 +48,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     partitionId, (uint)fileBytes.Length, payloadCrc32,
                     mcuAddress, md5Hash, destFileName, cancellationToken);
 
-
                 //--------------------------------------------------------------
                 int responseWaitTime;
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
@@ -69,16 +68,19 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     p.MessageType == MeadowMessageType.DownloadStartFail);
                 // await the response
 
-                var (success, _, messageType) = await _device.WaitForResponseMessage(filter, responseWaitTime, cancellationToken)
+                var (success, _, messageType) = await _device.WaitForResponseMessageAsync(filter, responseWaitTime, cancellationToken)
                     .ConfigureAwait(false);
 
                 // if it failed, bail out
-                if (!success) { return; }
+                if (!success)
+                {
+                    _logger.LogTrace("Message response indicates failure.");
+                    return;
+                }
 
                 // if it's an ESP start file transfer and the download started ok.
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
-                                   &&
-                                   messageType == MeadowMessageType.DownloadStartOkay)
+                                   && messageType == MeadowMessageType.DownloadStartOkay)
                 {
                     _logger.LogDebug("Request complete");
                 }
@@ -114,13 +116,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 WriteProgress(-1);
                 while (fileBufOffset <= fileBytes.Length - 1)           // equal would mean past the end
                 {
-                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableDataBlock) > (fileBytes.Length - 1))
+                    if ((fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength) > (fileBytes.Length - 1))
                     {
                         numBytesToSend = fileBytes.Length - fileBufOffset;  // almost done, last packet
                     }
                     else
                     {
-                        numBytesToSend = MeadowDeviceManager.MaxAllowableDataBlock;
+                        numBytesToSend = MeadowDeviceManager.MaxAllowableMsgPacketLength;
                     }
 
                     await BuildAndSendDataPacketRequest(fileBytes, fileBufOffset, numBytesToSend, sequenceNumber, cancellationToken).ConfigureAwait(false);
@@ -135,7 +137,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 WriteProgress(101);
 
                 // echo the device responses
-                await Task.Delay(250); // if we're too fast, we'll finish and the device will still echo a little
+                await Task.Delay(250, cancellationToken); // if we're too fast, we'll finish and the device will still echo a little
 
                 //--------------------------------------------------------------
                 // Build and send the correct trailer
@@ -166,7 +168,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
             catch (Exception except)
             {
-                _logger.LogError(except, "Exception sending to Meadow");
+                _logger.LogError(except, "Exception sending command to Meadow");
                 throw;
             }
         }
@@ -381,7 +383,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 _logger.LogTrace("Calculated Crc {crc}", _packetCrc32);
 
                 // Add 2, first to account for start delimiter and second for end
-                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxSizeOfPacketBuffer + 2];
+                byte[] encodedBytes = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload + 2];
                 // Skip first byte so it can be a start delimiter
                 int encodedToSend = CobsTools.CobsEncoding(messageBytes, messageOffset, messageSize, ref encodedBytes, 1);
 

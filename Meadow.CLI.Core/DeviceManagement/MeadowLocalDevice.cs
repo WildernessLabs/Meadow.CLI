@@ -24,9 +24,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<string?> GetDeviceInfoAsync(int timeoutMs = 5000,
-                                                          CancellationToken cancellationToken =
-                                                              default)
+        public override async Task<string?> GetDeviceInfoAsync(int timeoutMs = 5000, CancellationToken cancellationToken = default)
         {
             await Initialize(cancellationToken)
                 .ConfigureAwait(false);
@@ -38,7 +36,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                var (isSuccess, message, messageType) = await WaitForResponseMessage(
+                var (isSuccess, message, messageType) = await WaitForResponseMessageAsync(
                                p => p.MessageType == MeadowMessageType.DeviceInfo,
                                millisecondDelay: timeoutMs,
                                cancellationToken: cancellationToken)
@@ -56,9 +54,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         //device name is processed when the message is received
         //this will request the device name and return true it was successfully
-        public override async Task<string?> GetDeviceNameAsync(int timeoutMs = 5000,
-                                                          CancellationToken cancellationToken =
-                                                              default)
+        public override async Task<string?> GetDeviceNameAsync(int timeoutMs = 5000, CancellationToken cancellationToken = default)
         {
             await _sendTargetData.SendSimpleCommand(
                                      HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_NAME,
@@ -67,7 +63,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                var (isSuccess, message, messageType) =  await WaitForResponseMessage(
+                var (isSuccess, message, messageType) =  await WaitForResponseMessageAsync(
                                                                  p => p.MessageType == MeadowMessageType.DeviceInfo,
                                                                  millisecondDelay: timeoutMs,
                                                                  cancellationToken: cancellationToken)
@@ -83,8 +79,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public override async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken =
-                                                             default)
+        public override async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Sending Mono Run State Request");
             await _sendTargetData.SendSimpleCommand(
@@ -100,12 +95,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 if (e.MessageType == MeadowMessageType.Data)
                 {
                     Logger.LogTrace("Received Message: {message}", e.Message);
-                    if (e.Message == "On reset, Meadow will start MONO and run app.exe")
+                    if (e.Message == "On reset, Meadow will start MONO and run app.exe" || e.Message == "Mono is enabled")
                     {
                         result = true;
                         tcs.SetResult(true);
                     }
-                    else if (e.Message == "On reset, Meadow will not start MONO, therefore app.exe will not run")
+                    else if (e.Message == "On reset, Meadow will not start MONO, therefore app.exe will not run" || e.Message == "Mono is disabled")
                     {
                         result = false;
                         tcs.SetResult(true);
@@ -128,8 +123,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
             bool monoRunState;
-            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken)
-                       .ConfigureAwait(false)) && endTime > DateTime.UtcNow)
+            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false)) && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Disable Request");
                 await ProcessCommand(
@@ -140,7 +134,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                     .ConfigureAwait(false);
 
                 Logger.LogDebug("Waiting for Meadow to cycle");
-                // Give the meadow a little time to cycle
                 await Task.Delay(1000, cancellationToken)
                           .ConfigureAwait(false);
 
@@ -159,20 +152,33 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override async Task MonoEnableAsync(CancellationToken cancellationToken = default)
         {
-            await ProcessCommand(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE,
-                MeadowMessageType.SerialReconnect,
-                timeoutMs: 15000,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+            var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
+            bool monoRunState;
+            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false)) == false && endTime > DateTime.UtcNow)
+            {
+                Logger.LogDebug("Sending Mono Enable Request");
+                await ProcessCommand(
+                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE,
+                        MeadowMessageType.SerialReconnect,
+                        timeoutMs: 15000,
+                        cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
 
-            // Give the meadow a little time to cycle
-            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+                Logger.LogDebug("Waiting for Meadow to cycle");
+                await Task.Delay(1000, cancellationToken)
+                          .ConfigureAwait(false);
 
-            await Initialize(cancellationToken)
-                .ConfigureAwait(false);
+                Logger.LogDebug("Re-initialize the device");
+                await Initialize(cancellationToken)
+                    .ConfigureAwait(false);
 
-            await WaitForReadyAsync(cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                Logger.LogDebug("Waiting for the Meadow to be ready");
+                await WaitForReadyAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (!monoRunState)
+                throw new Exception("Failed to enable mono.");
         }
 
         public override Task MonoFlashAsync(CancellationToken cancellationToken = default)
@@ -288,7 +294,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                                              [CallerMemberName] string? caller =
                                                                  null)
         {
-            Logger.LogTrace($"{caller} sent {requestType} waiting for {responseMessageType.ToString() ?? "[empty]"}");
+            Logger.LogTrace("{caller} sent {requestType} waiting for {responseMessageType}", caller, requestType, responseMessageType.ToString() ?? "[empty]");
             var message = await ProcessCommand(
                                   requestType,
                                   e => e.MessageType == responseMessageType,
@@ -298,7 +304,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                   cancellationToken)
                               .ConfigureAwait(false);
 
-            Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
+            Logger.LogTrace("Returning to {caller} with {message}", caller, string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
             return message;
         }
 
@@ -324,14 +330,14 @@ namespace Meadow.CLI.Core.DeviceManagement
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            var (isSuccess, message, _) = await WaitForResponseMessage(filter, timeoutMs, cancellationToken)
+            var (isSuccess, message, _) = await WaitForResponseMessageAsync(filter, timeoutMs, cancellationToken)
                               .ConfigureAwait(false);
 
-            Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
+            Logger.LogTrace("Returning to {caller} with {message}", caller, string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
             return message;
         }
 
-        protected internal async Task<(bool Success, string? Message, MeadowMessageType MessageType)> WaitForResponseMessage(
+        protected internal async Task<(bool Success, string? Message, MeadowMessageType MessageType)> WaitForResponseMessageAsync(
             Predicate<MeadowMessageEventArgs>? filter,
             int millisecondDelay = 10000,
             CancellationToken cancellationToken = default,
@@ -350,7 +356,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
-                Logger.LogTrace($"Received {e.MessageType} {e.Message}, matches filter? {filter(e)}");
+                Logger.LogTrace("Received {messageType} {message}, matches filter? {isFilterMatch}", e.MessageType, e.Message, filter(e));
                 if (filter(e))
                 {
                     message = e.Message;
@@ -364,8 +370,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                //using var cts = new CancellationTokenSource(millisecondDelay);
-                //cts.Token.Register(() => tcs.TrySetCanceled());
+                using var cts = new CancellationTokenSource(millisecondDelay);
+                cts.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task.ConfigureAwait(false);
             }
             catch (TaskCanceledException e)
@@ -379,7 +385,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             if (result)
             {
-                Logger.LogTrace($"Returning to {caller} with {message ?? "[empty]"}");
+                Logger.LogTrace("Returning to {caller} with {message}", caller, string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
                 return (result, message, messageType);
             }
 

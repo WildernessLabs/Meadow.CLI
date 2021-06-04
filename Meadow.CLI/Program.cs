@@ -6,8 +6,8 @@ using CliFx;
 using Meadow.CLI.Commands;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
+using Serilog;
+using Serilog.Events;
 
 namespace Meadow.CLI
 {
@@ -15,27 +15,27 @@ namespace Meadow.CLI
     {
         public static async Task<int> Main(string[] args)
         {
+            var logLevel = LogEventLevel.Information;
+            var logModifier = args.FirstOrDefault(a => a.Contains("-v"))
+                                  ?.Count(x => x == 'v') ?? 0;
+
+            logLevel -= logModifier;
+            if (logLevel < 0)
+            {
+                logLevel = 0;
+            }
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
+                                                  .WriteTo.Console(
+                                                      logLevel,
+                                                      outputTemplate:
+                                                      "{Message:lj}{NewLine}{Exception}")
+                                                  .CreateLogger();
+            Console.WriteLine($"Using log level {logLevel}");
             var services = new ServiceCollection();
             services.AddLogging(
                 builder =>
                 {
-                    var logLevel = LogLevel.Information;
-                    var logModifier = args.FirstOrDefault(a => a.Contains("-v"))
-                        ?.Count(x => x == 'v') ?? 0;
-
-                    logLevel -= logModifier;
-                    if (logLevel < 0)
-                    {
-                        logLevel = 0;
-                    }
-                    
-                    Console.WriteLine($"Using log level {logLevel}");
-                    builder.AddSimpleConsole(c =>
-                    {
-                        c.ColorBehavior = LoggerColorBehavior.Enabled;
-                        c.SingleLine = true;
-                        c.UseUtcTimestamp = true;
-                    }).SetMinimumLevel(logLevel);
+                    builder.AddSerilog(Log.Logger, dispose:true);
                 });
 
             services.AddSingleton<MeadowDeviceManager>();

@@ -65,6 +65,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task DeployAppAsync(string fileName, CancellationToken cancellationToken = default);
         public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, int userData, CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
 
         // TODO: This is very Meadow Local Device Specific...
         public abstract Task RestartEsp32Async(CancellationToken cancellationToken = default);
@@ -78,9 +79,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            Trace.Assert(
-                await GetMonoRunStateAsync(cancellationToken)
-                    .ConfigureAwait(false),
+            Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                 "Meadow was expected to have Mono Disabled");
 
             Logger.LogInformation("Flashing ESP");
