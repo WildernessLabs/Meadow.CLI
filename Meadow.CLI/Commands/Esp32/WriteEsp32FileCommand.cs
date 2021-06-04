@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Esp32
 {
-    [Command("files esp32 write", Description = "Write files to the ESP File System")]
+    [Command("esp32 file write", Description = "Write files to the ESP File System")]
     public class WriteEsp32FileCommand : MeadowSerialCommand
     {
         [CommandOption(

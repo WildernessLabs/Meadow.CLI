@@ -295,10 +295,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            _logger.LogTrace("protocol-Request Information"); // TESTING
+                        {
+                            var msg = processor.ToString();
+                            _logger.LogTrace("Received request text information: {message}", msg);
                             if (!string.IsNullOrEmpty(processor.ToString()))
-                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
+                                OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, msg));
+
                             break;
+                        }
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
                             _logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
@@ -346,13 +350,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             break;
 
                         case HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
+                        {
                             // Just length and hex-hex-hex....
                             // Console.WriteLine($"Received {processor.MessageData.Length} bytes. They look like this: {Environment.NewLine}{BitConverter.ToString(processor.MessageData)}");
 
                             var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
 
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+                            OnReceiveData?.Invoke(
+                                this,
+                                new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+
                             break;
+                        }
                     }
                     return true;
                 }

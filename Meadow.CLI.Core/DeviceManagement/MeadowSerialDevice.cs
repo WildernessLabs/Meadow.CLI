@@ -32,6 +32,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override void Dispose()
         {
+            Logger.LogTrace("Disposing SerialPort");
             SerialPort.Dispose();
         }
 

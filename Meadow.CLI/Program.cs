@@ -24,11 +24,14 @@ namespace Meadow.CLI
             {
                 logLevel = 0;
             }
+
+            var outputTemplate = logLevel == LogEventLevel.Verbose
+                                     ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+                                     : "{Message:lj}{NewLine}{Exception}";
             Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
                                                   .WriteTo.Console(
                                                       logLevel,
-                                                      outputTemplate:
-                                                      "{Message:lj}{NewLine}{Exception}")
+                                                      outputTemplate)
                                                   .CreateLogger();
             Console.WriteLine($"Using log level {logLevel}");
             var services = new ServiceCollection();

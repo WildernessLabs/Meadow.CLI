@@ -52,7 +52,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             DataProcessor.OnReceiveData += handler;
 
-            await ProcessCommand(
+            await SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC,
                 userData: (uint) partition,
                 timeoutMs: 30000,
@@ -126,7 +126,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override Task EraseFlashAsync(CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(
+            return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE,
                 MeadowMessageType.SerialReconnect,
                 timeoutMs: 200000,
@@ -135,7 +135,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(
+            return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH,
                 MeadowMessageType.SerialReconnect,
                 timeoutMs: 200000,
@@ -145,7 +145,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public override Task FormatFileSystemAsync(uint partition = 0,
                                                    CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(
+            return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS,
                 userData: partition,
                 cancellationToken: cancellationToken);
@@ -153,7 +153,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
         {
-            return ProcessCommand(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
+            return SendCommandAndWaitForResponseAsync(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
         }
 
 

@@ -196,6 +196,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         //==========================================================================
         internal async Task<bool> SendSimpleCommand(HcomMeadowRequestType requestType, uint userData = 0, bool doAcceptedCheck = true, CancellationToken cancellationToken = default)
         {
+            _logger.LogTrace("Sending command {requestType}", requestType);
             var tcs = new TaskCompletionSource<bool>();
             var received = false;
 
@@ -207,6 +208,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
             {
+                _logger.LogTrace("FOO: Received MessageType: {messageType} Message: {message}", e.MessageType, string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
                 if (e.MessageType == MeadowMessageType.Accepted)
                 {
                     received = true;
@@ -214,6 +216,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 }
             };
 
+            _logger.LogTrace("Attaching data received handler");
             _device.DataProcessor.OnReceiveData += handler;
 
             await BuildAndSendSimpleCommand(requestType, userData, cancellationToken).ConfigureAwait(false);
@@ -230,6 +233,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
             finally
             {
+                _logger.LogTrace("Removing data received handler");
                 _device.DataProcessor.OnReceiveData -= handler;
             }
 
