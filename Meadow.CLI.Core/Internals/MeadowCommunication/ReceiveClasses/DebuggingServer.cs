@@ -88,9 +88,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             _activeClientCount = 0;
         }
 
-        public Task SendToVisualStudio(byte[] byteData)
+        public Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken)
         {
-            return _activeClient != null ? _activeClient.SendToVisualStudio(byteData) : Task.CompletedTask;
+            return _activeClient != null ? _activeClient.SendToVisualStudio(byteData, cancellationToken) : Task.CompletedTask;
         }
 
         public void Dispose()
@@ -246,7 +246,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 }
             }
 
-            public async Task SendToVisualStudio(byte[] byteData)
+            public async Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken)
             {
                 _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
                 try
@@ -258,7 +258,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         return;
                     }
 
-                    await _networkStream.WriteAsync(byteData, 0, byteData.Length);
+                    await _networkStream.WriteAsync(byteData, 0, byteData.Length, cancellationToken);
                 }
                 catch (Exception e)
                 {

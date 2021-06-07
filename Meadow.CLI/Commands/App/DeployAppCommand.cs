@@ -16,6 +16,9 @@ namespace Meadow.CLI.Commands.App
             IsRequired = true)]
         public string File { get; init; }
 
+        [CommandOption("includePdbs", 'i', Description = "Include the PDB files on deploy to enable debugging", IsRequired = false)]
+        public bool IncludePdbs { get; init; }
+
         public DeployAppCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
@@ -30,7 +33,7 @@ namespace Meadow.CLI.Commands.App
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            await device.DeployAppAsync(File, cancellationToken)
+            await device.DeployAppAsync(File, IncludePdbs, cancellationToken)
                   .ConfigureAwait(false);
         }
     }
