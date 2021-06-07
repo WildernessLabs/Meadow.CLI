@@ -49,8 +49,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (Exception ex)
             {
+                // TODO: Remove exception catch here and let the caller handle it or wrap it up in our own exception type.
                 _logger.LogError(ex, "Failed to connect to Meadow on {serialPort}", serialPort);
-                throw ex;
+                throw;
             }
         }
 

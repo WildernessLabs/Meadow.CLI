@@ -31,7 +31,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             var cancellationToken = console.RegisterCancellationHandler();
 
             var dfuAttempts = 0;
-            UsbRegistry dfuDevice = null;
+            UsbRegistry dfuDevice;
             while (true)
             {
                 try
@@ -60,9 +60,22 @@ namespace Meadow.CLI.Commands.DeviceManagement
                     await device.EnterDfuModeAsync(cancellationToken)
                                 .ConfigureAwait(false);
                 }
-                catch (FileNotFoundException)
+                catch (FileNotFoundException fnfEx)
                 {
-                    _logger.LogError("Failed to find Serial Port.");
+                    // TODO: Move message to ResourceManager or other tool for localization
+                    _logger.LogError("Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
+                    _logger.LogDebug(fnfEx, "Failed to open Serial Port.");
+                }
+                catch (IOException ioEx)
+                {
+                    _logger.LogError("Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
+                    _logger.LogDebug(ioEx, "Failed to open Serial Port.");
+                }
+                catch (UnauthorizedAccessException unAuthEx) when (
+                    unAuthEx.InnerException is IOException)
+                {
+                    _logger.LogError("Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
+                    _logger.LogDebug(unAuthEx, "Failed to open Serial Port.");
                 }
                 catch (Exception ex)
                 {
