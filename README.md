@@ -56,6 +56,16 @@ You can set the debug trace level to values 0, 1, 2, or 3. 2 is the most useful.
 `MeadowCLI.exe --GetDeviceInfo` - Outputs Meadow OS version and other information
 `MeadowCLI.exe --GetDeviceName` - Outputs Meadow device name contained in configuration file
 
+### Debugging
+
+`MeadowCLI.exe --VSDebugPort XXXX --StartDebugging` - Starts listening for debugging connection (substitute XXXX for a free port number)
+
+Note: you can use SDB command line debugger from https://github.com/mono/sdb. Just build it according to its readme, run the above command and then:
+
+`sdb "connect 127.0.0.1 XXXX"` (substitute XXXX for the same port number as above)
+
+
+
 ## Running applications
 
 You'll typically need at least 5 files installed to the Meadow flash to run a Meadow app:

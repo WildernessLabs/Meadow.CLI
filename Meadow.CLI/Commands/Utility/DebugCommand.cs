@@ -1,10 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net;
+using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using Microsoft.Extensions.Logging;
-using MonoLibUsb.Descriptors;
 
 namespace Meadow.CLI.Commands.Utility
 {
@@ -37,8 +37,9 @@ namespace Meadow.CLI.Commands.Utility
 
             // TODO: This is a terrible hack to link the DataProcessor to the Device
             device.DataProcessor.ForwardDebuggingData = device.ForwardMonoDataToVisualStudioAsync;
-            var server = new DebuggingServer(device, Port, _logger);
-            await server.StartListening(cancellationToken).ConfigureAwait(false);
+            var endpoint = new IPEndPoint(IPAddress.Loopback, Port);
+            var server = new DebuggingServer(device, endpoint, _logger);
+            await server.StartListeningAsync().ConfigureAwait(false);
         }
     }
 }

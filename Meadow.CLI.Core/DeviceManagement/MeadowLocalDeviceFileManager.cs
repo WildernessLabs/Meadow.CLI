@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -424,7 +425,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 (uint) userData, cancellationToken);
         }
 
-        public override async Task DeployAppAsync(string applicationFilePath, CancellationToken cancellationToken = default)
+        public override async Task DeployAppAsync(string applicationFilePath, bool includePdbs = false, CancellationToken cancellationToken = default)
         {
             if (!File.Exists(applicationFilePath))
             {
@@ -449,9 +450,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             var files = new List<string>();
             var crcs = new List<uint>();
 
-            foreach (var file in paths)
+            async Task AddFile(string file, bool includePdbs)
             {
-                using FileStream fs = File.Open(file, FileMode.Open);
+                await using FileStream fs = File.Open(file, FileMode.Open);
                 var len = (int)fs.Length;
                 var bytes = new byte[len];
 
@@ -460,9 +461,20 @@ namespace Meadow.CLI.Core.DeviceManagement
                 //0x
                 var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
-                //Console.WriteLine($"{file} crc is {crc}");
+                Logger.LogDebug("{file} crc is {crc}", file, crc);
                 files.Add(Path.GetFileName(file));
                 crcs.Add(crc);
+                if (includePdbs)
+                {
+                    var pdbFile = Path.ChangeExtension(file, "pdb");
+                    if (File.Exists(pdbFile))
+                        await AddFile(pdbFile, false).ConfigureAwait(false);
+                }
+            }
+
+            foreach (var file in paths)
+            {
+                await AddFile(file, includePdbs).ConfigureAwait(false);
             }
 
             var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
@@ -470,18 +482,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             //crawl dependencies
             foreach (var file in dependencies)
             {
-                using FileStream fs = File.Open(Path.Combine(fi.DirectoryName, file), FileMode.Open);
-                var len = (int)fs.Length;
-                var bytes = new byte[len];
-
-                await fs.ReadAsync(bytes, 0, len, cancellationToken);
-
-                //0x
-                var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
-
-                Logger.LogInformation("{file} crc is {checksum}", file, crc);
-                files.Add(Path.GetFileName(file));
-                crcs.Add(crc);
+                await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
             }
 
             // delete unused files
