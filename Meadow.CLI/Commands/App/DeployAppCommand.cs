@@ -33,8 +33,11 @@ namespace Meadow.CLI.Commands.App
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
+            await device.MonoDisableAsync(cancellationToken)
+                        .ConfigureAwait(false);
             await device.DeployAppAsync(File, IncludePdbs, cancellationToken)
                   .ConfigureAwait(false);
+            await device.MonoEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -23,6 +23,8 @@ namespace Meadow.CLI.Core.DeviceManagement
     //a simple model object that represents a meadow device including connection
     public abstract class MeadowDevice : IDisposable
     {
+        private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
+        private protected TimeSpan SlowTimeout = TimeSpan.FromSeconds(60);
         public readonly MeadowDataProcessor DataProcessor;
         private protected DebuggingServer DebuggingServer;
         private protected readonly ILogger Logger;
@@ -48,8 +50,8 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task UpdateMonoRuntimeAsync(string fileName, string? targetFileName = null, uint partition = 0, CancellationToken cancellationToken = default);
         public abstract Task WriteFileToEspFlashAsync(string fileName, string? targetFileName = null, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
         public abstract Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default);
-        public abstract Task<string?> GetDeviceInfoAsync(int timeoutInMs = 5000, CancellationToken cancellationToken = default);
-        public abstract Task<string?> GetDeviceNameAsync(int timeoutInMs = 5000, CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
+        public abstract Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public abstract Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default);
         public abstract Task MonoDisableAsync(CancellationToken cancellationToken = default);
         public abstract Task MonoEnableAsync(CancellationToken cancellationToken = default);
@@ -73,7 +75,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public virtual async Task FlashEspAsync(CancellationToken cancellationToken = default)
         {
-            await WaitForReadyAsync(cancellationToken: cancellationToken)
+            await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             await MonoDisableAsync(cancellationToken)
@@ -130,16 +132,16 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <param name="timeout">How long to wait for the meadow to become ready</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public virtual async Task WaitForReadyAsync(int timeout = 60_000,
+        public virtual async Task WaitForReadyAsync(TimeSpan timeout,
                                                CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
-            var then = now.AddMilliseconds(timeout);
+            var then = now.Add(timeout);
             while (DateTime.UtcNow < then)
             {
                 try
                 {
-                    var deviceInfo = await GetDeviceInfoAsync(cancellationToken: cancellationToken);
+                    var deviceInfo = await GetDeviceInfoAsync(timeout, cancellationToken: cancellationToken);
 
                     if (string.IsNullOrWhiteSpace(deviceInfo) == false)
                         return;

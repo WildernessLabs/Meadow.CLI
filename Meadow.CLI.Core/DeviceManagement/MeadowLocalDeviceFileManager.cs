@@ -55,27 +55,36 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             await SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC,
-                userData: (uint) partition,
+                userData: (uint)partition,
                 timeoutMs: 30000,
                 cancellationToken: cancellationToken);
 
-            await Task.WhenAny(new Task[] {timeOutTask, tcs.Task});
+            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
             DataProcessor.OnReceiveData -= handler;
 
             return FilesOnDevice;
         }
 
+        /// <summary>
+        /// Write a file to the Meadow
+        /// </summary>
+        /// <param name="filename">The name of the file</param>
+        /// <param name="path">The path to the file</param>
+        /// <param name="timeoutInMs">The amount of time to wait to write the file</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to cancel the operation</param>
+        /// <returns></returns>
         public override async Task<bool> WriteFileAsync(string filename,
-                                                   string path,
-                                                   int timeoutInMs = 200000,
-                                                   CancellationToken cancellationToken = default)
+                                                        string path,
+                                                        int timeoutInMs = 200000,
+                                                        CancellationToken cancellationToken =
+                                                            default)
         {
             if (IsDeviceInitialized() == false)
             {
                 throw new Exception("Device is not initialized");
             }
 
-            bool result = false;
+            var result = false;
 
             var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
 
@@ -93,12 +102,12 @@ namespace Meadow.CLI.Core.DeviceManagement
             DataProcessor.OnReceiveData += handler;
 
             await WriteFileInternal(
+                Path.Combine(path, filename),
                 filename,
-                path,
                 timeout: timeoutInMs,
                 cancellationToken: cancellationToken);
 
-            await Task.WhenAny(new Task[] {timeOutTask, tcs.Task});
+            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
 
             DataProcessor.OnReceiveData -= handler;
 
@@ -106,8 +115,8 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
         public override async Task DeleteFileAsync(string fileName,
-                                              uint partition = 0,
-                                              CancellationToken cancellationToken = default)
+                                                   uint partition = 0,
+                                                   CancellationToken cancellationToken = default)
         {
             await TransmitFileInfoToExtFlash(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME,
@@ -130,7 +139,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE,
                 MeadowMessageType.SerialReconnect,
-                timeoutMs: 200000,
+                timeoutMs: 200_000,
                 cancellationToken: cancellationToken);
         }
 
@@ -154,29 +163,36 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
         {
-            return SendCommandAndWaitForResponseAsync(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS, MeadowMessageType.SerialReconnect, cancellationToken: cancellationToken);
+            return SendCommandAndWaitForResponseAsync(
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS,
+                MeadowMessageType.SerialReconnect,
+                cancellationToken: cancellationToken);
         }
 
 
         public override async Task UpdateMonoRuntimeAsync(string fileName,
-                                                     string? targetFileName = null,
-                                                     uint partition = 0,
-                                                     CancellationToken cancellationToken = default)
+                                                          string? targetFileName = null,
+                                                          uint partition = 0,
+                                                          CancellationToken cancellationToken =
+                                                              default)
         {
             Logger.LogInformation("Starting Mono Runtime Update");
             Logger.LogInformation("Waiting for Meadow to be ready");
-            await WaitForReadyAsync(cancellationToken: cancellationToken)
+            await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             Logger.LogDebug("Calling Mono Disable");
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
-                         "Meadow was expected to have Mono Disabled");
+            Trace.Assert(
+                await GetMonoRunStateAsync(cancellationToken)
+                    .ConfigureAwait(false)
+             == false,
+                "Meadow was expected to have Mono Disabled");
 
             Logger.LogInformation("Updating Mono Runtime");
-            
+
             var sourceFilename = fileName;
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
@@ -239,15 +255,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                     300000,
                     cancellationToken)
                 .ConfigureAwait(false);
+
             Logger.LogInformation("Mono Runtime Update Complete");
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,
-                                                       string? targetFileName = null,
-                                                       uint partition = 0,
-                                                       string? mcuDestAddress = null,
-                                                       CancellationToken cancellationToken =
-                                                           default)
+                                                            string? targetFileName = null,
+                                                            uint partition = 0,
+                                                            string? mcuDestAddress = null,
+                                                            CancellationToken cancellationToken =
+                                                                default)
         {
             // For the ESP32 on the meadow, we don't need the target file name, we just need the
             // MCU's destination address and the file's binary.
@@ -358,7 +375,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public override async Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default)
+        public override async Task FlashEspAsync(string sourcePath,
+                                                 CancellationToken cancellationToken = default)
         {
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
@@ -391,7 +409,10 @@ namespace Meadow.CLI.Core.DeviceManagement
                       .ConfigureAwait(false);
         }
 
-        public override async Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
+        public override async Task<string?> GetInitialBytesFromFile(
+            string fileName,
+            uint partition = 0,
+            CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Getting initial bytes from {fileName}", fileName);
             var encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
@@ -403,9 +424,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                 cancellationToken);
 
             var (success, message, _) = await WaitForResponseMessageAsync(
-                x => x.MessageType == MeadowMessageType.Concluded,
-                5000,
-                cancellationToken);
+                                            x => x.MessageType == MeadowMessageType.Concluded,
+                                            5000,
+                                            cancellationToken);
 
             if (!success)
             {
@@ -416,16 +437,20 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
         public override Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
-                                                           int userData,
-                                                           CancellationToken cancellationToken = default)
+                                                                int userData,
+                                                                CancellationToken
+                                                                    cancellationToken = default)
         {
             return BuildAndSendSimpleData(
                 debuggerData,
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA,
-                (uint) userData, cancellationToken);
+                (uint)userData,
+                cancellationToken);
         }
 
-        public override async Task DeployAppAsync(string applicationFilePath, bool includePdbs = false, CancellationToken cancellationToken = default)
+        public override async Task DeployAppAsync(string applicationFilePath,
+                                                  bool includePdbs = false,
+                                                  CancellationToken cancellationToken = default)
         {
             if (!File.Exists(applicationFilePath))
             {
@@ -441,11 +466,17 @@ namespace Meadow.CLI.Core.DeviceManagement
                 CopySystemNetHttpDll(fi.DirectoryName);
             }
 
-            var deviceFiles = await GetFilesAndCrcsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            var extensions = new List<string> { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+            var deviceFiles = await GetFilesAndCrcsAsync(cancellationToken: cancellationToken)
+                                  .ConfigureAwait(false);
 
-            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-            .Where(s => extensions.Contains(new FileInfo(s).Extension));
+            var extensions = new List<string>
+                             { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+
+            var paths = Directory.EnumerateFiles(
+                                     fi.DirectoryName,
+                                     "*.*",
+                                     SearchOption.TopDirectoryOnly)
+                                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new List<string>();
             var crcs = new List<uint>();
@@ -461,20 +492,22 @@ namespace Meadow.CLI.Core.DeviceManagement
                 //0x
                 var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
-                Logger.LogDebug("{file} crc is {crc}", file, crc);
+                Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
                 files.Add(Path.GetFileName(file));
                 crcs.Add(crc);
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
                     if (File.Exists(pdbFile))
-                        await AddFile(pdbFile, false).ConfigureAwait(false);
+                        await AddFile(pdbFile, false)
+                            .ConfigureAwait(false);
                 }
             }
 
             foreach (var file in paths)
             {
-                await AddFile(file, includePdbs).ConfigureAwait(false);
+                await AddFile(file, includePdbs)
+                    .ConfigureAwait(false);
             }
 
             var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
@@ -490,7 +523,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 if (files.Contains(file) == false)
                 {
-                    await DeleteFileAsync(file, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await DeleteFileAsync(file, cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+
                     Logger.LogInformation("Removing file: {file}", file);
                 }
             }
@@ -510,8 +545,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                     continue;
                 }
 
-                await WriteFileAsync(files[i], fi.DirectoryName, cancellationToken: cancellationToken).ConfigureAwait(false);
                 Logger.LogInformation("Writing file: {file}", files[i]);
+                await WriteFileAsync(
+                        files[i],
+                        fi.DirectoryName,
+                        cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+                Logger.LogInformation("Wrote file: {file}", files[i]);
             }
 
             Logger.LogInformation("{file} deploy complete", fi.Name);
@@ -521,7 +562,11 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             try
             {
-                var bclNugetPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages", "wildernesslabs.meadow.assemblies");
+                var bclNugetPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".nuget",
+                    "packages",
+                    "wildernesslabs.meadow.assemblies");
 
                 if (Directory.Exists(bclNugetPath))
                 {
@@ -541,12 +586,20 @@ namespace Meadow.CLI.Core.DeviceManagement
                     {
                         versions.Sort();
 
-                        var sourcePath = Path.Combine(bclNugetPath, versions.Last().ToString(), "lib", "net472");
+                        var sourcePath = Path.Combine(
+                            bclNugetPath,
+                            versions.Last()
+                                    .ToString(),
+                            "lib",
+                            "net472");
+
                         if (Directory.Exists(sourcePath))
                         {
                             if (File.Exists(Path.Combine(sourcePath, SystemHttpNetDllName)))
                             {
-                                File.Copy(Path.Combine(sourcePath, SystemHttpNetDllName), Path.Combine(targetDir, SystemHttpNetDllName));
+                                File.Copy(
+                                    Path.Combine(sourcePath, SystemHttpNetDllName),
+                                    Path.Combine(targetDir,  SystemHttpNetDllName));
                             }
                         }
                     }
@@ -628,6 +681,18 @@ namespace Meadow.CLI.Core.DeviceManagement
             return false;
         }
 
+        /// <summary>
+        /// Transmit a file to the external flash on the Meadow
+        /// </summary>
+        /// <param name="requestType"></param>
+        /// <param name="sourceFileName">The absolute path of the file to send</param>
+        /// <param name="targetFileName">The name of the file on the Meadow</param>
+        /// <param name="partition">The partition on which to write the file</param>
+        /// <param name="mcuAddress">The address inside the MCU to write the file</param>
+        /// <param name="useSourceAsTarget"></param>
+        /// <param name="lastInSeries"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private async Task<FileTransferResult> TransmitFileInfoToExtFlash(
             HcomMeadowRequestType requestType,
             string sourceFileName,
@@ -651,15 +716,15 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     // No data packets, no end-of-file message and no mcu address
                     await BuildAndSendFileRelatedCommand(
-                                             requestType,
-                                             partition,
-                                             0,
-                                             0,
-                                             0,
-                                             string.Empty,
-                                             sourceFileName, 
-                                             cancellationToken)
-                                         .ConfigureAwait(false);
+                            requestType,
+                            partition,
+                            0,
+                            0,
+                            0,
+                            string.Empty,
+                            sourceFileName,
+                            cancellationToken)
+                        .ConfigureAwait(false);
 
                     return FileTransferResult.EmptyResult;
                 }
@@ -683,7 +748,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 // Open, read and close the data file
-                var fileBytes = File.ReadAllBytes(sourceFileName);
+                var fileBytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
                 var fileCrc32 = CrcTools.Crc32part(fileBytes, fileBytes.Length, 0);
                 var fileLength = fileBytes.Length;
 
@@ -691,16 +756,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                 sw.Restart();
 
                 await SendTheEntireFile(
-                                         requestType,
-                                         targetFileName,
-                                         partition,
-                                         fileBytes,
-                                         mcuAddress,
-                                         fileCrc32,
-                                         md5Hash,
-                                         lastInSeries, 
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+                        requestType,
+                        targetFileName,
+                        partition,
+                        fileBytes,
+                        mcuAddress,
+                        fileCrc32,
+                        md5Hash,
+                        lastInSeries,
+                        cancellationToken)
+                    .ConfigureAwait(false);
 
                 sw.Stop();
 
@@ -708,7 +773,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"TransmitFileInfoToExtFlash threw :{ex}");
+                Logger.LogError(ex, "Failed to transmit file to Meadow");
                 throw;
             }
         }

@@ -44,18 +44,28 @@ namespace Meadow.CLI.Commands.Files
                                         cancellationToken: cancellationToken)
                                     .ConfigureAwait(false);
 
-            var longestFileName = files.Keys.Select(x => x.Length).OrderByDescending(x => x)
-                                       .FirstOrDefault();
-
-            if (IncludeCrcs)
+            if (files.Any())
             {
-                foreach (var file in files)
-                    _logger.LogInformation($"{file.Key.PadRight(longestFileName)}\t{file.Value:x8}");
+
+                var longestFileName = files.Keys.Select(x => x.Length)
+                                           .OrderByDescending(x => x)
+                                           .FirstOrDefault();
+
+                if (IncludeCrcs)
+                {
+                    foreach (var file in files)
+                        _logger.LogInformation(
+                            $"{file.Key.PadRight(longestFileName)}\t{file.Value:x8}");
+                }
+                else
+                {
+                    foreach (var file in files)
+                        _logger.LogInformation($"{file.Key}");
+                }
             }
             else
             {
-                foreach (var file in files)
-                    _logger.LogInformation($"{file.Key}");
+                _logger.LogInformation("No files found.");
             }
         }
     }

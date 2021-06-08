@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
@@ -27,7 +28,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                                          cancellationToken)
                                      .ConfigureAwait(false);
 
-            var deviceName = await device.GetDeviceNameAsync(cancellationToken: cancellationToken)
+            var deviceName = await device.GetDeviceNameAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken)
                                          .ConfigureAwait(false);
 
             _logger.LogInformation($"Device Name: {deviceName}");
