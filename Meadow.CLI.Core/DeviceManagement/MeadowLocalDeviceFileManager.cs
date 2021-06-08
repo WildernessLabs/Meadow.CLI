@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -56,7 +55,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC,
                 userData: (uint)partition,
-                timeoutMs: 30000,
+                timeout: SlowTimeout,
                 cancellationToken: cancellationToken);
 
             await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
@@ -139,7 +138,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE,
                 MeadowMessageType.SerialReconnect,
-                timeoutMs: 200_000,
+                timeout: TimeSpan.FromMinutes(5),
                 cancellationToken: cancellationToken);
         }
 
@@ -148,7 +147,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH,
                 MeadowMessageType.SerialReconnect,
-                timeoutMs: 200000,
+                timeout: TimeSpan.FromMinutes(5),
                 cancellationToken: cancellationToken);
         }
 
@@ -252,7 +251,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogDebug("Waiting for Mono Update to complete");
             await WaitForResponseMessageAsync(
                     x => x.MessageType == MeadowMessageType.Concluded,
-                    300000,
+                    timeout: TimeSpan.FromMinutes(5),
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -268,7 +267,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             // For the ESP32 on the meadow, we don't need the target file name, we just need the
             // MCU's destination address and the file's binary.
-            // Assume if no mcuDestAddr that the fileName is a CSV with both file names and Mcu Addr
+            // Assume if no mcuDestAddress that the fileName is a CSV with both file names and Mcu Address
             if (mcuDestAddress != null)
             {
                 // Since the mcuDestAddr is used we'll assume the fileName field just contains
@@ -280,7 +279,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     targetFileName = Path.GetFileName(fileName);
                 }
 
-                // Convert mcuDestAddr from a string to a 32-bit unsigned int, but first
+                // Convert mcuDestAddress from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
                 uint mcuAddress = 0;
                 if (mcuDestAddress.StartsWith("0x") || mcuDestAddress.StartsWith("0X"))
@@ -327,7 +326,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return;
                 }
 
-                UInt32 mcuAddr;
+                uint mcuAddr;
                 for (int i = 0; i < fileElement.Length; i += 2)
                 {
                     // Trim any white space from this mcu addr and file name
@@ -342,11 +341,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                      || fileElement[i]
                             .StartsWith("0X"))
                     {
-                        // Fill in the Mcu Addr
-                        mcuAddr = UInt32.Parse(
-                            fileElement[i]
-                                .Substring(2),
-                            System.Globalization.NumberStyles.HexNumber);
+                        // Fill in the Mcu Address
+                        mcuAddr = uint.Parse(fileElement[i][2..],
+                                             System.Globalization.NumberStyles.HexNumber);
                     }
                     else
                     {
@@ -425,7 +422,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             var (success, message, _) = await WaitForResponseMessageAsync(
                                             x => x.MessageType == MeadowMessageType.Concluded,
-                                            5000,
+                                            timeout: DefaultTimeout,
                                             cancellationToken);
 
             if (!success)
@@ -535,7 +532,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 if (deviceFiles.Values.Contains(crcs[i]))
                 {
-                    Logger.LogInformation("Skipping file: {file}", files[i]);
+                    Logger.LogInformation("Skipping file (hash match): {file}", files[i]);
                     continue;
                 }
 

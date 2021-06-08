@@ -58,11 +58,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                 if (requestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
                 {
                     Logger.LogDebug("Erasing ESP32 Flash...");
-                    responseWaitTime = 30_000;
-                }
-                else
-                {
-                    responseWaitTime = 10_000;
                 }
 
                 // Build and send the header
@@ -82,8 +77,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 var (success, _, messageType) = await WaitForResponseMessageAsync(
                                                         _predicates[requestType],
-                                                        responseWaitTime,
-                                                        cancellationToken)
+                                                        cancellationToken: cancellationToken)
                                                     .ConfigureAwait(false);
 
                 // if it failed, bail out
@@ -557,7 +551,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             HcomMeadowRequestType requestType,
             MeadowMessageType responseMessageType = MeadowMessageType.Concluded,
             uint userData = 0,
-            int timeoutMs = 10000,
+            TimeSpan? timeout = null,
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
@@ -571,7 +565,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                   requestType,
                                   e => e.MessageType == responseMessageType,
                                   userData,
-                                  timeoutMs,
+                                  timeout,
                                   cancellationToken)
                               .ConfigureAwait(false);
 
@@ -587,7 +581,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             HcomMeadowRequestType requestType,
             Predicate<MeadowMessageEventArgs>? filter,
             uint userData = 0,
-            int timeoutMs = 10000,
+            TimeSpan? timeout = null,
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
@@ -597,7 +591,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 .ConfigureAwait(false);
 
             var (isSuccess, message, _) =
-                await WaitForResponseMessageAsync(filter, timeoutMs, cancellationToken)
+                await WaitForResponseMessageAsync(filter, SlowTimeout, cancellationToken)
                     .ConfigureAwait(false);
 
             Logger.LogTrace(
@@ -611,7 +605,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         private protected async Task<(bool Success, string? Message, MeadowMessageType MessageType)>
             WaitForResponseMessageAsync(Predicate<MeadowMessageEventArgs>? filter,
-                                        int millisecondDelay = 10_000,
+                                        TimeSpan? timeout = null,
                                         CancellationToken cancellationToken = default,
                                         [CallerMemberName] string? caller = null)
         {
@@ -664,7 +658,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                using var cts = new CancellationTokenSource(millisecondDelay);
+                using var cts = new CancellationTokenSource(timeout ?? SlowTimeout);
                 cts.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task.ConfigureAwait(false);
                 if (cts.IsCancellationRequested)

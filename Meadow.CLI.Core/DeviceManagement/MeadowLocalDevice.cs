@@ -130,7 +130,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await SendCommandAndWaitForResponseAsync(
                         HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_DISABLE,
                         MeadowMessageType.SerialReconnect,
-                        timeoutMs: 15000,
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
@@ -161,7 +160,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await SendCommandAndWaitForResponseAsync(
                         HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_ENABLE,
                         MeadowMessageType.SerialReconnect,
-                        timeoutMs: 15000,
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
@@ -186,8 +184,8 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             return SendCommandAndWaitForResponseAsync(
                 HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH,
-                timeoutMs: 200000,
                 filter: e => e.Message.StartsWith("Mono runtime successfully flashed."),
+                timeout: TimeSpan.FromMinutes(5),
                 cancellationToken: cancellationToken);
         }
 
@@ -195,7 +193,6 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             await SendCommandAndWaitForResponseAsync(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU,
-                    null,
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
