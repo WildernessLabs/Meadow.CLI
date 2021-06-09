@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "--Download"
+      "commandLineArgs": "device info"
     },
     "Login": {
       "commandName": "Project",

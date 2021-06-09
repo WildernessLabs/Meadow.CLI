@@ -1,6 +1,8 @@
 ﻿using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using MeadowCLI.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 
 namespace Meadow.CLI.Test
@@ -8,7 +10,7 @@ namespace Meadow.CLI.Test
     [TestFixture]
     public class ConnectionTest
     {
-        string port = "COM5";
+        string port = "COM19";
         public readonly string osFilename = "Meadow.OS.bin";
         public readonly string runtimeFilename = "Meadow.OS.Runtime.bin";
         public readonly string networkBootloaderFilename = "bootloader.bin";
@@ -19,41 +21,37 @@ namespace Meadow.CLI.Test
         // All tests are run expecting the device to already be DFU flash with OS.
 
         [Test]
-        public async Task FlashOSTest()
+        public async Task FlashOsTest()
         {
-            //DfuUpload.FlashOS(Path.Combine(fixturesPath.FullName, osFilename));
+            var cts = new CancellationTokenSource();
+            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
+            await deviceManager.FlashOsAsync(port, string.Empty, cancellationToken: cts.Token);
+        }
 
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
-            {
-                Assert.IsNotNull(meadow, "Initial connection");
-                await MeadowDeviceManager.MonoDisable(meadow);
-                var isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
-                // try to disable one more time
-                if (isEnabled)
-                {
-                    await MeadowDeviceManager.MonoDisable(meadow);
-                    isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
-                }
-                Assert.IsFalse(isEnabled, "Disable mono");
-            }
+        [Test]
+        public async Task MonoDisableTest()
+        {
+            var cts = new CancellationTokenSource();
+            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
+            using var meadow = deviceManager.GetMeadowForSerialPort(port);
+            Assert.IsNotNull(meadow, "Initial connection");
+            
+            await meadow.MonoDisableAsync(cts.Token);
+            var monoEnabled = await meadow.GetMonoRunStateAsync(cts.Token);
+            Assert.False(monoEnabled, "monoEnabled");
+        }
 
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
-            {
-                await MeadowFileManager.MonoUpdateRt(meadow, Path.Combine(fixturesPath.FullName, runtimeFilename));
-            }
-
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
-            {
-                await MeadowFileManager.FlashEsp(meadow, fixturesPath.FullName);
-            }
-
-            using (var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port))
-            {
-                Assert.IsNotNull(meadow);
-                await MeadowDeviceManager.MonoEnable(meadow);
-                var isEnabled = await MeadowDeviceManager.MonoRunState(meadow);
-                Assert.IsTrue(isEnabled);
-            }
+        [Test]
+        public async Task MonoEnableTest()
+        {
+            var cts = new CancellationTokenSource();
+            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
+            using var meadow = deviceManager.GetMeadowForSerialPort(port);
+            Assert.IsNotNull(meadow, "Initial connection");
+            
+            await meadow.MonoEnableAsync(cts.Token);
+            var monoEnabled = await meadow.GetMonoRunStateAsync(cts.Token);
+            Assert.True(monoEnabled, "monoEnabled");
         }
     }
 }

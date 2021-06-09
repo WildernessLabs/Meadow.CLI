@@ -1,18 +1,26 @@
-﻿using Meadow.CLI.Core.Auth;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Meadow.CLI.Core.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.CloudServices
 {
     public class DeviceRepository
     {
+        private readonly ILogger _logger;
+
+        public DeviceRepository(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task<(bool isSuccess, string message)> AddDevice(string serialNumber)
         {
             var host = SettingsManager.GetAppSetting("wlApiHost");
-            var authToken = await new IdentityManager().GetAccessToken();
+            var authToken = await new IdentityManager(_logger).GetAccessToken();
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 

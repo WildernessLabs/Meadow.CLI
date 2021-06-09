@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text.Json.Serialization;
 
-namespace Meadow.CLI
+namespace Meadow.CLI.Core
 {
     public class PackageVersions
     {
-        public string[] versions { get; set; }
+        [JsonPropertyName("versions")]
+        public string[] Versions { get; set; }
     }
 }

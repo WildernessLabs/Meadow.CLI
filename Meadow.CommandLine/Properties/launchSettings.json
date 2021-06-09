@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Meadow.CommandLine": {
+      "commandName": "Project",
+      "commandLineArgs": "flash os -s COM14"
+    }
+  }
+}
