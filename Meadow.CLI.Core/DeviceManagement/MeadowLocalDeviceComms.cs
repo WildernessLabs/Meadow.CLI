@@ -108,6 +108,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 //--------------------------------------------------------------
                 // Build and send the correct trailer
+                // TODO: Move this into the Command object
                 var trailerCommand = command.RequestType switch
                 {
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER =>
