@@ -3,11 +3,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.DeviceManagement
@@ -26,37 +24,43 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-                //--------------------------------------------------------------
-                if (command.RequestType == HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
-                {
-                    Logger.LogDebug("Erasing ESP32 Flash...");
-                }
-
-                var response = await SendCommandAndWaitForResponseAsync(command, cancellationToken).ConfigureAwait(false);
+                var response = await SendCommandAndWaitForResponseAsync(command, cancellationToken)
+                                   .ConfigureAwait(false);
 
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
-                    throw new MeadowCommandException("Meadow rejected download request with ", response);
+                    throw new MeadowCommandException(
+                        "Meadow rejected download request with ",
+                        response);
                 }
+
                 switch (command.RequestType)
                 {
                     // if it's an ESP start file transfer and the download started ok.
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER when response.MessageType == MeadowMessageType.DownloadStartOkay:
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType == MeadowMessageType.DownloadStartOkay:
                         Logger.LogDebug("ESP32 download request accepted");
                         break;
                     // if it's an ESP file transfer start and it failed to start
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER when response.MessageType == MeadowMessageType.DownloadStartFail:
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType == MeadowMessageType.DownloadStartFail:
                         Logger.LogDebug("ESP32 download request rejected");
-                        throw new MeadowCommandException("Halting download due to an error while preparing Meadow for download", response);
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER when response.MessageType != MeadowMessageType.DownloadStartOkay:
+                        throw new MeadowCommandException(
+                            "Halting download due to an error while preparing Meadow for download",
+                            response);
+                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType != MeadowMessageType.DownloadStartOkay:
                         throw response.MessageType switch
                         {
                             MeadowMessageType.DownloadStartFail => new MeadowCommandException(
-                                "Halting download due to an error while preparing Meadow for download", response),
+                                "Halting download due to an error while preparing Meadow for download",
+                                response),
                             MeadowMessageType.Concluded => new MeadowCommandException(
-                                "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely", response),
+                                "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely",
+                                response),
                             _ => new MeadowCommandException(
-                                $"Halting download due to an unexpected Meadow message type {response.MessageType} received", response)
+                                $"Halting download due to an unexpected Meadow message type {response.MessageType} received",
+                                response)
                         };
                 }
 
@@ -67,9 +71,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                 {
                     int numBytesToSend;
-                    if (fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength > command.FileSize - 1)
+                    if (fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength
+                      > command.FileSize - 1)
                     {
-                        numBytesToSend = command.FileSize - fileBufOffset; // almost done, last packet
+                        numBytesToSend =
+                            command.FileSize - fileBufOffset; // almost done, last packet
                     }
                     else
                     {
@@ -80,6 +86,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     {
                         throw new MeadowCommandException("File bytes are missing for file command");
                     }
+
                     await BuildAndSendDataPacketRequest(
                             command.FileBytes,
                             fileBufOffset,
@@ -103,16 +110,21 @@ namespace Meadow.CLI.Core.DeviceManagement
                 // Build and send the correct trailer
                 var trailerCommand = command.RequestType switch
                 {
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER => new SimpleCommandBuilder(
-                            HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER)
-                        .WithUserData(lastInSeries ? 1U : 0U).Build(),
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME => new SimpleCommandBuilder(
-                            HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
-                        .WithUserData(lastInSeries ? 1U : 0U).Build(),
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER => new SimpleCommandBuilder(
-                            HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
-                        .WithUserData(lastInSeries ? 1U : 0U).Build(),
-                    _ => throw new ArgumentOutOfRangeException(nameof(command.RequestType), "Cannot build trailer for unknown command")
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER =>
+                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER)
+                            .WithUserData(lastInSeries ? 1U : 0U)
+                            .Build(),
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME =>
+                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
+                            .WithUserData(lastInSeries ? 1U : 0U)
+                            .Build(),
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
+                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
+                            .WithUserData(lastInSeries ? 1U : 0U)
+                            .Build(),
+                    _ => throw new ArgumentOutOfRangeException(
+                             nameof(command.RequestType),
+                             "Cannot build trailer for unknown command")
                 };
 
                 await SendCommandAsync(trailerCommand, cancellationToken)
@@ -149,7 +161,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             _lastProgress = intProgress;
         }
 
-        internal async Task<bool> SendAcknowledgedSimpleCommand(Command command, CancellationToken cancellationToken)
+        internal async Task<bool> SendAcknowledgedSimpleCommand(
+            Command command,
+            CancellationToken cancellationToken)
         {
             Logger.LogTrace("Sending command {requestType}", command.RequestType);
             var tcs = new TaskCompletionSource<bool>();
@@ -157,7 +171,10 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             void Handler(object s, MeadowMessageEventArgs e)
             {
-                Logger.LogTrace("Received MessageType: {messageType} Message: {message}", e.MessageType, string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
+                Logger.LogTrace(
+                    "Received MessageType: {messageType} Message: {message}",
+                    e.MessageType,
+                    string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
 
                 if (e.MessageType != MeadowMessageType.Accepted) return;
 
@@ -179,7 +196,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (TaskCanceledException e)
             {
-                throw new MeadowCommandException("Command timeout waiting for response.", innerException: e);
+                throw new MeadowCommandException(
+                    "Command timeout waiting for response.",
+                    innerException: e);
             }
             finally
             {
@@ -210,7 +229,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 byte[] fullMsg = new byte[transmitSize];
 
                 byte[] seqBytes = BitConverter.GetBytes(sequenceNumber);
-                Array.Copy(seqBytes, fullMsg, sizeof(ushort));
+                Array.Copy(seqBytes,     fullMsg,       sizeof(ushort));
                 Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(ushort), messageSize);
 
                 await EncodeAndSendPacket(fullMsg, 0, transmitSize, cancellationToken)
@@ -227,14 +246,10 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             // Populate the header
             var messageBytes = command.ToMessageBytes();
-            await EncodeAndSendPacket(
-                    messageBytes,
-                    0,
-                    messageBytes.Length,
-                    cancellationToken)
+            await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
                 .ConfigureAwait(false);
         }
-        
+
         private async Task EncodeAndSendPacket(byte[] messageBytes,
                                                int messageOffset,
                                                int messageSize,
@@ -316,7 +331,8 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             Logger.LogTrace($"{caller} is sending {command.RequestType}");
 
-            await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            await SendCommandAsync(command, cancellationToken)
+                .ConfigureAwait(false);
 
             var (isSuccess, message, messageType) =
                 await WaitForResponseMessageAsync(command, cancellationToken)
@@ -333,10 +349,13 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         private protected async Task<(bool Success, string? Message, MeadowMessageType MessageType)>
             WaitForResponseMessageAsync(Command command,
-                                           CancellationToken cancellationToken = default,
-                                           [CallerMemberName] string? caller = null)
+                                        CancellationToken cancellationToken = default,
+                                        [CallerMemberName] string? caller = null)
         {
-            Logger.LogTrace("{caller} is waiting {seconds} for response.", caller, command.Timeout.TotalSeconds);
+            Logger.LogTrace(
+                "{caller} is waiting {seconds} for response.",
+                caller,
+                command.Timeout.TotalSeconds);
 
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
@@ -376,14 +395,20 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 DataProcessor.OnReceiveData += command.ResponseHandler;
             }
+
             DataProcessor.OnReceiveData += ResponseHandler;
             Logger.LogTrace("Attaching completion handler(s)");
             DataProcessor.OnReceiveData += CompletionHandler;
 
             try
             {
-                using var timeoutCancellationTokenSource = new CancellationTokenSource(command.Timeout);
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
+                using var timeoutCancellationTokenSource =
+                    new CancellationTokenSource(command.Timeout);
+
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    timeoutCancellationTokenSource.Token);
+
                 timeoutCancellationTokenSource.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task.ConfigureAwait(false);
                 if (cts.IsCancellationRequested)
@@ -391,7 +416,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (TaskCanceledException e)
             {
-                throw new MeadowCommandException("Command timeout waiting for response.", innerException: e);
+                throw new MeadowCommandException(
+                    "Command timeout waiting for response.",
+                    innerException: e);
             }
             finally
             {

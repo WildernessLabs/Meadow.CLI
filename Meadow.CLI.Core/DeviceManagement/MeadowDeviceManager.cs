@@ -314,6 +314,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                     await device.MonoEnableAsync(cancellationToken);
                 }
 
+                await Task.Delay(2000, cancellationToken)
+                          .ConfigureAwait(false);
+
                 // TODO: Verify that the device info returns the expected version
                 var deviceInfoString = await device
                                              .GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken)
