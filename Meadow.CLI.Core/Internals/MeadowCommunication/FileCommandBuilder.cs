@@ -16,8 +16,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             {
                 {
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                    p => p.Message.StartsWith("Meadow file download of")
-                      && p.Message.EndsWith("has begun")
+                    p => p.MessageType == MeadowMessageType.Concluded
+                    || p.MessageType == MeadowMessageType.DownloadStartOkay
+                    || p.MessageType == MeadowMessageType.DownloadStartFail
                 },
                 {
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,

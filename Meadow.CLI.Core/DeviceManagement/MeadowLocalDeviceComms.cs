@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -15,8 +14,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 {
     public partial class MeadowLocalDevice
     {
-        
-
         uint _packetCrc32;
 
         public async Task SendTheEntireFile(FileCommand command,
@@ -24,6 +21,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                             CancellationToken cancellationToken)
         {
             _packetCrc32 = 0;
+            _lastProgress = 0;
 
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
@@ -144,8 +142,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         private void WriteProgress(decimal i)
         {
-            if (Logger.IsEnabled(LogLevel.Trace))
-                return;
             var intProgress = Convert.ToInt32(i * 100);
             if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
 

@@ -148,11 +148,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
                 catch (MeadowCommandException meadowCommandException)
                 {
-                    Logger.LogDebug(meadowCommandException, "Caught exception while waiting for device to be ready");
+                    Logger.LogTrace(meadowCommandException, "Caught exception while waiting for device to be ready");
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogDebug(ex, "Caught exception while waiting for device to be ready. Retrying.");
+                    Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
 
                 await Task.Delay(1000, cancellationToken)
