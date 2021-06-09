@@ -50,7 +50,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task UpdateMonoRuntimeAsync(string fileName, string? targetFileName = null, uint partition = 0, CancellationToken cancellationToken = default);
         public abstract Task WriteFileToEspFlashAsync(string fileName, string? targetFileName = null, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
         public abstract Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default);
-        public abstract Task<string?> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
+        public abstract Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public abstract Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public abstract Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default);
         public abstract Task MonoDisableAsync(CancellationToken cancellationToken = default);
@@ -61,6 +61,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task NshEnableAsync(CancellationToken cancellationToken = default);
         public abstract Task NshDisableAsync(CancellationToken cancellationToken = default);
         public abstract Task TraceEnableAsync(CancellationToken cancellationToken = default);
+        public abstract Task SetTraceLevelAsync(uint traceLevel, CancellationToken cancellationToken = default);
         public abstract Task TraceDisableAsync(CancellationToken cancellationToken = default);
         public abstract Task QspiWriteAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
@@ -143,7 +144,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     var deviceInfo = await GetDeviceInfoAsync(timeout, cancellationToken: cancellationToken);
 
-                    if (string.IsNullOrWhiteSpace(deviceInfo) == false)
+                    if (deviceInfo != null)
                         return;
                 }
                 catch (MeadowCommandException meadowCommandException)

@@ -51,7 +51,7 @@ namespace Meadow.CLI.Commands.Esp32
 
             _logger.LogDebug("Translated {filename} to {targetFileName}", Filename, targetFileName);
 
-            Trace.Assert(
+            System.Diagnostics.Trace.Assert(
                 string.IsNullOrWhiteSpace(targetFileName) == false,
                 "string.IsNullOrWhiteSpace(targetFileName)");
 

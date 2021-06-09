@@ -123,8 +123,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         var deviceInfo =
                             await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
 
-                        if (!string.IsNullOrWhiteSpace(deviceInfo)
-                         && deviceInfo!.Contains(serialNumber))
+                        if (deviceInfo !=null && deviceInfo!.SerialNumber == serialNumber)
                         {
                             return device;
                         }
@@ -205,8 +204,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
                                              .ConfigureAwait(false);
 
-                var f = new MeadowDeviceInfo(deviceInfo);
-                serialNumber = f.SerialNumber;
+                serialNumber = deviceInfo!.SerialNumber;
             }
             else
             {
@@ -318,16 +316,10 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .ConfigureAwait(false);
 
                 // TODO: Verify that the device info returns the expected version
-                var deviceInfoString = await device
+                var deviceInfo = await device
                                              .GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken)
                                              .ConfigureAwait(false);
 
-                if (string.IsNullOrWhiteSpace(deviceInfoString))
-                {
-                    throw new Exception("Unable to retrieve device info.");
-                }
-
-                var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
                 _logger.LogInformation(
                     $"Updated Meadow to OS: {deviceInfo.MeadowOSVersion} ESP: {deviceInfo.CoProcessorOs}");
             }

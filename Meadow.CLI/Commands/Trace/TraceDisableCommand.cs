@@ -4,7 +4,7 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.TraceCommands
+namespace Meadow.CLI.Commands.Trace
 {
     [Command("trace disable", Description = "Disable Trace Logging on the Meadow")]
     public class TraceDisableCommand : MeadowSerialCommand

@@ -8,7 +8,7 @@ The CLI tool supports DFU flashing for `nuttx.bin` and `nuttx_user.bin`. When th
 
 The CLI tool also supports device and file management including file transfers, flash partitioning, and MCU reset.
 
-To run MeadowCLI on Windows, run MeadowCLI.exe from the command prompt. On Mac and Windows, call **mono MeadowCLI.exe**.
+To run MeadowCLI on Windows, run meadow.exe from the command prompt. On Mac and Windows, call **mono meadow.exe**.
 
 ## Options
 
@@ -16,55 +16,63 @@ To see the options, run the application with the --help arg.
 
 ## Running Commands
 
-File and device commands require you to specify the serial port. You can determine the serial port name in Windows by viewing the Device Manager.
+File and device commands require you to specify the serial port. You can determine the serial port name in Windows by viewing the Device Manager. The CLI will remember the last Serial Port used, so you only need to specify if the value has changed.
 
 On Mac and Linux, the serial port will show up in the **/dev** folder, generally with the prefix **tty.usb**. You can likely find the serial port name by running the command `ls /dev/tty.usb`.
 
 ## Useful commands
 
+### Update the Meadow OS
+```
+meadow flash os
+```
+
 ### Set the trace level
 
 You can set the debug trace level to values 0, 1, 2, or 3. 2 is the most useful.
-`MeadowCLI.exe --SetTraceLevel --Level 2 --SerialPort [NameOfSerialPort]`
+```
+meadow trace enable --level 2 -s [NameOfSerialPort]
+```
 
 ### File transfers
-
-`MeadowCLI.exe --WriteFile -f [NameOfFile] --SerialPort [NameOfSerialPort]`
+```
+meadow files write -f [NameOfFile]
+```
+You may specify multiple instances of `-f` to send multiple files
 
 ### List files in flash
-
-`MeadowCLI.exe --ListFiles --SerialPort [NameOfSerialPort]`
+```
+meadow files list
+```
 
 ### Delete a File
 
-`MeadowCLI.exe -s [NameOfSerialPort] --DeleteFile --TargetFileName [nameOfFile]`
-
-### Reformat the flash
-
-`MeadowCLI.exe --RenewFileSys` - Restarts Meadow and recreates file system
-
-`MeadowCLI.exe --EraseFlash` - Must wait 2 - 3 minutes to complete
+```
+meadow files delete -f
+```
+You may specify multiple instances of `-f` to send multiple files
 
 ### Stop/start the installed application from running automatically
-
-`MeadowCLI.exe --MonoDisable`
-
-`MeadowCLI.exe --MonoEnable`
-
+```
+meadow mono disable
+meadow mono enable
+```
 ### Useful utilities
-
-`MeadowCLI.exe --GetDeviceInfo` - Outputs Meadow OS version and other information
-`MeadowCLI.exe --GetDeviceName` - Outputs Meadow device name contained in configuration file
+```
+meadow device info
+meadow device name
+```
 
 ### Debugging
-
-`MeadowCLI.exe --VSDebugPort XXXX --StartDebugging` - Starts listening for debugging connection (substitute XXXX for a free port number)
+**NOTE THIS IS NOT YET FULLY IMPLEMENTED, IT WILL NOT WORK**
+```
+meadow debug --port XXXX
+```
+This starts listening on the specified port for a debugger to attach
 
 Note: you can use SDB command line debugger from https://github.com/mono/sdb. Just build it according to its readme, run the above command and then:
 
 `sdb "connect 127.0.0.1 XXXX"` (substitute XXXX for the same port number as above)
-
-
 
 ## Running applications
 

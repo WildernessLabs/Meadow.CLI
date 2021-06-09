@@ -4,17 +4,22 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.TraceCommands
+namespace Meadow.CLI.Commands.Trace
 {
     [Command("trace enable", Description = "Enable trace logging on the Meadow")]
     public class TraceEnableCommand : MeadowSerialCommand
     {
         private readonly ILogger<TraceEnableCommand> _logger;
-        public TraceEnableCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+
+        public TraceEnableCommand(ILoggerFactory loggerFactory,
+                                  MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<TraceEnableCommand>();
         }
+
+        [CommandOption("Level", 'l', Description = "The desired trace level")]
+        public uint? TraceLevel { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -22,7 +27,12 @@ namespace Meadow.CLI.Commands.TraceCommands
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.TraceEnableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.TraceEnableAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+            if (TraceLevel.HasValue)
+                await Meadow.SetTraceLevelAsync(TraceLevel.Value, cancellationToken)
+                            .ConfigureAwait(false);
         }
     }
 }

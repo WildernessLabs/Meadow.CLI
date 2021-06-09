@@ -23,9 +23,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
-        public override async Task<string?> GetDeviceInfoAsync(
-            TimeSpan timeout,
-            CancellationToken cancellationToken = default)
+        public override async Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             Initialize(cancellationToken);
 
@@ -43,7 +41,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         .ConfigureAwait(false);
 
                 if (commandResponse.IsSuccess)
-                    return commandResponse.Message;
+                    return new MeadowDeviceInfo(commandResponse.Message!);
 
                 throw new DeviceInfoException();
             }
@@ -59,29 +57,10 @@ namespace Meadow.CLI.Core.DeviceManagement
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
         {
-            var command = new SimpleCommandBuilder(
-                              HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION)
-                          .WithTimeout(timeout)
-                          .WithResponseType(MeadowMessageType.DeviceInfo)
-                          .Build();
+            var info = await GetDeviceInfoAsync(timeout, cancellationToken)
+                           .ConfigureAwait(false);
 
-            try
-            {
-                var commandResponse =
-                    await SendCommandAndWaitForResponseAsync(command, cancellationToken)
-                        .ConfigureAwait(false);
-
-                ;
-
-                if (commandResponse.IsSuccess)
-                    return commandResponse.Message;
-
-                throw new DeviceInfoException();
-            }
-            catch (MeadowDeviceManagerException mdmEx)
-            {
-                throw new DeviceInfoException(mdmEx);
-            }
+            return info.Name;
         }
 
         public override async Task<bool> GetMonoRunStateAsync(
@@ -260,6 +239,17 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST)
+                    .Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+        }
+
+        public override Task SetTraceLevelAsync(uint traceLevel,
+                                                CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL)
+                    .WithUserData(traceLevel)
                     .Build();
 
             return SendCommandAndWaitForResponseAsync(command, cancellationToken);

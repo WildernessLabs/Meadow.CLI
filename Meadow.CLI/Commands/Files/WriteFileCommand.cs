@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -63,7 +62,7 @@ namespace Meadow.CLI.Commands.Files
                 var targetFileName = GetTargetFileName(i);
                 _logger.LogDebug($"Translated {Files[i]} to {targetFileName}");
 
-                Trace.Assert(
+                System.Diagnostics.Trace.Assert(
                     string.IsNullOrWhiteSpace(targetFileName) == false,
                     "string.IsNullOrWhiteSpace(targetFileName)");
 
@@ -76,7 +75,11 @@ namespace Meadow.CLI.Commands.Files
                     _logger.LogInformation(
                         $"Writing {Files[i]} as {targetFileName} to partition {Partition}");
 
-                    var result = await Meadow.WriteFileAsync(Files[i], targetFileName, Partition, cancellationToken)
+                    var result = await Meadow.WriteFileAsync(
+                                                 Files[i],
+                                                 targetFileName,
+                                                 Partition,
+                                                 cancellationToken)
                                              .ConfigureAwait(false);
 
                     _logger.LogDebug($"File written successfully? {result}");

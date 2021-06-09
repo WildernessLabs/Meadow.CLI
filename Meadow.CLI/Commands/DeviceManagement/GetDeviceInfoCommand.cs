@@ -23,10 +23,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var deviceInfoString = await Meadow.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrWhiteSpace(deviceInfoString))
-                throw new Exception("Unable to retrieve device info");
-            var deviceInfo = new MeadowDeviceInfo(deviceInfoString);
+            var deviceInfo = await Meadow.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
             _logger.LogInformation(deviceInfo.ToString());
         }
     }
