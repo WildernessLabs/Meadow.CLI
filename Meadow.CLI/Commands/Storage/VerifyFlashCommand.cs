@@ -18,11 +18,12 @@ namespace Meadow.CLI.Commands.Storage
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogInformation("Verifying flash");
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-            await device.VerifyErasedFlashAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.VerifyErasedFlashAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

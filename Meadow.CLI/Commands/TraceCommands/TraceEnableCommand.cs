@@ -18,12 +18,11 @@ namespace Meadow.CLI.Commands.TraceCommands
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-            
-            await device.TraceEnableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.TraceEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

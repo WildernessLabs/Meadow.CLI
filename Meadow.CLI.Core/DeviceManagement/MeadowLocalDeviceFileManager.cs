@@ -21,9 +21,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             int partition = 0,
             CancellationToken cancellationToken = default)
         {
-            var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
-
-            var tcs = new TaskCompletionSource<bool>();
             var started = false;
 
             EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
@@ -43,23 +40,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     SetFileAndCrcsFromMessage(e.Message);
                 }
-
-                if (e.MessageType == MeadowMessageType.Concluded)
-                {
-                    tcs.TrySetResult(true);
-                }
             };
 
-            DataProcessor.OnReceiveData += handler;
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
+                          .WithResponseHandler(handler)
+                          .WithUserData((uint)partition).Build();
 
-            await SendCommandAndWaitForResponseAsync(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC,
-                userData: (uint)partition,
-                timeout: SlowTimeout,
-                cancellationToken: cancellationToken);
-
-            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-            DataProcessor.OnReceiveData -= handler;
+            await SendCommandAndWaitForResponseAsync(command, cancellationToken)
+                .ConfigureAwait(false);
 
             return FilesOnDevice;
         }
@@ -72,7 +60,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <param name="timeoutInMs">The amount of time to wait to write the file</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns></returns>
-        public override async Task<bool> WriteFileAsync(string filename,
+        public override async Task<FileTransferResult> WriteFileAsync(string filename,
                                                         string path,
                                                         int timeoutInMs = 200000,
                                                         CancellationToken cancellationToken =
@@ -82,90 +70,88 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 throw new Exception("Device is not initialized");
             }
-
-            var result = false;
-
-            var timeOutTask = Task.Delay(timeoutInMs, cancellationToken);
-
-            var tcs = new TaskCompletionSource<bool>();
-
-            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            
+            var sourceFileName = Path.Combine(path, filename);
+            var fi = new FileInfo(sourceFileName);
+            if (!fi.Exists)
             {
-                if (e.MessageType == MeadowMessageType.Concluded)
-                {
-                    result = true;
-                    tcs.SetResult(true);
-                }
-            };
+                throw new FileNotFoundException("Cannot find source file", fi.FullName);
+            }
 
-            DataProcessor.OnReceiveData += handler;
+            // If ESP32 file we must also send the MD5 has of the file
+            using var md5 = MD5.Create();
+            var fileBytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
+            var hash = md5.ComputeHash(fileBytes);
+            string md5Hash = BitConverter.ToString(hash)
+                                         .Replace("-", "")
+                                         .ToLowerInvariant();
+            var fileCrc32 = CrcTools.Crc32part(fileBytes, fileBytes.Length, 0);
 
-            await WriteFileInternal(
-                Path.Combine(path, filename),
-                filename,
-                timeout: timeoutInMs,
-                cancellationToken: cancellationToken);
+            var command = await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
+                          .WithSourceFileName(sourceFileName)
+                          .WithDestinationFileName(filename)
+                          .WithTimeout(TimeSpan.FromMilliseconds(timeoutInMs))
+                          .WithPartition(0)
+                          .BuildAsync();
 
-            await Task.WhenAny(new Task[] { timeOutTask, tcs.Task });
-
-            DataProcessor.OnReceiveData -= handler;
-
-            return result;
+            var sw = Stopwatch.StartNew();
+            await SendTheEntireFile(command, true, cancellationToken)
+                .ConfigureAwait(false);
+            sw.Stop();
+            return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
         }
 
         public override async Task DeleteFileAsync(string fileName,
                                                    uint partition = 0,
                                                    CancellationToken cancellationToken = default)
         {
-            await TransmitFileInfoToExtFlash(
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME,
-                    fileName,
-                    fileName,
-                    partition,
-                    0,
-                    true,
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            var command =
+                await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME)
+                    .WithDestinationFileName(fileName)
+                    .WithPartition(partition)
+                    .WithResponseType(MeadowMessageType.Concluded)
+                    .WithCompletionResponseType(MeadowMessageType.Concluded)
+                    .BuildAsync();
 
-            await WaitForResponseMessageAsync(
-                    x => x.MessageType == MeadowMessageType.Concluded,
-                    cancellationToken: cancellationToken)
+            await SendCommandAndWaitForResponseAsync(command, cancellationToken)
                 .ConfigureAwait(false);
         }
 
         public override Task EraseFlashAsync(CancellationToken cancellationToken = default)
         {
-            return SendCommandAndWaitForResponseAsync(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE,
-                MeadowMessageType.SerialReconnect,
-                timeout: TimeSpan.FromMinutes(5),
-                cancellationToken: cancellationToken);
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE)
+                    .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
 
         public override Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default)
         {
-            return SendCommandAndWaitForResponseAsync(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH,
-                MeadowMessageType.SerialReconnect,
-                timeout: TimeSpan.FromMinutes(5),
-                cancellationToken: cancellationToken);
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH)
+                    .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
 
         public override Task FormatFileSystemAsync(uint partition = 0,
                                                    CancellationToken cancellationToken = default)
         {
-            return SendCommandAndWaitForResponseAsync(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS,
-                userData: partition,
-                cancellationToken: cancellationToken);
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS)
+                    .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).WithUserData(partition).Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
 
         public override Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
         {
-            return SendCommandAndWaitForResponseAsync(
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS,
-                MeadowMessageType.SerialReconnect,
-                cancellationToken: cancellationToken);
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS)
+                    .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
 
 
@@ -237,25 +223,14 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
 
             Logger.LogDebug("Sending Mono Update Runtime Request");
-            await TransmitFileInfoToExtFlash(
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
-                    sourceFilename,
-                    targetFileName!,
-                    partition,
-                    0,
-                    false,
-                    true,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            var command = await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME)
+                                .WithPartition(partition)
+                                .WithDestinationFileName(targetFileName)
+                                .WithSourceFileName(sourceFilename)
+                                .BuildAsync()
+                                .ConfigureAwait(false);
 
-            Logger.LogDebug("Waiting for Mono Update to complete");
-            await WaitForResponseMessageAsync(
-                    x => x.MessageType == MeadowMessageType.Concluded,
-                    timeout: TimeSpan.FromMinutes(5),
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            Logger.LogInformation("Mono Runtime Update Complete");
+            await SendTheEntireFile(command, true, cancellationToken).ConfigureAwait(false);
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,
@@ -295,22 +270,15 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                     return;
                 }
+                var command = await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
+                                    .WithPartition(partition)
+                                    .WithDestinationFileName(targetFileName)
+                                    .WithMcuAddress(mcuAddress)
+                                    .WithSourceFileName(fileName)
+                                    .BuildAsync()
+                                    .ConfigureAwait(false);
 
-                await TransmitFileInfoToExtFlash(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
-                        fileName,
-                        targetFileName!,
-                        partition,
-                        mcuAddress,
-                        false,
-                        true,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
-                await WaitForResponseMessageAsync(
-                        x => x.MessageType == MeadowMessageType.Concluded,
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                await SendTheEntireFile(command, true, cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -326,7 +294,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return;
                 }
 
-                uint mcuAddr;
+                uint mcuAddress;
                 for (int i = 0; i < fileElement.Length; i += 2)
                 {
                     // Trim any white space from this mcu addr and file name
@@ -342,7 +310,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                             .StartsWith("0X"))
                     {
                         // Fill in the Mcu Address
-                        mcuAddr = uint.Parse(fileElement[i][2..],
+                        mcuAddress = uint.Parse(fileElement[i][2..],
                                              System.Globalization.NumberStyles.HexNumber);
                     }
                     else
@@ -358,15 +326,15 @@ namespace Meadow.CLI.Core.DeviceManagement
                     bool lastFile = i == fileElement.Length - 2;
 
                     // this may need need to be awaited?
-                    await TransmitFileInfoToExtFlash(
-                            HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
-                            fileElement[i + 1],
-                            targetFileName,
-                            partition,
-                            mcuAddr,
-                            false,
-                            lastFile,
-                            cancellationToken)
+                    var command = await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
+                                  .WithPartition(partition)
+                                  .WithDestinationFileName(targetFileName)
+                                  .WithMcuAddress(mcuAddress)
+                                  .WithSourceFileName(fileElement[i+1])
+                                  .BuildAsync()
+                                  .ConfigureAwait(false);
+
+                    await SendTheEntireFile(command, lastFile, cancellationToken)
                         .ConfigureAwait(false);
                 }
             }
@@ -414,35 +382,31 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogDebug("Getting initial bytes from {fileName}", fileName);
             var encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
 
-            await BuildAndSendSimpleData(
-                encodedFileName,
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES,
-                0,
-                cancellationToken);
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES)
+                          .WithResponseType(MeadowMessageType.InitialFileData)
+                    .WithData(encodedFileName).Build();
 
-            var (success, message, _) = await WaitForResponseMessageAsync(
-                                            x => x.MessageType == MeadowMessageType.Concluded,
-                                            timeout: DefaultTimeout,
-                                            cancellationToken);
+            var commandResponse = await SendCommandAndWaitForResponseAsync(command, cancellationToken);
 
-            if (!success)
+            if (!commandResponse.IsSuccess)
             {
                 Logger.LogWarning("No bytes found for file.");
             }
 
-            return message;
+            return commandResponse.Message;
         }
 
         public override Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
-                                                                int userData,
+                                                                uint userData,
                                                                 CancellationToken
                                                                     cancellationToken = default)
         {
-            return BuildAndSendSimpleData(
-                debuggerData,
-                HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA,
-                (uint)userData,
-                cancellationToken);
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
+                    .WithData(debuggerData)
+                    .WithUserData(userData).Build();
+
+            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
 
         public override async Task DeployAppAsync(string applicationFilePath,
@@ -466,6 +430,11 @@ namespace Meadow.CLI.Core.DeviceManagement
             var deviceFiles = await GetFilesAndCrcsAsync(cancellationToken: cancellationToken)
                                   .ConfigureAwait(false);
 
+            foreach (var (filename, crc) in deviceFiles)
+            {
+                Logger.LogInformation("Found {file} (CRC: {crc})", filename, crc);
+            }
+
             var extensions = new List<string>
                              { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
 
@@ -475,8 +444,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                      SearchOption.TopDirectoryOnly)
                                  .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
-            var files = new List<string>();
-            var crcs = new List<uint>();
+            var files = new Dictionary<string, uint>();
 
             async Task AddFile(string file, bool includePdbs)
             {
@@ -490,8 +458,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
                 Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
-                files.Add(Path.GetFileName(file));
-                crcs.Add(crc);
+                files.Add(Path.GetFileName(file), crc);
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
@@ -518,7 +485,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             // delete unused files
             foreach (var file in deviceFiles.Keys)
             {
-                if (files.Contains(file) == false)
+                if (files.ContainsKey(file) == false)
                 {
                     await DeleteFileAsync(file, cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
@@ -528,28 +495,28 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
 
             // write new files
-            for (int i = 0; i < files.Count; i++)
+            foreach(var file in files)
             {
-                if (deviceFiles.Values.Contains(crcs[i]))
+                if (deviceFiles.ContainsKey(file.Key) && deviceFiles[file.Key] == file.Value)
                 {
-                    Logger.LogInformation("Skipping file (hash match): {file}", files[i]);
+                    Logger.LogInformation("Skipping file (hash match): {file}", file.Key);
                     continue;
                 }
 
-                if (!File.Exists(Path.Combine(fi.DirectoryName, files[i])))
+                if (!File.Exists(Path.Combine(fi.DirectoryName, file.Key)))
                 {
-                    Logger.LogInformation("{file} not found", files[i]);
+                    Logger.LogInformation("{file} not found", file.Key);
                     continue;
                 }
 
-                Logger.LogInformation("Writing file: {file}", files[i]);
+                Logger.LogInformation("Writing file: {file}", file.Key);
                 await WriteFileAsync(
-                        files[i],
+                        file.Key,
                         fi.DirectoryName,
                         cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
 
-                Logger.LogInformation("Wrote file: {file}", files[i]);
+                Logger.LogInformation("Wrote file: {file}", file.Key);
             }
 
             Logger.LogInformation("{file} deploy complete", fi.Name);
@@ -605,173 +572,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             catch (Exception)
             {
                 // eat this for now
-            }
-        }
-
-        private protected async Task<bool> WriteFileInternal(
-            string filename,
-            string? targetFileName = null,
-            uint partition = 0,
-            int timeout = 200000,
-            CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(targetFileName))
-            {
-                targetFileName = Path.GetFileName(filename);
-            }
-
-            // For the STM32F7 on meadow, we need source file and destination file names.
-            string[] csvArray = filename.Split(',');
-            if (csvArray.Length == 1)
-            {
-                await TransmitFileInfoToExtFlash(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                        filename,
-                        targetFileName!,
-                        partition,
-                        0,
-                        false,
-                        true,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
-                await WaitForResponseMessageAsync(
-                        x => x.MessageType == MeadowMessageType.Concluded,
-                        cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-
-                // No CSV, just the source file name. So we'll assume the targetFileName is correct
-                //TransmitFileInfoToExtFlash(meadow, meadowRequestType, fileName, targetFileName, partition, 0, false, true);
-                return true;
-            }
-            else
-            {
-                // At this point, the fileName field should contain a CSV string containing the source
-                // and destination file names, always in an even number.
-                if (csvArray.Length % 2 != 0)
-                {
-                    Console.WriteLine(
-                        "Please provide a CSV input with file names \"source, destination, source, destination\"");
-
-                    return false;
-                }
-
-                for (int i = 0; i < csvArray.Length; i += 2)
-                {
-                    // Send files one-by-one
-                    bool lastFile = i == csvArray.Length - 2;
-                    await TransmitFileInfoToExtFlash(
-                            HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-                            csvArray[i]
-                                .Trim(),
-                            csvArray[i + 1]
-                                .Trim(),
-                            partition,
-                            0,
-                            false,
-                            lastFile,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Transmit a file to the external flash on the Meadow
-        /// </summary>
-        /// <param name="requestType"></param>
-        /// <param name="sourceFileName">The absolute path of the file to send</param>
-        /// <param name="targetFileName">The name of the file on the Meadow</param>
-        /// <param name="partition">The partition on which to write the file</param>
-        /// <param name="mcuAddress">The address inside the MCU to write the file</param>
-        /// <param name="useSourceAsTarget"></param>
-        /// <param name="lastInSeries"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private async Task<FileTransferResult> TransmitFileInfoToExtFlash(
-            HcomMeadowRequestType requestType,
-            string sourceFileName,
-            string targetFileName,
-            uint partition,
-            uint mcuAddress,
-            bool useSourceAsTarget,
-            bool lastInSeries = false,
-            CancellationToken cancellationToken = default)
-        {
-            var sw = new Stopwatch();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(sourceFileName))
-                {
-                    throw new ArgumentNullException(sourceFileName);
-                }
-
-                //----------------------------------------------
-                if (useSourceAsTarget)
-                {
-                    // No data packets, no end-of-file message and no mcu address
-                    await BuildAndSendFileRelatedCommand(
-                            requestType,
-                            partition,
-                            0,
-                            0,
-                            0,
-                            string.Empty,
-                            sourceFileName,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-
-                    return FileTransferResult.EmptyResult;
-                }
-
-                var fi = new FileInfo(sourceFileName);
-                if (!fi.Exists)
-                {
-                    throw new FileNotFoundException("Cannot find source file", fi.FullName);
-                }
-
-                // If ESP32 file we must also send the MD5 has of the file
-                string md5Hash = string.Empty;
-                if (mcuAddress != 0)
-                {
-                    using var md5 = MD5.Create();
-                    using var stream = File.OpenRead(sourceFileName);
-                    var hash = md5.ComputeHash(stream);
-                    md5Hash = BitConverter.ToString(hash)
-                                          .Replace("-", "")
-                                          .ToLowerInvariant();
-                }
-
-                // Open, read and close the data file
-                var fileBytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
-                var fileCrc32 = CrcTools.Crc32part(fileBytes, fileBytes.Length, 0);
-                var fileLength = fileBytes.Length;
-
-                sw.Start();
-                sw.Restart();
-
-                await SendTheEntireFile(
-                        requestType,
-                        targetFileName,
-                        partition,
-                        fileBytes,
-                        mcuAddress,
-                        fileCrc32,
-                        md5Hash,
-                        lastInSeries,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
-                sw.Stop();
-
-                return new FileTransferResult(sw.ElapsedMilliseconds, fileLength, fileCrc32);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to transmit file to Meadow");
-                throw;
             }
         }
 

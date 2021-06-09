@@ -32,17 +32,13 @@ namespace Meadow.CLI.Commands.Files
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogInformation($"Getting files on partition {Partition}");
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
-
-            var res = await device.GetInitialBytesFromFile(Filename, Partition, cancellationToken);
+            var res = await Meadow.GetInitialBytesFromFile(Filename, Partition, cancellationToken);
             if (res != null)
             {
                 _logger.LogInformation("Read {size} bytes from {filename}: {bytes}",

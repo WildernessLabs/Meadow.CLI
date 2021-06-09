@@ -27,18 +27,14 @@ namespace Meadow.CLI.Commands.Utility
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
-
             // TODO: This is a terrible hack to link the DataProcessor to the Device
-            device.DataProcessor.ForwardDebuggingData = device.ForwardMonoDataToVisualStudioAsync;
+            Meadow.DataProcessor.ForwardDebuggingData = Meadow.ForwardMonoDataToVisualStudioAsync;
             var endpoint = new IPEndPoint(IPAddress.Loopback, Port);
-            var server = new DebuggingServer(device, endpoint, _logger);
+            var server = new DebuggingServer(Meadow, endpoint, _logger);
             await server.StartListeningAsync().ConfigureAwait(false);
         }
     }

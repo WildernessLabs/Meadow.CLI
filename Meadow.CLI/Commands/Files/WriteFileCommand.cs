@@ -43,13 +43,9 @@ namespace Meadow.CLI.Commands.Files
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            var cancellationToken = console.RegisterCancellationHandler();
+            await base.ExecuteAsync(console);
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+            var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogDebug(
                 $"{Files.Count} files and {TargetFileNames.Count} target files specified.");
@@ -80,8 +76,8 @@ namespace Meadow.CLI.Commands.Files
                     _logger.LogInformation(
                         $"Writing {Files[i]} as {targetFileName} to partition {Partition}");
 
-                    var result = await device.WriteFileAsync(Files[i], targetFileName, Partition, cancellationToken)
-                                .ConfigureAwait(false);
+                    var result = await Meadow.WriteFileAsync(Files[i], targetFileName, Partition, cancellationToken)
+                                             .ConfigureAwait(false);
 
                     _logger.LogDebug($"File written successfully? {result}");
                 }

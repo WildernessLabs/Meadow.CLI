@@ -20,12 +20,10 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-
-            var deviceInfoString = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
+            var deviceInfoString = await Meadow.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(deviceInfoString))
                 throw new Exception("Unable to retrieve device info");
             var deviceInfo = new MeadowDeviceInfo(deviceInfoString);

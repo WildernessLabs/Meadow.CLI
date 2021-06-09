@@ -18,12 +18,11 @@ namespace Meadow.CLI.Commands.Nsh
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-            
-            await device.NshDisableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.NshDisableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

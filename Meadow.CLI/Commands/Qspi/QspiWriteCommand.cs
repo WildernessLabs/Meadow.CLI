@@ -22,12 +22,11 @@ namespace Meadow.CLI.Commands.Qspi
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-            
-            await device.QspiWriteAsync(Value, cancellationToken).ConfigureAwait(false);
+            await Meadow.QspiWriteAsync(Value, cancellationToken).ConfigureAwait(false);
         }
     }
 }

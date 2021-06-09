@@ -21,14 +21,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            var cancellationToken = console.RegisterCancellationHandler();
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+            await base.ExecuteAsync(console);
 
-            var deviceName = await device.GetDeviceNameAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken)
+            var cancellationToken = console.RegisterCancellationHandler();
+
+            var deviceName = await Meadow.GetDeviceNameAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken)
                                          .ConfigureAwait(false);
 
             _logger.LogInformation($"Device Name: {deviceName}");

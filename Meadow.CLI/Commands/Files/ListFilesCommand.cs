@@ -29,17 +29,13 @@ namespace Meadow.CLI.Commands.Files
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogInformation($"Getting files on partition {Partition}");
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
-
-            var files = await device.GetFilesAndCrcsAsync(
+            var files = await Meadow.GetFilesAndCrcsAsync(
                                         Partition,
                                         cancellationToken: cancellationToken)
                                     .ConfigureAwait(false);

@@ -9,11 +9,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands
 {
-    public abstract class MeadowSerialCommand : ICommand
+    public abstract class MeadowSerialCommand : ICommand, IDisposable
     {
         private protected ILoggerFactory LoggerFactory;
         private protected MeadowDeviceManager MeadowDeviceManager;
-        private protected string SettingsFilePath;
+        private protected MeadowDevice Meadow;
 
         private protected MeadowSerialCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
         {
@@ -42,8 +42,8 @@ namespace Meadow.CLI.Commands
             {
                 // TODO: VALIDATE THE INPUT HERE, INPUT IS UNVALIDATED
                 var port = SettingsManager.GetSetting(Setting.PORT);
-
-                SerialPortName = port.Trim();
+                if (!string.IsNullOrWhiteSpace(port))
+                    SerialPortName = port.Trim();
             }
 
             return _serialPort;
@@ -55,6 +55,21 @@ namespace Meadow.CLI.Commands
             SettingsManager.SaveSetting(Setting.PORT, _serialPort);
         }
 
-        public abstract ValueTask ExecuteAsync(IConsole console);
+        public virtual ValueTask ExecuteAsync(IConsole console)
+        {
+            Meadow = MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName);
+            if (Meadow == null)
+            {
+                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");
+                Environment.Exit(-1);
+            }
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            LoggerFactory?.Dispose();
+            Meadow?.Dispose();
+        }
     }
 }

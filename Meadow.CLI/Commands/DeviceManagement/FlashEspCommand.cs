@@ -17,19 +17,14 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+            await Meadow.FlashEspAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
-            await device.FlashEspAsync(cancellationToken)
-                       .ConfigureAwait(false);
-
-            await device.ResetMeadowAsync(cancellationToken)
-                       .ConfigureAwait(false);
+            await Meadow.ResetMeadowAsync(cancellationToken)
+                        .ConfigureAwait(false);
         }
     }
 }

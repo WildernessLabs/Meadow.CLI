@@ -16,13 +16,13 @@ namespace Meadow.CLI.Commands.FileSystem
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
             await console.Output.WriteLineAsync("Renewing file system on the Meadow.");
-            using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken)
-                                                        .ConfigureAwait(false);
 
-            await device.RenewFileSystemAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await Meadow.RenewFileSystemAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -35,12 +35,9 @@ namespace Meadow.CLI.Commands.Files
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
 
             foreach (var file in Files.Where(file => string.IsNullOrWhiteSpace(file) == false))
             {
@@ -48,7 +45,7 @@ namespace Meadow.CLI.Commands.Files
                 {
                     _logger.LogInformation($"Deleting {file} from partition {Partition}");
 
-                    await device.DeleteFileAsync(file, Partition, cancellationToken)
+                    await Meadow.DeleteFileAsync(file, Partition, cancellationToken)
                                 .ConfigureAwait(false);
                 }
             }

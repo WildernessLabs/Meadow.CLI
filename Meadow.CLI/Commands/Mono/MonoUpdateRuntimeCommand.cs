@@ -23,18 +23,14 @@ namespace Meadow.CLI.Commands.Mono
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+            await Meadow.UpdateMonoRuntimeAsync(Filename, cancellationToken: cancellationToken);
 
-            await device.UpdateMonoRuntimeAsync(Filename, cancellationToken: cancellationToken);
-
-            await device.ResetMeadowAsync(cancellationToken)
-                .ConfigureAwait(false);
+            await Meadow.ResetMeadowAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
             _logger.LogInformation("Mono Flashed Successfully");
         }

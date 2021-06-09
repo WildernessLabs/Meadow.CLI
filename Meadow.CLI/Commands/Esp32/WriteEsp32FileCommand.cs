@@ -38,13 +38,9 @@ namespace Meadow.CLI.Commands.Esp32
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            var cancellationToken = console.RegisterCancellationHandler();
+            await base.ExecuteAsync(console);
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
+            var cancellationToken = console.RegisterCancellationHandler();
 
             var targetFileName = string.IsNullOrWhiteSpace(TargetFilename)
                                      ? GetTargetFileName()
@@ -65,7 +61,7 @@ namespace Meadow.CLI.Commands.Esp32
             }
             else
             {
-                await device.WriteFileToEspFlashAsync(Filename, targetFileName, (uint)0, McuDestAddress, cancellationToken)
+                await Meadow.WriteFileToEspFlashAsync(Filename, targetFileName, (uint)0, McuDestAddress, cancellationToken)
                             .ConfigureAwait(false);
 
                 _logger.LogDebug("File written successfully");

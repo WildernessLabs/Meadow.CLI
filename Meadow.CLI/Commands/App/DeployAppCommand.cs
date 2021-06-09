@@ -26,18 +26,14 @@ namespace Meadow.CLI.Commands.App
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
 
-            await device.MonoDisableAsync(cancellationToken)
+            await Meadow.MonoDisableAsync(cancellationToken)
                         .ConfigureAwait(false);
-            await device.DeployAppAsync(File, IncludePdbs, cancellationToken)
-                  .ConfigureAwait(false);
-            await device.MonoEnableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
+                        .ConfigureAwait(false);
+            await Meadow.MonoEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

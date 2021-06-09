@@ -20,15 +20,11 @@ namespace Meadow.CLI.Commands.Esp32
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
-
-            await device.RestartEsp32Async(cancellationToken).ConfigureAwait(false);
+            await Meadow.RestartEsp32Async(cancellationToken).ConfigureAwait(false);
         }
     }
 }

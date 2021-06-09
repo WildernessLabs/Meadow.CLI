@@ -51,12 +51,12 @@ namespace Meadow.CLI.Core.DeviceManagement
             SerialPort.Write(encodedBytes, 0, encodedToSend);
         }
 
-        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
+        public override bool Initialize(CancellationToken cancellationToken = default)
         {
-            await Task.Yield();
             if (!SerialPort.IsOpen)
             {
                 SerialPort.Open();
+                SerialPort.BaseStream.ReadTimeout = 0;
             }
 
             return SerialPort.IsOpen;
@@ -79,10 +79,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                            WriteTimeout = 5000
                        };
 
-            port.Open();
-
-            //improves perf on Windows?
-            port.BaseStream.ReadTimeout = 0;
             return port;
         }
 
@@ -94,8 +90,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
 
-                var portOpened = await InitializeAsync(cancellationToken)
-                                      .ConfigureAwait(false);
+                var portOpened = Initialize(cancellationToken);
 
                 if (portOpened)
                 {

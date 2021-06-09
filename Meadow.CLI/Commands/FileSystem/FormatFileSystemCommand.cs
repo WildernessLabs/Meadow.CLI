@@ -25,17 +25,13 @@ namespace Meadow.CLI.Commands.FileSystem
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogInformation($"Formatting file system on partition {Partition}");
 
-            using var device = await MeadowDeviceManager
-                                     .GetMeadowForSerialPort(
-                                         SerialPortName,
-                                         cancellationToken)
-                                     .ConfigureAwait(false);
-
-            await device.FormatFileSystemAsync(cancellationToken: cancellationToken)
+            await Meadow.FormatFileSystemAsync(cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
         }
     }

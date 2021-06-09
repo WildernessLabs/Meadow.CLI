@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "--FlashEverything -s COM21"
+      "commandLineArgs": "flash os -vvv -s COM19 -d"
     },
     "Login": {
       "commandName": "Project",

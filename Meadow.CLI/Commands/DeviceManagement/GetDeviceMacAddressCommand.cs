@@ -20,12 +20,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            using var device =
-                await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, cancellationToken).ConfigureAwait(false);
-
-            var macAddress = await device.GetDeviceMacAddressAsync(cancellationToken).ConfigureAwait(false);
+            var macAddress = await Meadow.GetDeviceMacAddressAsync(cancellationToken).ConfigureAwait(false);
             if (macAddress == null)
             {
                 _logger.LogInformation("Unable to retrieve device mac address");

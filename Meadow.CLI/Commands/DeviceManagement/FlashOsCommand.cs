@@ -20,11 +20,18 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("BinPath", 'b', Description = "Path to the Meadow OS binary")]
         public string BinPath { get; init; }
 
+        [CommandOption("skipDfu",'d', Description = "Skip DFU flash.")]
+        public bool SkipDfu { get; init; }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
+
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await MeadowDeviceManager.FlashOsAsync(SerialPortName, BinPath, cancellationToken);
+            Meadow?.Dispose();
+
+            await MeadowDeviceManager.FlashOsAsync(SerialPortName, BinPath, SkipDfu, cancellationToken);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public IDictionary<string, uint> FilesOnDevice { get; protected set; } =
             new Dictionary<string, uint>();
         public abstract Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(int timeoutInMs = 10000, int partition = 0, CancellationToken cancellationToken = default);
-        public abstract Task<bool> WriteFileAsync(string filename, string path, int timeoutInMs = 200000, CancellationToken cancellationToken = default);
+        public abstract Task<FileTransferResult> WriteFileAsync(string filename, string path, int timeoutInMs = 200000, CancellationToken cancellationToken = default);
         public abstract Task DeleteFileAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public abstract Task EraseFlashAsync(CancellationToken cancellationToken = default);
         public abstract Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default);
@@ -66,7 +66,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task DeployAppAsync(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default);
-        public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, int userData, CancellationToken cancellationToken = default);
+        public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default);
         public abstract Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
 
         // TODO: This is very Meadow Local Device Specific...
@@ -75,7 +75,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public virtual async Task FlashEspAsync(CancellationToken cancellationToken = default)
         {
-            await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
+            await WaitForReadyAsync(DefaultTimeout, cancellationToken)
                 .ConfigureAwait(false);
 
             await MonoDisableAsync(cancellationToken)

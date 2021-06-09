@@ -11,7 +11,6 @@ using LibUsbDotNet.Main;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -35,38 +34,55 @@ namespace Meadow.CLI.Core.DeviceManagement
             _logger = _loggerFactory.CreateLogger<MeadowDeviceManager>();
         }
 
-        public Task<MeadowDevice> GetMeadowForSerialPort(string serialPort,
-                                                         CancellationToken cancellationToken =
-                                                             default) //, bool verbose = true)
-        {
-            return GetMeadowForSerialPort(
-                serialPort,
-                _loggerFactory.CreateLogger<MeadowSerialDevice>(),
-                cancellationToken);
-        }
-
-        public async Task<MeadowDevice> GetMeadowForSerialPort(
-            string serialPort,
-            ILogger<MeadowSerialDevice>? logger = null,
-            CancellationToken cancellationToken = default) //, bool verbose = true)
+        public MeadowDevice? GetMeadowForSerialPort(string serialPort, bool verbose = true)
         {
             try
             {
                 _logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
-                var meadow = new MeadowSerialDevice(
-                    serialPort,
-                    logger ?? new NullLogger<MeadowSerialDevice>());
+                var meadow = new MeadowSerialDevice(serialPort, _logger);
 
-                await meadow.InitializeAsync(cancellationToken)
-                            .ConfigureAwait(false);
+                meadow.Initialize();
 
                 return meadow;
+            }
+            catch (FileNotFoundException fnfEx)
+            {
+                
+                LogUserError(verbose);
+
+                _logger.LogDebug(fnfEx, "Failed to open Serial Port.");
+                return null;
+            }
+            catch (IOException ioEx)
+            {
+                LogUserError(verbose);
+
+                _logger.LogDebug(ioEx, "Failed to open Serial Port.");
+                return null;
+            }
+            catch (UnauthorizedAccessException unAuthEx) when (
+                unAuthEx.InnerException is IOException)
+            {
+                LogUserError(verbose);
+
+                _logger.LogDebug(unAuthEx, "Failed to open Serial Port.");
+                return null;
             }
             catch (Exception ex)
             {
                 // TODO: Remove exception catch here and let the caller handle it or wrap it up in our own exception type.
                 _logger.LogError(ex, "Failed to connect to Meadow on {serialPort}", serialPort);
                 throw;
+            }
+        }
+
+        private void LogUserError(bool verbose)
+        {
+            if (verbose)
+            {
+                // TODO: Move message to ResourceManager or other tool for localization
+                _logger.LogError(
+                    "Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
             }
         }
 
@@ -100,7 +116,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, cancellationToken);
+                        var device = GetMeadowForSerialPort(port, false);
+                        if (device == null)
+                            continue;
 
                         var deviceInfo =
                             await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
@@ -112,13 +130,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                         }
 
                         device.Dispose();
-                    }
-                    catch (FileNotFoundException fileNotFoundException)
-                    {
-                        // eat it for now
-                        _logger.LogDebug(
-                            fileNotFoundException,
-                            "This error can be safely ignored.");
                     }
                     catch (MeadowDeviceException meadowDeviceException)
                     {
@@ -176,100 +187,99 @@ namespace Meadow.CLI.Core.DeviceManagement
             return devices;
         }
 
-        public async Task FlashOsAsync(string serialPortName, string binPath, CancellationToken cancellationToken)
+        public async Task FlashOsAsync(string serialPortName, string binPath, bool skipDfu = false, CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
-            UsbRegistry dfuDevice;
-            while (true)
+            
+            string serialNumber;
+            if (skipDfu)
             {
-                try
+                _logger.LogInformation("Skipping DFU flash step.");
+                using var device = GetMeadowForSerialPort(serialPortName, false);
+                if (device == null)
+                {
+                    _logger.LogWarning("Cannot find Meadow on {port}", serialPortName);
+                    return;
+                }
+
+                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
+                                             .ConfigureAwait(false);
+
+                var f = new MeadowDeviceInfo(deviceInfo);
+                serialNumber = f.SerialNumber;
+            }
+            else
+            {
+                UsbRegistry dfuDevice;
+                while (true)
                 {
                     try
                     {
-                        dfuDevice = DfuUtils.GetDevice();
-                        break;
+                        try
+                        {
+                            dfuDevice = DfuUtils.GetDevice();
+                            break;
+                        }
+                        catch (MultipleDfuDevicesException)
+                        {
+                            // This is bad, we can't just blindly flash with multiple devices, let the user know
+                            throw;
+                        }
+                        catch (DeviceNotFoundException)
+                        {
+                            // eat it.
+                        }
+
+                        // No DFU device found, lets try to set the meadow to DFU mode.
+                        using var device = GetMeadowForSerialPort(serialPortName, false);
+
+                        if (device != null)
+                        {
+                            _logger.LogInformation("Entering DFU Mode");
+                            await device.EnterDfuModeAsync(cancellationToken)
+                                        .ConfigureAwait(false);
+                        }
                     }
-                    catch (MultipleDfuDevicesException)
+                    catch (Exception ex)
                     {
-                        // This is bad, we can't just blindly flash with multiple devices, let the user know
-                        throw;
+                        _logger.LogDebug(
+                            "An exception occurred while switching device to DFU Mode. Exception: {0}",
+                            ex);
                     }
-                    catch (DeviceNotFoundException)
+
+                    switch (dfuAttempts)
                     {
-                        // eat it.
+                        case 5:
+                            _logger.LogInformation(
+                                "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
+
+                            Console.ReadKey();
+                            break;
+                        case 10:
+                            _logger.LogInformation(
+                                "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
+
+                            Console.ReadKey();
+                            break;
+                        case > 15:
+                            throw new Exception(
+                                "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
                     }
 
-                    // No DFU device found, lets try to set the meadow to DFU mode.
-                    using var device = await GetMeadowForSerialPort(
-                                           serialPortName,
-                                           cancellationToken);
+                    // Lets give the device a little time to settle in and get picked up
+                    await Task.Delay(1000, cancellationToken)
+                              .ConfigureAwait(false);
 
-                    _logger.LogInformation("Entering DFU Mode");
-                    await device.EnterDfuModeAsync(cancellationToken)
-                                .ConfigureAwait(false);
-                }
-                catch (FileNotFoundException fnfEx)
-                {
-                    // TODO: Move message to ResourceManager or other tool for localization
-                    _logger.LogError(
-                        "Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
-
-                    _logger.LogDebug(fnfEx, "Failed to open Serial Port.");
-                }
-                catch (IOException ioEx)
-                {
-                    _logger.LogError(
-                        "Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
-
-                    _logger.LogDebug(ioEx, "Failed to open Serial Port.");
-                }
-                catch (UnauthorizedAccessException unAuthEx) when (
-                    unAuthEx.InnerException is IOException)
-                {
-                    _logger.LogError(
-                        "Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
-
-                    _logger.LogDebug(unAuthEx, "Failed to open Serial Port.");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(
-                        "An exception occurred while switching device to DFU Mode. Exception: {0}",
-                        ex);
+                    dfuAttempts++;
                 }
 
-                switch (dfuAttempts)
-                {
-                    case 5:
-                        _logger.LogInformation(
-                            "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
+                // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
+                serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
-                        Console.ReadKey();
-                        break;
-                    case 10:
-                        _logger.LogInformation(
-                            "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
-
-                        Console.ReadKey();
-                        break;
-                    case > 15:
-                        throw new Exception(
-                            "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
-                }
-
-                // Lets give the device a little time to settle in and get picked up
-                await Task.Delay(1000, cancellationToken)
-                          .ConfigureAwait(false);
-
-                dfuAttempts++;
+                _logger.LogInformation("Device in DFU Mode, flashing OS");
+                await DfuUtils.FlashOsAsync(device: dfuDevice, logger: _logger);
+                _logger.LogInformation("Device Flashed.");
             }
-
-            // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
-            var serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
-
-            _logger.LogInformation("Device in DFU Mode, flashing OS");
-            await DfuUtils.FlashOsAsync(device: dfuDevice, logger: _logger);
-            _logger.LogInformation("Device Flashed.");
 
             try
             {
