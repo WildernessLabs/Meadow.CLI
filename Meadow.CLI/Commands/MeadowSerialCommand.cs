@@ -24,7 +24,7 @@ namespace Meadow.CLI.Commands
         [CommandOption('v', Description = "Log verbosity")]
         public string[] Verbosity { get; init; }
 
-        [CommandOption("port", 's', Description = "Meadow COM port")]
+        [CommandOption("SerialPort", 's', Description = "Meadow COM port")]
         public string SerialPortName
         {
             get => GetSerialPort();
