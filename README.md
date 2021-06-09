@@ -127,7 +127,7 @@ meadow files list
 ### Delete a File
 
 ```
-meadow files delete -f
+meadow files delete -f [NameOfFile]
 ```
 You may specify multiple instances of `-f` to send multiple files
 
@@ -151,7 +151,10 @@ This starts listening on the specified port for a debugger to attach
 
 Note: you can use SDB command line debugger from https://github.com/mono/sdb. Just build it according to its readme, run the above command and then:
 
-`sdb "connect 127.0.0.1 XXXX"` (substitute XXXX for the same port number as above)
+```
+sdb "connect 127.0.0.1 XXXX"
+``` 
+Substitute XXXX for the same port number as above
 
 ## Running applications
 
