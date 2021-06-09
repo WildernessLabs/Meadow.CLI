@@ -40,6 +40,7 @@ COMMANDS
   debug             Debug a Meadow Application
   download os       Downloads the latest Meadow.OS to the host PC.
   install dfu-util  Install the DfuUtil utility
+  listen            Listen for console output from Meadow
   trace disable     Disable Trace Logging on the Meadow
   trace enable      Enable trace logging on the Meadow
   trace level       Enable trace logging on the Meadow
@@ -98,6 +99,11 @@ OPTIONS
 ### Update the Meadow OS
 ```
 meadow flash os
+```
+
+### Listen for Meadow Console.WriteLine
+```
+meadow listen
 ```
 
 ### Set the trace level

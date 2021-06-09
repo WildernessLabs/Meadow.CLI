@@ -31,7 +31,13 @@ namespace Meadow.CLI
             Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
                                                   .WriteTo.Console(logLevel, outputTemplate)
                                                   .CreateLogger();
-            Console.WriteLine($"Using log level {logLevel}");
+
+            // Log that we're using a log level other than default of Information
+            if (logLevel != LogEventLevel.Information)
+            {
+                Console.WriteLine($"Using log level {logLevel}");
+            }
+
             var services = new ServiceCollection();
             services.AddLogging(
                 builder =>

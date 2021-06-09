@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Utility
 {
-    [Command("listen", Description = "Listen for debug output")]
+    [Command("listen", Description = "Listen for console output from Meadow")]
     public class ListenCommand : MeadowSerialCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
@@ -25,6 +25,7 @@ namespace Meadow.CLI.Commands.Utility
 
             var cancellationToken = console.RegisterCancellationHandler();
             
+            _logger.LogInformation("Listening for Meadow Console output. Press Ctrl+C to exit");
             void ResponseHandler(object s, MeadowMessageEventArgs e)
             {
                 if (e.MessageType == MeadowMessageType.Data)
