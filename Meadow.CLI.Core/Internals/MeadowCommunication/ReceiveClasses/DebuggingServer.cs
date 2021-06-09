@@ -42,7 +42,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 var tcpListener = new TcpListener(LocalEndpoint);
                 tcpListener.Start();
                 LocalEndpoint = (IPEndPoint)tcpListener.LocalEndpoint;
-                Console.WriteLine("Listening for Visual Studio to connect");
+                _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
 
                 while (true)
                 {
@@ -118,6 +118,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _meadow = meadow;
                 _tcpClient = tcpClient;
                 _networkStream = tcpClient.GetStream();
+                _logger.LogDebug("Starting receive task");
                 _receiveVsDebugTask = Task.Factory.StartNew(
                     ReceiveVsDebug,
                     TaskCreationOptions.LongRunning);
@@ -202,7 +203,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 
             private async Task ReceiveVsDebug()
             {
-                // Console.WriteLine("ActiveClient:Start receiving from VS");
+                _logger.LogDebug("Start receiving from VS");
                 try
                 {
                     // Receive from Visual Studio and send to Meadow

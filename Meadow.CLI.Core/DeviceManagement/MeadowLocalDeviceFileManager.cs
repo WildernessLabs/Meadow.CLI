@@ -384,7 +384,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES)
                           .WithResponseType(MeadowMessageType.InitialFileData)
-                    .WithData(encodedFileName).Build();
+                          .WithData(encodedFileName)
+                          .Build();
 
             var commandResponse = await SendCommandAndWaitForResponseAsync(command, cancellationToken);
 
@@ -398,13 +399,13 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
                                                                 uint userData,
-                                                                CancellationToken
-                                                                    cancellationToken = default)
+                                                                CancellationToken cancellationToken = default)
         {
-            var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
-                    .WithData(debuggerData)
-                    .WithUserData(userData).Build();
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
+                          .WithData(debuggerData)
+                          .WithResponseFilter(x => true)
+                          .WithCompletionFilter(x => true)
+                          .WithUserData(userData).Build();
 
             return SendCommandAndWaitForResponseAsync(command, cancellationToken);
         }
