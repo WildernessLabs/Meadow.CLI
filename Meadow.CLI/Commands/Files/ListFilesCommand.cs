@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Files
 {
-    [Command("files list", Description = "List files in the on-board filesystem")]
+    [Command("file list", Description = "List files in the on-board filesystem")]
     public class ListFilesCommand : MeadowSerialCommand
     {
 #if USE_PARTITIONS

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.FileSystem
 {
-    [Command("filesystem format", Description = "Format a File System on the Meadow Board")]
+    [Command("fs format", Description = "Format a File System on the Meadow Board")]
     public class FormatFileSystemCommand : MeadowSerialCommand
     {
 #if USE_PARTITIONS

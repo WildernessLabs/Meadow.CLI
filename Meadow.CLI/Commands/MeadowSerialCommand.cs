@@ -31,8 +31,8 @@ namespace Meadow.CLI.Commands
             set => SetSerialPort(value);
         }
 
-        [CommandOption("listen", 'k', Description = "Keep port open to listen for output")]
-        public bool Listen {get; init;}
+        //[CommandOption("listen", 'k', Description = "Keep port open to listen for output")]
+        //public bool Listen {get; init;}
 
         private string _serialPort;
 

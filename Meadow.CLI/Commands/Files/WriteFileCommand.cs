@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Files
 {
-    [Command("files write", Description = "Write files to the Meadow File System")]
+    [Command("file write", Description = "Write files to the Meadow File System")]
     public class WritesFileCommand : MeadowSerialCommand
     {
         [CommandOption(

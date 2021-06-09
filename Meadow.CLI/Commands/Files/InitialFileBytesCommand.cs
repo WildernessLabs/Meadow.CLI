@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Files
 {
-    [Command("files initial bytes", Description = "Get the initial bytes from a file")]
+    [Command("file initial", Description = "Get the initial bytes from a file")]
     public class InitialFileBytesCommand : MeadowSerialCommand
     {
 #if USE_PARTITIONS

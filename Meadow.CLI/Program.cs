@@ -29,9 +29,7 @@ namespace Meadow.CLI
                                      ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
                                      : "{Message:lj}{NewLine}{Exception}";
             Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
-                                                  .WriteTo.Console(
-                                                      logLevel,
-                                                      outputTemplate)
+                                                  .WriteTo.Console(logLevel, outputTemplate)
                                                   .CreateLogger();
             Console.WriteLine($"Using log level {logLevel}");
             var services = new ServiceCollection();
@@ -46,6 +44,7 @@ namespace Meadow.CLI
             var serviceProvider = services.BuildServiceProvider();
             return await new CliApplicationBuilder().AddCommandsFromThisAssembly()
                                                     .UseTypeActivator(serviceProvider.GetService)
+                                                    .SetExecutableName("meadow")
                                                     .Build()
                                                     .RunAsync();
         }

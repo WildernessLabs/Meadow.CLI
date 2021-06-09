@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.FileSystem
 {
-    [Command("filesystem renew", Description = "Create a File System on the Meadow Board")]
+    [Command("fs renew", Description = "Create a File System on the Meadow Board")]
     public class RenewFileSystemCommand : MeadowSerialCommand
     {
         public RenewFileSystemCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
