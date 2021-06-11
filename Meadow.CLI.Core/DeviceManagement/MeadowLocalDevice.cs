@@ -301,7 +301,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             await Initialize(cancellationToken).ConfigureAwait(false);
 
-            await DebuggingServer.StartListeningAsync().ConfigureAwait(false);
+            await DebuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public override Task RestartEsp32Async(CancellationToken cancellationToken = default)

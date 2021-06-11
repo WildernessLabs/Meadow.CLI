@@ -26,8 +26,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         // VS 2015 - 4020
         public IPEndPoint LocalEndpoint { get; private set; }
 
-        private readonly CancellationTokenSource _cancellationTokenSource =
-            new CancellationTokenSource();
+        private CancellationTokenSource _cancellationTokenSource;
         private readonly ILogger _logger;
         private readonly MeadowDevice _meadow;
         private readonly IList<byte[]> _pendingMessages = new List<byte[]>();
@@ -42,10 +41,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             _logger = logger;
         }
 
-        public async Task StartListeningAsync()
+        public async Task StartListeningAsync(CancellationToken cancellationToken)
         {
             try
             {
+                _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var tcpListener = new TcpListener(LocalEndpoint);
                 tcpListener.Start();
                 LocalEndpoint = (IPEndPoint)tcpListener.LocalEndpoint;
@@ -73,6 +73,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                     {
+                        _logger.LogDebug("Closing active client");
                         Debug.Assert(_activeClientCount == 1);
                         Debug.Assert(_activeClient != null);
                         CloseActiveClient();
@@ -152,9 +153,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 }
                 pendingMessages.Clear();
                 _logger.LogDebug("Starting receive task");
-                //_receiveVsDebugTask = Task.Factory.StartNew(
-                //    ReceiveVsDebug,
-                //    TaskCreationOptions.LongRunning);
                 var pipe = new Pipe();
                 _receiverTask = Task.Factory.StartNew(() =>
                     ReadDataFromVisualStudio(_networkStream, pipe.Writer, _cts.Token),
@@ -163,7 +161,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _pusherTask = Task.Factory.StartNew(() => PushDataToMeadow(pipe.Reader, _cts.Token), TaskCreationOptions.LongRunning);
             }
 
-            // TODO: Finish implementing pipe
             private async Task ReadDataFromVisualStudio(Stream stream, PipeWriter writer, CancellationToken cancellationToken)
             {
                 try
@@ -189,11 +186,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         catch (SocketException)
                         {
                             _logger.LogDebug("Visual studio has disconnected");
+                            await writer.CompleteAsync().ConfigureAwait(false);
                             return;
                         }
                         catch (Exception ex)
                         {
                             _logger.LogDebug(ex, "Exception encountered while reading data from VS");
+                            await writer.CompleteAsync().ConfigureAwait(false);
                             return;
                         }
 
@@ -210,7 +209,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, ":-(");
-                    throw;
+                    await writer.CompleteAsync(ex).ConfigureAwait(false);
                 }
             }
 
@@ -220,36 +219,66 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 using var md5 = MD5.Create();
                 while (true)
                 {
-                    var result = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-
-                    var buffer = result.Buffer;
-                    foreach (var segment in buffer)
+                    try
                     {
-                        if (segment.IsEmpty) continue;
-                        var sequence = segment.ToArray();
-                        if (first)
+                        var result = await reader.ReadAsync(cancellationToken)
+                                                 .ConfigureAwait(false);
+
+                        var buffer = result.Buffer;
+                        foreach (var segment in buffer)
                         {
-                            var tmp = sequence[..13];
-                            _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}", tmp.Length, BitConverter.ToString(md5.ComputeHash(tmp)).Replace("-", string.Empty).ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token).ConfigureAwait(false);
-                            tmp = sequence[13..];
-                            _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}", tmp.Length, BitConverter.ToString(md5.ComputeHash(tmp)).Replace("-", string.Empty).ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token).ConfigureAwait(false);
-                            first = false;
+                            if (segment.IsEmpty) continue;
+                            var sequence = segment.ToArray();
+                            if (first)
+                            {
+                                var tmp = sequence[..13];
+                                _logger.LogTrace(
+                                    "Received {count} bytes from VS will forward to HCOM. {hash}",
+                                    tmp.Length,
+                                    BitConverter.ToString(md5.ComputeHash(tmp))
+                                                .Replace("-", string.Empty)
+                                                .ToLowerInvariant());
+
+                                await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
+                                             .ConfigureAwait(false);
+
+                                tmp = sequence[13..];
+                                _logger.LogTrace(
+                                    "Received {count} bytes from VS will forward to HCOM. {hash}",
+                                    tmp.Length,
+                                    BitConverter.ToString(md5.ComputeHash(tmp))
+                                                .Replace("-", string.Empty)
+                                                .ToLowerInvariant());
+
+                                await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
+                                             .ConfigureAwait(false);
+
+                                first = false;
+                            }
+                            else
+                            {
+                                await _meadow.ForwardVisualStudioDataToMonoAsync(
+                                                 sequence,
+                                                 0,
+                                                 _cts.Token)
+                                             .ConfigureAwait(false);
+                            }
                         }
-                        else
+
+                        // Tell the PipeReader how much of the buffer we have consumed
+                        reader.AdvanceTo(consumed: buffer.End);
+
+                        // Stop reading if there's no more data coming
+                        if (result.IsCompleted)
                         {
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(sequence, 0, _cts.Token).ConfigureAwait(false);
+                            break;
                         }
                     }
-                    
-                    // Tell the PipeReader how much of the buffer we have consumed
-                    reader.AdvanceTo(consumed: buffer.End);
-
-                    // Stop reading if there's no more data coming
-                    if (result.IsCompleted)
+                    catch (Exception ex)
                     {
-                        break;
+                        _logger.LogError(ex, "An error occurred in the pipe.");
+                        await reader.CompleteAsync(ex).ConfigureAwait(false);
+                        return;
                     }
                 }
 
@@ -292,7 +321,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     _cts.Dispose();
                     _receiverTask?.Dispose();
                     _pusherTask?.Dispose();
-                    //_receiveVsDebugTask?.Dispose();
                     Disposed = true;
                 }
             }
