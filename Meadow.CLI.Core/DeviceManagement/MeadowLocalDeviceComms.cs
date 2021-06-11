@@ -29,7 +29,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
-                    throw new MeadowCommandException(
+                    throw new MeadowCommandException(command,
                         "Meadow rejected download request with ",
                         response);
                 }
@@ -45,22 +45,22 @@ namespace Meadow.CLI.Core.DeviceManagement
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
                         when response.MessageType == MeadowMessageType.DownloadStartFail:
                         Logger.LogDebug("ESP32 download request rejected");
-                        throw new MeadowCommandException(
-                            "Halting download due to an error while preparing Meadow for download",
-                            response);
+                        throw new MeadowCommandException(command,
+                                                         "Halting download due to an error while preparing Meadow for download",
+                                                         response);
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
                         when response.MessageType != MeadowMessageType.DownloadStartOkay:
                         throw response.MessageType switch
                         {
-                            MeadowMessageType.DownloadStartFail => new MeadowCommandException(
+                            MeadowMessageType.DownloadStartFail => new MeadowCommandException(command,
                                 "Halting download due to an error while preparing Meadow for download",
                                 response),
-                            MeadowMessageType.Concluded => new MeadowCommandException(
+                            MeadowMessageType.Concluded => new MeadowCommandException(command,
                                 "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely",
                                 response),
-                            _ => new MeadowCommandException(
-                                $"Halting download due to an unexpected Meadow message type {response.MessageType} received",
-                                response)
+                            _ => new MeadowCommandException(command,
+                                                            $"Halting download due to an unexpected Meadow message type {response.MessageType} received",
+                                                            response)
                         };
                 }
 
@@ -84,7 +84,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                     if (command.FileBytes == null)
                     {
-                        throw new MeadowCommandException("File bytes are missing for file command");
+                        throw new MeadowCommandException(command, "File bytes are missing for file command");
                     }
 
                     await BuildAndSendDataPacketRequest(
@@ -366,9 +366,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             catch (TaskCanceledException e)
             {
-                throw new MeadowCommandException(
-                    "Command timeout waiting for response.",
-                    innerException: e);
+                throw new MeadowCommandException(command,
+                                                 "Command timeout waiting for response.",
+                                                 innerException: e);
             }
             finally
             {
@@ -390,7 +390,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 return new CommandResponse(result, message, messageType);
             }
 
-            throw new MeadowCommandException(message);
+            throw new MeadowCommandException(command, message);
         }
     }
 
