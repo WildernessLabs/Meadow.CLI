@@ -166,11 +166,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            Trace.Assert(
-                await GetMonoRunStateAsync(cancellationToken)
-                    .ConfigureAwait(false)
-             == false,
-                "Meadow was expected to have Mono Disabled");
+            Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
+                         "Meadow was expected to have Mono Disabled");
 
             Logger.LogInformation("Updating Mono Runtime");
 

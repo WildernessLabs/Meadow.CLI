@@ -91,6 +91,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public async Task<MeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
+            ILogger logger,
             int maxAttempts = 10,
             CancellationToken cancellationToken = default)
         {
@@ -100,7 +101,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 IEnumerable<string>? ports;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    ports = Directory.GetFiles("/dev", "tty.usb*");
+                    ports = GetMeadowSerialPortsForOsx();
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
@@ -119,12 +120,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, false).ConfigureAwait(false);
+                        var device = await GetMeadowForSerialPort(port, false, logger).ConfigureAwait(false);
                         if (device == null)
                             continue;
 
                         var deviceInfo =
-                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
+                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
 
                         if (deviceInfo!.SerialNumber == serialNumber)
                         {
@@ -342,6 +343,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 using var device = await FindMeadowBySerialNumber(
                                            serialNumber,
+                                           _logger,
                                            cancellationToken: cancellationToken)
                                        .ConfigureAwait(false);
 

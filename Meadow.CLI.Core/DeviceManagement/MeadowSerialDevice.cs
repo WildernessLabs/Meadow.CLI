@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO.Ports;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Exceptions;
@@ -71,7 +73,23 @@ namespace Meadow.CLI.Core.DeviceManagement
                     var attempts = 0;
                     while (attempts < 10)
                     {
-                        var ports = SerialPort.GetPortNames();
+                        IEnumerable<string>? ports;
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            ports = MeadowDeviceManager.GetMeadowSerialPortsForOsx();
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                        {
+                            ports = MeadowDeviceManager.GetMeadowSerialPortsForOsx();
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            ports = SerialPort.GetPortNames();
+                        }
+                        else
+                        {
+                            throw new Exception("Unknown operating system.");
+                        }
                         foreach (var port in ports)
                         {
                             Logger.LogTrace("Trying serial port {port}", port);
@@ -123,6 +141,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
         {
+            Logger.LogTrace("here");
             var now = DateTime.UtcNow;
             var then = now.Add(TimeSpan.FromSeconds(300));
             while (DateTime.UtcNow < then)
