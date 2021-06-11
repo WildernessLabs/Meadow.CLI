@@ -227,7 +227,6 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             try
             {
-                Logger.LogTrace("Sending packet of {messageSize} bytes", messageSize);
                 // For testing calculate the crc including the sequence number
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
@@ -260,7 +259,6 @@ namespace Meadow.CLI.Core.DeviceManagement
                 encodedBytes[encodedToSend] = 0; // End delimiter
                 encodedToSend++;
 
-                Logger.LogTrace("Encoded packet successfully");
                 try
                 {
                     await _semaphoreSlim.WaitAsync(cancellationToken)

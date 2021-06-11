@@ -116,5 +116,38 @@ namespace Meadow.CLI.Core.DeviceManagement.Tools
 
             return decodedOffset;
         }
+
+        public static int CobsDecoding(ReadOnlySequence<byte> encoded, ref byte[] decoded)
+        {
+            int decodedOffset = 0; // Offset into destination (decoded) buffer 
+
+            foreach (var sequence in encoded)
+            {
+                var encodedOffset = 0; // Offset into original (encoded) buffer
+                while (encodedOffset < encoded.Length)
+                {
+                    var replaceValue =
+                        sequence.Span[
+                            encodedOffset]; // Value that will be inserted to indicate replaced value
+
+                    if (((encodedOffset + replaceValue) > encoded.Length)
+                     && (replaceValue != 1))
+                        return 0;
+
+                    encodedOffset++; // Point to next source
+
+                    // Copy all unchanged bytes
+                    // C# would Array.Copy be noticeably better?
+                    for (var i = 1; i < replaceValue; i++)
+                        decoded[decodedOffset++] = sequence.Span[encodedOffset++];
+
+                    // Sometimes don't need a trailing delimiter added 
+                    if (replaceValue < 0xff && encodedOffset != encoded.Length)
+                        decoded[decodedOffset++] = 0x00;
+                }
+            }
+
+            return decodedOffset;
+        }
     }
 }

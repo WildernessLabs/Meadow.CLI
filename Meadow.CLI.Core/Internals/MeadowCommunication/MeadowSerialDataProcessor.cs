@@ -168,7 +168,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         var buffer = new byte[1024];
                         var receivedLength = await _serialPort.BaseStream.ReadAsync(buffer)
                                                               .ConfigureAwait(false);
-                        _logger.LogTrace("Received {count} bytes from serial port", receivedLength);
                         buffer = buffer[..receivedLength];
                         while (buffer.Length > 0)
                         {
@@ -230,42 +229,137 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        //private async Task ProcessPipeData(PipeReader pipeReader)
+        //private async Task ReadSerialPortData(PipeWriter pipeWriter)
         //{
-        //    while (true)
+        //    const int minimumBufferSize = 1024;
+        //    while (!_cts.IsCancellationRequested)
         //    {
-        //        var result = await pipeReader.ReadAsync(_cts.Token).ConfigureAwait(false);
-
-        //        var buffer = result.Buffer;
-        //        SequencePosition? position = null;
-
-        //        do
+        //        // Allocate at least 512 bytes from the PipeWriter
+        //        var memory = pipeWriter.GetMemory(minimumBufferSize);
+        //        try 
         //        {
-        //            // Look for a EOL in the buffer
-        //            position = buffer.PositionOf((byte)0x00);
-
-        //            if (position != null)
-        //            {
-        //                var sequence = buffer.Slice(0, buffer.End);
-        //                await DecodeAndProcessPacket(sequence, _cts.Token);
-        //                // Skip the line + the \n character (basically position)
-        //                buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
-        //            }
+        //            var bytesRead = await _serialPort.BaseStream.ReadAsync(memory, _cts.Token).ConfigureAwait(false);
+        //            _logger.LogTrace("Read {count} bytes from the serial port", bytesRead);
+        //            // Tell the PipeWriter how much was read from the Socket
+        //            pipeWriter.Advance(bytesRead);
         //        }
-        //        while (position != null);
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogDebug(ex, "Error reading from stream");
+        //            if (!_serialPort.IsOpen)
+        //            {
+        //                try
+        //                {
+        //                    _serialPort.Open();
+        //                    continue;
+        //                }
+        //                catch (Exception)
+        //                {
+        //                    await Task.Delay(1000)
+        //                              .ConfigureAwait(false);
+        //                    continue;
+        //                }
+        //            }
+        //            break;
+        //        }
 
-        //        // Tell the PipeReader how much of the buffer we have consumed
-        //        pipeReader.AdvanceTo(buffer.Start, buffer.End);
+        //        // Make the data available to the PipeReader
+        //        var result = await pipeWriter.FlushAsync(_cts.Token).ConfigureAwait(false);
 
-        //        // Stop reading if there's no more data coming
         //        if (result.IsCompleted)
         //        {
         //            break;
         //        }
         //    }
+        //}
+
+        //private async Task ProcessPipeData(PipeReader pipeReader)
+        //{
+        //    while (true)
+        //    {
+        //        try
+        //        {
+        //            var result = await pipeReader.ReadAsync(_cts.Token)
+        //                                         .ConfigureAwait(false);
+
+        //            var buffer = result.Buffer;
+        //            SequencePosition? position;
+
+        //            do
+        //            {
+        //                // Look for a EOL in the buffer
+        //                position = buffer.PositionOf((byte)0);
+
+        //                if (position != null)
+        //                {
+        //                    var sequence = buffer.Slice(0, position.Value);
+        //                    if (sequence.Length > 0)
+        //                    {
+        //                        var sequenceArray = sequence.ToArray();
+        //                        if (sequenceArray[^1] != 0x00)
+        //                        {
+        //                            throw new Exception("sadness");
+        //                        }
+        //                        await DecodeAndProcessPacket(sequence, _cts.Token);
+        //                    }
+
+        //                    buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+        //                }
+        //            } while (position != null);
+
+        //            // Tell the PipeReader how much of the buffer we have consumed
+        //            pipeReader.AdvanceTo(buffer.Start, buffer.End);
+
+        //            // Stop reading if there's no more data coming
+        //            if (result.IsCompleted)
+        //            {
+        //                break;
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "");
+        //            throw;
+        //        }
+        //    }
 
         //    // Mark the PipeReader as complete
         //    await pipeReader.CompleteAsync().ConfigureAwait(false);
+        //}
+
+        //private async Task<bool> DecodeAndProcessPacket(ReadOnlySequence<byte> packetBuffer, CancellationToken cancellationToken)
+        //{
+        //    var decodedBuffer = ArrayPool<byte>.Shared.Rent(MeadowDeviceManager.MaxAllowableMsgPacketLength);
+        //    var packetLength = packetBuffer.Length;
+        //    // It's possible that we may find a series of 0x00 values in the buffer.
+        //    // This is because when the sender is blocked (because this code isn't
+        //    // running) it will attempt to send a single 0x00 before the full message.
+        //    // This allows it to test for a connection. When the connection is
+        //    // unblocked this 0x00 is sent and gets put into the buffer along with
+        //    // any others that were queued along the usb serial pipe line.
+        //    if (packetLength == 1)
+        //    {
+        //        //_logger.LogTrace("Throwing out 0x00 from buffer");
+        //        return false;
+        //    }
+
+        //    var decodedSize = CobsTools.CobsDecoding(packetBuffer, ref decodedBuffer);
+
+        //    // If a message is too short it is ignored
+        //    if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
+        //        return false;
+
+        //    _logger.LogTrace("Decoded {count} into {count}", packetBuffer.Length, decodedSize);
+
+        //    Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
+
+        //    // Process the received packet
+        //    await ParseAndProcessReceivedPacket(
+        //            decodedBuffer[..decodedSize],
+        //            cancellationToken)
+        //        .ConfigureAwait(false);
+
+        //    return true;
         //}
 
         private async Task<bool> DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
@@ -290,8 +384,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
                 return false;
 
-            _logger.LogTrace("Decoded {count} into {count}", packetBuffer.Length, decodedSize);
-
             Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
 
             // Process the received packet
@@ -301,54 +393,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                        .ConfigureAwait(false);
 
             return true;
-        }
-
-        private async Task ReadSerialPortData(PipeWriter pipeWriter)
-        {
-            const int minimumBufferSize = 1024;
-            while (!_cts.IsCancellationRequested)
-            {
-                // Allocate at least 512 bytes from the PipeWriter
-                var memory = pipeWriter.GetMemory(minimumBufferSize);
-                try 
-                {
-                    var bytesRead = await _serialPort.BaseStream.ReadAsync(memory, _cts.Token).ConfigureAwait(false);
-                    if (bytesRead == 0)
-                    {
-                        break;
-                    }
-                    _logger.LogTrace("Read {count} bytes from the serial port", bytesRead);
-                    // Tell the PipeWriter how much was read from the Socket
-                    pipeWriter.Advance(bytesRead);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Error reading from stream");
-                    if (!_serialPort.IsOpen)
-                    {
-                        try
-                        {
-                            _serialPort.Open();
-                            continue;
-                        }
-                        catch (Exception)
-                        {
-                            await Task.Delay(1000)
-                                      .ConfigureAwait(false);
-                            continue;
-                        }
-                    }
-                    break;
-                }
-
-                // Make the data available to the PipeReader
-                var result = await pipeWriter.FlushAsync(_cts.Token).ConfigureAwait(false);
-
-                if (result.IsCompleted)
-                {
-                    break;
-                }
-            }
         }
 
         private async Task ParseAndProcessReceivedPacket(byte[] receivedMsg,
@@ -366,27 +410,22 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     switch (requestType)
                     {
                         case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:
-                            _logger.LogTrace("Request Undefined"); // TESTING
                             break;
 
                         // This set are responses to request issued by this application
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                            _logger.LogTrace("Request Rejected"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
                             }
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                             _logger.LogTrace("Request Accepted"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Accepted));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                             _logger.LogTrace("Request Concluded"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            _logger.LogTrace("Request Error"); // TESTING
                             if (!string.IsNullOrEmpty(processor.ToString()))
                             {
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, processor.ToString()));
@@ -395,14 +434,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
                         {
                             var msg = processor.ToString();
-                            _logger.LogTrace("Received request text information: {message}", msg);
                             if (!string.IsNullOrEmpty(processor.ToString()))
                                 OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, msg));
 
                             break;
                         }
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                            _logger.LogTrace("protocol-Request File List Header received"); // TESTING
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListTitle, processor.ToString()));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
@@ -434,7 +471,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                         // Debug message from Meadow for Visual Studio
                         case HcomHostRequestType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA:
-                            _logger.LogTrace($"Debugging message from Meadow for Visual Studio"); // TESTING
                             if (ForwardDebuggingData != null)
                                 await ForwardDebuggingData(processor.MessageData, cancellationToken)
                                     .ConfigureAwait(false);

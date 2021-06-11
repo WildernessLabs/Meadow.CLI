@@ -13,9 +13,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                if (receivedMessage.Length == HeaderLength)
+                //We actually have text based messages with 0 length
+                if (receivedMessage.Length <= HeaderLength)
                 {
-                    //throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data");
+                    throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data");
                 }
                 return true;
             }

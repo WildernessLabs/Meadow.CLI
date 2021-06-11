@@ -145,7 +145,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     .ConfigureAwait(false);
 
                 Logger.LogDebug("Waiting for Meadow to cycle");
-                await Task.Delay(500, cancellationToken)
+                await Task.Delay(1000, cancellationToken)
                           .ConfigureAwait(false);
 
                 Logger.LogDebug("Re-initialize the device");

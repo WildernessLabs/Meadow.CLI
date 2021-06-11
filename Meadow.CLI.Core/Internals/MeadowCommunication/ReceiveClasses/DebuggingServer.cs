@@ -186,10 +186,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             // Tell the PipeWriter how much was read from the Socket
                             writer.Advance(bytesRead);
                         }
+                        catch (SocketException)
+                        {
+                            _logger.LogDebug("Visual studio has disconnected");
+                            return;
+                        }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, "foo");
-                            break;
+                            _logger.LogDebug(ex, "Exception encountered while reading data from VS");
+                            return;
                         }
 
                         // Make the data available to the PipeReader
@@ -234,11 +239,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         }
                         else
                         {
-                            _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}", sequence.Length, BitConverter.ToString(md5.ComputeHash(sequence)).Replace("-", string.Empty).ToLowerInvariant());
                             await _meadow.ForwardVisualStudioDataToMonoAsync(sequence, 0, _cts.Token).ConfigureAwait(false);
                         }
-                        
-                        
                     }
                     
                     // Tell the PipeReader how much of the buffer we have consumed
@@ -284,6 +286,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {
                     if (Disposed)
                         return;
+                    _logger.LogTrace("Disposing ActiveClient");
                     _tcpClient.Dispose();
                     _networkStream.Dispose();
                     _cts.Dispose();
