@@ -24,7 +24,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-                var response = await SendCommandAndWaitForResponseAsync(command, cancellationToken)
+                var response = await SendCommandAsync(command, cancellationToken)
                                    .ConfigureAwait(false);
 
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
@@ -162,61 +162,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             _lastProgress = intProgress;
         }
 
-        internal async Task<bool> SendAcknowledgedSimpleCommand(
-            Command command,
-            CancellationToken cancellationToken)
-        {
-            Logger.LogTrace("Sending command {requestType}", command.RequestType);
-            var tcs = new TaskCompletionSource<bool>();
-            var received = false;
-
-            void Handler(object s, MeadowMessageEventArgs e)
-            {
-                Logger.LogTrace(
-                    "Received MessageType: {messageType} Message: {message}",
-                    e.MessageType,
-                    string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
-
-                if (e.MessageType != MeadowMessageType.Accepted) return;
-
-                received = true;
-                tcs.SetResult(true);
-            }
-
-            Logger.LogTrace("Attaching data received handler");
-            DataProcessor.OnReceiveData += Handler;
-
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
-
-            try
-            {
-                using var cts = new CancellationTokenSource(10_000);
-                cts.Token.Register(() => tcs.TrySetCanceled());
-                await tcs.Task.ConfigureAwait(false);
-            }
-            catch (TaskCanceledException e)
-            {
-                throw new MeadowCommandException(
-                    "Command timeout waiting for response.",
-                    innerException: e);
-            }
-            finally
-            {
-                Logger.LogTrace("Removing data received handler");
-                DataProcessor.OnReceiveData -= Handler;
-            }
-
-            if (!received)
-            {
-                throw new MeadowCommandException("Command not accepted.");
-            }
-
-            return received;
-        }
-
-        //==========================================================================
-        // Prepare a data packet for sending
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
                                                          int messageOffset,
                                                          int messageSize,
@@ -243,14 +188,38 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        internal async Task SendCommandAsync(Command command, CancellationToken cancellationToken)
+        private protected async Task<CommandResponse> SendCommandAsync(
+            Command command,
+            CancellationToken cancellationToken = default,
+            [CallerMemberName] string? caller = null)
         {
-            // Populate the header
+            Logger.LogTrace($"{caller} is sending {command.RequestType}");
+
             var messageBytes = command.ToMessageBytes();
             await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
                 .ConfigureAwait(false);
+
+            CommandResponse resp;
+            if (command.IsAcknowledged)
+            {
+                resp = await WaitForResponseMessageAsync(command, cancellationToken)
+                               .ConfigureAwait(false);
+            }
+            else
+            {
+                resp = CommandResponse.Empty;
+            }
+
+            Logger.LogTrace(
+                "Returning to {caller} with {success} {message}",
+                caller,
+                resp.IsSuccess,
+                string.IsNullOrWhiteSpace(resp.Message) ? "[empty]" : resp.Message);
+
+            return resp;
         }
 
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
         private async Task EncodeAndSendPacket(byte[] messageBytes,
                                                int messageOffset,
                                                int messageSize,
@@ -294,8 +263,22 @@ namespace Meadow.CLI.Core.DeviceManagement
                 Logger.LogTrace("Encoded packet successfully");
                 try
                 {
-                    await WriteAsync(encodedBytes, encodedToSend, cancellationToken)
-                        .ConfigureAwait(false);
+                    await _semaphoreSlim.WaitAsync(cancellationToken)
+                                        .ConfigureAwait(false);
+
+                    try
+                    {
+                        using var cts = new CancellationTokenSource(DefaultTimeout);
+                        cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
+                        var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+                        await WriteAsync(encodedBytes, encodedToSend, combinedCts.Token)
+                            .ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        _semaphoreSlim.Release();
+                    }
+
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
@@ -325,38 +308,15 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        private protected async Task<CommandResponse> SendCommandAndWaitForResponseAsync(
-            Command command,
-            CancellationToken cancellationToken = default,
-            [CallerMemberName] string? caller = null)
-        {
-            Logger.LogTrace($"{caller} is sending {command.RequestType}");
-
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
-
-            var (isSuccess, message, messageType) =
-                await WaitForResponseMessageAsync(command, cancellationToken)
-                    .ConfigureAwait(false);
-
-            Logger.LogTrace(
-                "Returning to {caller} with {success} {message}",
-                caller,
-                isSuccess,
-                string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
-
-            return new CommandResponse(isSuccess, message, messageType);
-        }
-
-        private protected async Task<(bool Success, string? Message, MeadowMessageType MessageType)>
-            WaitForResponseMessageAsync(Command command,
+        private protected async Task<CommandResponse> WaitForResponseMessageAsync(Command command,
                                         CancellationToken cancellationToken = default,
                                         [CallerMemberName] string? caller = null)
         {
             Logger.LogTrace(
-                "{caller} is waiting {seconds} for response.",
+                "{caller} is waiting {seconds} for response to {requestType}.",
                 caller,
-                command.Timeout.TotalSeconds);
+                command.Timeout.TotalSeconds, 
+                command.RequestType);
 
             var tcs = new TaskCompletionSource<bool>();
             var result = false;
@@ -406,9 +366,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 using var timeoutCancellationTokenSource =
                     new CancellationTokenSource(command.Timeout);
 
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    timeoutCancellationTokenSource.Token);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
                 timeoutCancellationTokenSource.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task.ConfigureAwait(false);
@@ -439,7 +397,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     caller,
                     string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
 
-                return (result, message, messageType);
+                return new CommandResponse(result, message, messageType);
             }
 
             throw new MeadowCommandException(message);

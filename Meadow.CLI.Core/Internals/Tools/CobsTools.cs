@@ -1,4 +1,7 @@
-﻿namespace Meadow.CLI.Core.DeviceManagement.Tools
+﻿using System;
+using System.Buffers;
+
+namespace Meadow.CLI.Core.DeviceManagement.Tools
 {
     public static class CobsTools
     {
@@ -79,6 +82,35 @@
 
                 // Sometimes don't need a trailing delimiter added 
                 if (replaceValue < 0xff && encodedOffset != length)
+                    decoded[decodedOffset++] = 0x00;
+            }
+
+            return decodedOffset;
+        }
+
+        //---------------------------------------------------------------------------
+        public static int CobsDecoding(Memory<byte> encoded, ref byte[] decoded)
+        {
+            int encodedOffset = 0; // Offset into original (encoded) buffer 
+            int decodedOffset = 0; // Offset into destination (decoded) buffer 
+            byte replaceValue = 0; // Value that will be inserted to indicate replaced value
+
+            while (encodedOffset < encoded.Length)
+            {
+                replaceValue = encoded.Span[encodedOffset]; // Grab next byte
+
+                if (((encodedOffset + replaceValue) > encoded.Length) && (replaceValue != 1))
+                    return 0;
+
+                encodedOffset++; // Point to next source
+
+                // Copy all unchanged bytes
+                // C# would Array.Copy be noticably better?
+                for (int i = 1; i < replaceValue; i++)
+                    decoded[decodedOffset++] = encoded.Span[encodedOffset++];
+
+                // Sometimes don't need a trailing delimiter added 
+                if (replaceValue < 0xff && encodedOffset != encoded.Length)
                     decoded[decodedOffset++] = 0x00;
             }
 

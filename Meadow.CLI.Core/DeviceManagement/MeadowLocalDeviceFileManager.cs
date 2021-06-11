@@ -46,7 +46,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .WithResponseHandler(handler)
                           .WithUserData((uint)partition).Build();
 
-            await SendCommandAndWaitForResponseAsync(command, cancellationToken)
+            await SendCommandAsync(command, cancellationToken)
                 .ConfigureAwait(false);
 
             return FilesOnDevice;
@@ -113,7 +113,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     .WithCompletionResponseType(MeadowMessageType.Concluded)
                     .BuildAsync();
 
-            await SendCommandAndWaitForResponseAsync(command, cancellationToken)
+            await SendCommandAsync(command, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -123,7 +123,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
 
-            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            return SendCommandAsync(command, cancellationToken);
         }
 
         public override Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default)
@@ -132,7 +132,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
 
-            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            return SendCommandAsync(command, cancellationToken);
         }
 
         public override Task FormatFileSystemAsync(uint partition = 0,
@@ -142,7 +142,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).WithUserData(partition).Build();
 
-            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            return SendCommandAsync(command, cancellationToken);
         }
 
         public override Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
@@ -151,12 +151,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect).WithTimeout(TimeSpan.FromMinutes(5)).Build();
 
-            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            return SendCommandAsync(command, cancellationToken);
         }
 
 
         public override async Task UpdateMonoRuntimeAsync(string fileName,
-                                                          string? targetFileName = null,
                                                           uint partition = 0,
                                                           CancellationToken cancellationToken =
                                                               default)
@@ -217,10 +216,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(targetFileName))
-            {
-                targetFileName = Path.GetFileName(sourceFilename);
-            }
+            var targetFileName = Path.GetFileName(sourceFilename);
 
             Logger.LogDebug("Sending Mono Update Runtime Request");
             var command = await new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME)
@@ -234,26 +230,17 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
         public override async Task WriteFileToEspFlashAsync(string fileName,
-                                                            string? targetFileName = null,
                                                             uint partition = 0,
                                                             string? mcuDestAddress = null,
                                                             CancellationToken cancellationToken =
                                                                 default)
         {
+            var targetFileName = Path.GetFileName(fileName);
             // For the ESP32 on the meadow, we don't need the target file name, we just need the
             // MCU's destination address and the file's binary.
             // Assume if no mcuDestAddress that the fileName is a CSV with both file names and Mcu Address
             if (mcuDestAddress != null)
             {
-                // Since the mcuDestAddr is used we'll assume the fileName field just contains
-                // a single file.
-                if (string.IsNullOrWhiteSpace(targetFileName))
-                {
-                    // While not used by the ESP32 it cost nothing to send it and can help
-                    // with debugging
-                    targetFileName = Path.GetFileName(fileName);
-                }
-
                 // Convert mcuDestAddress from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
                 uint mcuAddress = 0;
@@ -387,7 +374,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .WithData(encodedFileName)
                           .Build();
 
-            var commandResponse = await SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            var commandResponse = await SendCommandAsync(command, cancellationToken);
 
             if (!commandResponse.IsSuccess)
             {
@@ -403,11 +390,13 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
                           .WithData(debuggerData)
-                          .WithResponseFilter(x => true)
-                          .WithCompletionFilter(x => true)
-                          .WithUserData(userData).Build();
+                          .WithResponseType(MeadowMessageType.Accepted)
+                          .WithCompletionResponseType(MeadowMessageType.Accepted)
+                          .WithUserData(userData)
+                          .WithAcknowledgement(false)
+                          .Build();
 
-            return SendCommandAndWaitForResponseAsync(command, cancellationToken);
+            return SendCommandAsync(command, cancellationToken);
         }
 
         public override async Task DeployAppAsync(string applicationFilePath,

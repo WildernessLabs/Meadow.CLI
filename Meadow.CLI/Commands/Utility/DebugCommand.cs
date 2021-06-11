@@ -1,9 +1,7 @@
-﻿using System.Net;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Utility
@@ -30,12 +28,7 @@ namespace Meadow.CLI.Commands.Utility
             await base.ExecuteAsync(console);
 
             var cancellationToken = console.RegisterCancellationHandler();
-
-            // TODO: This is a terrible hack to link the DataProcessor to the Device
-            Meadow.DataProcessor.ForwardDebuggingData = Meadow.ForwardMonoDataToVisualStudioAsync;
-            var endpoint = new IPEndPoint(IPAddress.Loopback, Port);
-            var server = new DebuggingServer(Meadow, endpoint, _logger);
-            await server.StartListeningAsync().ConfigureAwait(false);
+            await Meadow.StartDebuggingSessionAsync(Port, cancellationToken).ConfigureAwait(false);
         }
     }
 }

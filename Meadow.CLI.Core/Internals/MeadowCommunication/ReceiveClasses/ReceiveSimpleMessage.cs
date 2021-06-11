@@ -4,11 +4,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
     internal class ReceiveSimpleMessage : ReceiveHeader
     {
-        public ReceiveSimpleMessage(byte[] receivedMessage, int receivedMessageLength) : base(receivedMessage, receivedMessageLength)
+        public ReceiveSimpleMessage(byte[] receivedMessage) : base(receivedMessage)
         {
         }
 
-        public override bool Execute(byte[] receivedMessage, int receivedMessageLen)
+        public override bool Execute(byte[] receivedMessage)
         {
             try
             {

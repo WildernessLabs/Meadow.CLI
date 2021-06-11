@@ -7,7 +7,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
     public interface IReceivedMessage
     {
         // Each derived class needs these
-        bool Execute(byte[] receivedMessage, int receivedMessageLen);
+        bool Execute(byte[] receivedMessage);
         string ToString();
 
         // These are in RecvHeader

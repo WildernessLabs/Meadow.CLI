@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Security.Cryptography;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
     internal class ReceiveSimpleBinary : ReceiveHeader
     {
-        public ReceiveSimpleBinary(byte[] receivedMessage, int receivedMessageLength) : base(receivedMessage, receivedMessageLength)
+        public ReceiveSimpleBinary(byte[] receivedMessage) : base(receivedMessage)
         {
         }
 
-        public override bool Execute(byte[] receivedMessage, int receivedMessageLen)
+        public override bool Execute(byte[] receivedMessage)
         {
             try
             {

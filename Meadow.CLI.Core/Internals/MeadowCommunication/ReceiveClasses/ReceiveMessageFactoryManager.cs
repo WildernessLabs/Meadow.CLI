@@ -37,14 +37,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             };
         }
 
-        public IReceivedMessage? CreateProcessor(byte[] receivedMessage, int receivedMsgLen)
+        public IReceivedMessage? CreateProcessor(byte[] receivedMessage)
         {
             var requestType = HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST;
             try
             {
                 requestType = FindRequestTypeValue(receivedMessage);
                 ReceiveMessageFactory factory = _factories[requestType];
-                return factory.Create(receivedMessage, receivedMsgLen);
+                return factory.Create(receivedMessage);
             }
             catch (KeyNotFoundException)
             {

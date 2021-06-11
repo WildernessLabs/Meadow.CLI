@@ -17,11 +17,20 @@ namespace Meadow.CLI.Commands.DeviceManagement
             _logger = loggerFactory.CreateLogger<FlashOsCommand>();
         }
 
-        [CommandOption("BinPath", 'b', Description = "Path to the Meadow OS binary")]
-        public string BinPath { get; init; }
+        [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
+        public string OsFile { get; init; }
+
+        [CommandOption("runtimeFile", 'r', Description = "Path to the Meadow Runtime binary")]
+        public string RuntimeFile { get; init; }
 
         [CommandOption("skipDfu",'d', Description = "Skip DFU flash.")]
         public bool SkipDfu { get; init; }
+
+        [CommandOption("skipEsp", 'e', Description = "Skip ESP flash.")]
+        public bool SkipEsp { get; init; }
+
+        [CommandOption("skipRuntime", 's', Description = "Skip updating the runtime.")]
+        public bool SkipRuntime { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -31,7 +40,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            await MeadowDeviceManager.FlashOsAsync(SerialPortName, BinPath, SkipDfu, cancellationToken);
+            await MeadowDeviceManager.FlashOsAsync(SerialPortName, OsFile, RuntimeFile, SkipDfu, SkipRuntime, SkipEsp, cancellationToken);
         }
     }
 }

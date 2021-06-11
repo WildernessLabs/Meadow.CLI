@@ -18,8 +18,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                              uint mcuAddress,
                              byte[]? fileBytes,
                              Predicate<MeadowMessageEventArgs> responseHandler,
-                             Predicate<MeadowMessageEventArgs> completionHandler)
-            : base(requestType, timeout, partition, null, responseHandler, completionHandler, null)
+                             Predicate<MeadowMessageEventArgs> completionHandler,
+                             string commandBuilder)
+            : base(requestType, timeout, partition, null, responseHandler, completionHandler, null, true, commandBuilder)
         {
             SourceFileName = sourceFileName;
             DestinationFileName = destinationFileName;

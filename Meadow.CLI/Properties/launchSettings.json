@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "device info"
+      "commandLineArgs": "debug -vvv -p 4024"
     },
     "Login": {
       "commandName": "Project",

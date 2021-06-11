@@ -1,5 +1,5 @@
-﻿using System.IO.Ports;
-using System.Linq;
+﻿using System;
+using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
@@ -48,15 +48,28 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await AttemptToReconnectToMeadow(cancellationToken);
             }
 
-            SerialPort.Write(encodedBytes, 0, encodedToSend);
+            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken).ConfigureAwait(false);
         }
 
-        public override bool Initialize(CancellationToken cancellationToken = default)
+        public override async Task<bool> Initialize(CancellationToken cancellationToken = default)
         {
-            if (!SerialPort.IsOpen)
+            var count = 0;
+            while (!SerialPort.IsOpen)
             {
-                SerialPort.Open();
-                SerialPort.BaseStream.ReadTimeout = 0;
+                SerialPort.Close();
+                try
+                {
+                    SerialPort.Open();
+                }
+                catch (Exception)
+                {
+                    await Task.Delay(100, cancellationToken)
+                              .ConfigureAwait(false);
+                }
+
+                count++;
+                if (count > 100)
+                    throw new NotConnectedException();
             }
 
             return SerialPort.IsOpen;
@@ -78,6 +91,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                            ReadTimeout = 5000,
                            WriteTimeout = 5000
                        };
+            
+            port.Open();
+            port.BaseStream.ReadTimeout = 0;
 
             return port;
         }
@@ -90,7 +106,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
 
-                var portOpened = Initialize(cancellationToken);
+                var portOpened = await Initialize(cancellationToken).ConfigureAwait(false);
 
                 if (portOpened)
                 {

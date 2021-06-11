@@ -2,6 +2,6 @@
 {
     public abstract class ReceiveMessageFactory
     {
-        public abstract IReceivedMessage Create(byte[] receivedMessage, int receivedMessageLength);
+        public abstract IReceivedMessage Create(byte[] receivedMessage);
     }
 }

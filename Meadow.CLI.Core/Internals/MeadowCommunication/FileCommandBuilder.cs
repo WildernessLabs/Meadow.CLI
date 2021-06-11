@@ -207,7 +207,22 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 McuAddress,
                 FileBytes, 
                 ResponsePredicate, 
-                CompletionPredicate);
+                CompletionPredicate, 
+                ToString());
+        }
+
+        public override string ToString()
+        {
+            return $"RequestType: {RequestType} "
+                 + $"Timeout: {Timeout} "
+                 + $"UserData: {UserData} "
+                 + $"ResponseType {ResponseMessageType?.ToString() ?? "none"} "
+                 + $"CompletionMessageType: {CompletionMessageType?.ToString() ?? "none"} "
+                 + $"CompletionPredicate: {CompletionPredicate != null} "
+                 + $"ResponsePredicate: {ResponsePredicate != null} "
+                 + $"MD5: {Md5Hash} "
+                 + $"CRC: {Crc32} "
+                 + $"MCU Address: {McuAddress}";
         }
     }
 }

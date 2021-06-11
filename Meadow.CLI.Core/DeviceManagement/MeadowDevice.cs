@@ -23,9 +23,10 @@ namespace Meadow.CLI.Core.DeviceManagement
     //a simple model object that represents a meadow device including connection
     public abstract class MeadowDevice : IDisposable
     {
+        private protected TimeSpan OneSecond = TimeSpan.FromSeconds(1);
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
         private protected TimeSpan SlowTimeout = TimeSpan.FromSeconds(60);
-        public readonly MeadowDataProcessor DataProcessor;
+        public MeadowDataProcessor DataProcessor;
         private protected DebuggingServer DebuggingServer;
         private protected readonly ILogger Logger;
 
@@ -35,7 +36,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger = logger ?? new NullLogger<MeadowDevice>();
         }
 
-        public MeadowDeviceInfo? DeviceInfo { get; protected set; }
+        public MeadowDeviceInfo DeviceInfo { get; protected set; }
 
         public IDictionary<string, uint> FilesOnDevice { get; protected set; } =
             new Dictionary<string, uint>();
@@ -47,8 +48,8 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task FormatFileSystemAsync(uint partition = 0, CancellationToken cancellationToken = default);
         // TODO: Should this also take a partition parameter?
         public abstract Task RenewFileSystemAsync(CancellationToken cancellationToken = default);
-        public abstract Task UpdateMonoRuntimeAsync(string fileName, string? targetFileName = null, uint partition = 0, CancellationToken cancellationToken = default);
-        public abstract Task WriteFileToEspFlashAsync(string fileName, string? targetFileName = null, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
+        public abstract Task UpdateMonoRuntimeAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
+        public abstract Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
         public abstract Task FlashEspAsync(string sourcePath, CancellationToken cancellationToken = default);
         public abstract Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public abstract Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
@@ -68,6 +69,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public abstract Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
         public abstract Task DeployAppAsync(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default);
         public abstract Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default);
+        public abstract Task StartDebuggingSessionAsync(int port, CancellationToken cancellationToken);
         public abstract Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
 
         // TODO: This is very Meadow Local Device Specific...
@@ -133,8 +135,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <param name="timeout">How long to wait for the meadow to become ready</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public virtual async Task WaitForReadyAsync(TimeSpan timeout,
-                                               CancellationToken cancellationToken = default)
+        public virtual async Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             var then = now.Add(timeout);
@@ -142,10 +143,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 try
                 {
-                    var deviceInfo = await GetDeviceInfoAsync(timeout, cancellationToken: cancellationToken);
-
-                    if (deviceInfo != null)
-                        return;
+                    DeviceInfo = await GetDeviceInfoAsync(OneSecond, cancellationToken);
+                    return;
                 }
                 catch (MeadowCommandException meadowCommandException)
                 {
@@ -156,15 +155,20 @@ namespace Meadow.CLI.Core.DeviceManagement
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
 
-                await Task.Delay(1000, cancellationToken)
+                await Task.Delay(100, cancellationToken)
                           .ConfigureAwait(false);
             }
 
             throw new Exception($"Device not ready after {timeout}ms");
         }
 
-        public virtual Task ForwardMonoDataToVisualStudioAsync(byte[] debuggerData, CancellationToken cancellationToken = default)
+        public virtual Task ForwardMonoDataToVisualStudioAsync(byte[]? debuggerData, CancellationToken cancellationToken = default)
         {
+            if (debuggerData == null)
+            {
+                Logger.LogDebug("Debugger data was null.");
+                return Task.CompletedTask;
+            }
             return DebuggingServer.SendToVisualStudio(debuggerData, cancellationToken);
         }
 

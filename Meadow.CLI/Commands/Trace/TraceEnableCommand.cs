@@ -27,12 +27,17 @@ namespace Meadow.CLI.Commands.Trace
 
             var cancellationToken = console.RegisterCancellationHandler();
 
+            _logger.LogInformation("Enabling trace.");
             await Meadow.TraceEnableAsync(cancellationToken)
                         .ConfigureAwait(false);
 
             if (TraceLevel.HasValue)
+            {
+                _logger.LogInformation("Setting trace level");
                 await Meadow.SetTraceLevelAsync(TraceLevel.Value, cancellationToken)
                             .ConfigureAwait(false);
+            }
+            _logger.LogInformation("Trace enabled successfully");
         }
     }
 }

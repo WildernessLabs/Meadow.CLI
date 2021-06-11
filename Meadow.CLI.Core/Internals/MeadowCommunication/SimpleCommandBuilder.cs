@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
@@ -21,6 +22,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         private protected Predicate<MeadowMessageEventArgs>? ResponsePredicate { get; set; }
         private protected Predicate<MeadowMessageEventArgs>? CompletionPredicate { get; set; }
         private protected EventHandler<MeadowMessageEventArgs>? ResponseHandler { get; set; }
+        private protected bool IsAcknowledged { get; set; } = true;
 
         public SimpleCommandBuilder WithTimeout(TimeSpan timeout)
         {
@@ -70,6 +72,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             return this;
         }
 
+        public SimpleCommandBuilder WithAcknowledgement(bool isAcknowledged)
+        {
+            IsAcknowledged = isAcknowledged;
+            return this;
+        }
+
         public Command Build()
         {
             if (ResponsePredicate == null)
@@ -86,7 +94,19 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 else CompletionPredicate = e => e.MessageType == MeadowMessageType.Concluded;
             }
             
-            return new Command(RequestType, Timeout ?? DefaultTimeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler);
+            return new Command(RequestType, Timeout ?? DefaultTimeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
+        }
+
+        public override string ToString()
+        {
+            return $"RequestType: {RequestType} "
+                 + $"Timeout: {Timeout} "
+                 + $"UserData: {UserData} "
+                 + $"ResponseType {ResponseMessageType?.ToString() ?? "none"} "
+                 + $"CompletionMessageType: {CompletionMessageType?.ToString() ?? "none"} "
+                 + $"ResponseHandler: {ResponseHandler != null} "
+                 + $"CompletionPredicate: {CompletionPredicate != null} "
+                 + $"ResponsePredicate: {ResponsePredicate != null}";
         }
     }
 }

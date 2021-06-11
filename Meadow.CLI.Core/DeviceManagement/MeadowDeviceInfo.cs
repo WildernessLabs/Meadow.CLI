@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             RawDeviceInfo = deviceInfoString;
             Name = deviceInfoString.Substring(0, deviceInfoString.IndexOf(' '));
             Model = ParseValue("Model: ",                          deviceInfoString);
-            MeadowOSVersion = ParseValue("MeadowOS Version: ",     deviceInfoString);
+            MeadowOsVersion = ParseValue("MeadowOS Version: ",     deviceInfoString);
             Processor = ParseValue("Processor: ",                  deviceInfoString);
             ProcessorId = ParseValue("Processor Id:",              deviceInfoString);
             SerialNumber = ParseValue("Serial Number: ",           deviceInfoString);
@@ -30,7 +30,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         public string RawDeviceInfo { get; }
         public string Name { get; }
         public string Model { get; }
-        public string MeadowOSVersion { get; }
+        public string MeadowOsVersion { get; }
         public string Processor { get; }
         public string ProcessorId { get; }
         public string SerialNumber { get; }

@@ -5,17 +5,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
     internal class ReceiveSimpleText : ReceiveHeader
     {
-        public ReceiveSimpleText(byte[] receivedMessage, int receivedMessageLength) : base(receivedMessage, receivedMessageLength)
+        public ReceiveSimpleText(byte[] receivedMessage) : base(receivedMessage)
         {
         }
 
-        public override bool Execute(byte[] receivedMessage, int receivedMessageLen)
+        public override bool Execute(byte[] receivedMessage)
         {
             try
             {
                 if (receivedMessage.Length == HeaderLength)
                 {
-                    throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data");
+                    //throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data");
                 }
                 return true;
             }
@@ -27,7 +27,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         }
         public override string ToString()
         {
-            return (MessageDataLength > 0) ? ASCIIEncoding.ASCII.GetString(MessageData) : string.Empty;
+            return (MessageDataLength > 0) ? ASCIIEncoding.ASCII.GetString(MessageData!) : string.Empty;
         }
     }
 }

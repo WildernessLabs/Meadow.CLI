@@ -123,7 +123,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         var deviceInfo =
                             await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
 
-                        if (deviceInfo !=null && deviceInfo!.SerialNumber == serialNumber)
+                        if (deviceInfo!.SerialNumber == serialNumber)
                         {
                             return device;
                         }
@@ -186,7 +186,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return devices;
         }
 
-        public async Task FlashOsAsync(string serialPortName, string binPath, bool skipDfu = false, CancellationToken cancellationToken = default)
+        public async Task FlashOsAsync(string serialPortName, string osPath = "", string runtimePath = "", bool skipDfu = false, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
             
@@ -275,7 +275,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
                 _logger.LogInformation("Device in DFU Mode, flashing OS");
-                await DfuUtils.FlashOsAsync(device: dfuDevice, logger: _logger);
+                await DfuUtils.FlashOsAsync(osPath, dfuDevice, _logger);
                 _logger.LogInformation("Device Flashed.");
             }
 
@@ -292,19 +292,35 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return;
                 }
 
-                await device.UpdateMonoRuntimeAsync(binPath, cancellationToken: cancellationToken);
+                if (skipRuntime == false)
+                {
+                    await device.UpdateMonoRuntimeAsync(
+                        runtimePath,
+                        cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    _logger.LogInformation("Skipping update of runtime.");
+                }
 
                 // Again, verify that Mono is disabled
                 Trace.Assert(await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                              "Meadow was expected to have Mono Disabled");
 
-                _logger.LogInformation("Updating ESP");
-                await device.FlashEspAsync(cancellationToken)
-                            .ConfigureAwait(false);
+                if (skipEsp == false)
+                {
+                    _logger.LogInformation("Updating ESP");
+                    await device.FlashEspAsync(cancellationToken)
+                                .ConfigureAwait(false);
 
-                // Reset the meadow again to ensure flash worked.
-                await device.ResetMeadowAsync(cancellationToken)
-                            .ConfigureAwait(false);
+                    // Reset the meadow again to ensure flash worked.
+                    await device.ResetMeadowAsync(cancellationToken)
+                                .ConfigureAwait(false);
+                }
+                else
+                {
+                    _logger.LogInformation("Skipping ESP flash");
+                }
 
                 _logger.LogInformation("Enabling Mono and Resetting");
                 while (await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false)
@@ -312,6 +328,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     await device.MonoEnableAsync(cancellationToken);
                 }
 
+                // This is to ensure the ESP info has updated in HCOM on the Meadow
                 await Task.Delay(2000, cancellationToken)
                           .ConfigureAwait(false);
 
@@ -321,7 +338,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                                              .ConfigureAwait(false);
 
                 _logger.LogInformation(
-                    $"Updated Meadow to OS: {deviceInfo.MeadowOSVersion} ESP: {deviceInfo.CoProcessorOs}");
+                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion} ESP: {deviceInfo.CoProcessorOs}");
             }
             catch (Exception ex)
             {

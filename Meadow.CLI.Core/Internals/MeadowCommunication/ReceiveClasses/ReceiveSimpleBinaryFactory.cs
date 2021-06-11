@@ -6,6 +6,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
     public class ReceiveSimpleBinaryFactory : ReceiveMessageFactory
     {
-        public override IReceivedMessage Create(byte[] receivedMessage, int receivedMessageLength) => new ReceiveSimpleBinary(receivedMessage, receivedMessageLength);
+        public override IReceivedMessage Create(byte[] receivedMessage) => new ReceiveSimpleBinary(receivedMessage);
     }
 }

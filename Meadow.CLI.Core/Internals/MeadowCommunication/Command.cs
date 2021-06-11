@@ -11,7 +11,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         private protected const ushort HcomProtocolExtraDataDefaultValue = 0x0000;
         private protected const int HcomProtocolRequestMd5HashLength = 32;
 
-        public Command(HcomMeadowRequestType requestType, TimeSpan timeout, uint userData, byte[]? data, Predicate<MeadowMessageEventArgs> responsePredicate, Predicate<MeadowMessageEventArgs> completionPredicate, EventHandler<MeadowMessageEventArgs>? responseHandler)
+        public Command(HcomMeadowRequestType requestType,
+                       TimeSpan timeout,
+                       uint userData,
+                       byte[]? data,
+                       Predicate<MeadowMessageEventArgs> responsePredicate,
+                       Predicate<MeadowMessageEventArgs> completionPredicate,
+                       EventHandler<MeadowMessageEventArgs>? responseHandler,
+                       bool isAcknowledged,
+                       string commandBuilder)
         {
             RequestType = requestType;
             Timeout = timeout;
@@ -20,6 +28,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             ResponsePredicate = responsePredicate;
             CompletionPredicate = completionPredicate;
             ResponseHandler = responseHandler;
+            IsAcknowledged = isAcknowledged;
+            CommandBuilder = commandBuilder;
         }
 
         public HcomMeadowRequestType RequestType { get; protected set; }
@@ -29,6 +39,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public Predicate<MeadowMessageEventArgs> ResponsePredicate { get; protected set; }
         public Predicate<MeadowMessageEventArgs> CompletionPredicate { get; protected set; }
         public EventHandler<MeadowMessageEventArgs>? ResponseHandler { get; protected set; }
+        public string CommandBuilder { get; protected set; }
+        public bool IsAcknowledged { get; set; }
 
         protected int ToMessageBytes(ref byte[] messageBytes)
         {
@@ -100,6 +112,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             // Note: Could use the StructLayout attribute to build
             ToMessageBytes(ref messageBytes);
             return messageBytes;
+        }
+
+        public override string ToString()
+        {
+            return CommandBuilder;
         }
     }
 }
