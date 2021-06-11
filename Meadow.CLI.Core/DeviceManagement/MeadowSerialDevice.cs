@@ -2,6 +2,7 @@
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
+using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +25,46 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             SerialPort = serialPort;
             _serialPortName = serialPortName;
+        }
+
+        public override async Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            var now = DateTime.UtcNow;
+            var then = now.Add(timeout);
+            while (DateTime.UtcNow < then)
+            {
+                try
+                {
+                    var serialPort = await MeadowDeviceManager.FindMeadowComPortBySerialNumber(
+                        DeviceInfo.SerialNumber,
+                        Logger,
+                        cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                    if (serialPort == null)
+                    {
+                        throw new DeviceNotFoundException(
+                            $"Unable to find Meadow with Serial Number {DeviceInfo.SerialNumber}");
+                    }
+
+                    SerialPort = new SerialPort(serialPort);
+                    DeviceInfo = await GetDeviceInfoAsync(OneSecond, cancellationToken);
+                    return;
+                }
+                catch (MeadowCommandException meadowCommandException)
+                {
+                    Logger.LogTrace(meadowCommandException, "Caught exception while waiting for device to be ready");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
+                }
+
+                await Task.Delay(100, cancellationToken)
+                          .ConfigureAwait(false);
+            }
+
+            throw new Exception($"Device not ready after {timeout}ms");
+            
         }
 
         public sealed override bool IsDeviceInitialized()
@@ -51,7 +92,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken).ConfigureAwait(false);
         }
 
-        public override async Task<bool> Initialize(CancellationToken cancellationToken = default)
+        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
         {
             var count = 0;
             while (!SerialPort.IsOpen)
@@ -60,6 +101,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 try
                 {
                     SerialPort.Open();
+                    await GetDeviceInfoAsync(DefaultTimeout, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -106,7 +149,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
 
-                var portOpened = await Initialize(cancellationToken).ConfigureAwait(false);
+                var portOpened = await InitializeAsync(cancellationToken).ConfigureAwait(false);
 
                 if (portOpened)
                 {

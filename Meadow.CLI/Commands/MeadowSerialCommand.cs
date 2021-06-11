@@ -11,6 +11,7 @@ namespace Meadow.CLI.Commands
 {
     public abstract class MeadowSerialCommand : ICommand, IDisposable
     {
+        private protected ILogger Logger;
         private protected ILoggerFactory LoggerFactory;
         private protected MeadowDeviceManager MeadowDeviceManager;
         private protected MeadowDevice Meadow;
@@ -18,6 +19,7 @@ namespace Meadow.CLI.Commands
         private protected MeadowSerialCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
         {
             LoggerFactory = loggerFactory;
+            Logger = loggerFactory.CreateLogger<MeadowSerialCommand>();
             MeadowDeviceManager = meadowDeviceManager;
         }
 
@@ -55,15 +57,14 @@ namespace Meadow.CLI.Commands
             SettingsManager.SaveSetting(Setting.PORT, _serialPort);
         }
 
-        public virtual ValueTask ExecuteAsync(IConsole console)
+        public virtual async ValueTask ExecuteAsync(IConsole console)
         {
-            Meadow = MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName);
+            Meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
             if (Meadow == null)
             {
                 LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");
                 Environment.Exit(-1);
             }
-            return ValueTask.CompletedTask;
         }
 
         public void Dispose()

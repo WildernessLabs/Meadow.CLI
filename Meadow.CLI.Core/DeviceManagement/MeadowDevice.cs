@@ -25,7 +25,6 @@ namespace Meadow.CLI.Core.DeviceManagement
     {
         private protected TimeSpan OneSecond = TimeSpan.FromSeconds(1);
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
-        private protected TimeSpan SlowTimeout = TimeSpan.FromSeconds(60);
         public MeadowDataProcessor DataProcessor;
         private protected DebuggingServer DebuggingServer;
         private protected readonly ILogger Logger;
@@ -135,32 +134,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <param name="timeout">How long to wait for the meadow to become ready</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public virtual async Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
-        {
-            var now = DateTime.UtcNow;
-            var then = now.Add(timeout);
-            while (DateTime.UtcNow < then)
-            {
-                try
-                {
-                    DeviceInfo = await GetDeviceInfoAsync(OneSecond, cancellationToken);
-                    return;
-                }
-                catch (MeadowCommandException meadowCommandException)
-                {
-                    Logger.LogTrace(meadowCommandException, "Caught exception while waiting for device to be ready");
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
-                }
-
-                await Task.Delay(100, cancellationToken)
-                          .ConfigureAwait(false);
-            }
-
-            throw new Exception($"Device not ready after {timeout}ms");
-        }
+        public abstract Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
         public virtual Task ForwardMonoDataToVisualStudioAsync(byte[]? debuggerData, CancellationToken cancellationToken = default)
         {

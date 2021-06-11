@@ -232,23 +232,21 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             if (first)
                             {
                                 var tmp = sequence[..13];
-                                _logger.LogTrace(
-                                    "Received {count} bytes from VS will forward to HCOM. {hash}",
-                                    tmp.Length,
-                                    BitConverter.ToString(md5.ComputeHash(tmp))
-                                                .Replace("-", string.Empty)
-                                                .ToLowerInvariant());
+                                _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
+                                                 tmp.Length,
+                                                 BitConverter.ToString(md5.ComputeHash(tmp))
+                                                             .Replace("-", string.Empty)
+                                                             .ToLowerInvariant());
 
                                 await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
                                              .ConfigureAwait(false);
 
                                 tmp = sequence[13..];
-                                _logger.LogTrace(
-                                    "Received {count} bytes from VS will forward to HCOM. {hash}",
-                                    tmp.Length,
-                                    BitConverter.ToString(md5.ComputeHash(tmp))
-                                                .Replace("-", string.Empty)
-                                                .ToLowerInvariant());
+                                _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
+                                                 tmp.Length,
+                                                 BitConverter.ToString(md5.ComputeHash(tmp))
+                                                             .Replace("-", string.Empty)
+                                                             .ToLowerInvariant());
 
                                 await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
                                              .ConfigureAwait(false);
@@ -257,10 +255,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             }
                             else
                             {
-                                await _meadow.ForwardVisualStudioDataToMonoAsync(
-                                                 sequence,
-                                                 0,
-                                                 _cts.Token)
+                                await _meadow.ForwardVisualStudioDataToMonoAsync(sequence, 0, _cts.Token)
                                              .ConfigureAwait(false);
                             }
                         }

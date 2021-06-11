@@ -32,8 +32,7 @@ namespace Meadow.CLI.Test
         public async Task MonoDisableTest()
         {
             var cts = new CancellationTokenSource();
-            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
-            using var meadow = deviceManager.GetMeadowForSerialPort(port);
+            using var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance).ConfigureAwait(false);
             Assert.IsNotNull(meadow, "Initial connection");
             
             await meadow.MonoDisableAsync(cts.Token);
@@ -45,8 +44,7 @@ namespace Meadow.CLI.Test
         public async Task MonoEnableTest()
         {
             var cts = new CancellationTokenSource();
-            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
-            using var meadow = deviceManager.GetMeadowForSerialPort(port);
+            using var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance).ConfigureAwait(false);
             Assert.IsNotNull(meadow, "Initial connection");
             
             await meadow.MonoEnableAsync(cts.Token);

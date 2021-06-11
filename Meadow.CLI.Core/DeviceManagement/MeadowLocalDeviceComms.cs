@@ -248,8 +248,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     if (encodedBytes[i] == 0x00)
                     {
                         throw new InvalidProgramException(
-                            "All zeros should have been removed. "
-                          + $"There's one at offset of {i}");
+                            "All zeros should have been removed. There's one at offset of {i}");
                     }
                 }
 

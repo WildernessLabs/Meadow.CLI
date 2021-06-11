@@ -20,6 +20,11 @@ namespace Meadow.CLI.Core.DeviceManagement
             Socket = socket;
         }
 
+        public override Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool IsDeviceInitialized()
         {
             throw new NotImplementedException();
@@ -37,7 +42,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         SocketFlags.None);
         }
 
-        public override Task<bool> Initialize(CancellationToken cancellationToken = default)
+        public override Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
             //Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
