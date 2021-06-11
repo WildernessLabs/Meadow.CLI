@@ -29,7 +29,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("skipEsp", 'e', Description = "Skip ESP flash.")]
         public bool SkipEsp { get; init; }
 
-        [CommandOption("skipRuntime", 's', Description = "Skip updating the runtime.")]
+        [CommandOption("skipRuntime", 'k', Description = "Skip updating the runtime.")]
         public bool SkipRuntime { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
