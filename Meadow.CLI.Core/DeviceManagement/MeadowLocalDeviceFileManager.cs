@@ -155,14 +155,11 @@ namespace Meadow.CLI.Core.DeviceManagement
         }
 
 
-        public override async Task UpdateMonoRuntimeAsync(string fileName,
-                                                          uint partition = 0,
-                                                          CancellationToken cancellationToken =
-                                                              default)
+        public override async Task UpdateMonoRuntimeAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Starting Mono Runtime Update");
             Logger.LogInformation("Waiting for Meadow to be ready");
-            await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
+            await ReInitializeAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             Logger.LogDebug("Calling Mono Disable");

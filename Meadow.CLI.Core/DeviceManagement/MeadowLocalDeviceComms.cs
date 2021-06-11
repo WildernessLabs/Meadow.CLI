@@ -327,19 +327,13 @@ namespace Meadow.CLI.Core.DeviceManagement
                     e.MessageType,
                     string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
 
-                if (!command.ResponsePredicate(e)) return;
-                Logger.LogTrace("Message matched response filter");
-                message = e.Message;
-                messageType = e.MessageType;
-                result = true;
-            }
-
-            void CompletionHandler(object s, MeadowMessageEventArgs e)
-            {
-                Logger.LogTrace(
-                    "Received MessageType: {messageType} Message: {message}",
-                    e.MessageType,
-                    string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
+                if (command.ResponsePredicate(e))
+                {
+                    Logger.LogTrace("Message matched response filter");
+                    message = e.Message;
+                    messageType = e.MessageType;
+                    result = true;
+                }
 
                 if (command.CompletionPredicate(e))
                 {
@@ -349,6 +343,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
 
             Logger.LogTrace("Attaching response handler(s)");
+            Debug.Assert(DataProcessor != null);
             if (command.ResponseHandler != null)
             {
                 DataProcessor.OnReceiveData += command.ResponseHandler;
@@ -356,7 +351,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             DataProcessor.OnReceiveData += ResponseHandler;
             Logger.LogTrace("Attaching completion handler(s)");
-            DataProcessor.OnReceiveData += CompletionHandler;
 
             try
             {
@@ -379,7 +373,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             finally
             {
                 Logger.LogTrace("Removing handlers");
-                DataProcessor.OnReceiveData -= CompletionHandler;
                 DataProcessor.OnReceiveData -= ResponseHandler;
                 if (command.ResponseHandler != null)
                 {

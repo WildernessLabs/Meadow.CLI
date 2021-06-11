@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.IO.Ports;
+using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
@@ -34,8 +35,6 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            await base.ExecuteAsync(console);
-
             var cancellationToken = console.RegisterCancellationHandler();
 
             Meadow?.Dispose();

@@ -20,14 +20,10 @@ namespace Meadow.CLI.Core.DeviceManagement
                                         int encodedToSend,
                                         CancellationToken cancellationToken = default);
 
-        public abstract Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
-
         //device Id information is processed when the message is received
         //this will request the device Id and return true it was set successfully
         public override async Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            await InitializeAsync(cancellationToken).ConfigureAwait(false);
-
             var command = new SimpleCommandBuilder(
                               HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION)
                           .WithTimeout(timeout)
@@ -44,9 +40,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 if (commandResponse.IsSuccess)
                 {
-                    var deviceInfo = new MeadowDeviceInfo(commandResponse.Message!);
-                    DeviceInfo = deviceInfo;
-                    return DeviceInfo;
+                    return new MeadowDeviceInfo(commandResponse.Message!);
                 }
 
                 throw new DeviceInfoException();
@@ -115,16 +109,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 await SendCommandAsync(command, cancellationToken)
                     .ConfigureAwait(false);
 
-                Logger.LogDebug("Waiting for Meadow to cycle");
-                await Task.Delay(1000, cancellationToken)
-                          .ConfigureAwait(false);
-
                 Logger.LogDebug("Re-initialize the device");
-                await InitializeAsync(cancellationToken).ConfigureAwait(false);
-
-                Logger.LogDebug("Waiting for the Meadow to be ready");
-                await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                await ReInitializeAsync(cancellationToken).ConfigureAwait(false);
             }
 
             if (monoRunState)
@@ -153,11 +139,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           .ConfigureAwait(false);
 
                 Logger.LogDebug("Re-initialize the device");
-                await InitializeAsync(cancellationToken).ConfigureAwait(false);
-
-                Logger.LogDebug("Waiting for the Meadow to be ready");
-                await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                await ReInitializeAsync(cancellationToken).ConfigureAwait(false);
             }
 
             if (!monoRunState)
@@ -191,10 +173,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            await InitializeAsync(cancellationToken).ConfigureAwait(false);
-
-            await WaitForReadyAsync(DefaultTimeout, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            await ReInitializeAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public override Task EnterDfuModeAsync(CancellationToken cancellationToken = default)
@@ -303,7 +282,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             await SendCommandAsync(command, cancellationToken);
 
-            await InitializeAsync(cancellationToken).ConfigureAwait(false);
+            await ReInitializeAsync(cancellationToken).ConfigureAwait(false);
 
             await DebuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
         }

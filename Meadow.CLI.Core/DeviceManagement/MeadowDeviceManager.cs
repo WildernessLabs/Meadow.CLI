@@ -44,7 +44,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 var meadow = new MeadowSerialDevice(serialPort, logger);
 
-                await meadow.InitializeAsync().ConfigureAwait(false);
+                await meadow.InitializeAsync(CancellationToken.None).ConfigureAwait(false);
 
                 return meadow;
             }
@@ -89,23 +89,22 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public static async Task<string?> FindMeadowComPortBySerialNumber(
+        public async Task<MeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
-            ILogger logger,
             int maxAttempts = 10,
             CancellationToken cancellationToken = default)
         {
             var attempts = 0;
             while (attempts < maxAttempts)
             {
-                string[]? ports;
+                IEnumerable<string>? ports;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     ports = Directory.GetFiles("/dev", "tty.usb*");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    ports = Directory.GetFiles("/dev", "tty.usb*");
+                    ports = GetMeadowSerialPortsForOsx();
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
@@ -120,15 +119,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     try
                     {
-                        using var device = await GetMeadowForSerialPort(port, false).ConfigureAwait(false);
+                        var device = await GetMeadowForSerialPort(port, false).ConfigureAwait(false);
                         if (device == null)
                             continue;
 
-                        var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                        var deviceInfo =
+                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
 
                         if (deviceInfo!.SerialNumber == serialNumber)
                         {
-                            return port;
+                            return device;
                         }
 
                         device.Dispose();
@@ -136,7 +136,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     catch (MeadowDeviceException meadowDeviceException)
                     {
                         // eat it for now
-                        logger.LogDebug(
+                        _logger.LogDebug(
                             meadowDeviceException,
                             "This error can be safely ignored.");
                     }
@@ -152,23 +152,60 @@ namespace Meadow.CLI.Core.DeviceManagement
                 $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
-        public static async Task<MeadowDevice?> FindMeadowBySerialNumber(
-            string serialNumber,
-            ILogger logger,
-            int maxAttempts = 10,
-            CancellationToken cancellationToken = default)
+        public static List<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
         {
-            var port = await FindMeadowComPortBySerialNumber(
-                           serialNumber,
-                           logger,
-                           maxAttempts,
-                           cancellationToken).ConfigureAwait(false);
+            logger ??= NullLogger.Instance;
+            logger.LogDebug("Get Meadow Serial ports");
+            var ports = new List<string>();
 
-            if (port != null)
-                return new MeadowSerialDevice(port, logger);
+            var psi = new ProcessStartInfo
+                      {
+                          FileName = "/usr/sbin/ioreg",
+                          UseShellExecute = false,
+                          RedirectStandardOutput = true,
+                          Arguments = "-r -c IOUSBHostDevice -l"
+                      };
 
-            throw new DeviceNotFoundException(
-                $"Unable to find Meadow with Serial Number {serialNumber}");
+            string output = string.Empty;
+
+            using (var p = Process.Start(psi))
+            {
+                if (p != null)
+                {
+                    output = p.StandardOutput.ReadToEnd();
+                    p.WaitForExit();
+                }
+            }
+
+            //split into lines
+            var lines = output.Split("\n\r".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+
+            bool foundMeadow = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("Meadow F7 Micro"))
+                {
+                    foundMeadow = true;
+                }
+                else if (lines[i].IndexOf("+-o", StringComparison.Ordinal) == 0)
+                {
+                    foundMeadow = false;
+                }
+
+                //now find the IODialinDevice entry which contains the serial port name
+                if (foundMeadow && lines[i].Contains("IODialinDevice"))
+                {
+                    int startIndex = lines[i].IndexOf("/");
+                    int endIndex = lines[i].IndexOf("\"", startIndex + 1);
+                    var port = lines[i].Substring(startIndex, endIndex - startIndex);
+                    logger.LogDebug($"Found Meadow at {port}", port);
+
+                    ports.Add(port);
+                    foundMeadow = false;
+                }
+            }
+            logger.LogDebug("Found {count} ports", ports.Count);
+            return ports;
         }
 
         //we'll move this soon
@@ -305,7 +342,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 using var device = await FindMeadowBySerialNumber(
                                            serialNumber,
-                                           _logger,
                                            cancellationToken: cancellationToken)
                                        .ConfigureAwait(false);
 

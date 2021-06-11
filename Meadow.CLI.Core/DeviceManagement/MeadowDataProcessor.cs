@@ -5,10 +5,11 @@ using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
-    public class MeadowDataProcessor
+    public abstract class MeadowDataProcessor : IDisposable
     {
         public EventHandler<MeadowMessageEventArgs>? OnReceiveData;
         public Func<byte[]?, CancellationToken, Task>? ForwardDebuggingData;
+        public abstract void Dispose();
     }
 
     public class MeadowMessageEventArgs : EventArgs

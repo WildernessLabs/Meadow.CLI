@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -23,9 +22,8 @@ namespace Meadow.CLI.Core.DeviceManagement
     //a simple model object that represents a meadow device including connection
     public abstract class MeadowDevice : IDisposable
     {
-        private protected TimeSpan OneSecond = TimeSpan.FromSeconds(1);
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
-        public MeadowDataProcessor DataProcessor;
+        public MeadowDataProcessor? DataProcessor;
         private protected DebuggingServer DebuggingServer;
         private protected readonly ILogger Logger;
 
@@ -77,7 +75,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public virtual async Task FlashEspAsync(CancellationToken cancellationToken = default)
         {
-            await WaitForReadyAsync(DefaultTimeout, cancellationToken)
+            await ReInitializeAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             await MonoDisableAsync(cancellationToken)
@@ -128,13 +126,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                       .ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Wait for the Meadow to respond to commands
-        /// </summary>
-        /// <param name="timeout">How long to wait for the meadow to become ready</param>
-        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation</param>
-        /// <returns>A <see cref="bool"/> indicating if the Meadow is ready</returns>
-        public abstract Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
+        public abstract Task<bool> InitializeAsync(CancellationToken cancellationToken);
+        public abstract Task<bool> ReInitializeAsync(CancellationToken cancellationToken);
 
         public virtual Task ForwardMonoDataToVisualStudioAsync(byte[]? debuggerData, CancellationToken cancellationToken = default)
         {
@@ -153,6 +146,17 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public abstract bool IsDeviceInitialized();
 
-        public abstract void Dispose();
+        protected abstract void Dispose(bool disposing);
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~MeadowDevice()
+        {
+            Dispose(false);
+        }
     }
 }

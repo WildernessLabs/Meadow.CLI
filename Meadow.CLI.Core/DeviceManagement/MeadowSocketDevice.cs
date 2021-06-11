@@ -20,19 +20,15 @@ namespace Meadow.CLI.Core.DeviceManagement
             Socket = socket;
         }
 
-        public override Task WaitForReadyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
         public override bool IsDeviceInitialized()
         {
             throw new NotImplementedException();
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Socket.Dispose();
+            if (disposing)
+                Socket?.Dispose();
         }
 
         public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken)
@@ -58,8 +54,13 @@ namespace Meadow.CLI.Core.DeviceManagement
             //}
         }
 
+        public override Task<bool> ReInitializeAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         private static bool TryCreateIPEndPoint(string address,
-                                               out IPEndPoint? endpoint)
+                                                out IPEndPoint? endpoint)
         {
             if (string.IsNullOrEmpty(address))
             {

@@ -36,7 +36,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         DownloadStartFail,
     }
 
-    public class MeadowSerialDataProcessor : MeadowDataProcessor, IDisposable
+    public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
         private readonly ILogger _logger;
         //collapse to one and use enum
@@ -149,20 +149,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 {
                     try
                     {
-                        if (!_serialPort.IsOpen)
+                        // Reconnection happens higher up
+                        while (!_serialPort.IsOpen)
                         {
-                            try
-                            {
-                                _serialPort.Open();
-                                continue;
-                            }
-                            catch (Exception)
-                            {
-                                await Task.Delay(1000)
-                                          .ConfigureAwait(false);
-
-                                continue;
-                            }
+                            await Task.Delay(100)
+                                      .ConfigureAwait(false);
                         }
 
                         var buffer = new byte[1024];
@@ -532,7 +523,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         if (buffOffset < decodedSize)
             continue;
         */
-        public void Dispose()
+        public override void Dispose()
         {
             try
             {
