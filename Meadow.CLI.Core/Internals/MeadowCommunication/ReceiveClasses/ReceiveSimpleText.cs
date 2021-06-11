@@ -14,9 +14,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             try
             {
                 //We actually have text based messages with 0 length
-                if (receivedMessage.Length <= HeaderLength)
+                if (receivedMessage.Length < HeaderLength)
                 {
-                    throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data");
+                    throw new ArgumentException($"Received {nameof(ReceiveSimpleText)} with no text data. Message Length: {receivedMessage.Length}");
                 }
                 return true;
             }
@@ -28,7 +28,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         }
         public override string ToString()
         {
-            return (MessageDataLength > 0) ? ASCIIEncoding.ASCII.GetString(MessageData!) : string.Empty;
+            return MessageDataLength > 0 ? Encoding.ASCII.GetString(MessageData!) : string.Empty;
         }
     }
 }
