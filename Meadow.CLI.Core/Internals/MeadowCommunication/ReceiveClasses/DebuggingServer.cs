@@ -172,7 +172,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         var memory = writer.GetMemory(minimumBufferSize);
                         try
                         {
-                            var bytesRead = await stream.ReadAsync(memory.ToArray(), 0, memory.Length);
+                            var bytesRead = await stream.ReadAsync(memory.ToArray(), 0, memory.Length, cancellationToken);
 
                             if (bytesRead == 0)
                             {
