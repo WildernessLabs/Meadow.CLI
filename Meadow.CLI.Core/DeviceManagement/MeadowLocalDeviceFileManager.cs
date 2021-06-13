@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -80,7 +81,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             // If ESP32 file we must also send the MD5 has of the file
             using var md5 = MD5.Create();
-            var fileBytes = await File.ReadAllBytesAsync(sourceFileName, cancellationToken);
+            var fileBytes = File.ReadAllBytes(sourceFileName);
             var hash = md5.ComputeHash(fileBytes);
             string md5Hash = BitConverter.ToString(hash)
                                          .Replace("-", "")
@@ -414,9 +415,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             var deviceFiles = await GetFilesAndCrcsAsync(cancellationToken: cancellationToken)
                                   .ConfigureAwait(false);
 
-            foreach (var (filename, crc) in deviceFiles)
+            foreach (KeyValuePair<string, uint> file in deviceFiles.AsEnumerable())
             {
-                Logger.LogInformation("Found {file} (CRC: {crc})", filename, crc);
+                Logger.LogInformation($"Found {file.Key} (CRC: {file.Value})");
             }
 
             var extensions = new List<string>
@@ -432,7 +433,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             async Task AddFile(string file, bool includePdbs)
             {
-                await using FileStream fs = File.Open(file, FileMode.Open);
+                using FileStream fs = File.Open(file, FileMode.Open);
                 var len = (int)fs.Length;
                 var bytes = new byte[len];
 

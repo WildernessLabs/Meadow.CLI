@@ -151,8 +151,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         throw new FileNotFoundException("Cannot find source file", fi.FullName);
                     }
 
-                    FileBytes = await File.ReadAllBytesAsync(SourceFileName)
-                                          .ConfigureAwait(false);
+                    FileBytes = File.ReadAllBytes(SourceFileName);
                 }
 
                 FileSize = FileBytes.Length;

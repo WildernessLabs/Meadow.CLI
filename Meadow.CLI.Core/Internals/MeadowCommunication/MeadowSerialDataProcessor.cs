@@ -157,8 +157,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         }
 
                         var buffer = new byte[1024];
-                        var receivedLength = await _serialPort.BaseStream.ReadAsync(buffer)
-                                                              .ConfigureAwait(false);
+                        var receivedLength = await _serialPort.BaseStream.ReadAsync(buffer, 0, buffer.Length)
+                            .ConfigureAwait(false);
+            
                         buffer = buffer[..receivedLength];
                         while (buffer.Length > 0)
                         {

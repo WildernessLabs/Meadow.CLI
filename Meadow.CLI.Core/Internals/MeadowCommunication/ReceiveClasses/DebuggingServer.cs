@@ -149,7 +149,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _networkStream = tcpClient.GetStream();
                 foreach (var pendingMessage in pendingMessages)
                 {
-                    _networkStream.Write(pendingMessage);
+                    _networkStream.Write(pendingMessage, 0, pendingMessage.Length);
                 }
                 pendingMessages.Clear();
                 _logger.LogDebug("Starting receive task");
@@ -172,8 +172,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         var memory = writer.GetMemory(minimumBufferSize);
                         try
                         {
-                            var bytesRead = await stream.ReadAsync(memory, cancellationToken)
-                                                        .ConfigureAwait(false);
+                            var bytesRead = await stream.ReadAsync(memory.ToArray(), 0, memory.Length);
 
                             if (bytesRead == 0)
                             {
