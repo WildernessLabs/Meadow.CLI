@@ -25,7 +25,7 @@ namespace Meadow.CLI.Test
         {
             var cts = new CancellationTokenSource();
             var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
-            await deviceManager.FlashOsAsync(port, string.Empty, string.Empty, cancellationToken: cts.Token);
+            //await deviceManager.FlashOsAsync(port, string.Empty, string.Empty, cancellationToken: cts.Token);
         }
 
         [Test]

@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Pipelines;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
@@ -28,13 +24,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 
         private CancellationTokenSource _cancellationTokenSource;
         private readonly ILogger _logger;
-        private readonly MeadowDevice _meadow;
-        private readonly IList<byte[]> _pendingMessages = new List<byte[]>();
+        private readonly IMeadowDevice _meadow;
         private ActiveClient? _activeClient;
         private int _activeClientCount = 0;
 
         // Constructor
-        public DebuggingServer(MeadowDevice meadow, IPEndPoint localEndpoint, ILogger logger)
+        /// <summary>
+        /// Create a new DebuggingServer for proxying debug data between VS and Meadow
+        /// </summary>
+        /// <param name="meadow">The <see cref="IMeadowDevice"/> to debug</param>
+        /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
+        /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
+        public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger logger)
         {
             LocalEndpoint = localEndpoint;
             _meadow = meadow;
@@ -79,13 +80,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         CloseActiveClient();
                     }
 
-                    _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _pendingMessages, _cancellationTokenSource.Token);
+                    _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
                     _activeClientCount++;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                _logger.LogError(ex, "An error occurred while listening for debugging connections");
             }
         }
 
@@ -94,29 +95,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             _activeClient?.Dispose();
             _activeClient = null;
             _activeClientCount = 0;
-        }
-
-        public async Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken)
-        {
-            if (_activeClient == null)
-            {
-                _logger.LogDebug("Storing debugger data for Visual Studio");
-                _pendingMessages.Add(byteData);
-            }
-            else
-            {
-                if (_pendingMessages.Any())
-                {
-                    _logger.LogDebug("Flushing pending debugger messages.");
-                    foreach (var pendingMessage in _pendingMessages)
-                    {
-                        await _activeClient.SendToVisualStudio(pendingMessage, cancellationToken).ConfigureAwait(false);
-                    }
-                    _pendingMessages.Clear();
-                }
-
-                await _activeClient.SendToVisualStudio(byteData, cancellationToken).ConfigureAwait(false);
-            }
         }
 
         public void Dispose()
@@ -128,180 +106,102 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         // Embedded class
         private class ActiveClient : IDisposable
         {
-            private readonly MeadowDevice _meadow;
+            private readonly IMeadowDevice _meadow;
             private readonly TcpClient _tcpClient;
             private readonly NetworkStream _networkStream;
 
             private readonly CancellationTokenSource _cts;
-            private readonly Task _receiverTask;
-            private readonly Task _pusherTask;
-            //private readonly Task _receiveVsDebugTask;
+            private readonly Task _receiveVsDebugDataTask;
+            private readonly Task _receiveMeadowDebugDataTask;
             private readonly ILogger _logger;
             public bool Disposed = false;
 
             // Constructor
-            internal ActiveClient(MeadowDevice meadow, TcpClient tcpClient, ILogger logger, IList<byte[]> pendingMessages, CancellationToken cancellationToken)
+            internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger logger, CancellationToken cancellationToken)
             {
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _logger = logger;
                 _meadow = meadow;
                 _tcpClient = tcpClient;
                 _networkStream = tcpClient.GetStream();
-                foreach (var pendingMessage in pendingMessages)
-                {
-                    _networkStream.Write(pendingMessage);
-                }
-                pendingMessages.Clear();
                 _logger.LogDebug("Starting receive task");
-                var pipe = new Pipe();
-                _receiverTask = Task.Factory.StartNew(() =>
-                    ReadDataFromVisualStudio(_networkStream, pipe.Writer, _cts.Token),
-                    TaskCreationOptions.LongRunning);
-
-                _pusherTask = Task.Factory.StartNew(() => PushDataToMeadow(pipe.Reader, _cts.Token), TaskCreationOptions.LongRunning);
+                _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, TaskCreationOptions.LongRunning);
+                _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
             }
 
-            private async Task ReadDataFromVisualStudio(Stream stream, PipeWriter writer, CancellationToken cancellationToken)
+            private async Task SendToMeadowAsync()
             {
                 try
                 {
-                    const int minimumBufferSize = 1024;
-                    while (!cancellationToken.IsCancellationRequested)
+                    using var md5 = MD5.Create();
+                    // Receive from Visual Studio and send to Meadow
+                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(490);
+                    var meadowBuffer = Array.Empty<byte>();
+                    while (!_cts.IsCancellationRequested)
                     {
-                        // Allocate at least 512 bytes from the PipeWriter
-                        var memory = writer.GetMemory(minimumBufferSize);
-                        try
-                        {
-                            var bytesRead = await stream.ReadAsync(memory, cancellationToken)
-                                                        .ConfigureAwait(false);
+                        int bytesRead;
 
-                            if (bytesRead == 0)
-                            {
-                                break;
-                            }
+                        read:
+                        bytesRead = await _networkStream.ReadAsync(receiveBuffer, 0, receiveBuffer.Length);
+                        if (bytesRead == 0 || _cts.IsCancellationRequested)
+                            continue;
 
-                            // Tell the PipeWriter how much was read from the Socket
-                            writer.Advance(bytesRead);
-                        }
-                        catch (SocketException)
-                        {
-                            _logger.LogDebug("Visual studio has disconnected");
-                            await writer.CompleteAsync().ConfigureAwait(false);
-                            return;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogDebug(ex, "Exception encountered while reading data from VS");
-                            await writer.CompleteAsync().ConfigureAwait(false);
-                            return;
-                        }
+                        var destIndex = meadowBuffer.Length;
+                        Array.Resize(ref meadowBuffer, destIndex + bytesRead);
+                        Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
 
-                        // Make the data available to the PipeReader
-                        var result = await writer.FlushAsync(cancellationToken)
-                                                 .ConfigureAwait(false);
+                        // Ensure we read all the data in this message before passing it along
+                        // I'm not sure this is actually needed, the whole message should get read at once.
+                        if (_networkStream.DataAvailable)
+                            goto read;
 
-                        if (result.IsCompleted)
-                        {
-                            break;
-                        }
+                        // Forward to Meadow
+                        _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
+                                         meadowBuffer.Length,
+                                         BitConverter.ToString(md5.ComputeHash(meadowBuffer))
+                                                     .Replace("-", string.Empty)
+                                                     .ToLowerInvariant());
+                        await _meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0).ConfigureAwait(false);
+                        meadowBuffer = Array.Empty<byte>();
                     }
                 }
-                catch (Exception ex)
+                catch (IOException ioe)
                 {
-                    _logger.LogError(ex, ":-(");
-                    await writer.CompleteAsync(ex).ConfigureAwait(false);
-                }
-            }
-
-            private async Task PushDataToMeadow(PipeReader reader, CancellationToken cancellationToken)
-            {
-                var first = true;
-                using var md5 = MD5.Create();
-                while (true)
-                {
-                    try
-                    {
-                        var result = await reader.ReadAsync(cancellationToken)
-                                                 .ConfigureAwait(false);
-
-                        var buffer = result.Buffer;
-                        foreach (var segment in buffer)
-                        {
-                            if (segment.IsEmpty) continue;
-                            var sequence = segment.ToArray();
-                            if (first)
-                            {
-                                var tmp = sequence[..13];
-                                _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
-                                                 tmp.Length,
-                                                 BitConverter.ToString(md5.ComputeHash(tmp))
-                                                             .Replace("-", string.Empty)
-                                                             .ToLowerInvariant());
-
-                                await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
-                                             .ConfigureAwait(false);
-
-                                tmp = sequence[13..];
-                                _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
-                                                 tmp.Length,
-                                                 BitConverter.ToString(md5.ComputeHash(tmp))
-                                                             .Replace("-", string.Empty)
-                                                             .ToLowerInvariant());
-
-                                await _meadow.ForwardVisualStudioDataToMonoAsync(tmp, 0, _cts.Token)
-                                             .ConfigureAwait(false);
-
-                                first = false;
-                            }
-                            else
-                            {
-                                await _meadow.ForwardVisualStudioDataToMonoAsync(sequence, 0, _cts.Token)
-                                             .ConfigureAwait(false);
-                            }
-                        }
-
-                        // Tell the PipeReader how much of the buffer we have consumed
-                        reader.AdvanceTo(consumed: buffer.End);
-
-                        // Stop reading if there's no more data coming
-                        if (result.IsCompleted)
-                        {
-                            break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "An error occurred in the pipe.");
-                        await reader.CompleteAsync(ex).ConfigureAwait(false);
-                        return;
-                    }
-                }
-
-                // Mark the PipeReader as complete
-                await reader.CompleteAsync().ConfigureAwait(false);
-            }
-
-            public async Task SendToVisualStudio(byte[] byteData, CancellationToken cancellationToken)
-            {
-                _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
-                try
-                {
-                    // Receive from Meadow and send to Visual Studio
-                    if (!_tcpClient.Connected)
-                    {
-                        _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
-                        return;
-                    }
-
-                    await _networkStream.WriteAsync(byteData, 0, byteData.Length, cancellationToken);
+                    // VS client probably died
+                    _logger.LogInformation("Visual Studio Disconnected");
+                    _logger.LogTrace(ioe, "Visual Studio Disconnected");
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Error sending data to Visual Studio");
-                    if (_cts.IsCancellationRequested)
-                        throw;
+                    _logger.LogError(e, "Error receiving data from Visual Studio");
+                    throw;
                 }
-                _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+            }
+
+            private async Task SendToVisualStudio()
+            {
+                while (!_cts.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
+                        _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
+                        if (!_tcpClient.Connected)
+                        {
+                            _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
+                            return;
+                        }
+
+                        await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
+                        _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error sending data to Visual Studio");
+                        if (_cts.IsCancellationRequested)
+                            throw;
+                    }
+                }
             }
 
             public void Dispose()
@@ -311,11 +211,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     if (Disposed)
                         return;
                     _logger.LogTrace("Disposing ActiveClient");
+                    _cts.Cancel(false);
+                    _receiveVsDebugDataTask.Wait(TimeSpan.FromSeconds(10));
+                    _receiveMeadowDebugDataTask.Wait(TimeSpan.FromSeconds(10));
+                    _receiveVsDebugDataTask?.Dispose();
+                    _receiveMeadowDebugDataTask?.Dispose();
                     _tcpClient.Dispose();
                     _networkStream.Dispose();
                     _cts.Dispose();
-                    _receiverTask?.Dispose();
-                    _pusherTask?.Dispose();
                     Disposed = true;
                 }
             }

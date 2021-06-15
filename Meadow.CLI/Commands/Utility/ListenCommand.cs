@@ -31,7 +31,7 @@ namespace Meadow.CLI.Commands.Utility
                 if (e.MessageType == MeadowMessageType.Data)
                     _logger.LogInformation(e.Message);
             };
-            Meadow.DataProcessor.OnReceiveData += ResponseHandler;
+            //Meadow.DataProcessor.OnReceiveData += ResponseHandler;
             try
             {
                 await Task.Delay(-1, cancellationToken)
@@ -43,7 +43,7 @@ namespace Meadow.CLI.Commands.Utility
             }
             finally
             {
-                Meadow.DataProcessor.OnReceiveData -= ResponseHandler;
+                //Meadow.DataProcessor.OnReceiveData -= ResponseHandler;
             }
         }
     }

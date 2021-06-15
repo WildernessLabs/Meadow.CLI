@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.DeviceManagement
@@ -8,7 +7,7 @@ namespace Meadow.CLI.Core.DeviceManagement
     public abstract class MeadowDataProcessor : IDisposable
     {
         public EventHandler<MeadowMessageEventArgs>? OnReceiveData;
-        public Func<byte[]?, CancellationToken, Task>? ForwardDebuggingData;
+        public BlockingCollection<byte[]> DebuggerMessages = new BlockingCollection<byte[]>();
         public abstract void Dispose();
     }
 

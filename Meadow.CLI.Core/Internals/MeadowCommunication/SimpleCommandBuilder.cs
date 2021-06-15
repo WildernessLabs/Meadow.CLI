@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
@@ -10,6 +9,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public SimpleCommandBuilder(HcomMeadowRequestType requestType)
         {
             RequestType = requestType;
+            Timeout = DefaultTimeout;
         }
 
         private protected MeadowMessageType? ResponseMessageType;
@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         private protected HcomMeadowRequestType RequestType { get; set; }
         private protected uint UserData { get; set; }
-        private protected TimeSpan? Timeout { get; set; }
+        private protected TimeSpan Timeout { get; set; }
         private protected byte[]? Data { get; set; }
         private protected Predicate<MeadowMessageEventArgs>? ResponsePredicate { get; set; }
         private protected Predicate<MeadowMessageEventArgs>? CompletionPredicate { get; set; }
@@ -94,7 +94,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 else CompletionPredicate = e => e.MessageType == MeadowMessageType.Concluded;
             }
             
-            return new Command(RequestType, Timeout ?? DefaultTimeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
+            return new Command(RequestType, Timeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
         }
 
         public override string ToString()

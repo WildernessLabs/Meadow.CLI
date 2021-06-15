@@ -1,11 +1,12 @@
 ﻿using System;
+using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Exceptions
 {
-    public class DeviceNotFoundException : Exception
+    public class DeviceNotFoundException : MeadowDeviceException
     {
-        public DeviceNotFoundException(string message, Exception? innerException = null)
-            : base(message, innerException)
+        public DeviceNotFoundException(string? message = null, Exception? innerException = null)
+            : base(message ?? "Unable to find Meadow", innerException)
         {
 
         }

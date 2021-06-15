@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
-using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using LibUsbDotNet.Main;
+using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -35,17 +33,27 @@ namespace Meadow.CLI.Core.DeviceManagement
             _logger = _loggerFactory.CreateLogger<MeadowDeviceManager>();
         }
 
-        public static async Task<MeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
+        public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
 
             try
             {
                 logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
-                var meadow = new MeadowSerialDevice(serialPort, logger);
+                IMeadowDevice? meadow = null;
+                var createTask= Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
+                var delayTask = Task.Delay(1000);
+                var completedTask = await Task.WhenAny(createTask, delayTask)
+                          .ConfigureAwait(false);
 
-                await meadow.InitializeAsync(CancellationToken.None).ConfigureAwait(false);
+                if (completedTask == delayTask || meadow == null)
+                {
+                    logger.LogTrace("Timeout while creating meadow.");
+                    return null;
+                }
 
+                await meadow.InitializeAsync(CancellationToken.None);
+                
                 return meadow;
             }
             catch (FileNotFoundException fnfEx)
@@ -89,7 +97,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public async Task<MeadowDevice?> FindMeadowBySerialNumber(
+        public static async Task<IMeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
             ILogger logger,
             int maxAttempts = 10,
@@ -125,7 +133,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                             continue;
 
                         var deviceInfo =
-                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken);
 
                         if (deviceInfo!.SerialNumber == serialNumber)
                         {
@@ -137,7 +145,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     catch (MeadowDeviceException meadowDeviceException)
                     {
                         // eat it for now
-                        _logger.LogDebug(
+                        logger.LogDebug(
                             meadowDeviceException,
                             "This error can be safely ignored.");
                     }
@@ -207,204 +215,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             logger.LogDebug("Found {count} ports", ports.Count);
             return ports;
-        }
-
-        //we'll move this soon
-        public static List<string> FindSerialDevices()
-        {
-            var devices = new List<string>();
-
-            foreach (var s in SerialPort.GetPortNames())
-            {
-                //limit Mac searches to tty.usb*, Windows, try all COM ports
-                //on Mac it's pretty quick to test em all so we could remove this check 
-                if (Environment.OSVersion.Platform != PlatformID.Unix || s.Contains("tty.usb"))
-                {
-                    devices.Add(s);
-                }
-            }
-
-            return devices;
-        }
-
-        public static List<string> GetSerialDeviceCaptions()
-        {
-            var devices = new List<string>();
-
-            using (var searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
-            {
-                var portnames = SerialPort.GetPortNames();
-                foreach (var item in searcher.Get())
-                {
-                    devices.Add(
-                        item["Caption"]
-                            .ToString());
-                }
-            }
-
-            return devices;
-        }
-
-        public async Task FlashOsAsync(string serialPortName, string osPath = "", string runtimePath = "", bool skipDfu = false, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
-        {
-            var dfuAttempts = 0;
-            
-            string serialNumber;
-            if (skipDfu)
-            {
-                _logger.LogInformation("Skipping DFU flash step.");
-                using var device = await GetMeadowForSerialPort(serialPortName, false).ConfigureAwait(false);
-                if (device == null)
-                {
-                    _logger.LogWarning("Cannot find Meadow on {port}", serialPortName);
-                    return;
-                }
-
-                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
-                                             .ConfigureAwait(false);
-
-                serialNumber = deviceInfo!.SerialNumber;
-            }
-            else
-            {
-                UsbRegistry dfuDevice;
-                while (true)
-                {
-                    try
-                    {
-                        try
-                        {
-                            dfuDevice = DfuUtils.GetDevice();
-                            break;
-                        }
-                        catch (MultipleDfuDevicesException)
-                        {
-                            // This is bad, we can't just blindly flash with multiple devices, let the user know
-                            throw;
-                        }
-                        catch (DeviceNotFoundException)
-                        {
-                            // eat it.
-                        }
-
-                        // No DFU device found, lets try to set the meadow to DFU mode.
-                        using var device = await GetMeadowForSerialPort(serialPortName, false).ConfigureAwait(false);
-
-                        if (device != null)
-                        {
-                            _logger.LogInformation("Entering DFU Mode");
-                            await device.EnterDfuModeAsync(cancellationToken)
-                                        .ConfigureAwait(false);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogDebug(
-                            "An exception occurred while switching device to DFU Mode. Exception: {0}",
-                            ex);
-                    }
-
-                    switch (dfuAttempts)
-                    {
-                        case 5:
-                            _logger.LogInformation(
-                                "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
-
-                            Console.ReadKey();
-                            break;
-                        case 10:
-                            _logger.LogInformation(
-                                "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
-
-                            Console.ReadKey();
-                            break;
-                        case > 15:
-                            throw new Exception(
-                                "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
-                    }
-
-                    // Lets give the device a little time to settle in and get picked up
-                    await Task.Delay(1000, cancellationToken)
-                              .ConfigureAwait(false);
-
-                    dfuAttempts++;
-                }
-
-                // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
-                serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
-
-                _logger.LogInformation("Device in DFU Mode, flashing OS");
-                await DfuUtils.FlashOsAsync(osPath, dfuDevice, _logger);
-                _logger.LogInformation("Device Flashed.");
-            }
-
-            try
-            {
-                using var device = await FindMeadowBySerialNumber(
-                                           serialNumber,
-                                           _logger,
-                                           cancellationToken: cancellationToken)
-                                       .ConfigureAwait(false);
-
-                if (device == null)
-                {
-                    _logger.LogWarning("Unable to find Meadow after DFU Flash.");
-                    return;
-                }
-
-                if (skipRuntime == false)
-                {
-                    await device.UpdateMonoRuntimeAsync(
-                        runtimePath,
-                        cancellationToken: cancellationToken);
-                }
-                else
-                {
-                    _logger.LogInformation("Skipping update of runtime.");
-                }
-
-                // Again, verify that Mono is disabled
-                Trace.Assert(await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
-                             "Meadow was expected to have Mono Disabled");
-
-                if (skipEsp == false)
-                {
-                    _logger.LogInformation("Updating ESP");
-                    await device.FlashEspAsync(cancellationToken)
-                                .ConfigureAwait(false);
-
-                    // Reset the meadow again to ensure flash worked.
-                    await device.ResetMeadowAsync(cancellationToken)
-                                .ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("Skipping ESP flash");
-                }
-
-                _logger.LogInformation("Enabling Mono and Resetting");
-                while (await device.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false)
-                {
-                    await device.MonoEnableAsync(cancellationToken);
-                }
-
-                // This is to ensure the ESP info has updated in HCOM on the Meadow
-                await Task.Delay(2000, cancellationToken)
-                          .ConfigureAwait(false);
-
-                // TODO: Verify that the device info returns the expected version
-                var deviceInfo = await device
-                                             .GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken)
-                                             .ConfigureAwait(false);
-
-                _logger.LogInformation(
-                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion} ESP: {deviceInfo.CoProcessorOs}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error flashing OS to Meadow");
-            }
         }
     }
 }

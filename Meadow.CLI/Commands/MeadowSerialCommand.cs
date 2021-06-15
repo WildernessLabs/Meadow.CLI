@@ -5,6 +5,7 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands
@@ -14,7 +15,7 @@ namespace Meadow.CLI.Commands
         private protected ILogger Logger;
         private protected ILoggerFactory LoggerFactory;
         private protected MeadowDeviceManager MeadowDeviceManager;
-        private protected MeadowDevice Meadow;
+        private protected MeadowDeviceHelper Meadow;
 
         private protected MeadowSerialCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
         {
@@ -59,12 +60,14 @@ namespace Meadow.CLI.Commands
 
         public virtual async ValueTask ExecuteAsync(IConsole console)
         {
-            Meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
-            if (Meadow == null)
+            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
+            if (meadow == null)
             {
                 LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");
                 Environment.Exit(-1);
             }
+
+            Meadow = new MeadowDeviceHelper(meadow, Logger);
         }
 
         public void Dispose()

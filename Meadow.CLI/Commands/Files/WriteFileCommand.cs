@@ -78,7 +78,7 @@ namespace Meadow.CLI.Commands.Files
                     var result = await Meadow.WriteFileAsync(
                                                  Files[i],
                                                  targetFileName,
-                                                 Partition,
+                                                 TimeSpan.FromSeconds(60),
                                                  cancellationToken)
                                              .ConfigureAwait(false);
 

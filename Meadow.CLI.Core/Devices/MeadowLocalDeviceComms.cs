@@ -3,16 +3,20 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Core.DeviceManagement
+namespace Meadow.CLI.Core.Devices
 {
     public partial class MeadowLocalDevice
     {
         uint _packetCrc32;
+        private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
 
         public async Task SendTheEntireFile(FileCommand command,
                                             bool lastInSeries,
@@ -155,11 +159,11 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         private void WriteProgress(decimal i)
         {
-            var intProgress = Convert.ToInt32(i * 100);
-            if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
+            //var intProgress = Convert.ToInt32(i * 100);
+            //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
 
-            Logger.LogInformation("Operation Progress: {progress:P0}", i);
-            _lastProgress = intProgress;
+            //Logger.LogInformation("Operation Progress: {progress:P0}", i);
+            //_lastProgress = intProgress;
         }
 
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
@@ -175,7 +179,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 byte[] fullMsg = new byte[transmitSize];
 
                 byte[] seqBytes = BitConverter.GetBytes(sequenceNumber);
-                Array.Copy(seqBytes,     fullMsg,       sizeof(ushort));
+                Array.Copy(seqBytes, fullMsg, sizeof(ushort));
                 Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(ushort), messageSize);
 
                 await EncodeAndSendPacket(fullMsg, 0, transmitSize, cancellationToken)
@@ -193,33 +197,42 @@ namespace Meadow.CLI.Core.DeviceManagement
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
-            Logger.LogTrace($"{caller} is sending {command.RequestType}");
+            await _comPortSemaphore.WaitAsync(cancellationToken)
+                                .ConfigureAwait(false);
 
-            var messageBytes = command.ToMessageBytes();
-            await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
-                .ConfigureAwait(false);
-
-            CommandResponse resp;
-            if (command.IsAcknowledged)
+            try
             {
-                resp = await WaitForResponseMessageAsync(command, cancellationToken)
+                Logger.LogTrace($"{caller} is sending {command.RequestType}");
+
+                CommandResponse resp;
+                if (command.IsAcknowledged)
+                {
+                    resp = await WaitForResponseMessageAsync(command, cancellationToken)
                                .ConfigureAwait(false);
+                }
+                else
+                {
+                    var messageBytes = command.ToMessageBytes();
+                    await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
+                        .ConfigureAwait(false);
+                    resp = CommandResponse.Empty;
+                }
+
+                Logger.LogTrace(
+                    "Returning to {caller} with {success} {message}",
+                    caller,
+                    resp.IsSuccess,
+                    string.IsNullOrWhiteSpace(resp.Message) ? "[empty]" : resp.Message);
+
+                return resp;
             }
-            else
+            finally
             {
-                resp = CommandResponse.Empty;
+                _comPortSemaphore.Release();
             }
-
-            Logger.LogTrace(
-                "Returning to {caller} with {success} {message}",
-                caller,
-                resp.IsSuccess,
-                string.IsNullOrWhiteSpace(resp.Message) ? "[empty]" : resp.Message);
-
-            return resp;
         }
 
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
+        
         private async Task EncodeAndSendPacket(byte[] messageBytes,
                                                int messageOffset,
                                                int messageSize,
@@ -260,22 +273,12 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 try
                 {
-                    await _semaphoreSlim.WaitAsync(cancellationToken)
-                                        .ConfigureAwait(false);
 
-                    try
-                    {
-                        using var cts = new CancellationTokenSource(DefaultTimeout);
-                        cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
-                        var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-                        await WriteAsync(encodedBytes, encodedToSend, combinedCts.Token)
-                            .ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        _semaphoreSlim.Release();
-                    }
-
+                    using var cts = new CancellationTokenSource(DefaultTimeout);
+                    cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
+                    var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+                    await WriteAsync(encodedBytes, encodedToSend, combinedCts.Token)
+                        .ConfigureAwait(false);
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
@@ -312,7 +315,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             Logger.LogTrace(
                 "{caller} is waiting {seconds} for response to {requestType}.",
                 caller,
-                command.Timeout.TotalSeconds, 
+                command.Timeout.TotalSeconds,
                 command.RequestType);
 
             var tcs = new TaskCompletionSource<bool>();
@@ -354,6 +357,10 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
+                var messageBytes = command.ToMessageBytes();
+                await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
+                    .ConfigureAwait(false);
+
                 using var timeoutCancellationTokenSource =
                     new CancellationTokenSource(command.Timeout);
 
@@ -392,9 +399,5 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             throw new MeadowCommandException(command, message);
         }
-    }
-
-    public class NotConnectedException : Exception
-    {
     }
 }

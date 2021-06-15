@@ -1,8 +1,9 @@
-﻿using System.IO.Ports;
+﻿using System;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement
@@ -10,12 +11,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
     public class FlashOsCommand : MeadowSerialCommand
     {
-        private readonly ILogger<FlashOsCommand> _logger;
-
         public FlashOsCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(loggerFactory, meadowDeviceManager)
         {
-            _logger = loggerFactory.CreateLogger<FlashOsCommand>();
         }
 
         [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
@@ -39,7 +37,32 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            await MeadowDeviceManager.FlashOsAsync(SerialPortName, OsFile, RuntimeFile, SkipDfu, SkipRuntime, SkipEsp, cancellationToken);
+            string serialNumber;
+            if (!SkipDfu)
+                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken).ConfigureAwait(false);
+            else
+            {
+                Logger.LogInformation("Skipping DFU flash step.");
+                using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, false).ConfigureAwait(false);
+                if (device == null)
+                {
+                    Logger.LogWarning("Cannot find Meadow on {port}", SerialPortName);
+                    return;
+                }
+
+                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
+                                             .ConfigureAwait(false);
+
+                serialNumber = deviceInfo!.SerialNumber;
+            }
+
+            var meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                serialNumber,
+                Logger,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            Meadow = new MeadowDeviceHelper(meadow, Logger);
+            await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
         }
     }
 }

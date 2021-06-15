@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
@@ -36,8 +37,9 @@ namespace Meadow.CLI.Commands.Files
             _logger.LogInformation($"Getting files on partition {Partition}");
 
             var files = await Meadow.GetFilesAndCrcsAsync(
+                                        TimeSpan.FromSeconds(60),
                                         Partition,
-                                        cancellationToken: cancellationToken)
+                                        cancellationToken)
                                     .ConfigureAwait(false);
 
             if (files.Any())

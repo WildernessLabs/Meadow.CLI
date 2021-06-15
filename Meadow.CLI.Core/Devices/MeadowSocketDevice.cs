@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Core.DeviceManagement
+namespace Meadow.CLI.Core.Devices
 {
     public class MeadowSocketDevice : MeadowLocalDevice
     {
@@ -25,7 +25,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             throw new NotImplementedException();
         }
 
-        protected override void Dispose(bool disposing)
+        private protected override void Dispose(bool disposing)
         {
             if (disposing)
                 Socket?.Dispose();
@@ -52,11 +52,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             //    Console.WriteLine("Could not connect to socket, aborting...");
             //    Environment.Exit(1);
             //}
-        }
-
-        public override Task<bool> ReInitializeAsync(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
         }
 
         private static bool TryCreateIPEndPoint(string address,

@@ -20,7 +20,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.FlashEspAsync(cancellationToken)
+            await Meadow.FlashEspAsync(cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
 
             await Meadow.ResetMeadowAsync(cancellationToken)
