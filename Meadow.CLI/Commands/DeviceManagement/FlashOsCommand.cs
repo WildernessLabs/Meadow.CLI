@@ -43,7 +43,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             else
             {
                 Logger.LogInformation("Skipping DFU flash step.");
-                using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, false).ConfigureAwait(false);
+                using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, false, Logger).ConfigureAwait(false);
                 if (device == null)
                 {
                     Logger.LogWarning("Cannot find Meadow on {port}", SerialPortName);

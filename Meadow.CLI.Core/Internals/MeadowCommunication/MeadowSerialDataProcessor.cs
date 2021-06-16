@@ -85,7 +85,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     var segment = new ArraySegment<byte>(buffer);
                     var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
 
-                    await DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token).ConfigureAwait(false);
+                    DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token);
 
                     await Task.Delay(50).ConfigureAwait(false);
                 }
@@ -176,8 +176,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                 {
                                     var msg = buffer.Slice(0, messageEnd);
                                     buffer = buffer.Slice(messageEnd + 1);
-                                    await DecodeAndProcessPacket(msg, _cts.Token)
-                                        .ConfigureAwait(false);
+                                    DecodeAndProcessPacket(msg, _cts.Token);
                                 }
                                 // We had some part of the message from a previous iteration
                                 else
@@ -185,8 +184,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                     message.AddSegment(buffer.Slice(0,messageEnd));
                                     buffer = buffer.Slice(messageEnd + 1);
                                     var msg = message.ToArray();
-                                    await DecodeAndProcessPacket(msg, _cts.Token)
-                                        .ConfigureAwait(false);
+                                    DecodeAndProcessPacket(msg, _cts.Token);
 
                                     message = null;
                                 }
@@ -216,7 +214,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        private async Task<bool> DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
+        private bool DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
         {
             var decodedBuffer = ArrayPool<byte>.Shared.Rent(MeadowDeviceManager.MaxAllowableMsgPacketLength);
             var packetLength = packetBuffer.Length;
@@ -241,16 +239,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
 
             // Process the received packet
-            await ParseAndProcessReceivedPacket(decodedBuffer.AsSpan(0, decodedSize).ToArray(),
-                                                cancellationToken)
-                       .ConfigureAwait(false);
+            ParseAndProcessReceivedPacket(decodedBuffer.AsSpan(0, decodedSize).ToArray(),
+                                          cancellationToken);
 
             ArrayPool<byte>.Shared.Return(decodedBuffer);
             return true;
         }
 
         // TODO: Convert to Memory<byte> from byte[]
-        private async Task ParseAndProcessReceivedPacket(byte[] receivedMsg, CancellationToken cancellationToken)
+        private void ParseAndProcessReceivedPacket(byte[] receivedMsg, CancellationToken cancellationToken)
         {
             try
             {

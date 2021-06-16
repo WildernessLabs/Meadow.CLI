@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core.DeviceManagement;
@@ -31,7 +30,7 @@ namespace Meadow.CLI.Commands.Utility
                 if (e.MessageType == MeadowMessageType.Data)
                     _logger.LogInformation(e.Message);
             };
-            //Meadow.DataProcessor.OnReceiveData += ResponseHandler;
+            Meadow.MeadowDevice.DataProcessor.OnReceiveData += ResponseHandler;
             try
             {
                 await Task.Delay(-1, cancellationToken)
@@ -43,7 +42,7 @@ namespace Meadow.CLI.Commands.Utility
             }
             finally
             {
-                //Meadow.DataProcessor.OnReceiveData -= ResponseHandler;
+                Meadow.MeadowDevice.DataProcessor.OnReceiveData -= ResponseHandler;
             }
         }
     }

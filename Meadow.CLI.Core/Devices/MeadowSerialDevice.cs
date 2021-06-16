@@ -72,9 +72,7 @@ namespace Meadow.CLI.Core.Devices
                         await Task.Delay(1000, cancellationToken)
                                   .ConfigureAwait(false);
 
-                        DeviceInfo = await GetDeviceInfoAsync(
-                                         TimeSpan.FromSeconds(1),
-                                         cancellationToken);
+                        DeviceInfo = await GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
 
                         return true;
                     }

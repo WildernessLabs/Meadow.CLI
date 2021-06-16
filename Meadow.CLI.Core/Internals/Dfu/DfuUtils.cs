@@ -2,10 +2,14 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+
 using LibUsbDotNet;
 using LibUsbDotNet.Main;
+
 using Meadow.CLI.Core.Exceptions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -35,7 +39,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             if (allDevices.Count(x => x.Name == _usbStmName) > 1)
             {
                 throw new MultipleDfuDevicesException("More than one DFU device found, please connect only one and try again.");
-                
+
             }
 
             var device = UsbDevice.AllDevices.SingleOrDefault(x => x.Name == _usbStmName);
@@ -52,16 +56,16 @@ namespace Meadow.CLI.Core.Internals.Dfu
             switch (Environment.OSVersion.Platform)
             {
                 case PlatformID.Win32NT:
-                {
-                    var deviceID = device.DeviceProperties["DeviceID"].ToString();
-                    return deviceID.Substring(deviceID.LastIndexOf("\\") + 1);
-                }
+                    {
+                        var deviceID = device.DeviceProperties["DeviceID"].ToString();
+                        return deviceID.Substring(deviceID.LastIndexOf("\\") + 1);
+                    }
                 default:
                     return device.DeviceProperties["SerialNumber"].ToString();
             }
         }
 
-        public static async Task FlashOsAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlashAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
@@ -75,7 +79,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             if (!File.Exists(filename))
             {
                 logger.LogError("Please specify valid --File or --Download latest");
-                return;
+                return false;
             }
             else
             {
@@ -85,30 +89,43 @@ namespace Meadow.CLI.Core.Internals.Dfu
             var serial = GetDeviceSerial(device);
 
             var dfuUtilVersion = GetDfuUtilVersion();
+            logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
 
             if (string.IsNullOrEmpty(dfuUtilVersion))
             {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     logger.LogError("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
                 }
-                else
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     logger.LogError("dfu-util not found. To install run: brew install dfu-util");
                 }
-                return;
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    logger.LogError("dfu-util not found. Install using package manager, for example: apt install dfu-util");
+                }
+                return false;
             }
             else if (dfuUtilVersion != "0.10")
             {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     logger.LogError("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
                 }
-                else
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
+                } 
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    if (dfuUtilVersion != "0.9")
+                        return false;
                 }
-                return;
+                else
+                {
+                    return false;
+                }
             }
 
             try
@@ -116,12 +133,12 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 var startInfo = new ProcessStartInfo(
                                     "dfu-util",
                                     $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
-                                {
-                                    UseShellExecute = false,
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                    RedirectStandardInput = false
-                                };
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = false
+                };
                 using var process = Process.Start(startInfo);
                 if (process == null)
                     throw new Exception("Failed to start dfu-util");
@@ -133,24 +150,19 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                              while (process.HasExited == false)
                                              {
                                                  var logLine = process.StandardOutput.ReadLine();
+                                                 // Ignore empty output
                                                  if (logLine == null)
+                                                     continue;
+                                                 
+                                                 if (logLine.Contains("%"))
                                                  {
-                                                     logger.LogInformation(string.Empty);
-                                                 }
-                                                 else if (logLine.Contains("%"))
-                                                 {
-                                                     var operation = logLine.Substring(
-                                                         0,
-                                                         logLine.IndexOf(
-                                                             "\t",
-                                                             StringComparison.Ordinal)).Trim();
-                                                     var progressBarEnd = logLine.IndexOf(
-                                                         "]",
-                                                         StringComparison.Ordinal) + 1;
+                                                     var operation = logLine.Substring(0,
+                                                         logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
+                                                     var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
                                                      var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
                                                      Console.SetCursorPosition(0, Console.CursorTop);
                                                      if (progress != "100%")
-                                                        Console.Write($"{operation} {progress}");
+                                                         Console.Write($"{operation} {progress}");
                                                  }
                                                  else
                                                  {
@@ -176,8 +188,10 @@ namespace Meadow.CLI.Core.Internals.Dfu
             catch (Exception ex)
             {
                 logger.LogError($"There was a problem executing dfu-util: {ex.Message}");
-                return;
+                return false;
             }
+
+            return true;
         }
 
         private static string GetDfuUtilVersion()

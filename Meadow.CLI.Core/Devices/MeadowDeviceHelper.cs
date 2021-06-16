@@ -22,6 +22,7 @@ namespace Meadow.CLI.Core.Devices
         private IMeadowDevice _meadowDevice;
         public TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
         public readonly ILogger Logger;
+        public IMeadowDevice MeadowDevice => _meadowDevice;
 
         public MeadowDeviceHelper(IMeadowDevice meadow, ILogger logger)
         {
@@ -31,7 +32,6 @@ namespace Meadow.CLI.Core.Devices
                              nameof(meadow));
             Logger = logger;
         }
-
 
         public MeadowDeviceInfo DeviceInfo { get; private set; }
 
@@ -225,11 +225,15 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.QspiInitAsync(value, cancellationToken);
         }
 
-        public Task DeployAppAsync(string fileName,
-                                   bool includePdbs = false,
-                                   CancellationToken cancellationToken = default)
+        public async Task DeployAppAsync(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.DeployAppAsync(fileName, includePdbs, cancellationToken);
+            await MonoDisableAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await _meadowDevice.DeployAppAsync(fileName, includePdbs, cancellationToken).ConfigureAwait(false);
+
+            await MonoEnableAsync(cancellationToken)
+                .ConfigureAwait(false);
         }
 
         public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
@@ -311,6 +315,13 @@ namespace Meadow.CLI.Core.Devices
             {
                 if (skipRuntime == false)
                 {
+                    await MonoDisableAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+                    // Again, verify that Mono is disabled
+                    Trace.Assert(await _meadowDevice.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
+                                 "Meadow was expected to have Mono Disabled");
+
                     await _meadowDevice.UpdateMonoRuntimeAsync(
                         runtimePath,
                         cancellationToken: cancellationToken);
@@ -319,10 +330,6 @@ namespace Meadow.CLI.Core.Devices
                 {
                     Logger.LogInformation("Skipping update of runtime.");
                 }
-
-                // Again, verify that Mono is disabled
-                Trace.Assert(await _meadowDevice.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
-                             "Meadow was expected to have Mono Disabled");
 
                 if (skipEsp == false)
                 {
@@ -436,9 +443,16 @@ namespace Meadow.CLI.Core.Devices
             string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             logger.LogInformation("Device in DFU Mode, flashing OS");
-            await DfuUtils.FlashOsAsync(osPath, dfuDevice, logger);
-            logger.LogInformation("Device Flashed.");
-            return serialNumber;
+            var res = await DfuUtils.DfuFlashAsync(osPath, dfuDevice, logger).ConfigureAwait(false);
+            if (res)
+            {
+                logger.LogInformation("Device Flashed.");
+                return serialNumber;
+            }
+            else
+            {
+                throw new MeadowDeviceException("Failed to flash meadow");
+            }
         }
 
         private void Dispose(bool disposing)

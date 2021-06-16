@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,8 +16,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 {
     public class MeadowDeviceManager
     {
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly ILogger _logger;
         internal const int MaxAllowableMsgPacketLength = 512;
 
         internal const int MaxEstimatedSizeOfEncodedPayload =
@@ -27,12 +26,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         internal const int MaxAllowableMsgPayloadLength =
             MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
-        public MeadowDeviceManager(ILoggerFactory loggerFactory)
-        {
-            _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.CreateLogger<MeadowDeviceManager>();
-        }
-
+        // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
@@ -41,14 +35,22 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 IMeadowDevice? meadow = null;
-                var createTask= Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
-                var delayTask = Task.Delay(1000);
-                var completedTask = await Task.WhenAny(createTask, delayTask)
+                var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
+                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
                           .ConfigureAwait(false);
 
-                if (completedTask == delayTask || meadow == null)
+                if (completedTask != createTask || meadow == null)
                 {
-                    logger.LogTrace("Timeout while creating meadow.");
+                    logger.LogTrace("Timeout while creating Meadow");
+                    try
+                    {
+                        await createTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogInformation(ex, "An error occurred while attempting to create Meadow");
+                        throw;
+                    }
                     return null;
                 }
 
@@ -97,6 +99,26 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
+        public static IList<string> GetSerialPorts()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetMeadowSerialPortsForLinux();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMeadowSerialPortsForOsx();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return SerialPort.GetPortNames();
+            }
+            else
+            {
+                throw new Exception("Unknown operating system.");
+            }
+        }
+
         public static async Task<IMeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
             ILogger logger,
@@ -106,34 +128,21 @@ namespace Meadow.CLI.Core.DeviceManagement
             var attempts = 0;
             while (attempts < maxAttempts)
             {
-                IEnumerable<string>? ports;
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    ports = GetMeadowSerialPortsForOsx();
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    ports = GetMeadowSerialPortsForOsx();
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    ports = SerialPort.GetPortNames();
-                }
-                else
-                {
-                    throw new Exception("Unknown operating system.");
-                }
 
+                var ports = GetSerialPorts();
                 foreach (var port in ports)
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, false, logger).ConfigureAwait(false);
+                        var device = await GetMeadowForSerialPort(port, false, logger)
+                                         .ConfigureAwait(false);
+
                         if (device == null)
                             continue;
 
-                        var deviceInfo =
-                            await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken);
+                        var deviceInfo = await device.GetDeviceInfoAsync(
+                                             TimeSpan.FromSeconds(60),
+                                             cancellationToken);
 
                         if (deviceInfo!.SerialNumber == serialNumber)
                         {
@@ -141,6 +150,25 @@ namespace Meadow.CLI.Core.DeviceManagement
                         }
 
                         device.Dispose();
+                    }
+                    catch (UnauthorizedAccessException unauthorizedAccessException)
+                    {
+                        if (unauthorizedAccessException.InnerException is IOException)
+                        {
+                            // Eat it and retry
+                            logger.LogDebug(
+                                unauthorizedAccessException,
+                                "This error can be safely ignored.");
+                        }
+                        logger.LogError(unauthorizedAccessException, "An unknown error has occurred while finding meadow");
+                        throw;
+                    }
+                    catch (IOException ioException)
+                    {
+                        // Eat it and retry
+                        logger.LogDebug(
+                            ioException,
+                            "This error can be safely ignored.");
                     }
                     catch (MeadowDeviceException meadowDeviceException)
                     {
@@ -161,8 +189,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                 $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
-        public static List<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
+        public static IList<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
+                throw new PlatformNotSupportedException("This method is only supported on macOS");
+
             logger ??= NullLogger.Instance;
             logger.LogDebug("Get Meadow Serial ports");
             var ports = new List<string>();
@@ -189,24 +220,24 @@ namespace Meadow.CLI.Core.DeviceManagement
             //split into lines
             var lines = output.Split("\n\r".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 
-            bool foundMeadow = false;
-            for (int i = 0; i < lines.Length; i++)
+            var foundMeadow = false;
+            foreach (var line in lines)
             {
-                if (lines[i].Contains("Meadow F7 Micro"))
+                if (line.Contains("Meadow F7 Micro"))
                 {
                     foundMeadow = true;
                 }
-                else if (lines[i].IndexOf("+-o", StringComparison.Ordinal) == 0)
+                else if (line.IndexOf("+-o", StringComparison.Ordinal) == 0)
                 {
                     foundMeadow = false;
                 }
 
                 //now find the IODialinDevice entry which contains the serial port name
-                if (foundMeadow && lines[i].Contains("IODialinDevice"))
+                if (foundMeadow && line.Contains("IODialinDevice"))
                 {
-                    int startIndex = lines[i].IndexOf("/");
-                    int endIndex = lines[i].IndexOf("\"", startIndex + 1);
-                    var port = lines[i].Substring(startIndex, endIndex - startIndex);
+                    int startIndex = line.IndexOf("/");
+                    int endIndex = line.IndexOf("\"", startIndex + 1);
+                    var port = line.Substring(startIndex, endIndex - startIndex);
                     logger.LogDebug($"Found Meadow at {port}", port);
 
                     ports.Add(port);
@@ -215,6 +246,38 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             logger.LogDebug("Found {count} ports", ports.Count);
             return ports;
+        }
+
+        public static IList<string> GetMeadowSerialPortsForLinux(ILogger? logger = null)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
+                throw new PlatformNotSupportedException("This method is only supported on Linux");
+
+            const string devicePath = "/dev/serial/by-id";
+            logger ??= NullLogger.Instance;
+            var psi = new ProcessStartInfo()
+                      {
+                          FileName = "/usr/bin/ls",
+                          Arguments = $"-l {devicePath}",
+                          UseShellExecute = false,
+                          RedirectStandardOutput = true
+                      };
+
+            using var proc = Process.Start(psi);
+            proc.WaitForExit(1000);
+            var output = proc.StandardOutput.ReadToEnd();
+
+            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                  .Where(x => x.Contains("Wilderness_Labs"))
+                  .Select(
+                      line =>
+                      {
+                          var parts = line.Split(' ');
+                          var source = parts[8];
+                          var target = parts[10];
+                          var port = Path.GetFullPath(Path.Combine(devicePath, target));
+                          return port;
+                      }).ToArray();
         }
     }
 }

@@ -405,8 +405,7 @@ namespace Meadow.CLI.Core.Devices
                                                            default)
         {
             var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
                     .WithData(debuggerData)
                     .WithResponseType(MeadowMessageType.Accepted)
                     .WithCompletionResponseType(MeadowMessageType.Accepted)
