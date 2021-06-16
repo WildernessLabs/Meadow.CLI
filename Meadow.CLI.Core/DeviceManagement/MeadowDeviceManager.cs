@@ -191,7 +191,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static IList<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
                 throw new PlatformNotSupportedException("This method is only supported on macOS");
 
             logger ??= NullLogger.Instance;
