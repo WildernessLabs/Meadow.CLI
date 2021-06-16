@@ -325,6 +325,9 @@ namespace Meadow.CLI.Core.Devices
                     await _meadowDevice.UpdateMonoRuntimeAsync(
                         runtimePath,
                         cancellationToken: cancellationToken);
+
+                    await ReInitializeMeadowAsync(cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
@@ -345,6 +348,9 @@ namespace Meadow.CLI.Core.Devices
                     // Reset the meadow again to ensure flash worked.
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)
                                        .ConfigureAwait(false);
+
+                    await ReInitializeMeadowAsync(cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
