@@ -191,7 +191,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (TimeoutException ex)
+                    {
+                    }
+                    catch (Exception ex)
                     {
                         _logger.LogTrace(ex, "An error occurred while listening to the serial port.");
                         await Task.Delay(100, _cts.Token)
