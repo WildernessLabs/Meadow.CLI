@@ -439,6 +439,19 @@ namespace Meadow.CLI.Core.Devices
                                       cancellationToken: cancellationToken)
                                   .ConfigureAwait(false);
 
+            //rename App.dll to App.exe
+            var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
+            var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
+
+            if (File.Exists(fileNameDll))
+            {
+                if (File.Exists(fileNameExe))
+                {
+                    File.Delete(fileNameExe);
+                }
+                File.Copy(fileNameDll, fileNameExe);
+            }
+
             foreach (var f in deviceFiles)
             {
                 Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
