@@ -17,6 +17,43 @@ namespace Meadow.CLI.Core.Devices
     {
         private protected static readonly string SystemHttpNetDllName = "System.Net.Http.dll";
 
+        public async Task<IList<string>> GetFilesAndFoldersAsync(
+            TimeSpan timeout,
+            CancellationToken cancellationToken = default)
+        {
+            var started = false;
+
+            var items = new List<string>();
+
+            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            {
+                if (e.MessageType == MeadowMessageType.Accepted)
+                {
+                    started = true;
+                }
+                else if (started == false)
+                {   //ignore everything until we've started a new file list request
+                    return;
+                }
+
+                if (e.MessageType == MeadowMessageType.Data)
+                {
+                    items.Add(e.Message);
+                }
+            };
+
+            var command =
+                new SimpleCommandBuilder(
+                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+                    .WithResponseHandler(handler)
+                    .Build();
+
+            await SendCommandAsync(command, cancellationToken)
+                .ConfigureAwait(false);
+
+            return items;
+        }
+
         public async Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(
             TimeSpan timeout,
             int partition = 0,
@@ -416,6 +453,61 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
+        //ToDo this is super fragile
+        //Need updated API to read files after B5.1
+        async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
+        {
+            var items = await GetFilesAndFoldersAsync(new TimeSpan(0, 0, 10), cancellationToken);
+
+            bool isRoot = false;
+            bool isFolder = false;
+            string folderName = string.Empty;
+
+            var filesToDelete = new List<string>();
+
+            for (int i = 0; i < items.Count; i++)
+            {   //start of folders in root
+                if (isRoot == false && items[i].Contains("meadow0/"))
+                {
+                    isRoot = true;
+                } //next root folder - break out
+                else if (isRoot && items[i].Contains(" ") == false)
+                {
+                    break;
+                } //item under meadow0
+                else if (isRoot &&
+                    items[i].Contains("/") &&
+                    items[i].Contains("./") == false)
+                {
+                    folderName = items[i].Substring(1);
+                    isFolder = true;
+                }
+                else if (isFolder == true &&
+                    items[i].Contains("  ") &&
+                    items[i].Contains("[file]"))
+                {
+                    var end = items[i].IndexOf(" [file]");
+                    filesToDelete.Add(Path.Combine(folderName, items[i].Substring(2, end - 2)));
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            foreach (var item in filesToDelete)
+            {
+                if (item.Contains("Data/") ||
+                    item.Contains("Documents/"))
+                {
+                    continue;
+                }
+
+                Console.WriteLine($"Deleting {item}");
+                await DeleteFileAsync(item, 0, cancellationToken);
+            }
+        }
+
         public async Task DeployAppAsync(string applicationFilePath,
                                          bool includePdbs = false,
                                          CancellationToken cancellationToken = default)
@@ -425,6 +517,8 @@ namespace Meadow.CLI.Core.Devices
                 Console.WriteLine($"{applicationFilePath} not found.");
                 return;
             }
+
+            await DeleteTemporaryFiles(cancellationToken);
 
             var fi = new FileInfo(applicationFilePath);
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
