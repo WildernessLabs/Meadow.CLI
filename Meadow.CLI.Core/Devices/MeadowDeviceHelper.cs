@@ -30,6 +30,14 @@ namespace Meadow.CLI.Core.Devices
                              "Device is not initialized, missing DeviceInfo",
                              nameof(meadow));
             Logger = logger;
+
+            //sorry Pete
+            if(meadow is MeadowSerialDevice)
+            {
+                var msd = meadow as MeadowSerialDevice;
+
+                lastSerialPort = msd?.SerialPort?.PortName ?? "";
+            }
         }
 
         public MeadowDeviceInfo DeviceInfo { get; private set; }
@@ -293,6 +301,8 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.IsDeviceInitialized();
         }
 
+        string lastSerialPort { get; set; }
+
         public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
@@ -301,6 +311,16 @@ namespace Meadow.CLI.Core.Devices
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
+
+            if(string.IsNullOrWhiteSpace(lastSerialPort) == false)
+            {
+                var serialMeadow = await MeadowDeviceManager.GetMeadowForSerialPort(lastSerialPort);
+
+                if(serialMeadow != null)
+                {
+                    return;
+                }
+            }
 
             var meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
                 serialNumber,

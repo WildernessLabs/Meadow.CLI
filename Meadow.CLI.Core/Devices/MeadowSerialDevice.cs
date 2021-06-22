@@ -37,6 +37,7 @@ namespace Meadow.CLI.Core.Devices
             if (disposing)
             {
                 Logger.LogTrace("Disposing SerialPort");
+                SerialPort?.Close();
                 SerialPort?.Dispose();
             }
         }
@@ -100,6 +101,10 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
+            Console.WriteLine($"OpenSerialPort: {portName}");
+
+            Thread.Sleep(5000);
+
             // Create a new SerialPort object with default settings
             var port = new SerialPort
                        {
