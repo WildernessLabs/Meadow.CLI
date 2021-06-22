@@ -111,7 +111,7 @@ namespace Meadow.CLI.Core.Logging
             return !left.Equals(right);
         }
 
-        public EventId(int id, string name = null)
+        public EventId(int id, string name = "")
         {
             Id = id;
             Name = name;

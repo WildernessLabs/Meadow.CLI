@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Logging;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
