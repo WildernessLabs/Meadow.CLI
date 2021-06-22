@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -27,9 +28,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         // Avoid changing signature
-        public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
+        public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, IMeadowLogger? logger = null)
         {
-            logger ??= NullLogger.Instance;
+            logger ??= NullMeadowLogger.Instance;
 
             try
             {
@@ -89,7 +90,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        private static void LogUserError(bool verbose, ILogger logger)
+        private static void LogUserError(bool verbose, IMeadowLogger logger)
         {
             if (verbose)
             {
@@ -121,7 +122,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static async Task<IMeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
-            ILogger logger,
+            IMeadowLogger logger,
             int maxAttempts = 10,
             CancellationToken cancellationToken = default)
         {
@@ -189,12 +190,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
-        public static IList<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
+        public static IList<string> GetMeadowSerialPortsForOsx(IMeadowLogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
                 throw new PlatformNotSupportedException("This method is only supported on macOS");
 
-            logger ??= NullLogger.Instance;
+            logger ??= NullMeadowLogger.Instance;
             logger.LogDebug("Get Meadow Serial ports");
             var ports = new List<string>();
 
@@ -248,13 +249,13 @@ namespace Meadow.CLI.Core.DeviceManagement
             return ports;
         }
 
-        public static IList<string> GetMeadowSerialPortsForLinux(ILogger? logger = null)
+        public static IList<string> GetMeadowSerialPortsForLinux(IMeadowLogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Linux");
 
             const string devicePath = "/dev/serial/by-id";
-            logger ??= NullLogger.Instance;
+            logger ??= NullMeadowLogger.Instance;
             var psi = new ProcessStartInfo()
                       {
                           FileName = "/usr/bin/ls",

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices

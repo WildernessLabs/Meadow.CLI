@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Devices;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
@@ -23,7 +24,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         public IPEndPoint LocalEndpoint { get; private set; }
 
         private CancellationTokenSource _cancellationTokenSource;
-        private readonly ILogger _logger;
+        private readonly IMeadowLogger _logger;
         private readonly IMeadowDevice _meadow;
         private ActiveClient? _activeClient;
         private int _activeClientCount = 0;
@@ -34,8 +35,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// </summary>
         /// <param name="meadow">The <see cref="IMeadowDevice"/> to debug</param>
         /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
-        /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
-        public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger logger)
+        /// <param name="logger">The <see cref="IMeadowLogger"/> to logging state information</param>
+        public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, IMeadowLogger logger)
         {
             LocalEndpoint = localEndpoint;
             _meadow = meadow;
@@ -113,11 +114,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             private readonly CancellationTokenSource _cts;
             private readonly Task _receiveVsDebugDataTask;
             private readonly Task _receiveMeadowDebugDataTask;
-            private readonly ILogger _logger;
+            private readonly IMeadowLogger _logger;
             public bool Disposed = false;
 
             // Constructor
-            internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger logger, CancellationToken cancellationToken)
+            internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, IMeadowLogger logger, CancellationToken cancellationToken)
             {
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _logger = logger;

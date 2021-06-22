@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CredentialManagement;
 using IdentityModel.OidcClient;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 
@@ -19,9 +20,9 @@ namespace Meadow.CLI.Core.Identity
         readonly string redirectUri = "http://localhost:8877/";
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
-        private readonly ILogger _logger;
+        private readonly IMeadowLogger _logger;
 
-        public IdentityManager(ILogger logger)
+        public IdentityManager(IMeadowLogger logger)
         {
             _logger = logger;
         }

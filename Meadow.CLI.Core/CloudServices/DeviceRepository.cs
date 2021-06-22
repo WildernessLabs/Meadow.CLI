@@ -4,15 +4,15 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Identity;
-using Microsoft.Extensions.Logging;
+using Meadow.CLI.Core.Logging;
 
 namespace Meadow.CLI.Core.CloudServices
 {
     public class DeviceRepository
     {
-        private readonly ILogger _logger;
+        private readonly IMeadowLogger _logger;
 
-        public DeviceRepository(ILogger logger)
+        public DeviceRepository(IMeadowLogger logger)
         {
             _logger = logger;
         }

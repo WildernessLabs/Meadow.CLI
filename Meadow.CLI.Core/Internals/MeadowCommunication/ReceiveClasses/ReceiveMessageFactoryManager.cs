@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 using Meadow.CLI.Core.DeviceManagement;
-
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
@@ -10,8 +10,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
     public class ReceiveMessageFactoryManager
     {
         private readonly Dictionary<HcomHostRequestType, ReceiveMessageFactory> _factories;
-        private readonly ILogger _logger;
-        public ReceiveMessageFactoryManager(ILogger logger)
+        private readonly IMeadowLogger _logger;
+        public ReceiveMessageFactoryManager(IMeadowLogger logger)
         {
             _logger = logger;
             _factories = new Dictionary<HcomHostRequestType, ReceiveMessageFactory>

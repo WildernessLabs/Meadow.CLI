@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -37,7 +38,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
-        private readonly ILogger _logger;
+        private readonly IMeadowLogger _logger;
         //collapse to one and use enum
         private readonly SerialPort _serialPort;
         readonly Socket _socket;
@@ -53,20 +54,20 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         //-------------------------------------------------------------
         // Constructor
-        private MeadowSerialDataProcessor(ILogger logger)
+        private MeadowSerialDataProcessor(IMeadowLogger logger)
         {
             _cts = new CancellationTokenSource();
             _receiveMessageFactoryManager = new ReceiveMessageFactoryManager(logger);
             _logger = logger;
         }
 
-        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(SerialPort serialPort, IMeadowLogger? logger = null) : this(logger ?? new NullMeadowLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
             _dataProcessorTask = Task.Factory.StartNew(ReadSerialPortAsync, TaskCreationOptions.LongRunning);
         }
 
-        public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(Socket socket, IMeadowLogger? logger = null) : this(logger ?? new NullMeadowLogger<MeadowSerialDataProcessor>())
         {
             this._socket = socket;
             _dataProcessorTask = Task.Factory.StartNew(ReadSocketAsync, TaskCreationOptions.LongRunning);

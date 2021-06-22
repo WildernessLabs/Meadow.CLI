@@ -9,7 +9,7 @@ using LibUsbDotNet;
 using LibUsbDotNet.Main;
 
 using Meadow.CLI.Core.Exceptions;
-
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -65,9 +65,10 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlashAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlashAsync(string filename = "", UsbRegistry? device = null, IMeadowLogger? logger = null)
         {
-            logger ??= NullLogger.Instance;
+            //ToDo logger ??= NullLogger.Instance;
+
             device ??= GetDevice();
 
             // if filename isn't specified fallback to download path

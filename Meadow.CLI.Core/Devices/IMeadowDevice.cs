@@ -5,13 +5,14 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
     public interface IMeadowDevice : IDisposable
     {
-        public ILogger Logger { get; }
+        public IMeadowLogger Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; }
 

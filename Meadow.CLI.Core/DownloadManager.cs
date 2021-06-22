@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core
@@ -38,9 +39,9 @@ namespace Meadow.CLI.Core
             "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
         private static readonly HttpClient Client = new HttpClient();
-        private readonly ILogger _logger;
+        private readonly IMeadowLogger _logger;
 
-        public DownloadManager(ILogger logger)
+        public DownloadManager(IMeadowLogger logger)
         {
             _logger = logger;
         }

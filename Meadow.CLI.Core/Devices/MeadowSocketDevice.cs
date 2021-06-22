@@ -5,7 +5,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Microsoft.Extensions.Logging;
+using Meadow.CLI.Core;
+using Meadow.CLI.Core.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -14,7 +15,7 @@ namespace Meadow.CLI.Core.Devices
         private readonly AddressFamily _addressFamily;
         public readonly Socket Socket;
 
-        public MeadowSocketDevice(Socket socket, ILogger<MeadowSocketDevice>? logger = null)
+        public MeadowSocketDevice(Socket socket, IMeadowLogger<MeadowSocketDevice>? logger = null)
             : base(new MeadowSerialDataProcessor(socket), logger)
         {
             Socket = socket;

@@ -11,7 +11,7 @@ using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
-
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
@@ -21,10 +21,10 @@ namespace Meadow.CLI.Core.Devices
     {
         private IMeadowDevice _meadowDevice;
         public TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
-        public readonly ILogger Logger;
+        public readonly IMeadowLogger Logger;
         public IMeadowDevice MeadowDevice => _meadowDevice;
 
-        public MeadowDeviceHelper(IMeadowDevice meadow, ILogger logger)
+        public MeadowDeviceHelper(IMeadowDevice meadow, IMeadowLogger logger)
         {
             _meadowDevice = meadow;
             DeviceInfo = meadow.DeviceInfo ?? throw new ArgumentException(
@@ -383,7 +383,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public static async Task<string> DfuFlashAsync(string serialPortName, string osPath, ILogger logger, CancellationToken cancellationToken = default)
+        public static async Task<string> DfuFlashAsync(string serialPortName, string osPath, IMeadowLogger logger, CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
 

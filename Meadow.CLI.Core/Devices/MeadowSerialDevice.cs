@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
@@ -16,14 +17,14 @@ namespace Meadow.CLI.Core.Devices
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
-        public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
+        public MeadowSerialDevice(string serialPortName, IMeadowLogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
         }
 
         private MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
-                                   ILogger? logger = null)
+                                   IMeadowLogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
         {
             SerialPort = serialPort;

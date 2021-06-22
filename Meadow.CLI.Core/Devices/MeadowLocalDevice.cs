@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
-
+using Meadow.CLI.Core.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
@@ -18,13 +18,13 @@ namespace Meadow.CLI.Core.Devices
     {
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-        public ILogger Logger { get; }
+        public IMeadowLogger Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
         public IDictionary<string, uint> FilesOnDevice { get; } = new Dictionary<string, uint>();
 
-        protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
+        protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, IMeadowLogger? logger = null)
         {
             Logger = logger;
             DataProcessor = dataProcessor;
