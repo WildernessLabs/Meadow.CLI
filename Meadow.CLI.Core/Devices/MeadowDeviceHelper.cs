@@ -40,6 +40,11 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.GetFilesAndCrcsAsync(timeout, partition, cancellationToken);
         }
 
+        public Task<IList<string>> GetFilesAndFoldersAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.GetFilesAndFoldersAsync(timeout, cancellationToken);
+        }
+
         public Task<FileTransferResult> WriteFileAsync(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.WriteFileAsync(filename, path, timeout, cancellationToken);

@@ -16,6 +16,7 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDeviceInfo? DeviceInfo { get; }
 
         public IDictionary<string, uint> FilesOnDevice { get; }
+        public Task<IList<string>> GetFilesAndFoldersAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default);
         public Task<FileTransferResult> WriteFileAsync(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task DeleteFileAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
