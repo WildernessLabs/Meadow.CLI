@@ -80,7 +80,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             try
             {
-                while (true)
+                while (!_cts.IsCancellationRequested)
                 {
                     var segment = new ArraySegment<byte>(buffer);
                     var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
@@ -140,7 +140,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             SerialMessage? message = null;
             try
             {
-                while (true)
+                while (!_cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -191,7 +191,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             }
                         }
                     }
-                    catch (TimeoutException ex)
+                    catch (TimeoutException)
                     {
                     }
                     catch (Exception ex)
@@ -371,8 +371,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             try
             {
                 _cts.Cancel();
-                //_pipeReaderTask?.Dispose();
-                //_pipeWriterTask?.Dispose();
                 _dataProcessorTask?.Dispose();
             }
             catch (Exception ex)

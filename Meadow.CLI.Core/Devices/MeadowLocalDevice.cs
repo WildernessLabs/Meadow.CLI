@@ -320,7 +320,7 @@ namespace Meadow.CLI.Core.Devices
 
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 

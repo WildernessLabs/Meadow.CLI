@@ -257,7 +257,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             logger ??= NullLogger.Instance;
             var psi = new ProcessStartInfo()
                       {
-                          FileName = "/usr/bin/ls",
+                          FileName = "ls",
                           Arguments = $"-l {devicePath}",
                           UseShellExecute = false,
                           RedirectStandardOutput = true

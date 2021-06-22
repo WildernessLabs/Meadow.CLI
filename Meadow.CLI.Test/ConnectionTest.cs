@@ -24,7 +24,7 @@ namespace Meadow.CLI.Test
         public async Task FlashOsTest()
         {
             var cts = new CancellationTokenSource();
-            var deviceManager = new MeadowDeviceManager(NullLoggerFactory.Instance);
+            var deviceManager = new MeadowDeviceManager();
             //await deviceManager.FlashOsAsync(port, string.Empty, string.Empty, cancellationToken: cts.Token);
         }
 

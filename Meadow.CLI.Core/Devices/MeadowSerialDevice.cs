@@ -13,6 +13,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public class MeadowSerialDevice : MeadowLocalDevice
     {
+        private readonly object lck = new object();
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
@@ -37,10 +38,13 @@ namespace Meadow.CLI.Core.Devices
 
         private protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            lock (lck)
             {
-                Logger.LogTrace("Disposing SerialPort");
-                SerialPort?.Dispose();
+                if (disposing)
+                {
+                    Logger.LogTrace("Disposing SerialPort");
+                    SerialPort?.Dispose();
+                }
             }
         }
 

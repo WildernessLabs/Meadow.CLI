@@ -225,7 +225,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.QspiInitAsync(value, cancellationToken);
         }
 
-        public async Task DeployAppAsync(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default)
+        public async Task DeployAppAsync(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default)
         {
             await MonoDisableAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -247,7 +247,13 @@ namespace Meadow.CLI.Core.Devices
                 cancellationToken);
         }
 
-        public async Task StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
+        /// <summary>
+        /// Start a session to debug an application on the Meadow
+        /// </summary>
+        /// <param name="port">The port to use for the debugging proxy</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> for cancelling the operation</param>
+        /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
+        public async Task<DebuggingServer> StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
         {
             await MonoEnableAsync(cancellationToken);
 
@@ -263,8 +269,8 @@ namespace Meadow.CLI.Core.Devices
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
-
             await debuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
+            return debuggingServer;
         }
 
         public Task<string?> GetInitialBytesFromFile(string fileName,
@@ -463,7 +469,13 @@ namespace Meadow.CLI.Core.Devices
 
         private void Dispose(bool disposing)
         {
-            _meadowDevice?.Dispose();
+            lock (Logger)
+            {
+                if (disposing)
+                {
+                    _meadowDevice?.Dispose();
+                }
+            }
         }
 
         public void Dispose()
