@@ -34,7 +34,9 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 IMeadowDevice? meadow = null;
+                
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
+
                 var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
                           .ConfigureAwait(false);
 

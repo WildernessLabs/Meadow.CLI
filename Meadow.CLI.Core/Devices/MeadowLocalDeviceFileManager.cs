@@ -626,6 +626,9 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 Logger.LogInformation("Writing file: {file}", file.Key);
+
+                await Task.Delay(250).ConfigureAwait(false);
+
                 await WriteFileAsync(
                         file.Key,
                         fi.DirectoryName,

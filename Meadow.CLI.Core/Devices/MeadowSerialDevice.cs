@@ -122,8 +122,22 @@ namespace Meadow.CLI.Core.Devices
             
             if (port.IsOpen)
                 port.Close();
-            port.Open();
-            port.BaseStream.ReadTimeout = 0;
+
+            int retries = 20;
+
+            for(int i = 0; i < retries; i++)
+            {
+                try
+                {
+                    port.Open();
+                    port.BaseStream.ReadTimeout = 0;
+                    break;
+                }
+                catch
+                {
+                    Thread.Sleep(500);
+                }
+            }
 
             return port;
         }
