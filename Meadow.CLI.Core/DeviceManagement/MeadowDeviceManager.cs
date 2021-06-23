@@ -37,7 +37,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
 
-                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
+                var completedTask = await Task.WhenAny(createTask, Task.Delay(10000))
                           .ConfigureAwait(false);
 
                 if (completedTask != createTask || meadow == null)
@@ -56,7 +56,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 await meadow.InitializeAsync(CancellationToken.None);
-                
+
                 return meadow;
             }
             catch (FileNotFoundException fnfEx)

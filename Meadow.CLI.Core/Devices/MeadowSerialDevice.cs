@@ -101,10 +101,6 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
-            Console.WriteLine($"OpenSerialPort: {portName}");
-
-            Thread.Sleep(5000);
-
             // Create a new SerialPort object with default settings
             var port = new SerialPort
                        {
@@ -123,12 +119,12 @@ namespace Meadow.CLI.Core.Devices
             if (port.IsOpen)
                 port.Close();
 
-            int retries = 20;
+            int retries = 15;
 
             for(int i = 0; i < retries; i++)
             {
                 try
-                {
+                {   //on Windows the port can be slow to release after disposing 
                     port.Open();
                     port.BaseStream.ReadTimeout = 0;
                     break;
