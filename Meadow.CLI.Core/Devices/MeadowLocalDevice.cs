@@ -193,6 +193,15 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
+        public Task Uart1Trace(CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
         public Task TraceDisableAsync(CancellationToken cancellationToken = default)
         {
             var command =
@@ -211,7 +220,56 @@ namespace Meadow.CLI.Core.Devices
 
             return SendCommandAsync(command, cancellationToken);
         }
-        
+
+        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task Uart1Apps(CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
         public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default)
         {
             var command =

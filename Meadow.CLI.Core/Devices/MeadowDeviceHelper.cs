@@ -77,9 +77,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.RenewFileSystemAsync(cancellationToken);
         }
 
-        public async Task UpdateMonoRuntimeAsync(string fileName,
-                                           uint partition = 0,
-                                           CancellationToken cancellationToken = default)
+        public async Task UpdateMonoRuntimeAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Starting Mono Runtime Update");
             Logger.LogDebug("Calling Mono Disable");
@@ -95,10 +93,7 @@ namespace Meadow.CLI.Core.Devices
             await _meadowDevice.UpdateMonoRuntimeAsync(fileName, partition, cancellationToken).ConfigureAwait(false);
         }
 
-        public Task WriteFileToEspFlashAsync(string fileName,
-                                             uint partition = 0,
-                                             string? mcuDestAddress = null,
-                                             CancellationToken cancellationToken = default)
+        public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.WriteFileToEspFlashAsync(
                 fileName,
@@ -112,15 +107,12 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.FlashEspAsync(sourcePath, cancellationToken);
         }
 
-        public Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout,
-                                                         CancellationToken cancellationToken =
-                                                             default)
+        public Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.GetDeviceInfoAsync(timeout, cancellationToken);
         }
 
-        public Task<string?> GetDeviceNameAsync(TimeSpan timeout,
-                                                CancellationToken cancellationToken = default)
+        public Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.GetDeviceNameAsync(timeout, cancellationToken);
         }
@@ -204,8 +196,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.TraceEnableAsync(cancellationToken);
         }
 
-        public Task SetTraceLevelAsync(uint traceLevel,
-                                       CancellationToken cancellationToken = default)
+        public Task SetTraceLevelAsync(uint traceLevel, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.SetTraceLevelAsync(traceLevel, cancellationToken);
         }
@@ -213,6 +204,36 @@ namespace Meadow.CLI.Core.Devices
         public Task TraceDisableAsync(CancellationToken cancellationToken = default)
         {
             return _meadowDevice.TraceDisableAsync(cancellationToken);
+        }
+
+        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.SetDeveloper1(userData, cancellationToken);
+        }
+
+        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.SetDeveloper2(userData, cancellationToken);
+        }
+
+        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.SetDeveloper3(userData, cancellationToken);
+        }
+
+        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.SetDeveloper4(userData, cancellationToken);
+        }
+
+        public Task Uart1Apps(CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.Uart1Apps(cancellationToken);
+        }
+
+        public Task Uart1Trace(CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.Uart1Trace(cancellationToken);
         }
 
         public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default)
@@ -241,10 +262,7 @@ namespace Meadow.CLI.Core.Devices
                 .ConfigureAwait(false);
         }
 
-        public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
-                                                       uint userData,
-                                                       CancellationToken cancellationToken =
-                                                           default)
+        public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.ForwardVisualStudioDataToMonoAsync(
                 debuggerData,
@@ -278,9 +296,7 @@ namespace Meadow.CLI.Core.Devices
             return debuggingServer;
         }
 
-        public Task<string?> GetInitialBytesFromFile(string fileName,
-                                                     uint partition = 0,
-                                                     CancellationToken cancellationToken = default)
+        public Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.GetInitialBytesFromFile(fileName, partition, cancellationToken);
         }

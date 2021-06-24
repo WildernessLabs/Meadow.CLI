@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
@@ -39,6 +37,12 @@ namespace Meadow.CLI.Core.Devices
         public Task NshDisableAsync(CancellationToken cancellationToken = default);
         public Task TraceEnableAsync(CancellationToken cancellationToken = default);
         public Task SetTraceLevelAsync(uint traceLevel, CancellationToken cancellationToken = default);
+        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default);
+        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default);
+        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default);
+        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default);
+        public Task Uart1Apps(CancellationToken cancellationToken = default);
+        public Task Uart1Trace(CancellationToken cancellationToken = default);
         public Task TraceDisableAsync(CancellationToken cancellationToken = default);
         public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default);
         public Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
