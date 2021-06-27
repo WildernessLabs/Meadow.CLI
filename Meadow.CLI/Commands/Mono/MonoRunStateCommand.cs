@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono state", Description = "Returns whether or not mono is enabled or disabled on the Meadow device.")]
+    [Command("mono state", Description = "Returns whether or not mono is enabled or disabled on the Meadow device")]
     public class MonoRunStateCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoRunStateCommand> _logger;
