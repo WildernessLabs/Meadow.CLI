@@ -368,8 +368,8 @@ namespace Meadow.CLI.Core.Devices
                     Logger.LogInformation("Skipping ESP flash");
                 }
 
-                Logger.LogInformation("Enabling Mono and Resetting");
-                await MonoEnableAsync(cancellationToken);
+                //Logger.LogInformation("Enabling Mono and Resetting");
+                //await MonoEnableAsync(cancellationToken);
 
                 // This is to ensure the ESP info has updated in HCOM on the Meadow
                 await Task.Delay(2000, cancellationToken)
