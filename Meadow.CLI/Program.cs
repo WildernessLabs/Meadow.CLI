@@ -48,11 +48,16 @@ namespace Meadow.CLI
             services.AddSingleton<MeadowDeviceManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
-            return await new CliApplicationBuilder().AddCommandsFromThisAssembly()
+            await new CliApplicationBuilder().AddCommandsFromThisAssembly()
                                                     .UseTypeActivator(serviceProvider.GetService)
                                                     .SetExecutableName("meadow")
                                                     .Build()
                                                     .RunAsync();
+
+            Console.WriteLine("Done!");
+
+            Environment.Exit(0);
+            return 0;
         }
 
         private static void AddCommandsAsServices(IServiceCollection services)

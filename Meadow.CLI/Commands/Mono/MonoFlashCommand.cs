@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono flash", Description = "Uploads the mono runtime file to the Meadow device. Does NOT move it into place.")]
+    [Command("mono flash", Description = "Uploads the mono runtime file to the Meadow device. Does NOT move it into place")]
     public class MonoFlashCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoRunStateCommand> _logger;

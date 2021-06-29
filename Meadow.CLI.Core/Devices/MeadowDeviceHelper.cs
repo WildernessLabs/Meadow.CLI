@@ -319,16 +319,32 @@ namespace Meadow.CLI.Core.Devices
         public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
+            string serialPort = string.Empty;
+            IMeadowDevice meadow = null;
+
+            if(_meadowDevice is MeadowSerialDevice)
+            {
+                serialPort = (_meadowDevice as MeadowSerialDevice).SerialPort.PortName;
+            }
 
             _meadowDevice?.Dispose();
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            var meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
+            if(String.IsNullOrEmpty(serialPort) == false)
+            {   //try the old port first
+                meadow = new MeadowSerialDevice(serialPort, Logger);
+            }
+            
+            if(meadow == null)
+            {
+                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
                 serialNumber,
                 Logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
@@ -384,8 +400,8 @@ namespace Meadow.CLI.Core.Devices
                     Logger.LogInformation("Skipping ESP flash");
                 }
 
-                Logger.LogInformation("Enabling Mono and Resetting");
-                await MonoEnableAsync(cancellationToken);
+                //Logger.LogInformation("Enabling Mono and Resetting");
+                //await MonoEnableAsync(cancellationToken);
 
                 // This is to ensure the ESP info has updated in HCOM on the Meadow
                 await Task.Delay(2000, cancellationToken)

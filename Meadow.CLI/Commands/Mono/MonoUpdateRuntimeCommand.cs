@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono update rt", Description = "Uploads the mono runtime files to the Meadow device and moves them into place.")]
+    [Command("mono update rt", Description = "Uploads the mono runtime files to the Meadow device and moves them into place")]
     public class MonoUpdateRuntimeCommand : MeadowSerialCommand
     {
-        [CommandOption("filename",'f', Description = "The local name of the mono runtime file. Default is empty.")]
+        [CommandOption("filename",'f', Description = "The local name of the mono runtime file - Default is empty")]
         public string Filename {get; init;}
 
         private readonly ILogger<MonoRunStateCommand> _logger;

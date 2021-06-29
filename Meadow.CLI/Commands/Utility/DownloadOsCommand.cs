@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Utility
 {
-    [Command("download os", Description = "Downloads the latest Meadow.OS to the host PC.")]
+    [Command("download os", Description = "Downloads the latest Meadow.OS to the host PC")]
     public class DownloadOsCommand : MeadowCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
