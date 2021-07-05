@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Meadow.CLI.Core.Auth
+namespace Meadow.CLI.Core.Identity
 {
 	static class Keychain
 	{

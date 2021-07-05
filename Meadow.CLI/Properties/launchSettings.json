@@ -2,71 +2,67 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "--Download"
+      "commandLineArgs": "download os"
     },
     "Login": {
       "commandName": "Project",
-      "commandLineArgs": "--Login"
+      "commandLineArgs": "cloud login"
     },
     "Logout": {
       "commandName": "Project",
-      "commandLineArgs": "--Logout"
+      "commandLineArgs": "cloud logout"
+    },
+    "StartDebugging": {
+      "commandName": "Project",
+      "commandLineArgs": "debug"
     },
     "FlashOS": {
       "commandName": "Project",
-      "commandLineArgs": "--FlashOS"
+      "commandLineArgs": "flash os"
     },
     "EraseFlash": {
       "commandName": "Project",
-      "commandLineArgs": "--EraseFlash"
+      "commandLineArgs": "flash erash"
     },
     "MonoUpdateRt": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoUpdateRt"
+      "commandLineArgs": "mono update rt"
     },
     "FlashEsp": {
       "commandName": "Project",
-      "commandLineArgs": "--FlashEsp"
+      "commandLineArgs": "flash esp"
     },
     "MonoDisable": {
       "commandName": "Project",
-      "commandLineArgs": "--MonoDisable"
+      "commandLineArgs": "mono disable"
     },
     "MonoEnable": {
       "commandName": "Project",
-      "commandLineArgs": "--monoenable --keepalive"
+      "commandLineArgs": "mono enable"
     },
     "GetDeviceInfo": {
       "commandName": "Project",
-      "commandLineArgs": "--GetDeviceInfo"
+      "commandLineArgs": "device info"
     },
     "ListFiles": {
       "commandName": "Project",
-      "commandLineArgs": "--ListFiles"
-    },
-    "SerialPort": {
-      "commandName": "Project",
-      "commandLineArgs": "--SerialPort COM14"
-    },
-    "KeepAlive": {
-      "commandName": "Project",
-      "commandLineArgs": "--KeepAlive"
+      "commandLineArgs": "file list -i"
     },
     "DeployApp": {
       "commandName": "Project",
-      "commandLineArgs": "--DeployApp --File C:\\Users\\brikim\\source\\repos\\MeadowApplication29\\MeadowApplication29\\bin\\Debug\\net472\\App.exe"
+      "commandLineArgs": "app deploy -f C:\\Users\\brikim\\source\\repos\\MeadowApplication29\\MeadowApplication29\\bin\\Debug\\net472\\App.exe"
     },
     "DeleteFile": {
       "commandName": "Project",
-      "commandLineArgs": "--DeleteFile --TargetFileName App.exe --SerialPort COM4"
+      "commandLineArgs": "file delete -f App.exe"
     },
     "WriteFile": {
       "commandName": "Project",
-      "commandLineArgs": "--WriteFile --File App.exe"
+      "commandLineArgs": "file write -f App.exe"
     },
     "InstallDfuUtil": {
       "commandName": "Project",
-      "commandLineArgs": "--InstallDfuUtil"
+      "commandLineArgs": "install dfu-util"
     },
     "RegisterDevice": {
       "commandName": "Project",
@@ -74,11 +70,11 @@
     },
     "Version": {
       "commandName": "Project",
-      "commandLineArgs": "--Version"
+      "commandLineArgs": "version"
     },
     "Help": {
       "commandName": "Project",
-      "commandLineArgs": "--Help"
+      "commandLineArgs": "-h"
     }
   }
 }

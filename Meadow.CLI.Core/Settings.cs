@@ -4,13 +4,12 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
-namespace Meadow.CLI
+namespace Meadow.CLI.Core
 {
     public static class SettingsManager
     {
-        readonly static string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "clisettings.json");
+        private static readonly string Path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "clisettings.json");
 
         public static string GetSetting(Setting setting)
         {
@@ -34,14 +33,14 @@ namespace Meadow.CLI
                 settings.Add(setting.ToString(), value);
             }
 
-            FileInfo fi = new FileInfo(path);
+            FileInfo fi = new FileInfo(Path);
             if (!Directory.Exists(fi.Directory.FullName))
             {
                 Directory.CreateDirectory(fi.Directory.FullName);
             }
 
             var json = JsonSerializer.Serialize(settings);
-            File.WriteAllText(path, json);
+            File.WriteAllText(Path, json);
         }
 
         public static string GetAppSetting(string name)
@@ -58,18 +57,16 @@ namespace Meadow.CLI
 
         private static Settings GetSettings()
         {
-            Settings settings;
-
-            if (File.Exists(path))
+            if (File.Exists(Path))
             {
-                var json = File.ReadAllText(path); 
-                settings = JsonSerializer.Deserialize<Settings>(json);
+                var json = File.ReadAllText(Path); 
+                var settings = JsonSerializer.Deserialize<Settings>(json);
+                return settings ?? new Settings();
             }
             else
             {
-                settings = new Settings();
+                return new Settings();
             }
-            return settings;
         }
     }
 

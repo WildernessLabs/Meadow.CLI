@@ -1,18 +1,17 @@
-﻿using System;
-using Mono.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
-using System.Collections.Generic;
+using Mono.Collections.Generic;
 
-namespace MeadowCLI.DeviceManagement
+namespace Meadow.CLI.Core.DeviceManagement
 {
     //https://github.com/xamarin/xamarin-macios/blob/main/tools/mtouch/Assembly.mtouch.cs#L54
 
     public static class AssemblyManager
     {
-        static List<string> dependencyMap = new List<string>();
-        static string folderPath;
-        static string fileName;
+        private static readonly List<string> dependencyMap = new List<string>();
+        private static string? folderPath;
+        private static string? fileName;
 
         public static List<string> GetDependencies(string file, string path)
         {
@@ -29,14 +28,15 @@ namespace MeadowCLI.DeviceManagement
             return dependencies;
         }
 
-        static Collection<AssemblyNameReference> GetAssemblyNameReferences(string fileName, string path = null)
+        static Collection<AssemblyNameReference> GetAssemblyNameReferences(string fileName, string? path = null)
         {
             if (!string.IsNullOrWhiteSpace(path))
             {
-                fileName = Path.Combine(path, fileName);
+                fileName = Path.Combine(path!, fileName);
             }
 
-            if (Path.GetExtension(fileName) != ".exe")
+            if (Path.GetExtension(fileName) != ".exe" &&
+                Path.GetExtension(fileName) != ".dll")
             {
                 if (fileName.Contains(".dll") == false)
                 {
@@ -46,9 +46,8 @@ namespace MeadowCLI.DeviceManagement
 
             Collection<AssemblyNameReference> references;
 
-            if (File.Exists(fileName) == false)
+            if(File.Exists(fileName) == false)
             {
-                Console.WriteLine($"Could not find {fileName}");
                 return null;
             }
 
@@ -68,9 +67,7 @@ namespace MeadowCLI.DeviceManagement
                     var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
 
                     if (namedRefs == null)
-                    {
                         continue;
-                    }
 
                     dependencyMap.Add(ar.Name);
 
