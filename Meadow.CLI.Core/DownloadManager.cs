@@ -37,7 +37,10 @@ namespace Meadow.CLI.Core
         public static readonly string UpdateCommand =
             "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
-        private static readonly HttpClient Client = new HttpClient();
+        private static readonly HttpClient Client = new HttpClient()
+                                                    {
+                                                        Timeout = TimeSpan.FromMinutes(5)
+                                                    };
         private readonly ILogger _logger;
 
         public DownloadManager(ILogger logger)
@@ -195,7 +198,7 @@ namespace Meadow.CLI.Core
         {
             _logger.LogDebug("Downloading latest firmware");
             using var firmwareRequest = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var firmwareResponse = await Client.SendAsync(firmwareRequest, cancellationToken)
+            using var firmwareResponse = await Client.SendAsync(firmwareRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                                                      .ConfigureAwait(false);
 
             firmwareResponse.EnsureSuccessStatusCode();
@@ -210,7 +213,7 @@ namespace Meadow.CLI.Core
 
             _logger.LogDebug("Downloading latest version file");
             using var versionRequest = new HttpRequestMessage(HttpMethod.Get, _versionCheckUrl);
-            using var versionResponse = await Client.SendAsync(versionRequest, cancellationToken)
+            using var versionResponse = await Client.SendAsync(versionRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                                                     .ConfigureAwait(false);
 
             versionResponse.EnsureSuccessStatusCode();
