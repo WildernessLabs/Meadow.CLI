@@ -108,9 +108,11 @@ namespace Meadow.CLI.Core
                 if (response.IsSuccessStatusCode == false)
                     throw new Exception("Failed to download dfu-util");
 
-                using var fs = File.OpenWrite(Path.Combine(WildernessLabsTemp, downloadFileName));
-                await response.Content.CopyToAsync(fs)
-                              .ConfigureAwait(false);
+                using (var fs = File.OpenWrite(Path.Combine(WildernessLabsTemp, downloadFileName)))
+                {
+                    await response.Content.CopyToAsync(fs)
+                                  .ConfigureAwait(false);
+                }
 
                 ZipFile.ExtractToDirectory(
                     Path.Combine(WildernessLabsTemp, downloadFileName),
