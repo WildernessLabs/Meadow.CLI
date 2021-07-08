@@ -102,7 +102,7 @@ namespace Meadow.CLI.Core
                 const string downloadUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-0.10-binaries.zip";
 
                 var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/", StringComparison.Ordinal) + 1);
-                var response = await Client.GetAsync(downloadUrl, cancellationToken)
+                var response = await Client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                                            .ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode == false)
