@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -319,12 +320,12 @@ namespace Meadow.CLI.Core.Devices
         public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
-            string serialPort = string.Empty;
-            IMeadowDevice meadow = null;
+            string? serialPort = null;
+            IMeadowDevice? meadow = null;
 
-            if(_meadowDevice is MeadowSerialDevice)
+            if(_meadowDevice is MeadowSerialDevice device)
             {
-                serialPort = (_meadowDevice as MeadowSerialDevice).SerialPort.PortName;
+                serialPort = device.SerialPort?.PortName;
             }
 
             _meadowDevice?.Dispose();
@@ -332,18 +333,17 @@ namespace Meadow.CLI.Core.Devices
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
 
-            if(String.IsNullOrEmpty(serialPort) == false)
-            {   //try the old port first
-                meadow = new MeadowSerialDevice(serialPort, Logger);
-            }
-            
-            if(meadow == null)
+            //try the old port first, if we still have it
+            if (string.IsNullOrWhiteSpace(serialPort) == false)
             {
-                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
-                serialNumber,
-                Logger,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(serialPort!, false, Logger);
             }
+
+            meadow ??= await MeadowDeviceManager.FindMeadowBySerialNumber(
+                                                    serialNumber,
+                                                    Logger,
+                                                    cancellationToken: cancellationToken)
+                                                .ConfigureAwait(false);
             
 
             await Task.Delay(1000, cancellationToken)

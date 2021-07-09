@@ -160,8 +160,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                                 unauthorizedAccessException,
                                 "This error can be safely ignored.");
                         }
-                        logger.LogError(unauthorizedAccessException, "An unknown error has occurred while finding meadow");
-                        throw;
+                        else
+                        {
+                            logger.LogError(
+                                unauthorizedAccessException,
+                                "An unknown error has occurred while finding meadow");
+
+                            throw;
+                        }
                     }
                     catch (IOException ioException)
                     {
