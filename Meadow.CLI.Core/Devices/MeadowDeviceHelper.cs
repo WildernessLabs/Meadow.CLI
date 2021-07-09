@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,9 +45,9 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.GetFilesAndFoldersAsync(timeout, cancellationToken);
         }
 
-        public Task<FileTransferResult> WriteFileAsync(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<FileTransferResult> WriteFileAsync(string sourceFileName, string destinationFileName, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.WriteFileAsync(filename, path, timeout, cancellationToken);
+            return _meadowDevice.WriteFileAsync(sourceFileName, destinationFileName, timeout, cancellationToken);
         }
 
         public Task DeleteFileAsync(string fileName,

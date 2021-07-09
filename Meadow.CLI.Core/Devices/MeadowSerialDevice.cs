@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Microsoft.Extensions.Logging;
