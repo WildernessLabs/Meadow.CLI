@@ -78,7 +78,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             if (!File.Exists(filename))
             {
-                logger.LogError("Please specify valid --File or --Download latest");
+                logger.LogError("Please specify valid --File or download the latest with: meadow download os");
                 return false;
             }
             else
@@ -95,7 +95,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow install dfu-util");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
@@ -111,7 +111,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    logger.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
