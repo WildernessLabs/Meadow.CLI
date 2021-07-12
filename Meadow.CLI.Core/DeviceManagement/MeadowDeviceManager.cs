@@ -113,10 +113,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 var ports = SerialPort.GetPortNames();
 
-                if(ports.Contains("COM1"))
-                {
-                    ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
-                }
+                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
 
                 return ports;
             }

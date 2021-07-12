@@ -60,10 +60,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             IMeadowDevice meadow = null;
 
-            if(OperatingSystem.IsWindows())
-            {
-                await Task.Delay(2000);
-            }
+            await Task.Delay(2000).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(SerialPortName) == false)
             {
