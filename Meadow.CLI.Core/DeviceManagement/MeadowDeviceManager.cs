@@ -111,7 +111,14 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return SerialPort.GetPortNames();
+                var ports = SerialPort.GetPortNames();
+
+                if(ports.Contains("COM1"))
+                {
+                    ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+                }
+
+                return ports;
             }
             else
             {

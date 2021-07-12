@@ -117,8 +117,22 @@ namespace Meadow.CLI.Core.Devices
             
             if (port.IsOpen)
                 port.Close();
-            port.Open();
-            port.BaseStream.ReadTimeout = 0;
+
+            int retries = 15;
+
+            for (int i = 0; i < retries; i++)
+            {
+                try
+                {   //on Windows the port can be slow to release after disposing 
+                    port.Open();
+                    port.BaseStream.ReadTimeout = 0;
+                    break;
+                }
+                catch
+                {
+                    Thread.Sleep(500);
+                }
+            }
 
             return port;
         }
