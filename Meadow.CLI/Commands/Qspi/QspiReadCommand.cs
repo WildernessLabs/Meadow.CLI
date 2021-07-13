@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -14,8 +15,8 @@ namespace Meadow.CLI.Commands.Qspi
         [CommandOption("value",'v', Description = "The QSPI Value to read", IsRequired = true)]
         public int Value {get; init;}
 
-        public QspiReadCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public QspiReadCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<QspiReadCommand>();
         }

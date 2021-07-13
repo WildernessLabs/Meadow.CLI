@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -33,9 +34,8 @@ namespace Meadow.CLI.Commands.Files
 
         private readonly ILogger<WritesFileCommand> _logger;
 
-        public WritesFileCommand(ILoggerFactory loggerFactory,
-                                 MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public WritesFileCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<WritesFileCommand>();
         }

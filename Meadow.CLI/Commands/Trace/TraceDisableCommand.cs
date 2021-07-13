@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +11,9 @@ namespace Meadow.CLI.Commands.Trace
     public class TraceDisableCommand : MeadowSerialCommand
     {
         private readonly ILogger<TraceDisableCommand> _logger;
-        public TraceDisableCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+
+        public TraceDisableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<TraceDisableCommand>();
         }
