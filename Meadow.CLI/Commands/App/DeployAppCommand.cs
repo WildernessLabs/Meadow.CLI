@@ -30,6 +30,8 @@ namespace Meadow.CLI.Commands.App
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
+            await DownloadManager.DownloadLatestAsync().ConfigureAwait(false);
+
             await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
                         .ConfigureAwait(false);
         }
