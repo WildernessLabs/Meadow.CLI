@@ -75,6 +75,10 @@
     "Help": {
       "commandName": "Project",
       "commandLineArgs": "-h"
+    },
+    "ListPorts": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
     }
   }
 }

@@ -42,9 +42,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             };
 
-            var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
                     .WithResponseHandler(handler)
                     .Build();
 
@@ -80,9 +78,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             };
 
-            var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
                     .WithResponseHandler(handler)
                     .WithUserData((uint)partition)
                     .Build();
@@ -553,10 +549,7 @@ namespace Meadow.CLI.Core.Devices
             var extensions = new List<string>
                              { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
 
-            var paths = Directory.EnumerateFiles(
-                                     fi.DirectoryName,
-                                     "*.*",
-                                     SearchOption.TopDirectoryOnly)
+            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
                                  .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
