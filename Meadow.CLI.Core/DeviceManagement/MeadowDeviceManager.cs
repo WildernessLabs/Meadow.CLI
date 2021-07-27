@@ -254,9 +254,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                     int startIndex = line.IndexOf("/");
                     int endIndex = line.IndexOf("\"", startIndex + 1);
                     var port = line.Substring(startIndex, endIndex - startIndex);
-                    logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, null);
+                    var serialNumberStart = port.LastIndexOf("m") + 1;
+                    var serialNumber = port.Substring(serialNumberStart);
 
-                    ports.Add(new MeadowDeviceEntity(port, null));
+                    logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, serialNumber);
+                    ports.Add(new MeadowDeviceEntity(port, serialNumber));
                     foundMeadow = false;
                 }
             }
