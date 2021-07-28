@@ -18,13 +18,16 @@ namespace Meadow.CLI.Commands.Mono
             _logger = LoggerFactory.CreateLogger<MonoEnableCommand>();
         }
 
+        [CommandOption("force",'f', Description = "Send the Mono Enable Command even if Mono is already enabled")]
+        public bool Force { get; init; }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             await base.ExecuteAsync(console);
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoEnableAsync(cancellationToken)
+            await Meadow.MonoEnableAsync(Force, cancellationToken)
                         .ConfigureAwait(false);
             _logger.LogInformation("Mono Enabled Successfully");
         }
