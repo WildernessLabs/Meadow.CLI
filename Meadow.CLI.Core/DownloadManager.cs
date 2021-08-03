@@ -7,6 +7,9 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Meadow.CLI.Core.Common;
+
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core
@@ -38,9 +41,9 @@ namespace Meadow.CLI.Core
             "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
         private static readonly HttpClient Client = new HttpClient()
-                                                    {
-                                                        Timeout = TimeSpan.FromMinutes(5)
-                                                    };
+        {
+            Timeout = TimeSpan.FromMinutes(5)
+        };
         private readonly ILogger _logger;
 
         public DownloadManager(ILoggerFactory loggerFactory)
@@ -50,7 +53,10 @@ namespace Meadow.CLI.Core
 
         public async Task DownloadLatestAsync()
         {
-            var payload = await Client.GetStringAsync(_versionCheckUrl);
+            _logger.LogInformation("Downloading latest version file");
+            var versionCheckFile = await DownloadFileAsync(new Uri(_versionCheckUrl));
+
+            var payload = File.ReadAllText(versionCheckFile);
             var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
             if (release == null)
             {
@@ -78,11 +84,14 @@ namespace Meadow.CLI.Core
 
             Directory.CreateDirectory(FirmwareDownloadsFilePath);
 
-            await DownloadFile(new Uri(release.DownloadURL));
-            await DownloadFile(new Uri(release.NetworkDownloadURL));
+            _logger.LogInformation("Downloading latest MCU firmware");
+            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL));
+
+            _logger.LogInformation("Downloading latest ESP32 firmware");
+            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL));
 
             _logger.LogInformation(
-                $"Download and extracted OS version {release.Version} to: {FirmwareDownloadsFilePath}");
+                $"Downloaded and extracted OS version {release.Version} to: {FirmwareDownloadsFilePath}");
         }
 
         public async Task InstallDfuUtilAsync(bool is64Bit = true,
@@ -108,10 +117,11 @@ namespace Meadow.CLI.Core
                 if (response.IsSuccessStatusCode == false)
                     throw new Exception("Failed to download dfu-util");
 
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var downloadFileStream = new DownloadFileStream(stream, _logger))
                 using (var fs = File.OpenWrite(Path.Combine(WildernessLabsTemp, downloadFileName)))
                 {
-                    await response.Content.CopyToAsync(fs)
-                                  .ConfigureAwait(false);
+                    await downloadFileStream.CopyToAsync(fs).ConfigureAwait(false);
                 }
 
                 ZipFile.ExtractToDirectory(
@@ -133,10 +143,10 @@ namespace Meadow.CLI.Core
                                         Environment.SpecialFolder.SystemX86);
 
                 File.Copy(dfuUtilExe.FullName, Path.Combine(targetDir, dfuUtilExe.Name), true);
-                File.Copy(libUsbDll.FullName,  Path.Combine(targetDir, libUsbDll.Name),  true);
+                File.Copy(libUsbDll.FullName, Path.Combine(targetDir, libUsbDll.Name), true);
 
                 // clean up from previous version
-                var dfuPath = Path.Combine(@"C:\Windows\System",    dfuUtilExe.Name);
+                var dfuPath = Path.Combine(@"C:\Windows\System", dfuUtilExe.Name);
                 var libUsbPath = Path.Combine(@"C:\Windows\System", libUsbDll.Name);
                 if (File.Exists(dfuPath))
                 {
@@ -195,40 +205,28 @@ namespace Meadow.CLI.Core
             return (false, string.Empty, string.Empty);
         }
 
-        private async Task DownloadFile(Uri uri, CancellationToken cancellationToken = default)
+        private async Task<string> DownloadFileAsync(Uri uri, CancellationToken cancellationToken = default)
         {
-            _logger.LogDebug("Downloading latest firmware");
-            using var firmwareRequest = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var firmwareResponse = await Client.SendAsync(firmwareRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                                                      .ConfigureAwait(false);
 
-            firmwareResponse.EnsureSuccessStatusCode();
-            
+            response.EnsureSuccessStatusCode();
+
             var downloadFileName = Path.GetTempFileName();
-            _logger.LogDebug("Copying firmware to temp file {filename}", downloadFileName);
+            _logger.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
+            using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            using (var downloadFileStream = new DownloadFileStream(stream, _logger))
             using (var firmwareFile = File.OpenWrite(downloadFileName))
             {
-                await firmwareResponse.Content.CopyToAsync(firmwareFile)
-                                      .ConfigureAwait(false);
+                await downloadFileStream.CopyToAsync(firmwareFile).ConfigureAwait(false);
             }
+            return downloadFileName;
+        }
 
-            _logger.LogDebug("Downloading latest version file");
-            using var versionRequest = new HttpRequestMessage(HttpMethod.Get, _versionCheckUrl);
-            using var versionResponse = await Client.SendAsync(versionRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                                                    .ConfigureAwait(false);
-
-            versionResponse.EnsureSuccessStatusCode();
-
-            var versionFileName = Path.Combine(FirmwareDownloadsFilePath, VersionCheckFile);
-            
-            _logger.LogDebug("Copying version file to {filename}", versionFileName);
-            using (var versionFile =
-                File.OpenWrite(versionFileName))
-            {
-
-                await versionResponse.Content.CopyToAsync(versionFile)
-                                     .ConfigureAwait(false);
-            }
+        private async Task DownloadAndExtractFileAsync(Uri uri, CancellationToken cancellationToken = default)
+        {
+            var downloadFileName = await DownloadFileAsync(uri, cancellationToken).ConfigureAwait(false);
 
             _logger.LogDebug("Extracting firmware to {path}", FirmwareDownloadsFilePath);
             ZipFile.ExtractToDirectory(
