@@ -556,6 +556,11 @@ namespace Meadow.CLI.Core.Devices
 
             async Task AddFile(string file, bool includePdbs)
             {
+                if(files.ContainsKey(Path.GetFileName(file)))
+                {
+                    return;
+                }
+
                 using FileStream fs = File.Open(file, FileMode.Open);
                 var len = (int)fs.Length;
                 var bytes = new byte[len];
@@ -567,6 +572,7 @@ namespace Meadow.CLI.Core.Devices
 
                 Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
                 files.Add(Path.GetFileName(file), crc);
+
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
