@@ -13,14 +13,14 @@ namespace Meadow.CLI.Core.Devices
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
-        public MeadowSerialDevice(string serialPortName, IMeadowLogger? logger = null)
+        public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
         }
 
         private MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
-                                   IMeadowLogger? logger = null)
+                                   ILogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
         {
             SerialPort = serialPort;
@@ -37,7 +37,6 @@ namespace Meadow.CLI.Core.Devices
             if (disposing)
             {
                 Logger.LogTrace("Disposing SerialPort");
-                SerialPort?.Close();
                 SerialPort?.Dispose();
             }
         }

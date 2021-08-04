@@ -8,11 +8,11 @@ namespace Meadow.CLI.Core.Logging
     /// <summary>
     /// Minimalistic logger that does nothing.
     /// </summary>
-    public class NullMeadowLogger : IMeadowLogger
+    public class NullLogger : ILogger
     {
-        public static NullMeadowLogger Instance { get; } = new NullMeadowLogger();
+        public static NullLogger Instance { get; } = new NullLogger();
 
-        private NullMeadowLogger()
+        private NullLogger()
         {
         }
 
@@ -37,9 +37,9 @@ namespace Meadow.CLI.Core.Logging
     /// <summary>
     /// Minimalistic logger that does nothing.
     /// </summary>
-    public class NullMeadowLogger<T> : IMeadowLogger<T>
+    public class NullLogger<T> : ILogger<T>
     {
-        public static readonly NullMeadowLogger<T> Instance = new NullMeadowLogger<T>();
+        public static readonly NullLogger<T> Instance = new NullLogger<T>();
 
         /// <inheritdoc />
         public IDisposable BeginScope<TState>(TState state)

@@ -17,13 +17,13 @@ namespace Meadow.CLI.Core.Devices
     {
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-        public IMeadowLogger Logger { get; }
+        public ILogger Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
-        public IDictionary<string, uint> FilesOnDevice { get; } = new Dictionary<string, uint>();
+        public IDictionary<string, uint> FilesOnDevice { get; } = new SortedDictionary<string, uint>();
 
-        protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, IMeadowLogger? logger = null)
+        protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
         {
             Logger = logger;
             DataProcessor = dataProcessor;
@@ -192,6 +192,15 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
+        public Task Uart1Trace(CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
         public Task TraceDisableAsync(CancellationToken cancellationToken = default)
         {
             var command =
@@ -210,7 +219,56 @@ namespace Meadow.CLI.Core.Devices
 
             return SendCommandAsync(command, cancellationToken);
         }
-        
+
+        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
+        public Task Uart1Apps(CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART)
+                    .Build();
+
+            return SendCommandAsync(command, cancellationToken);
+        }
+
         public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default)
         {
             var command =
@@ -319,7 +377,7 @@ namespace Meadow.CLI.Core.Devices
 
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 

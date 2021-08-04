@@ -36,7 +36,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
     {
-        private readonly IMeadowLogger _logger;
+        private readonly ILogger _logger;
         //collapse to one and use enum
         private readonly SerialPort _serialPort;
         readonly Socket _socket;
@@ -52,20 +52,20 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         //-------------------------------------------------------------
         // Constructor
-        private MeadowSerialDataProcessor(IMeadowLogger logger)
+        private MeadowSerialDataProcessor(ILogger logger)
         {
             _cts = new CancellationTokenSource();
             _receiveMessageFactoryManager = new ReceiveMessageFactoryManager(logger);
             _logger = logger;
         }
 
-        public MeadowSerialDataProcessor(SerialPort serialPort, IMeadowLogger? logger = null) : this(logger ?? new NullMeadowLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
             _dataProcessorTask = Task.Factory.StartNew(ReadSerialPortAsync, TaskCreationOptions.LongRunning);
         }
 
-        public MeadowSerialDataProcessor(Socket socket, IMeadowLogger? logger = null) : this(logger ?? new NullMeadowLogger<MeadowSerialDataProcessor>())
+        public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this._socket = socket;
             _dataProcessorTask = Task.Factory.StartNew(ReadSocketAsync, TaskCreationOptions.LongRunning);
@@ -79,7 +79,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             try
             {
-                while (true)
+                while (!_cts.IsCancellationRequested)
                 {
                     var segment = new ArraySegment<byte>(buffer);
                     var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
@@ -139,7 +139,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             SerialMessage? message = null;
             try
             {
-                while (true)
+                while (!_cts.IsCancellationRequested)
                 {
                     try
                     {
@@ -190,7 +190,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             }
                         }
                     }
-                    catch (TimeoutException ex)
+                    catch (TimeoutException)
                     {
                     }
                     catch (Exception ex)
@@ -370,8 +370,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             try
             {
                 _cts.Cancel();
-                //_pipeReaderTask?.Dispose();
-                //_pipeWriterTask?.Dispose();
                 _dataProcessorTask?.Dispose();
             }
             catch (Exception ex)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using Meadow.CLI.Commands;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -46,13 +47,19 @@ namespace Meadow.CLI
                 });
 
             services.AddSingleton<MeadowDeviceManager>();
+            services.AddSingleton<DownloadManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
-            return await new CliApplicationBuilder().AddCommandsFromThisAssembly()
+            await new CliApplicationBuilder().AddCommandsFromThisAssembly()
                                                     .UseTypeActivator(serviceProvider.GetService)
                                                     .SetExecutableName("meadow")
                                                     .Build()
                                                     .RunAsync();
+
+            Console.WriteLine("Done!");
+
+            Environment.Exit(0);
+            return 0;
         }
 
         private static void AddCommandsAsServices(IServiceCollection services)

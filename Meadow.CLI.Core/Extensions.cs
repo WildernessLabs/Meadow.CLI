@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Meadow.CLI
+namespace Meadow.CLI.Core
 {
     public static class Extensions
     {
-        public static Version ToVersion(this String s)
+        public static Version ToVersion(this string s)
         {
             if (Version.TryParse(s, out var result))
             {

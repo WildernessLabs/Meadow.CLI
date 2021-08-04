@@ -21,12 +21,16 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         // VS 2017 - 4022
         // VS 2015 - 4020
         public IPEndPoint LocalEndpoint { get; private set; }
-
-        private CancellationTokenSource _cancellationTokenSource;
-        private readonly IMeadowLogger _logger;
+        
+        private readonly object _lck = new object();
+        private CancellationTokenSource? _cancellationTokenSource;
+        private readonly ILogger _logger;
         private readonly IMeadowDevice _meadow;
         private ActiveClient? _activeClient;
         private int _activeClientCount = 0;
+        private Task? _listenerTask;
+        private bool _isReady;
+        public bool Disposed;
 
         // Constructor
         /// <summary>
@@ -34,25 +38,60 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// </summary>
         /// <param name="meadow">The <see cref="IMeadowDevice"/> to debug</param>
         /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
-        /// <param name="logger">The <see cref="IMeadowLogger"/> to logging state information</param>
-        public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, IMeadowLogger logger)
+        /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
+        public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger logger)
         {
             LocalEndpoint = localEndpoint;
             _meadow = meadow;
             _logger = logger;
         }
 
+        /// <summary>
+        /// Start the debugging server
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> that is linked internally to the running task</param>
+        /// <returns>A <see cref="Task"/> representing the startup operation</returns>
         public async Task StartListeningAsync(CancellationToken cancellationToken)
+        {
+            _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _listenerTask = Task.Factory.StartNew(StartListener, TaskCreationOptions.LongRunning);
+            var startTimeout = DateTime.UtcNow.AddSeconds(60);
+            while (DateTime.UtcNow < startTimeout)
+            {
+                if (_isReady)
+                {
+                    return;
+                }
+
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+            }
+
+            throw new Exception("DebuggingServer did not start listening within the 60 second timeout.");
+        }
+
+        /// <summary>
+        /// Stop the <see cref="DebuggingServer"/>
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the shutdown operation</returns>
+        public async Task StopListeningAsync()
+        {
+            if (_cancellationTokenSource != null)
+                _cancellationTokenSource?.Cancel(false);
+
+            if (_listenerTask != null)
+                await _listenerTask.ConfigureAwait(false);
+        }
+
+        private async Task StartListener()
         {
             try
             {
-                _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var tcpListener = new TcpListener(LocalEndpoint);
                 tcpListener.Start();
                 LocalEndpoint = (IPEndPoint)tcpListener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
-
-                while (true)
+                _isReady = true;
+                while (!_cancellationTokenSource.IsCancellationRequested)
                 {
                     // Wait for client to connect
                     TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
@@ -64,7 +103,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _logger.LogError(ex, "An error occurred while listening for debugging connections");
             }
         }
-
+        
         private void OnConnect(TcpClient tcpClient)
         {
             try
@@ -99,8 +138,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 
         public void Dispose()
         {
-            _cancellationTokenSource.Cancel(false);
-            _activeClient?.Dispose();
+            lock (_lck)
+            {
+                if (Disposed)
+                    return;
+                _cancellationTokenSource?.Cancel(false);
+                _activeClient?.Dispose();
+                _listenerTask?.Dispose();
+                Disposed = true;
+            }
         }
 
         // Embedded class
@@ -113,11 +159,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             private readonly CancellationTokenSource _cts;
             private readonly Task _receiveVsDebugDataTask;
             private readonly Task _receiveMeadowDebugDataTask;
-            private readonly IMeadowLogger _logger;
+            private readonly ILogger _logger;
             public bool Disposed = false;
 
             // Constructor
-            internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, IMeadowLogger logger, CancellationToken cancellationToken)
+            internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger logger, CancellationToken cancellationToken)
             {
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _logger = logger;

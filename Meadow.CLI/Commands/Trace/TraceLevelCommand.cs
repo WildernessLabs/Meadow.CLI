@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +11,9 @@ namespace Meadow.CLI.Commands.Trace
     public class TraceLevelCommand : MeadowSerialCommand
     {
         private readonly ILogger<TraceLevelCommand> _logger;
-        public TraceLevelCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+
+        public TraceLevelCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<TraceLevelCommand>();
         }

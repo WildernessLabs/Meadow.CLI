@@ -1,19 +1,19 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono state", Description = "Returns whether or not mono is enabled or disabled on the Meadow device.")]
+    [Command("mono state", Description = "Returns whether or not mono is enabled or disabled on the Meadow device")]
     public class MonoRunStateCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoRunStateCommand> _logger;
 
-        public MonoRunStateCommand(ILoggerFactory loggerFactory,
-                                   MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public MonoRunStateCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MonoRunStateCommand>();
         }

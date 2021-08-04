@@ -11,14 +11,10 @@ namespace Meadow.CLI.Core
     {
         private static readonly string Path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "clisettings.json");
 
-        public static string GetSetting(Setting setting)
+        public static string? GetSetting(Setting setting)
         {
             var settings = GetSettings();
-            if(settings.TryGetValue(setting.ToString(), out var ret))
-            {
-                return ret;
-            }
-            return string.Empty;
+            return settings.TryGetValue(setting.ToString(), out var ret) ? ret : null;
         }
 
         public static void SaveSetting(Setting setting, string value)
@@ -76,7 +72,9 @@ namespace Meadow.CLI.Core
 
     public enum Setting
     {
-        PORT
+        PORT,
+        LastUpdateCheck,
+        LatestVersion
     }
 
 }

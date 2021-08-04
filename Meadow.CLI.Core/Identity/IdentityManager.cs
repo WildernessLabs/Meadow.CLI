@@ -19,9 +19,9 @@ namespace Meadow.CLI.Core.Identity
         readonly string redirectUri = "http://localhost:8877/";
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
-        private readonly IMeadowLogger _logger;
+        private readonly ILogger _logger;
 
-        public IdentityManager(IMeadowLogger logger)
+        public IdentityManager(ILogger logger)
         {
             _logger = logger;
         }

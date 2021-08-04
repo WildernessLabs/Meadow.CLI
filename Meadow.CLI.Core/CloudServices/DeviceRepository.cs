@@ -10,9 +10,9 @@ namespace Meadow.CLI.Core.CloudServices
 {
     public class DeviceRepository
     {
-        private readonly IMeadowLogger _logger;
+        private readonly ILogger _logger;
 
-        public DeviceRepository(IMeadowLogger logger)
+        public DeviceRepository(ILogger logger)
         {
             _logger = logger;
         }

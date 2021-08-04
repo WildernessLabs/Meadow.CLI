@@ -1,21 +1,25 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono enable", Description = "Sets mono to run on the Meadow board and then resets it.")]
+    [Command("mono enable", Description = "Sets mono to run on the Meadow board and then resets it")]
     public class MonoEnableCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoEnableCommand> _logger;
-        public MonoEnableCommand(ILoggerFactory loggerFactory,
-                                 MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        
+        public MonoEnableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MonoEnableCommand>();
         }
+
+        [CommandOption("force",'f', Description = "Send the Mono Enable Command even if Mono is already enabled")]
+        public bool Force { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -23,7 +27,7 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoEnableAsync(cancellationToken)
+            await Meadow.MonoEnableAsync(Force, cancellationToken)
                         .ConfigureAwait(false);
             _logger.LogInformation("Mono Enabled Successfully");
         }

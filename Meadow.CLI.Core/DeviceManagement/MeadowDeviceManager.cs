@@ -26,18 +26,16 @@ namespace Meadow.CLI.Core.DeviceManagement
             MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         // Avoid changing signature
-        public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, IMeadowLogger? logger = null)
+        public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
         {
-            logger ??= NullMeadowLogger.Instance;
+            logger ??= NullLogger.Instance;
 
             try
             {
                 logger.LogInformation($"Connecting to Meadow on {serialPort}", serialPort);
                 IMeadowDevice? meadow = null;
-                
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
-
-                var completedTask = await Task.WhenAny(createTask, Task.Delay(10000))
+                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
                           .ConfigureAwait(false);
 
                 if (completedTask != createTask || meadow == null)
@@ -56,7 +54,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 await meadow.InitializeAsync(CancellationToken.None);
-
+                
                 return meadow;
             }
             catch (FileNotFoundException fnfEx)
@@ -90,7 +88,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        private static void LogUserError(bool verbose, IMeadowLogger logger)
+        private static void LogUserError(bool verbose, ILogger logger)
         {
             if (verbose)
             {
@@ -100,19 +98,21 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public static IList<string> GetSerialPorts()
+        public static IList<MeadowDeviceEntity> GetSerialPorts(ILogger logger = null)
         {
+            if (logger == null)
+                logger = NullLogger.Instance;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return GetMeadowSerialPortsForLinux();
+                return GetMeadowSerialPortsForLinux(logger);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return GetMeadowSerialPortsForOsx();
+                return GetMeadowSerialPortsForOsx(logger);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return SerialPort.GetPortNames();
+                return GetMeadowSerialPortsForWindows(logger);
             }
             else
             {
@@ -122,7 +122,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static async Task<IMeadowDevice?> FindMeadowBySerialNumber(
             string serialNumber,
-            IMeadowLogger logger,
+            ILogger logger,
             int maxAttempts = 10,
             CancellationToken cancellationToken = default)
         {
@@ -130,12 +130,20 @@ namespace Meadow.CLI.Core.DeviceManagement
             while (attempts < maxAttempts)
             {
 
-                var ports = GetSerialPorts();
-                foreach (var port in ports)
+                var meadows = GetSerialPorts();
+                foreach (var meadow in meadows)
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, false, logger)
+                        // Here we were able to get the serial number from the device descriptor
+                        if (meadow.SerialNumber != null && meadow.SerialNumber == serialNumber)
+                        {
+                            return await GetMeadowForSerialPort(meadow.Port, false, logger)
+                                         .ConfigureAwait(false);
+                        }
+
+                        // Fallback to brute force searching
+                        var device = await GetMeadowForSerialPort(meadow.Port, false, logger)
                                          .ConfigureAwait(false);
 
                         if (device == null)
@@ -161,8 +169,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                                 unauthorizedAccessException,
                                 "This error can be safely ignored.");
                         }
-                        logger.LogError(unauthorizedAccessException, "An unknown error has occurred while finding meadow");
-                        throw;
+                        else
+                        {
+                            logger.LogError(
+                                unauthorizedAccessException,
+                                "An unknown error has occurred while finding meadow");
+
+                            throw;
+                        }
                     }
                     catch (IOException ioException)
                     {
@@ -190,14 +204,14 @@ namespace Meadow.CLI.Core.DeviceManagement
                 $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
-        public static IList<string> GetMeadowSerialPortsForOsx(IMeadowLogger? logger = null)
+        public static IList<MeadowDeviceEntity> GetMeadowSerialPortsForOsx(ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
                 throw new PlatformNotSupportedException("This method is only supported on macOS");
 
-            logger ??= NullMeadowLogger.Instance;
+            logger ??= NullLogger.Instance;
             logger.LogDebug("Get Meadow Serial ports");
-            var ports = new List<string>();
+            var ports = new List<MeadowDeviceEntity>();
 
             var psi = new ProcessStartInfo
                       {
@@ -239,9 +253,11 @@ namespace Meadow.CLI.Core.DeviceManagement
                     int startIndex = line.IndexOf("/");
                     int endIndex = line.IndexOf("\"", startIndex + 1);
                     var port = line.Substring(startIndex, endIndex - startIndex);
-                    logger.LogDebug($"Found Meadow at {port}", port);
+                    var serialNumberStart = port.LastIndexOf("m") + 1;
+                    var serialNumber = port.Substring(serialNumberStart);
 
-                    ports.Add(port);
+                    logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, serialNumber);
+                    ports.Add(new MeadowDeviceEntity(port, serialNumber));
                     foundMeadow = false;
                 }
             }
@@ -249,16 +265,16 @@ namespace Meadow.CLI.Core.DeviceManagement
             return ports;
         }
 
-        public static IList<string> GetMeadowSerialPortsForLinux(IMeadowLogger? logger = null)
+        public static IList<MeadowDeviceEntity> GetMeadowSerialPortsForLinux(ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Linux");
 
             const string devicePath = "/dev/serial/by-id";
-            logger ??= NullMeadowLogger.Instance;
+            logger ??= NullLogger.Instance;
             var psi = new ProcessStartInfo()
                       {
-                          FileName = "/usr/bin/ls",
+                          FileName = "ls",
                           Arguments = $"-l {devicePath}",
                           UseShellExecute = false,
                           RedirectStandardOutput = true
@@ -275,10 +291,41 @@ namespace Meadow.CLI.Core.DeviceManagement
                       {
                           var parts = line.Split(' ');
                           var source = parts[8];
+                          var serialNumber = source.Substring(source.LastIndexOf('_') + 1, source.LastIndexOf('-') - source.LastIndexOf('_') - 1);
                           var target = parts[10];
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                          return port;
+                          logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, serialNumber);
+                          return new MeadowDeviceEntity(port, serialNumber);
                       }).ToArray();
+        }
+
+        public static IList<MeadowDeviceEntity> GetMeadowSerialPortsForWindows(ILogger? logger = null)
+        {
+            var procInfo = new ProcessStartInfo()
+            {
+                FileName = "powershell.exe",
+                Arguments = @"$objs = Get-WMIObject Win32_PnPEntity | where { $_.name -match 'COM\d+'}; foreach($obj in $objs) {'Port: '+ $obj.Name + ', Name: ' + $obj.GetDeviceProperties('DEVPKEY_Device_BusReportedDeviceDesc').DeviceProperties.Data + ', DeviceID: ' + $obj.GetDeviceProperties('DEVPKEY_Device_BusReportedDeviceDesc').DeviceProperties.DeviceID}",
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = false
+            };
+            var proc = Process.Start(procInfo);
+            if (proc == null)
+            {
+                return SerialPort.GetPortNames().Select(x => new MeadowDeviceEntity(x, null)).ToArray();
+            }
+
+            var output = proc.StandardOutput.ReadToEnd();
+            var ports = new List<MeadowDeviceEntity>();
+            foreach (var line in output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var port = line.Substring(line.IndexOf('(') + 1, line.IndexOf(')') - line.IndexOf('(') - 1);
+                var serialNumber = line.Substring(line.LastIndexOf('\\') + 1);
+                logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, serialNumber);
+                ports.Add(new MeadowDeviceEntity(port, serialNumber));
+            }
+            return ports;
         }
     }
 }

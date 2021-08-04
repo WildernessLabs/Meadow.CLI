@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -17,10 +18,10 @@ namespace Meadow.CLI.Commands.App
         public string File { get; init; }
 
         [CommandOption("includePdbs", 'i', Description = "Include the PDB files on deploy to enable debugging", IsRequired = false)]
-        public bool IncludePdbs { get; init; }
+        public bool IncludePdbs { get; init; } = true;
 
-        public DeployAppCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public DeployAppCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
         }
 
@@ -29,11 +30,8 @@ namespace Meadow.CLI.Commands.App
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoDisableAsync(cancellationToken)
-                        .ConfigureAwait(false);
             await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
                         .ConfigureAwait(false);
-            await Meadow.MonoEnableAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

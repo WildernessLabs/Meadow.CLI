@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -16,9 +17,8 @@ namespace Meadow.CLI.Commands.FileSystem
 
         private readonly ILogger<FormatFileSystemCommand> _logger;
 
-        public FormatFileSystemCommand(ILoggerFactory loggerFactory,
-                                       MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public FormatFileSystemCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<FormatFileSystemCommand>();
         }

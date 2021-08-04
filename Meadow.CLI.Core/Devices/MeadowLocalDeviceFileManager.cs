@@ -42,9 +42,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             };
 
-            var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
                     .WithResponseHandler(handler)
                     .Build();
 
@@ -80,9 +78,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             };
 
-            var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
                     .WithResponseHandler(handler)
                     .WithUserData((uint)partition)
                     .Build();
@@ -96,13 +92,13 @@ namespace Meadow.CLI.Core.Devices
         /// <summary>
         /// Write a file to the Meadow
         /// </summary>
-        /// <param name="filename">The name of the file</param>
-        /// <param name="path">The path to the file</param>
+        /// <param name="sourceFileName">The name of the file</param>
+        /// <param name="destinationFileName">The path to the file</param>
         /// <param name="timeout">The amount of time to wait to write the file</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns></returns>
-        public async Task<FileTransferResult> WriteFileAsync(string filename,
-                                                             string path,
+        public async Task<FileTransferResult> WriteFileAsync(string sourceFileName,
+                                                             string destinationFileName,
                                                              TimeSpan timeout,
                                                              CancellationToken cancellationToken =
                                                                  default)
@@ -112,7 +108,6 @@ namespace Meadow.CLI.Core.Devices
                 throw new Exception("Device is not initialized");
             }
 
-            var sourceFileName = Path.Combine(path, filename);
             var fi = new FileInfo(sourceFileName);
             if (!fi.Exists)
             {
@@ -133,7 +128,7 @@ namespace Meadow.CLI.Core.Devices
                 await new FileCommandBuilder(
                           HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
                       .WithSourceFileName(sourceFileName)
-                      .WithDestinationFileName(filename)
+                      .WithDestinationFileName(destinationFileName)
                       .WithTimeout(timeout)
                       .WithPartition(0)
                       .BuildAsync();
@@ -554,16 +549,18 @@ namespace Meadow.CLI.Core.Devices
             var extensions = new List<string>
                              { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
 
-            var paths = Directory.EnumerateFiles(
-                                     fi.DirectoryName,
-                                     "*.*",
-                                     SearchOption.TopDirectoryOnly)
+            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
                                  .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
 
             async Task AddFile(string file, bool includePdbs)
             {
+                if(files.ContainsKey(file))
+                {
+                    return;
+                }
+
                 using FileStream fs = File.Open(file, FileMode.Open);
                 var len = (int)fs.Length;
                 var bytes = new byte[len];
@@ -595,7 +592,15 @@ namespace Meadow.CLI.Core.Devices
             //crawl dependencies
             foreach (var file in dependencies)
             {
-                await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
+                try
+                {
+                    await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
+                }
+                catch
+                {
+                    Console.WriteLine("nope");
+                }
+                
             }
 
             // delete unused files
@@ -626,14 +631,11 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 Logger.LogInformation("Writing file: {file}", file.Key);
-
-                await Task.Delay(250).ConfigureAwait(false);
-
                 await WriteFileAsync(
+                        Path.Combine(fi.DirectoryName, file.Key),
                         file.Key,
-                        fi.DirectoryName,
                         DefaultTimeout,
-                        cancellationToken: cancellationToken)
+                        cancellationToken)
                     .ConfigureAwait(false);
 
                 Logger.LogInformation("Wrote file: {file}", file.Key);

@@ -15,7 +15,7 @@ namespace Meadow.CLI.Core.Devices
         private readonly AddressFamily _addressFamily;
         public readonly Socket Socket;
 
-        public MeadowSocketDevice(Socket socket, IMeadowLogger<MeadowSocketDevice>? logger = null)
+        public MeadowSocketDevice(Socket socket, ILogger<MeadowSocketDevice>? logger = null)
             : base(new MeadowSerialDataProcessor(socket), logger)
         {
             Socket = socket;

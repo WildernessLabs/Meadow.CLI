@@ -9,7 +9,7 @@ namespace Meadow.CLI.Core.Logging
     /// Represents a type used to perform logging.
     /// </summary>
     /// <remarks>Aggregates most logging patterns to a single method.</remarks>
-    public interface IMeadowLogger
+    public interface ILogger
     {
         /// <summary>
         /// Writes a log entry.
@@ -42,11 +42,10 @@ namespace Meadow.CLI.Core.Logging
     /// Generally used to enable activation of a named <see cref="ILogger"/> from dependency injection.
     /// </summary>
     /// <typeparam name="TCategoryName">The type who's name is used for the logger category name.</typeparam>
-    public interface IMeadowLogger<out TCategoryName> : IMeadowLogger
+    public interface ILogger<out TCategoryName> : ILogger
     {
 
     }
-
 
     /// <summary>
     /// Defines logging severity levels.
