@@ -556,7 +556,7 @@ namespace Meadow.CLI.Core.Devices
 
             async Task AddFile(string file, bool includePdbs)
             {
-                if(files.ContainsKey(file))
+                if(files.ContainsKey(Path.GetFileName(file)))
                 {
                     return;
                 }
@@ -572,9 +572,16 @@ namespace Meadow.CLI.Core.Devices
 
                 Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
                 files.Add(Path.GetFileName(file), crc);
+
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
+
+                    if (files.ContainsKey(pdbFile))
+                    {
+                        return;
+                    }
+
                     if (File.Exists(pdbFile))
                         await AddFile(pdbFile, false)
                             .ConfigureAwait(false);
@@ -592,15 +599,7 @@ namespace Meadow.CLI.Core.Devices
             //crawl dependencies
             foreach (var file in dependencies)
             {
-                try
-                {
-                    await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
-                }
-                catch
-                {
-                    Console.WriteLine("nope");
-                }
-                
+                await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
             }
 
             // delete unused files
