@@ -576,12 +576,6 @@ namespace Meadow.CLI.Core.Devices
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
-
-                    if (files.ContainsKey(pdbFile))
-                    {
-                        return;
-                    }
-
                     if (File.Exists(pdbFile))
                         await AddFile(pdbFile, false)
                             .ConfigureAwait(false);
