@@ -99,10 +99,10 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public static IList<MeadowDeviceEntity> GetSerialPorts(ILogger logger = null)
+        public static IList<MeadowDeviceEntity> GetSerialPorts(ILogger? logger = null)
         {
-            if (logger == null)
-                logger = NullLogger.Instance;
+            logger ??= NullLogger.Instance;
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 return GetMeadowSerialPortsForLinux(logger);
@@ -132,67 +132,38 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
 
                 var meadows = GetSerialPorts();
+
+                // Try to get the meadow by the serial number from the device descriptor
+                var meadowBySerialNumber = meadows.Where(x => x.SerialNumber != null).FirstOrDefault(x => x.SerialNumber == serialNumber);
+                if (meadowBySerialNumber != null)
+                {
+                    var meadow = await GetMeadowForSerialPort(meadowBySerialNumber.Port, false, logger)
+                                .ConfigureAwait(false);
+                    if (meadow == null)
+                        continue;
+                    
+                    return meadow;
+                }
+
+                // Fallback to brute force searching
                 foreach (var meadow in meadows)
                 {
-                    try
+                    var device = await GetMeadowForSerialPort(meadow.Port, false, logger)
+                                        .ConfigureAwait(false);
+
+                    if (device == null)
+                        continue;
+
+                    var deviceInfo = await device.GetDeviceInfoAsync(
+                                            TimeSpan.FromSeconds(60),
+                                            cancellationToken);
+
+                    if (deviceInfo!.SerialNumber == serialNumber)
                     {
-                        // Here we were able to get the serial number from the device descriptor
-                        if (meadow.SerialNumber != null && meadow.SerialNumber == serialNumber)
-                        {
-                            return await GetMeadowForSerialPort(meadow.Port, false, logger)
-                                         .ConfigureAwait(false);
-                        }
-
-                        // Fallback to brute force searching
-                        var device = await GetMeadowForSerialPort(meadow.Port, false, logger)
-                                         .ConfigureAwait(false);
-
-                        if (device == null)
-                            continue;
-
-                        var deviceInfo = await device.GetDeviceInfoAsync(
-                                             TimeSpan.FromSeconds(60),
-                                             cancellationToken);
-
-                        if (deviceInfo!.SerialNumber == serialNumber)
-                        {
-                            return device;
-                        }
-
-                        device.Dispose();
+                        return device;
                     }
-                    catch (UnauthorizedAccessException unauthorizedAccessException)
-                    {
-                        if (unauthorizedAccessException.InnerException is IOException)
-                        {
-                            // Eat it and retry
-                            logger.LogDebug(
-                                unauthorizedAccessException,
-                                "This error can be safely ignored.");
-                        }
-                        else
-                        {
-                            logger.LogError(
-                                unauthorizedAccessException,
-                                "An unknown error has occurred while finding meadow");
 
-                            throw;
-                        }
-                    }
-                    catch (IOException ioException)
-                    {
-                        // Eat it and retry
-                        logger.LogDebug(
-                            ioException,
-                            "This error can be safely ignored.");
-                    }
-                    catch (MeadowDeviceException meadowDeviceException)
-                    {
-                        // eat it for now
-                        logger.LogDebug(
-                            meadowDeviceException,
-                            "This error can be safely ignored.");
-                    }
+                    device.Dispose();
                 }
 
                 await Task.Delay(1000, cancellationToken)
@@ -309,7 +280,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
-                CreateNoWindow = false
+                CreateNoWindow = true
             };
             var proc = Process.Start(procInfo);
             if (proc == null)

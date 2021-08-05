@@ -4,7 +4,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public class MeadowDeviceEntity
     {
-        public MeadowDeviceEntity(string port, string serialNumber)
+        public MeadowDeviceEntity(string port, string? serialNumber)
         {
             if (string.IsNullOrWhiteSpace(port))
                 throw new ArgumentNullException(nameof(port));
@@ -15,7 +15,7 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public string Port { get;set;}
-        public string SerialNumber { get;set;}
+        public string? SerialNumber { get;set;}
 
         public override string ToString()
         {

@@ -326,24 +326,12 @@ namespace Meadow.CLI.Core.Devices
         public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
-            string? serialPort = null;
             IMeadowDevice? meadow = null;
-
-            if(_meadowDevice is MeadowSerialDevice device)
-            {
-                serialPort = device.SerialPort?.PortName;
-            }
 
             _meadowDevice?.Dispose();
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
-
-            //try the old port first, if we still have it
-            if (string.IsNullOrWhiteSpace(serialPort) == false)
-            {
-                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(serialPort!, false, Logger);
-            }
 
             meadow ??= await MeadowDeviceManager.FindMeadowBySerialNumber(
                                                     serialNumber,
