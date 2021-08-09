@@ -79,7 +79,7 @@ namespace Meadow.CLI.Core
 
             if (Directory.Exists(FirmwareDownloadsFilePath))
             {
-                Directory.Delete(FirmwareDownloadsFilePath, true);
+                CleanPath(FirmwareDownloadsFilePath);
             }
 
             Directory.CreateDirectory(FirmwareDownloadsFilePath);
@@ -232,6 +232,35 @@ namespace Meadow.CLI.Core
             ZipFile.ExtractToDirectory(
                 downloadFileName,
                 FirmwareDownloadsFilePath);
+        }
+
+        private void CleanPath(string path)
+        {
+            var di = new DirectoryInfo(path);
+            foreach (FileInfo file in di.GetFiles())
+            {
+                try
+                {
+                    file.Delete();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to delete file {file} in firmware path", file.FullName);
+                    _logger.LogDebug(ex, "Failed to delete file");
+                }
+            }
+            foreach (DirectoryInfo dir in di.GetDirectories())
+            {
+                try
+                {
+                    dir.Delete(true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Failed to delete directory {directory} in firmware path", dir.FullName);
+                    _logger.LogDebug(ex, "Failed to delete directory");
+                }
+            }
         }
     }
 }
