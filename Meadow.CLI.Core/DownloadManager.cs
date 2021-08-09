@@ -232,6 +232,15 @@ namespace Meadow.CLI.Core
             ZipFile.ExtractToDirectory(
                 downloadFileName,
                 FirmwareDownloadsFilePath);
+            try
+            {
+                File.Delete(downloadFileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Unable to delete temporary file");
+                _logger.LogDebug(ex, "Unable to delete temporary file");
+            }
         }
 
         private void CleanPath(string path)
