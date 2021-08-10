@@ -217,6 +217,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                       {
                           FileName = "/usr/sbin/ioreg",
                           UseShellExecute = false,
+                          CreateNoWindow = true,
                           RedirectStandardOutput = true,
                           Arguments = "-r -c IOUSBHostDevice -l"
                       };
@@ -277,6 +278,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                           FileName = "ls",
                           Arguments = $"-l {devicePath}",
                           UseShellExecute = false,
+                          CreateNoWindow = true,
                           RedirectStandardOutput = true
                       };
 
@@ -308,7 +310,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
-                CreateNoWindow = false
+                CreateNoWindow = true
             };
             var proc = Process.Start(procInfo);
             if (proc == null)

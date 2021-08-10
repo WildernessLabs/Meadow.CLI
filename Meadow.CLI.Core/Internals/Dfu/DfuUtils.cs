@@ -133,6 +133,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                     $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
                 {
                     UseShellExecute = false,
+                    CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     RedirectStandardInput = false
