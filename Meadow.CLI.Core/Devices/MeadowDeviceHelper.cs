@@ -126,13 +126,15 @@ namespace Meadow.CLI.Core.Devices
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
             bool monoRunState;
-            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false))
+            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken))
                 && endTime > DateTime.UtcNow)
             {
                 await _meadowDevice.MonoDisableAsync(cancellationToken);
 
+                await Task.Delay(3000);
+
                 Logger.LogDebug("Re-initialize the device");
-                await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
+                await ReInitializeMeadowAsync(cancellationToken);
             }
 
             if (monoRunState)
@@ -357,8 +359,9 @@ namespace Meadow.CLI.Core.Devices
             {
                 if (skipRuntime == false)
                 {
-                    await MonoDisableAsync(cancellationToken)
-                        .ConfigureAwait(false);
+                    await MonoDisableAsync(cancellationToken);
+
+                    await Task.Delay(3000);
 
                     // Again, verify that Mono is disabled
                     Trace.Assert(await _meadowDevice.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
@@ -491,6 +494,10 @@ namespace Meadow.CLI.Core.Devices
             string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             logger.LogInformation("Device in DFU Mode, flashing OS");
+
+            //ToDo DELETE
+           // return serialNumber;
+            
             var res = await DfuUtils.DfuFlashAsync(osPath, dfuDevice, logger).ConfigureAwait(false);
             if (res)
             {

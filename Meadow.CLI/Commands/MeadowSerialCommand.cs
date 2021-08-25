@@ -60,7 +60,11 @@ namespace Meadow.CLI.Commands
 
         public virtual async ValueTask ExecuteAsync(IConsole console)
         {
-            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
+            Meadow?.Dispose();
+            Meadow = null;
+
+            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger);
+
             if (meadow == null)
             {
                 LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");
