@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -11,8 +12,9 @@ namespace Meadow.CLI.Commands.Trace
     public class SetDeveloperValueCommand : MeadowSerialCommand
     {
         private readonly ILogger<SetDeveloperValueCommand> _logger;
-        public SetDeveloperValueCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+
+        public SetDeveloperValueCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<SetDeveloperValueCommand>();
         }

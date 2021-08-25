@@ -10,22 +10,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands
 {
-    public abstract class MeadowSerialCommand : ICommand, IDisposable
+    public abstract class MeadowSerialCommand : MeadowCommand, ICommand, IDisposable
     {
         private protected ILogger Logger;
-        private protected ILoggerFactory LoggerFactory;
         private protected MeadowDeviceManager MeadowDeviceManager;
         private protected MeadowDeviceHelper Meadow;
 
-        private protected MeadowSerialCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+        private protected MeadowSerialCommand(DownloadManager downloadManager,
+                                              ILoggerFactory loggerFactory,
+                                              MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory)
         {
-            LoggerFactory = loggerFactory;
             Logger = loggerFactory.CreateLogger<MeadowSerialCommand>();
             MeadowDeviceManager = meadowDeviceManager;
         }
-
-        [CommandOption('v', Description = "Log verbosity")]
-        public string[] Verbosity { get; init; }
 
         [CommandOption("SerialPort", 's', Description = "Meadow COM port")]
         public string SerialPortName
@@ -58,8 +56,9 @@ namespace Meadow.CLI.Commands
             SettingsManager.SaveSetting(Setting.PORT, _serialPort);
         }
 
-        public virtual async ValueTask ExecuteAsync(IConsole console)
+        public override async ValueTask ExecuteAsync(IConsole console)
         {
+            await base.ExecuteAsync(console);
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
             if (meadow == null)
             {

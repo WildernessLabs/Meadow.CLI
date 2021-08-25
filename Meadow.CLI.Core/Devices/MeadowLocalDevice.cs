@@ -22,7 +22,7 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
-        public IDictionary<string, uint> FilesOnDevice { get; } = new Dictionary<string, uint>();
+        public IDictionary<string, uint> FilesOnDevice { get; } = new SortedDictionary<string, uint>();
 
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
         {

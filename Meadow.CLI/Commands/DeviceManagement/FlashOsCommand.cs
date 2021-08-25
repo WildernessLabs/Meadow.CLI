@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
     public class FlashOsCommand : MeadowSerialCommand
     {
-        public FlashOsCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
         }
 

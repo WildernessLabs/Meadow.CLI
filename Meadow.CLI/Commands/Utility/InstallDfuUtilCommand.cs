@@ -13,7 +13,7 @@ namespace Meadow.CLI.Commands.Utility
     public class InstallDfuUtilCommand : MeadowCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
-        public InstallDfuUtilCommand(ILoggerFactory loggerFactory) :base(loggerFactory)
+        public InstallDfuUtilCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory) :base(downloadManager, loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }
@@ -21,11 +21,11 @@ namespace Meadow.CLI.Commands.Utility
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
+            await base.ExecuteAsync(console);
 
             if (OperatingSystem.IsWindows() && IsAdministrator())
             {
-                var downloadManager = new DownloadManager(_logger);
-                await downloadManager.InstallDfuUtilAsync(Environment.Is64BitOperatingSystem, cancellationToken);
+                await DownloadManager.InstallDfuUtilAsync(Environment.Is64BitOperatingSystem, cancellationToken);
             }
             else if (OperatingSystem.IsMacOS())
             {

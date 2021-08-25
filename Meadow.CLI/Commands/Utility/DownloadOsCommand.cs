@@ -11,7 +11,7 @@ namespace Meadow.CLI.Commands.Utility
     public class DownloadOsCommand : MeadowCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
-        public DownloadOsCommand(ILoggerFactory loggerFactory) : base(loggerFactory)
+        public DownloadOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory) : base(downloadManager, loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }
@@ -19,9 +19,9 @@ namespace Meadow.CLI.Commands.Utility
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
+            await base.ExecuteAsync(console);
 
-            var downloadManager = new DownloadManager(_logger);
-            await downloadManager.DownloadLatestAsync().ConfigureAwait(false);
+            await DownloadManager.DownloadLatestAsync().ConfigureAwait(false);
         }
     }
 }

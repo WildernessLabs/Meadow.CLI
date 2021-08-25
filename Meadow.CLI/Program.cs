@@ -46,9 +46,8 @@ namespace Meadow.CLI
                     builder.AddSerilog(Log.Logger, dispose:true);
                 });
 
-            
-
             services.AddSingleton<MeadowDeviceManager>();
+            services.AddSingleton<DownloadManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
             await new CliApplicationBuilder().AddCommandsFromThisAssembly()
@@ -57,17 +56,7 @@ namespace Meadow.CLI
                                                     .Build()
                                                     .RunAsync();
 
-            var downloadManager = new DownloadManager(null);
-            var check = downloadManager.CheckForUpdatesAsync().Result;
-
-            if (check.updateExists)
-            {
-                Log.Logger.Information("CLI version {0} is available. To update, run: {1}", check.latestVersion, DownloadManager.UpdateCommand);
-            }
-            else
-            {
-                Log.Logger.Information("{0}", "Done!");
-            }
+            Console.WriteLine("Done!");
 
             Environment.Exit(0);
             return 0;

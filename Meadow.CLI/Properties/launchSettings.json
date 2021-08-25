@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "flash os -s COM12"
+      "commandLineArgs": "flash os"
     },
     "Login": {
       "commandName": "Project",
@@ -75,6 +75,10 @@
     "Help": {
       "commandName": "Project",
       "commandLineArgs": "-h"
+    },
+    "ListPorts": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
     }
   }
 }
