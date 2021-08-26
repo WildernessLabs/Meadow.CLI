@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "flash os"
+      "commandLineArgs": "flash erase -s COM21"
     },
     "Login": {
       "commandName": "Project",

@@ -5,7 +5,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
     public class SimpleCommandBuilder
     {
-        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
         public SimpleCommandBuilder(HcomMeadowRequestType requestType)
         {
             RequestType = requestType;

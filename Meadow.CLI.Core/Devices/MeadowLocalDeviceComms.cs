@@ -341,6 +341,9 @@ namespace Meadow.CLI.Core.Devices
                 if (command.CompletionPredicate(e))
                 {
                     Logger.LogTrace("Setting result complete");
+                    //message = e.Message;
+                    //messageType = e.MessageType;
+                    result = true; //TODO: Adrian - Pete - should this be here?? I added it
                     tcs.SetResult(true);
                 }
             }

@@ -20,7 +20,7 @@ namespace Meadow.CLI.Core.Devices
     public sealed class MeadowDeviceHelper : IDisposable
     {
         private IMeadowDevice _meadowDevice;
-        public TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
+        public TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
         public readonly ILogger Logger;
         public IMeadowDevice MeadowDevice => _meadowDevice;
 

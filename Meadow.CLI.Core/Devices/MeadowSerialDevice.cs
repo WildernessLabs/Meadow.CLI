@@ -54,7 +54,7 @@ namespace Meadow.CLI.Core.Devices
 
         public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
         {
-            var initTimeout = TimeSpan.FromSeconds(60);
+            var initTimeout = TimeSpan.FromSeconds(30);//ToDo Adrian reduced from 60s ... think 30 is safe
             var now = DateTime.UtcNow;
             var then = now.Add(initTimeout);
             while (DateTime.UtcNow < then)
@@ -90,8 +90,8 @@ namespace Meadow.CLI.Core.Devices
                 {
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
-
-                await Task.Delay(100, cancellationToken)
+                //ToDo: Adrian - review - increased delay from 100ms to 500ms
+                await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
             }
 

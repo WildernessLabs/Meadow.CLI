@@ -16,7 +16,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice : IMeadowDevice
     {
-        private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
+        private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
         public ILogger Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }

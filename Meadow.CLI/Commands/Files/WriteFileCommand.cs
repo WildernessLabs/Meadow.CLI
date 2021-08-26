@@ -78,7 +78,7 @@ namespace Meadow.CLI.Commands.Files
                     var result = await Meadow.WriteFileAsync(
                                                  Files[i],
                                                  targetFileName,
-                                                 TimeSpan.FromSeconds(60),
+                                                 TimeSpan.FromSeconds(30),
                                                  cancellationToken)
                                              .ConfigureAwait(false);
 

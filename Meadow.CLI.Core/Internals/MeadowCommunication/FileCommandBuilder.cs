@@ -10,7 +10,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
     public class FileCommandBuilder
     {
-        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
+        private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
         private readonly Dictionary<HcomMeadowRequestType, Predicate<MeadowMessageEventArgs>> _predicates =
             new Dictionary<HcomMeadowRequestType, Predicate<MeadowMessageEventArgs>>()
             {

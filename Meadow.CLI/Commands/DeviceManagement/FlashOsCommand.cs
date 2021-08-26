@@ -53,7 +53,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                     return;
                 }
 
-                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
+                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(30), cancellationToken)
                                              .ConfigureAwait(false);
 
                 serialNumber = deviceInfo!.SerialNumber;
