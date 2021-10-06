@@ -79,6 +79,10 @@
     "ListPorts": {
       "commandName": "Project",
       "commandLineArgs": "list ports"
+    },
+    "SendNotification": {
+      "commandName": "Project",
+      "commandLineArgs": "notification send -m \"my message\" -t \"my topic\""
     }
   }
 }

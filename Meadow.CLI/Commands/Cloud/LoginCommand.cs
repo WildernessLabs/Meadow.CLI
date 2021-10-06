@@ -2,22 +2,23 @@
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Cloud
 {
     [Command("cloud login", Description = "Log into the Meadow Service")]
-    public class LoginCommand : ICommand
+    public class LoginCommand : MeadowCommand
     {
         private readonly ILogger<LoginCommand> _logger;
 
-        public LoginCommand(ILoggerFactory loggerFactory)
+        public LoginCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory) : base(downloadManager, loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<LoginCommand>();
         }
 
-        public async ValueTask ExecuteAsync(IConsole console)
+        public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
