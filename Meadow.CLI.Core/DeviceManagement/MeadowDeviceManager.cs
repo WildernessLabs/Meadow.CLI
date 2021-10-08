@@ -294,6 +294,10 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 var port = line.Substring(line.IndexOf('(') + 1, line.IndexOf(')') - line.IndexOf('(') - 1);
                 var serialNumber = line.Substring(line.LastIndexOf('\\') + 1);
+                
+                if (!port.StartsWith("COM"))
+                    continue;
+
                 logger.LogDebug("Found Meadow at {port} with SerialNumber {serialNumber}", port, serialNumber);
                 ports.Add(new MeadowDeviceEntity(port, serialNumber));
             }
