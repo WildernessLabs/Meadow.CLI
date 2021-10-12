@@ -547,7 +547,7 @@ namespace Meadow.CLI.Core.Devices
             }
 
             var extensions = new List<string>
-                             { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".txt" };
+                             { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt" };
 
             var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
                                  .Where(s => extensions.Contains(new FileInfo(s).Extension));
