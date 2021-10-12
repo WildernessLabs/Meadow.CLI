@@ -23,6 +23,7 @@ namespace Meadow.CLI.Core.Devices
         public Task FormatFileSystemAsync(uint partition = 0, CancellationToken cancellationToken = default);
         public Task RenewFileSystemAsync(CancellationToken cancellationToken = default);
         public Task UpdateMonoRuntimeAsync(string? fileName, uint partition = 0, CancellationToken cancellationToken = default);
+        public Task UpdateOSAsync(string? fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
         public Task FlashEspAsync(string? sourcePath, CancellationToken cancellationToken = default);
         public Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);

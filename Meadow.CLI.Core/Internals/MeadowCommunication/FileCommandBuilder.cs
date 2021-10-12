@@ -31,6 +31,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     p => p.MessageType == MeadowMessageType.Concluded
                       || p.MessageType == MeadowMessageType.DownloadStartOkay
                       || p.MessageType == MeadowMessageType.DownloadStartFail
+                },
+                {
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_OS_UPDATE,
+                    p => p.MessageType == MeadowMessageType.Concluded
+                      || p.MessageType == MeadowMessageType.DownloadStartOkay
+                      || p.MessageType == MeadowMessageType.DownloadStartFail
                 }
             };
 

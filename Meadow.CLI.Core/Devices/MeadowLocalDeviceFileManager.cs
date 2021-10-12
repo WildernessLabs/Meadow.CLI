@@ -267,6 +267,65 @@ namespace Meadow.CLI.Core.Devices
                 .ConfigureAwait(false);
         }
 
+        public async Task UpdateOSAsync(string? fileName,
+                                                 uint partition = 0,
+                                                 CancellationToken cancellationToken = default)
+        {
+            var sourceFilename = fileName;
+            if (string.IsNullOrWhiteSpace(sourceFilename))
+            {
+                // check local override
+                sourceFilename = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    DownloadManager.RuntimeFilename);
+
+                if (File.Exists(sourceFilename))
+                {
+                    Logger.LogInformation(
+                        $"Using current directory '{DownloadManager.RuntimeFilename}'");
+                }
+                else
+                {
+                    sourceFilename = Path.Combine(
+                        DownloadManager.FirmwareDownloadsFilePath,
+                        DownloadManager.RuntimeFilename);
+
+                    if (File.Exists(sourceFilename))
+                    {
+                        Logger.LogInformation("FileName not specified, using latest download.");
+                    }
+                    else
+                    {
+                        Logger.LogInformation(
+                            "Unable to locate an OS file. Either provide a path or download one.");
+
+                        return; // KeepConsoleOpen?
+                    }
+                }
+            }
+
+            if (!File.Exists(sourceFilename))
+            {
+                Logger.LogInformation($"File '{sourceFilename}' not found");
+                return;
+            }
+
+            var targetFileName = Path.GetFileName(sourceFilename);
+
+            Logger.LogDebug("Sending OS Update Request");
+            var command =
+                await new FileCommandBuilder(
+                          HcomMeadowRequestType.HCOM_MDOW_REQUEST_OS_UPDATE)
+                      .WithPartition(partition)
+                      .WithDestinationFileName(targetFileName)
+                      .WithSourceFileName(sourceFilename)
+                      .BuildAsync()
+                      .ConfigureAwait(false);
+
+            await SendTheEntireFile(command, true, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         public async Task WriteFileToEspFlashAsync(string fileName,
                                                    uint partition = 0,
                                                    string? mcuDestAddress = null,

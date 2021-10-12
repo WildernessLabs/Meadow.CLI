@@ -93,6 +93,13 @@ namespace Meadow.CLI.Core.Devices
             await _meadowDevice.UpdateMonoRuntimeAsync(fileName, partition, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task UpdateOSAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
+        {
+            Logger.LogInformation("Starting OS Update");
+            
+            await _meadowDevice.UpdateOSAsync(fileName, partition, cancellationToken).ConfigureAwait(false);
+        }
+
         public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.WriteFileToEspFlashAsync(

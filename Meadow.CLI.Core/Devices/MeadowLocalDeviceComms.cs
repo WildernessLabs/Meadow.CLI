@@ -123,6 +123,10 @@ namespace Meadow.CLI.Core.Devices
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
                             .WithUserData(lastInSeries ? 1U : 0U)
                             .Build(),
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_OS_UPDATE =>
+                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_OS_UPDATE_FILE_END)
+                            .WithUserData(lastInSeries ? 1U : 0U)
+                            .Build(),
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
                             .WithUserData(lastInSeries ? 1U : 0U)
