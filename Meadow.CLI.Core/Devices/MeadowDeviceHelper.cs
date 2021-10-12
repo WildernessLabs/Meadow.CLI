@@ -133,7 +133,7 @@ namespace Meadow.CLI.Core.Devices
                 await _meadowDevice.MonoDisableAsync(cancellationToken);
 
                 Logger.LogDebug("Waiting for Meadow to cycle");
-                await Task.Delay(1000, cancellationToken)
+                await Task.Delay(3000, cancellationToken)
                           .ConfigureAwait(false);
 
                 Logger.LogDebug("Re-initialize the device");
@@ -326,12 +326,24 @@ namespace Meadow.CLI.Core.Devices
         public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
+            string? serialPort = null;
             IMeadowDevice? meadow = null;
+
+            if(_meadowDevice is MeadowSerialDevice device)
+            {
+                serialPort = device.SerialPort?.PortName;
+            }
 
             _meadowDevice?.Dispose();
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
+
+            //try the old port first, if we still have it
+            if (string.IsNullOrWhiteSpace(serialPort) == false)
+            {
+                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(serialPort!, false, Logger);
+            }
 
             meadow ??= await MeadowDeviceManager.FindMeadowBySerialNumber(
                                                     serialNumber,
@@ -355,6 +367,8 @@ namespace Meadow.CLI.Core.Devices
                     await MonoDisableAsync(cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
 
+                    await Task.Delay(2000);
+
                     // Again, verify that Mono is disabled
                     Trace.Assert(await _meadowDevice.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                                  "Meadow was expected to have Mono Disabled");
@@ -363,8 +377,12 @@ namespace Meadow.CLI.Core.Devices
                         runtimePath,
                         cancellationToken: cancellationToken);
 
+                    await Task.Delay(2000);
+
                     await ReInitializeMeadowAsync(cancellationToken)
                         .ConfigureAwait(false);
+
+                    await Task.Delay(2000);
                 }
                 else
                 {
@@ -386,6 +404,8 @@ namespace Meadow.CLI.Core.Devices
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)
                                        .ConfigureAwait(false);
 
+                    await Task.Delay(3000);
+
                     await ReInitializeMeadowAsync(cancellationToken)
                         .ConfigureAwait(false);
                 }
@@ -398,7 +418,7 @@ namespace Meadow.CLI.Core.Devices
                 //await MonoEnableAsync(cancellationToken);
 
                 // This is to ensure the ESP info has updated in HCOM on the Meadow
-                await Task.Delay(2000, cancellationToken)
+                await Task.Delay(3000, cancellationToken)
                           .ConfigureAwait(false);
 
                 // TODO: Verify that the device info returns the expected version

@@ -40,7 +40,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             string serialNumber;
             if (!SkipDfu)
+            {
                 serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken).ConfigureAwait(false);
+            }
             else
             {
                 Logger.LogInformation("Skipping DFU flash step.");
@@ -57,11 +59,27 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 serialNumber = deviceInfo!.SerialNumber;
             }
 
-            var meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
+            //try to find Meadow on the existing serial port first
+            IMeadowDevice meadow = null;
+
+            await Task.Delay(2000).ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(SerialPortName) == false)
+            {
+                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(
+                    SerialPortName,
+                    true,
+                    Logger).ConfigureAwait(false);
+            }
+
+            if (meadow == null)
+            {
+                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
                 serialNumber,
                 Logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
-
+            }
+            
             Meadow = new MeadowDeviceHelper(meadow, Logger);
 
             await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);

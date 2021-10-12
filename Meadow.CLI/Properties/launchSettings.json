@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "download os"
+      "commandLineArgs": "flash os"
     },
     "Login": {
       "commandName": "Project",
