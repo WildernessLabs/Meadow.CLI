@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -55,12 +56,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
 
                 await meadow.InitializeAsync(CancellationToken.None);
-                
+
                 return meadow;
             }
             catch (FileNotFoundException fnfEx)
             {
-                
+
                 LogUserError(verbose, logger);
 
                 logger.LogDebug(fnfEx, "Failed to open Serial Port.");
@@ -111,12 +112,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var ports = SerialPort.GetPortNames();
-
-                //hack to skip COM1
-                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
-
-                return ports;
+                return GetMeadowSerialPortsForWindows();
             }
             else
             {
@@ -289,6 +285,97 @@ namespace Meadow.CLI.Core.DeviceManagement
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
                           return port;
                       }).ToArray();
+        }
+
+        public static IList<string> GetMeadowSerialPortsForWindows(ILogger? logger = null)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                throw new PlatformNotSupportedException("This method is only supported on Windows");
+
+            try
+            {
+                // Meadow devices use VID 2E6A
+                const string MeadowPnpDeviceIDPrefix = @"USB\\VID_2E6A";
+
+                // The 'Name' field is where the COM port name is.
+                string PnpEntityFields = "Name";
+
+                // The name field looks like "USB Serial Device (COM7)",
+                // so we want the port name between the parens.
+                const string ComPortNamePattern = @"\((COM[\d]+)\)";
+
+                string queryArgument = @$"PATH Win32_PnPEntity WHERE ""PNPClass = 'Ports' AND " +
+                    @$"DeviceID LIKE '{MeadowPnpDeviceIDPrefix}%'"" GET {PnpEntityFields}";
+
+                // Can't use System.Management.ManagementObjectSearcher, not supported in netstandard2.0
+
+                logger ??= NullLogger.Instance;
+                ProcessStartInfo psi = new()
+                {
+                    FileName = "wmic",
+                    Arguments = $"/OUTPUT:STDOUT {queryArgument}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                };
+
+                using var proc = Process.Start(psi);
+                proc.WaitForExit(1000);
+                var output = proc.StandardOutput.ReadToEnd();
+                var error = proc.StandardError.ReadToEnd();
+
+                if (string.IsNullOrWhiteSpace(error) == false)
+                {
+                    // WMIC gave us an error. Most likely 'no instances', fall back to regular port scanning.
+                    throw new ApplicationException($"WMIC Execution error: {error}");
+                }
+
+                string[] rows = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (rows.Length < 2)
+                {
+                    // if all we got the header, fall back to regular port scanning.
+                    throw new ApplicationException();
+                }
+
+                List<string> ports = new();
+
+                // go through all the result rows,
+                foreach (string queryResult in rows.Skip(1))
+                {
+                    // pull the port name out of the string.
+                    var matches = Regex.Matches(queryResult, ComPortNamePattern, RegexOptions.IgnoreCase);
+                    if (matches.Count == 0 || matches[0].Success == false)
+                    {
+                        logger.LogInformation("Failed to extract port name from device entry: {device}", queryResult);
+                        continue;
+                    }
+
+                    // there is only one match, and our capture group is number 1. (group 0 is the whole match)
+                    string portName = matches[0].Groups[1].Value;
+                    ports.Add(portName);
+                }
+
+                return ports;
+            }
+            catch (ApplicationException aex)
+            {
+                // eat it for now
+                logger.LogDebug(
+                    aex,
+                    "This error can be safely ignored.");
+
+                // we failed to find a port using wmic, fall back to
+                // returning every potential port as reported by SerialPort.
+                var ports = SerialPort.GetPortNames();
+
+                //hack to skip COM1
+                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+
+                return ports;
+            }
         }
     }
 }
