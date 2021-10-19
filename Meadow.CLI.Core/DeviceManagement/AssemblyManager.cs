@@ -13,7 +13,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         private static readonly List<string> dependencyMap = new List<string>();
         private static string? fileName;
 
-        private static readonly string meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, "bcl");
+        private static readonly string meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, "meadow_assemblies");
 
         public static List<string> GetDependencies(string file, string path)
         {
