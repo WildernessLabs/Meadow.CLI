@@ -49,7 +49,7 @@ namespace Meadow.CLI.Core
             _logger = loggerFactory.CreateLogger<DownloadManager>();
         }
 
-        public async Task DownloadLatestAsync(string? version = null)
+        public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
             string _versionCheckUrl = null;
             if (version is null) {
@@ -93,8 +93,12 @@ namespace Meadow.CLI.Core
 
             if (Directory.Exists(local_path))
             {
-                     _logger.LogInformation( $"OS version {release.Version}  is already installed." );
+                if (force)
+                    CleanPath(local_path);
+                else {
+                     _logger.LogInformation( $"OS version {release.Version} is already installed." );
                      return;
+                }
             }
 
             Directory.CreateDirectory(local_path);
