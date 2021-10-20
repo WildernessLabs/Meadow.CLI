@@ -28,6 +28,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private readonly IMeadowDevice _meadow;
         private ActiveClient? _activeClient;
         private int _activeClientCount = 0;
+        private TcpListener _listener;
         private Task? _listenerTask;
         private bool _isReady;
         public bool Disposed;
@@ -75,6 +76,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// <returns>A <see cref="Task"/> representing the shutdown operation</returns>
         public async Task StopListeningAsync()
         {
+            _listener?.Stop();
+            
             if (_cancellationTokenSource != null)
                 _cancellationTokenSource?.Cancel(false);
 
@@ -86,15 +89,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                var tcpListener = new TcpListener(LocalEndpoint);
-                tcpListener.Start();
-                LocalEndpoint = (IPEndPoint)tcpListener.LocalEndpoint;
+                var _listener = new TcpListener(LocalEndpoint);
+                _listener.Start();
+                LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
                 _isReady = true;
                 while (!_cancellationTokenSource.IsCancellationRequested)
                 {
                     // Wait for client to connect
-                    TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
+                    TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
                     OnConnect(tcpClient);
                 }
             }
