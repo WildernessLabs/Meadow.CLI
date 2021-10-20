@@ -13,12 +13,13 @@ namespace Meadow.CLI.Core.DeviceManagement
         private static readonly List<string> dependencyMap = new List<string>();
         private static string? fileName;
 
-        private static readonly string meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, "meadow_assemblies");
+        private static string meadow_override_path = null;
 
-        public static List<string> GetDependencies(string file, string path)
+        public static List<string> GetDependencies(string file, string path, string osVersion)
         {
+            meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, osVersion, "meadow_assemblies");
             if (!Directory.Exists(meadow_override_path))
-                throw new Exception ("OS download not found. Please run the 'download os' command");
+                throw new Exception ($"OS download for version {osVersion} not found.");
 
             dependencyMap.Clear();
 

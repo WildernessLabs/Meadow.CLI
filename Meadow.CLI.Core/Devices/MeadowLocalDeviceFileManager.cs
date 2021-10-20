@@ -504,9 +504,11 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task DeployAppAsync(string applicationFilePath,
+                                        string osVersion,
                                          bool includePdbs = false,
                                          CancellationToken cancellationToken = default)
         {
+
             if (!File.Exists(applicationFilePath))
             {
                 Console.WriteLine($"{applicationFilePath} not found.");
@@ -581,7 +583,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             }
 
-            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
+            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion);
 
             //crawl dependencies
             foreach (var file in dependencies)
@@ -617,7 +619,7 @@ namespace Meadow.CLI.Core.Devices
                     continue;
                 }
 
-                if (!File.Exists(Path.Combine(fi.DirectoryName, filename)))
+                if (!File.Exists(file.Key))
                 {
                     Logger.LogInformation("{file} not found", filename);
                     continue;

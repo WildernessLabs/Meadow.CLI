@@ -260,7 +260,11 @@ namespace Meadow.CLI.Core.Devices
             await MonoDisableAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            await _meadowDevice.DeployAppAsync(fileName, includePdbs, cancellationToken).ConfigureAwait(false);
+            //check the device OS version, in order to download matching assemblies to it
+            var deviceInfo = await _meadowDevice.GetDeviceInfoAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
+            string osVersion = deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
+
+            await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken).ConfigureAwait(false);
 
             await MonoEnableAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
