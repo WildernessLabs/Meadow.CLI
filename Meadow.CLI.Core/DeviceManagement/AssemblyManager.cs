@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, osVersion, "meadow_assemblies");
             if (!Directory.Exists(meadow_override_path))
-                throw new Exception ($"OS download for version {osVersion} not found.");
+                meadow_override_path = path;
 
             dependencyMap.Clear();
 

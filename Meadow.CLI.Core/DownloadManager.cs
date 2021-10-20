@@ -76,6 +76,13 @@ namespace Meadow.CLI.Core
                                      .GetCustomAttribute<AssemblyFileVersionAttribute>()
                                      .Version;
 
+            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
+            {
+                _logger.LogInformation(
+                    $"Installing OS version {release.Version} is not supported by this tool anymore. The minimum version supported is 0.6.0.0.");
+                return;
+            }
+
             if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
                 _logger.LogInformation(
