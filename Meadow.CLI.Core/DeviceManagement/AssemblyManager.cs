@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static List<string> GetDependencies(string file, string path, string osVersion)
         {
-            meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, osVersion, "meadow_assemblies");
+            meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion, "meadow_assemblies");
             if (!Directory.Exists(meadow_override_path))
                 meadow_override_path = path;
 
