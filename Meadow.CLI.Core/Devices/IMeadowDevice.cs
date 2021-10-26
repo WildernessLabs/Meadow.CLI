@@ -47,7 +47,7 @@ namespace Meadow.CLI.Core.Devices
         public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default);
         public Task QspiReadAsync(int value, CancellationToken cancellationToken = default);
         public Task QspiInitAsync(int value, CancellationToken cancellationToken = default);
-        public Task DeployAppAsync(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default);
+        public Task DeployAppAsync(string fileName, string osVersion, bool includePdbs = false, CancellationToken cancellationToken = default);
         public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default);
         public Task StartDebuggingAsync(int port, CancellationToken cancellationToken);
         public Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
