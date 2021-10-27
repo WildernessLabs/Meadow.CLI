@@ -68,7 +68,7 @@ namespace Meadow.CLI.Core
             string _versionCheckUrl = null;
             if (version is null) {
                 _logger.LogInformation("Downloading latest version file");
-                _versionCheckUrl = _versionCheckUrlRoot + "latest.json";
+                _versionCheckUrl = _versionCheckUrlRoot + "latest_dev.json";
             }
             else {
                 _logger.LogInformation("Download version file for release " + version);
@@ -84,6 +84,11 @@ namespace Meadow.CLI.Core
                 var ex = new Exception("Unable to identify release.");
                 _logger.LogError(ex, "Unable to identify release. Payload: {payload}", payload);
                 throw ex;
+            }
+
+            if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            {
+                Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
             }
 
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
@@ -105,11 +110,6 @@ namespace Meadow.CLI.Core
                     $"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
 
                 return;
-            }
-
-            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
-            {
-                Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
             }
 
             var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
@@ -157,7 +157,9 @@ namespace Meadow.CLI.Core
                                            .ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode == false)
+                {
                     throw new Exception("Failed to download dfu-util");
+                }
 
                 using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var downloadFileStream = new DownloadFileStream(stream, _logger))
