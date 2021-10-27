@@ -19,10 +19,24 @@ namespace Meadow.CLI.Core
         readonly string _versionCheckUrlRoot =
             "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
 
-        public static readonly string FirmwareDownloadsFilePath = Path.Combine(
+        public static readonly string FirmwareDownloadsFilePathRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
             "Firmware");
+
+        public static string FirmwareLatestVersion {
+            get {
+                string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
+                if (File.Exists(latest_txt))
+                    return File.ReadAllText(latest_txt);
+                else
+                    throw new FileNotFoundException("OS download was not found.");
+             }
+        }
+
+        public static string FirmwareDownloadsFilePath {
+            get { return Path.Combine(FirmwareDownloadsFilePathRoot, FirmwareLatestVersion); }
+        }
 
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -54,7 +68,7 @@ namespace Meadow.CLI.Core
             string _versionCheckUrl = null;
             if (version is null) {
                 _logger.LogInformation("Downloading latest version file");
-                _versionCheckUrl = _versionCheckUrlRoot + "latest_dev.json";
+                _versionCheckUrl = _versionCheckUrlRoot + "latest.json";
             }
             else {
                 _logger.LogInformation("Download version file for release " + version);
@@ -72,11 +86,13 @@ namespace Meadow.CLI.Core
                 throw ex;
             }
 
+            File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+
             var appVersion = Assembly.GetEntryAssembly()!
                                      .GetCustomAttribute<AssemblyFileVersionAttribute>()
                                      .Version;
 
-            if (release.Version.ToVersion() < "0.5.3.0".ToVersion())
+            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
             {
                 _logger.LogInformation(
                     $"Installing OS version {release.Version} is not supported by this tool anymore. The minimum version supported is 0.6.0.0.");
@@ -91,12 +107,12 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            if (!Directory.Exists(FirmwareDownloadsFilePath))
+            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
             {
-                Directory.CreateDirectory(FirmwareDownloadsFilePath);
+                Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
             }
 
-            var local_path = Path.Combine(FirmwareDownloadsFilePath, release.Version);
+            var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
 
             if (Directory.Exists(local_path))
             {
