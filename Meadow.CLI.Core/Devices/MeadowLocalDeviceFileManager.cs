@@ -547,11 +547,13 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
             }
 
-            var extensions = new List<string>
-                             { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt", ".pem" };
+            //  var extensions = new List<string>
+            //                  { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt", ".pem" };
 
-            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-                                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
+            var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+                                   .Where(s => new FileInfo(s).Extension != ".dll")
+                                   .Where(s => new FileInfo(s).Extension != ".pdb");
+                //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
 
@@ -583,6 +585,12 @@ namespace Meadow.CLI.Core.Devices
             }
 
             var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion);
+
+            //add local files (this includes App.exe)
+            foreach (var file in binaries)
+            {
+                await AddFile(file, false);
+            }
 
             //crawl dependencies
             foreach (var file in dependencies)
