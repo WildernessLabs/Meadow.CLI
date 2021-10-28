@@ -77,7 +77,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         public async Task StopListeningAsync()
         {
             _listener?.Stop();
-            
+
             if (_cancellationTokenSource != null)
                 _cancellationTokenSource?.Cancel(false);
 
@@ -89,7 +89,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                var _listener = new TcpListener(LocalEndpoint);
+                _listener = new TcpListener(LocalEndpoint);
                 _listener.Start();
                 LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
