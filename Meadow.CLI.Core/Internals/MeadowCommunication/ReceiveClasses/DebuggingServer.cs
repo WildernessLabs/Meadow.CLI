@@ -32,6 +32,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private Task? _listenerTask;
         private bool _isReady;
         public bool Disposed;
+        private bool _debuggerConnected;
 
         // Constructor
         /// <summary>
@@ -77,7 +78,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         public async Task StopListeningAsync()
         {
             _listener?.Stop();
-
+            _debuggerConnected = false;
             if (_cancellationTokenSource != null)
                 _cancellationTokenSource?.Cancel(false);
 
@@ -94,11 +95,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
                 _isReady = true;
-                while (!_cancellationTokenSource.IsCancellationRequested)
+
+                // We only one to listen until the debugger is connected (presumably) then we can stop spinning.
+                while (!_debuggerConnected)
                 {
                     // Wait for client to connect
                     TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
                     OnConnect(tcpClient);
+                    if (_debuggerConnected)
+                        break;
                 }
             }
             catch (Exception ex)
@@ -111,9 +116,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                _logger.LogInformation("Visual Studio has connected");
+                _logger.LogInformation("Visual Studio has Connected");
                 lock (this)
                 {
+                    _debuggerConnected = true;
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                     {
                         _logger.LogDebug("Closing active client");
@@ -217,8 +223,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 catch (IOException ioe)
                 {
                     // VS client probably died
-                    _logger.LogInformation("Visual Studio Disconnected");
-                    _logger.LogTrace(ioe, "Visual Studio Disconnected");
+                    _logger.LogInformation("Visual Studio has Disconnected");
+                    _logger.LogTrace(ioe, "Visual Studio has Disconnected");
                 }
                 catch (Exception e)
                 {
@@ -243,6 +249,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 
                         await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
                         _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                    }
+                    catch (OperationCanceledException) {
+                        // FIXME This should only happen when we kill the debugger.
                     }
                     catch (Exception e)
                     {
