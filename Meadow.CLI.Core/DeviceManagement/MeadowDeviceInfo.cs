@@ -114,10 +114,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 _elements.Add(KN_MODEL, ParseValue("Model: ", deviceInfoString));
                 _elements.Add(KN_OS_VERSION, ParseValue("MeadowOS Version: ", deviceInfoString));
                 _elements.Add(KN_PROCESSOR_TYPE, ParseValue("Processor: ", deviceInfoString));
-                _elements.Add(KN_PROCESSOR_ID, ParseValue("Processor Id:", deviceInfoString));
+                _elements.Add(KN_PROCESSOR_ID, ParseValue("Processor Id: ", deviceInfoString));
                 _elements.Add(KN_SERIAL_NUMBER, ParseValue("Serial Number: ", deviceInfoString));
                 _elements.Add(KN_COPROCESSOR_TYPE, ParseValue("CoProcessor: ", deviceInfoString));
                 _elements.Add(KN_COPROCESSOR_VERSION, ParseValue("CoProcessor OS Version: ", deviceInfoString));
+                _elements.Add(KN_HARDWARE_VERSION, ParseValue("H/W Version: ", deviceInfoString));
+                _elements.Add(KN_DEVICE_NAME, ParseValue("Device Name: ", deviceInfoString));
             }
         }
 
@@ -301,9 +303,18 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <returns>Value associated with the key.</returns>
         private string ParseValue(string key, string source)
         {
+            string result = string.Empty;
             var start = source.IndexOf(key, StringComparison.Ordinal) + key.Length;
-            var end = source.IndexOf(',', start);
-            return source.Substring(start, end - start);
+            if (start >= 0)
+            {
+                var end = source.IndexOf(',', start);
+                if (end < 0)
+                {
+                    end = source.Length;
+                }
+                result = source.Substring(start, end - start);
+            }
+            return (result);
         }
     }
 }
