@@ -120,6 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 _elements.Add(KN_COPROCESSOR_VERSION, ParseValue("CoProcessor OS Version: ", deviceInfoString));
                 _elements.Add(KN_HARDWARE_VERSION, ParseValue("H/W Version: ", deviceInfoString));
                 _elements.Add(KN_DEVICE_NAME, ParseValue("Device Name: ", deviceInfoString));
+                _elements.Add(KN_MONO_VERSION, ParseValue("Mono Version: ", deviceInfoString));
             }
         }
 
