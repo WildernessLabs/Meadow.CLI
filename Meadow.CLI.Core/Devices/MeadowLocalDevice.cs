@@ -70,7 +70,7 @@ namespace Meadow.CLI.Core.Devices
             var info = await GetDeviceInfoAsync(timeout, cancellationToken)
                            .ConfigureAwait(false);
 
-            return info.Name;
+            return info.Product;
         }
 
         public async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default)
