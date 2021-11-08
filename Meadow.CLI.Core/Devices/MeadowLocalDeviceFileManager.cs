@@ -504,6 +504,7 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task DeployAppAsync(string applicationFilePath,
+                                        string osVersion,
                                          bool includePdbs = false,
                                          CancellationToken cancellationToken = default)
         {
@@ -546,11 +547,13 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
             }
 
-            var extensions = new List<string>
-                             { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt" };
+            //  var extensions = new List<string>
+            //                  { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt", ".pem" };
 
-            var paths = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-                                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
+            var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+                                   .Where(s => new FileInfo(s).Extension != ".dll")
+                                   .Where(s => new FileInfo(s).Extension != ".pdb");
+                //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
 
@@ -571,8 +574,7 @@ namespace Meadow.CLI.Core.Devices
                 var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
                 Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
-                files.Add(Path.GetFileName(file), crc);
-
+                files.Add(file, crc);
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(file, "pdb");
@@ -582,51 +584,58 @@ namespace Meadow.CLI.Core.Devices
                 }
             }
 
-            foreach (var file in paths)
-            {
-                await AddFile(file, includePdbs)
-                    .ConfigureAwait(false);
-            }
+            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion);
 
-            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName);
+            //add local files (this includes App.exe)
+            foreach (var file in binaries)
+            {
+                await AddFile(file, false);
+            }
 
             //crawl dependencies
             foreach (var file in dependencies)
             {
-                await AddFile(Path.Combine(fi.DirectoryName, file), includePdbs);
+                await AddFile(file, includePdbs);
             }
 
             // delete unused files
-            foreach (var file in deviceFiles.Keys)
+            foreach (var devicefile in deviceFiles.Keys)
             {
-                if (files.ContainsKey(file) == false)
+                bool found = false;
+                foreach (var localfile in files.Keys)
                 {
-                    await DeleteFileAsync(file, cancellationToken: cancellationToken)
+                    if (Path.GetFileName(localfile).Equals(devicefile))
+                        found = true;
+                }
+                if (!found)
+                {
+                    await DeleteFileAsync(devicefile, cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
 
-                    Logger.LogInformation("Removing file: {file}", file);
+                    Logger.LogInformation("Removing file: {file}", devicefile);
                 }
             }
 
             // write new files
             foreach (var file in files)
             {
-                if (deviceFiles.ContainsKey(file.Key) && deviceFiles[file.Key] == file.Value)
+                var filename = Path.GetFileName(file.Key);
+                if (deviceFiles.ContainsKey(filename) && deviceFiles[filename] == file.Value)
                 {
-                    Logger.LogInformation("Skipping file (hash match): {file}", file.Key);
+                    Logger.LogInformation("Skipping file (hash match): {file}", filename);
                     continue;
                 }
 
-                if (!File.Exists(Path.Combine(fi.DirectoryName, file.Key)))
+                if (!File.Exists(file.Key))
                 {
-                    Logger.LogInformation("{file} not found", file.Key);
+                    Logger.LogInformation("{file} not found", filename);
                     continue;
                 }
 
-                Logger.LogInformation("Writing file: {file}", file.Key);
+                Logger.LogInformation("Writing file: {file}", filename);
                 await WriteFileAsync(
-                        Path.Combine(fi.DirectoryName, file.Key),
                         file.Key,
+                        filename,
                         DefaultTimeout,
                         cancellationToken)
                     .ConfigureAwait(false);

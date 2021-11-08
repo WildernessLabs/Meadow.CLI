@@ -16,12 +16,15 @@ namespace Meadow.CLI.Commands.Utility
             _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }
 
+        [CommandOption("force", 'f', Description = "Force re-download of the OS", IsRequired = false)]
+        public bool force { get; init; } = false;
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
             await base.ExecuteAsync(console);
 
-            await DownloadManager.DownloadLatestAsync().ConfigureAwait(false);
+            await DownloadManager.DownloadLatestAsync(null, force).ConfigureAwait(false);
         }
     }
 }

@@ -16,15 +16,27 @@ namespace Meadow.CLI.Core
 {
     public class DownloadManager
     {
-        readonly string _versionCheckUrl =
-            "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/latest.json";
+        readonly string _versionCheckUrlRoot =
+            "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
 
-        string VersionCheckFile => new Uri(_versionCheckUrl).Segments.Last();
-
-        public static readonly string FirmwareDownloadsFilePath = Path.Combine(
+        public static readonly string FirmwareDownloadsFilePathRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
             "Firmware");
+
+        public static string FirmwareLatestVersion {
+            get {
+                string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
+                if (File.Exists(latest_txt))
+                    return File.ReadAllText(latest_txt);
+                else
+                    throw new FileNotFoundException("OS download was not found.");
+             }
+        }
+
+        public static string FirmwareDownloadsFilePath {
+            get { return Path.Combine(FirmwareDownloadsFilePathRoot, FirmwareLatestVersion); }
+        }
 
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -51,9 +63,18 @@ namespace Meadow.CLI.Core
             _logger = loggerFactory.CreateLogger<DownloadManager>();
         }
 
-        public async Task DownloadLatestAsync()
+        public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
-            _logger.LogInformation("Downloading latest version file");
+            string _versionCheckUrl = null;
+            if (version is null) {
+                _logger.LogInformation("Downloading latest version file");
+                _versionCheckUrl = _versionCheckUrlRoot + "latest_dev.json";
+            }
+            else {
+                _logger.LogInformation("Download version file for release " + version);
+                _versionCheckUrl = _versionCheckUrlRoot + version + ".json";
+            }
+            string VersionCheckFile = new Uri(_versionCheckUrl).Segments.Last();
             var versionCheckFile = await DownloadFileAsync(new Uri(_versionCheckUrl));
 
             var payload = File.ReadAllText(versionCheckFile);
@@ -65,9 +86,23 @@ namespace Meadow.CLI.Core
                 throw ex;
             }
 
+            if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            {
+                Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
+            }
+
+            File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+
             var appVersion = Assembly.GetEntryAssembly()!
                                      .GetCustomAttribute<AssemblyFileVersionAttribute>()
                                      .Version;
+
+            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
+            {
+                _logger.LogInformation(
+                    $"Installing OS version {release.Version} is not supported by this tool anymore. The minimum version supported is 0.6.0.0.");
+                return;
+            }
 
             if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
@@ -77,21 +112,28 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            if (Directory.Exists(FirmwareDownloadsFilePath))
+            var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
+
+            if (Directory.Exists(local_path))
             {
-                CleanPath(FirmwareDownloadsFilePath);
+                if (force)
+                    CleanPath(local_path);
+                else {
+                     _logger.LogInformation( $"OS version {release.Version} is already installed." );
+                     return;
+                }
             }
 
-            Directory.CreateDirectory(FirmwareDownloadsFilePath);
+            Directory.CreateDirectory(local_path);
 
             _logger.LogInformation("Downloading latest MCU firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL));
+            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path);
 
             _logger.LogInformation("Downloading latest ESP32 firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL));
+            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path);
 
             _logger.LogInformation(
-                $"Downloaded and extracted OS version {release.Version} to: {FirmwareDownloadsFilePath}");
+                $"Downloaded and extracted OS version {release.Version} to: {local_path}");
         }
 
         public async Task InstallDfuUtilAsync(bool is64Bit = true,
@@ -115,7 +157,9 @@ namespace Meadow.CLI.Core
                                            .ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode == false)
+                {
                     throw new Exception("Failed to download dfu-util");
+                }
 
                 using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var downloadFileStream = new DownloadFileStream(stream, _logger))
@@ -224,14 +268,14 @@ namespace Meadow.CLI.Core
             return downloadFileName;
         }
 
-        private async Task DownloadAndExtractFileAsync(Uri uri, CancellationToken cancellationToken = default)
+        private async Task DownloadAndExtractFileAsync(Uri uri, string target_path, CancellationToken cancellationToken = default)
         {
             var downloadFileName = await DownloadFileAsync(uri, cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Extracting firmware to {path}", FirmwareDownloadsFilePath);
+            _logger.LogDebug("Extracting firmware to {path}", target_path);
             ZipFile.ExtractToDirectory(
                 downloadFileName,
-                FirmwareDownloadsFilePath);
+                target_path);
             try
             {
                 File.Delete(downloadFileName);
