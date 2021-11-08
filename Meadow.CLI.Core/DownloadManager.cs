@@ -68,7 +68,7 @@ namespace Meadow.CLI.Core
             string _versionCheckUrl = null;
             if (version is null) {
                 _logger.LogInformation("Downloading latest version file");
-                _versionCheckUrl = _versionCheckUrlRoot + "latest_dev.json";
+                _versionCheckUrl = _versionCheckUrlRoot + "latest.json";
             }
             else {
                 _logger.LogInformation("Download version file for release " + version);
