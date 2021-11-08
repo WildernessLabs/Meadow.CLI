@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Microsoft.Extensions.Logging;
@@ -13,7 +10,6 @@ namespace Meadow.CLI.Core.Devices
 {
     public class MeadowSerialDevice : MeadowLocalDevice
     {
-        private readonly object lck = new object();
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
@@ -38,13 +34,10 @@ namespace Meadow.CLI.Core.Devices
 
         private protected override void Dispose(bool disposing)
         {
-            lock (lck)
+            if (disposing)
             {
-                if (disposing)
-                {
-                    Logger.LogTrace("Disposing SerialPort");
-                    SerialPort?.Dispose();
-                }
+                Logger.LogTrace("Disposing SerialPort");
+                SerialPort?.Dispose();
             }
         }
 
@@ -97,8 +90,8 @@ namespace Meadow.CLI.Core.Devices
                 {
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
-
-                await Task.Delay(100, cancellationToken)
+                //ToDo: Adrian - review - increased delay from 100ms to 500ms
+                await Task.Delay(500, cancellationToken)
                           .ConfigureAwait(false);
             }
 
@@ -124,8 +117,22 @@ namespace Meadow.CLI.Core.Devices
             
             if (port.IsOpen)
                 port.Close();
-            port.Open();
-            port.BaseStream.ReadTimeout = 0;
+
+            int retries = 15;
+
+            for (int i = 0; i < retries; i++)
+            {
+                try
+                {   //on Windows the port can be slow to release after disposing 
+                    port.Open();
+                    port.BaseStream.ReadTimeout = 0;
+                    break;
+                }
+                catch
+                {
+                    Thread.Sleep(500);
+                }
+            }
 
             return port;
         }

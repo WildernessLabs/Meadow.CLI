@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -78,7 +79,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             if (!File.Exists(filename))
             {
-                logger.LogError("Please specify valid --File or --Download latest");
+                logger.LogError("Please specify valid --File or download the latest with: meadow download os");
                 return false;
             }
             else
@@ -95,7 +96,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow install dfu-util");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
@@ -111,7 +112,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util update required. To install, run in administrator mode: meadow --InstallDfuUtil");
+                    logger.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
@@ -221,15 +222,21 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     return string.Empty;
                 }
             }
-            catch (Exception ex)
+            catch (Win32Exception ex)
             {
-                if (ex.Message.Contains("cannot find") || ex.Message.Contains("No such file or directory"))
+                switch (ex.NativeErrorCode)
                 {
-                    return string.Empty;
-                }
-                else
-                {
-                    throw ex;
+                    case 0x0002: // ERROR_FILE_NOT_FOUND
+                    case 0x0003: // ERROR_PATH_NOT_FOUND
+                    case 0x000F: // ERROR_INVALID_DRIVE
+                    case 0x0014: // ERROR_BAD_UNIT
+                    case 0x001B: // ERROR_SECTOR_NOT_FOUND
+                    case 0x0033: // ERROR_REM_NOT_LIST
+                    case 0x013D: // ERROR_MR_MID_NOT_FOUND
+                        return string.Empty;
+                    
+                    default:
+                        throw;
                 }
             }
         }

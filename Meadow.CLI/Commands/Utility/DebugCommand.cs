@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -11,8 +12,8 @@ namespace Meadow.CLI.Commands.Utility
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
 
-        public DebugCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public DebugCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }
@@ -28,7 +29,11 @@ namespace Meadow.CLI.Commands.Utility
             await base.ExecuteAsync(console);
 
             var cancellationToken = console.RegisterCancellationHandler();
-            await Meadow.StartDebuggingSessionAsync(Port, cancellationToken).ConfigureAwait(false);
+            using (var server = await Meadow.StartDebuggingSessionAsync(Port, cancellationToken).ConfigureAwait(false))
+            {
+                _logger.LogInformation("Debugging server started. Press enter to exit");
+                await console.Input.ReadLineAsync();
+            }
         }
     }
 }

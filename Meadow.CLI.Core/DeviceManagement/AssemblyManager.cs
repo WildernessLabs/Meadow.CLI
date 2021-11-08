@@ -2,6 +2,7 @@
 using System.IO;
 using Mono.Cecil;
 using Mono.Collections.Generic;
+using System;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -10,69 +11,67 @@ namespace Meadow.CLI.Core.DeviceManagement
     public static class AssemblyManager
     {
         private static readonly List<string> dependencyMap = new List<string>();
-        private static string? folderPath;
         private static string? fileName;
 
-        public static List<string> GetDependencies(string file, string path)
+        private static string meadow_override_path = null;
+
+        public static List<string> GetDependencies(string file, string path, string osVersion)
         {
+            meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion, "meadow_assemblies");
+            if (!Directory.Exists(meadow_override_path))
+                meadow_override_path = path;
+
             dependencyMap.Clear();
 
-            var refs = GetAssemblyNameReferences(fileName = file, folderPath = path);
+            var refs = GetAssemblyNameReferences(fileName = file, path);
 
-            var dependencies = GetDependencies(refs, dependencyMap);
+            var dependencies = GetDependencies(refs, dependencyMap, path);
 
-            for (int i = 0; i < dependencies.Count; i++)
-            {
-                dependencies[i] += ".dll";
-            }
             return dependencies;
         }
 
-        static Collection<AssemblyNameReference> GetAssemblyNameReferences(string fileName, string? path = null)
+        static (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
         {
-            if (!string.IsNullOrWhiteSpace(path))
+            string? ResolvePath (string fileName, string path)
             {
-                fileName = Path.Combine(path!, fileName);
+                string attempted_path = Path.Combine(path, fileName);
+                if (Path.GetExtension(fileName) != ".exe" &&
+                    Path.GetExtension(fileName) != ".dll")
+                {
+                    attempted_path += ".dll";
+                }
+                return File.Exists(attempted_path) ? attempted_path : null;
             }
 
-            if (Path.GetExtension(fileName) != ".exe" &&
-                Path.GetExtension(fileName) != ".dll")
-            {
-                if (fileName.Contains(".dll") == false)
-                {
-                    fileName += ".dll";
-                }
-            }
+            string? resolved_path = ResolvePath (fileName, meadow_override_path) ?? ResolvePath (fileName, path);
+
+            if (resolved_path is null)
+                return (null, null);
 
             Collection<AssemblyNameReference> references;
 
-            if(File.Exists(fileName) == false)
-            {
-                return null;
-            }
-
-            using (var definition = AssemblyDefinition.ReadAssembly(fileName))
+            using (var definition = AssemblyDefinition.ReadAssembly(resolved_path))
             {
                 references = definition.MainModule.AssemblyReferences;
             }
-            return references;
+            return (references, resolved_path);
         }
 
-        static List<string> GetDependencies(Collection<AssemblyNameReference> references, List<string> dependencyMap)
+        static List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
         {
-            foreach (var ar in references)
+            if (dependencyMap.Contains(references.Item2))
+                return dependencyMap;
+
+            dependencyMap.Add(references.Item2);
+
+            foreach (var ar in references.Item1)
             {
-                if (!dependencyMap.Contains(ar.Name))
-                {
-                    var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
 
-                    if (namedRefs == null)
-                        continue;
+                if (namedRefs.Item1 == null)
+                    continue;
 
-                    dependencyMap.Add(ar.Name);
-
-                    GetDependencies(namedRefs, dependencyMap);
-                }
+                GetDependencies(namedRefs, dependencyMap, folderPath);
             }
 
             return dependencyMap;

@@ -12,14 +12,8 @@ namespace TestApp
         static string _devicePort = "COM14"; //win
         public static void Main(string[] args)
         {
-            ExecuteCLI("--FlashOS");
-            ExecuteCLI("--Download");
-            ExecuteCLI($"--MonoDisable -s {_devicePort}");
-            // try one more time. this is usually needed right after OS flash for some reason
-            ExecuteCLI($"--MonoDisable -s {_devicePort}");
-            ExecuteCLI("--MonoUpdateRt");
-            ExecuteCLI("--FlashEsp");
-            ExecuteCLI("--MonoEnable");
+            ExecuteCLI("download os");
+            ExecuteCLI($"flash os -s {_devicePort}");
 
             Console.WriteLine("Done!");
             Console.Read();

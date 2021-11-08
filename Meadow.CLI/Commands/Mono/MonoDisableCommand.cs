@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -10,11 +11,15 @@ namespace Meadow.CLI.Commands.Mono
     public class MonoDisableCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoDisableCommand> _logger;
-        public MonoDisableCommand(ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        
+        public MonoDisableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
             _logger = LoggerFactory.CreateLogger<MonoDisableCommand>();
         }
+
+        [CommandOption("force",'f', Description = "Send the Mono Disable Command even if Mono is already disabled")]
+        public bool Force { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -22,7 +27,7 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoDisableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.MonoDisableAsync(Force, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Mono Disabled Successfully");
         }
     }

@@ -122,6 +122,7 @@ namespace Meadow.CLI.Core.Devices
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME =>
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
                             .WithUserData(lastInSeries ? 1U : 0U)
+                            .WithTimeout(TimeSpan.FromSeconds(60))
                             .Build(),
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
@@ -341,6 +342,9 @@ namespace Meadow.CLI.Core.Devices
                 if (command.CompletionPredicate(e))
                 {
                     Logger.LogTrace("Setting result complete");
+                    //message = e.Message;
+                    //messageType = e.MessageType;
+                    result = true; //TODO: Adrian - Pete - should this be here?? I added it
                     tcs.SetResult(true);
                 }
             }

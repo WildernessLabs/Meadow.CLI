@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
@@ -9,9 +10,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
     [Command("flash esp", Description = "Flash the ESP co-processor")]
     public class FlashEspCommand : MeadowSerialCommand
     {
-        public FlashEspCommand(ILoggerFactory loggerFactory,
-                               MeadowDeviceManager meadowDeviceManager)
-            : base(loggerFactory, meadowDeviceManager)
+        public FlashEspCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
+            : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
         }
 

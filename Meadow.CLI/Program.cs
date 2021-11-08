@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using Meadow.CLI.Commands;
+using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -45,14 +46,26 @@ namespace Meadow.CLI
                     builder.AddSerilog(Log.Logger, dispose:true);
                 });
 
-            services.AddSingleton<MeadowDeviceManager>();
+           services.AddSingleton<MeadowDeviceManager>();
+            services.AddSingleton<DownloadManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
-            await new CliApplicationBuilder().AddCommandsFromThisAssembly()
-                                                    .UseTypeActivator(serviceProvider.GetService)
-                                                    .SetExecutableName("meadow")
-                                                    .Build()
-                                                    .RunAsync();
+
+            try
+            {
+                await new CliApplicationBuilder().AddCommandsFromThisAssembly()
+                                                                    .UseTypeActivator(serviceProvider.GetService)
+                                                                    .SetExecutableName("meadow")
+                                                                    .Build()
+                                                                    .RunAsync();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Operation failed: {ex.Message}");
+#if DEBUG
+                throw ex; //debug spew for debug builds
+#endif
+            }
 
             Console.WriteLine("Done!");
 
