@@ -290,14 +290,120 @@ namespace Meadow.CLI.Core.DeviceManagement
         public static IList<string> GetMeadowSerialPortsForWindows(ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+            {
                 throw new PlatformNotSupportedException("This method is only supported on Windows");
+            }
 
-            var ports = SerialPort.GetPortNames();
+            logger ??= NullLogger.Instance;
 
-            //hack to skip COM1
-            ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+            try
+            {
+                // Meadow devices use VID 2E6A
+                const string MeadowPnpDeviceIDPrefix = @"USB\VID_2E6A";
 
-            return ports;
+                // The 'Name' field is where the COM port name is.
+                string PnpEntityFields = "Name";
+
+                // The name field looks like "USB Serial Device (COM7)",
+                // so we want the port name between the parens.
+                const string ComPortNamePattern = @"\((COM[\d]+)\)";
+
+                // Can't use System.Management.ManagementObjectSearcher, not supported in netstandard2.0,
+                // and neither is System.Management.Automation from the PowerShell SDK.
+                // so we are using the powershell cmdlet `Get-CmiInstance` (alias gcim)
+                // see: https://devblogs.microsoft.com/powershell/introduction-to-cim-cmdlets/
+
+                string queryArgument = @$"gcim Win32_PnPEntity " + // get all the Win32_PnPEntities
+                    @$"| where {{ $_.PNPClass -eq 'Ports' -and  $_.DeviceID -like '{MeadowPnpDeviceIDPrefix}*' }} " + // filter by ports with our device id
+                    @$"| select {PnpEntityFields}" + // select the properties we want
+                    $@"| fl "; // format as a list
+
+                ProcessStartInfo psi = new()
+                {
+                    FileName = "pwsh.exe",
+                    Arguments = $"-NoLogo -NoProfile -NonInteractive -Command {queryArgument}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                };
+
+                using Process? proc = Process.Start(psi);
+
+                if (proc is null)
+                {
+                    logger.LogWarning("Failed to start PowerShell process.");
+                    throw new ApplicationException();
+                }
+
+                bool exited = proc.WaitForExit(5000);
+
+                if (exited == false)
+                {
+                    logger.LogWarning("PowerShell invocation hung longer than allowed timeout.");
+                    throw new ApplicationException();
+                }
+
+                string? output = proc.StandardOutput.ReadToEnd()?.Trim();
+                string? error = proc.StandardError.ReadToEnd()?.Trim();
+
+                if (proc.ExitCode != 0)
+                {
+                    logger.LogWarning("Failed to find Meadow by gcim, Powershell ExitCode: {ExitCode}", proc.ExitCode);
+                    throw new ApplicationException($"PowerShell unexpected ExitCode: {proc.ExitCode}");
+                }
+                else if (string.IsNullOrWhiteSpace(error) == false)
+                {
+                    logger.LogWarning("Failed to find Meadow by gcim: {error}", error);
+                    throw new ApplicationException($"PowerShell Execution error: {error}");
+                }
+
+                string[] rows = output?.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
+                if (rows.Length == 0)
+                {
+                    // if we didn't get any rows, fall back to regular port scanning.
+                    // tbd: is this desired behavior?
+                    throw new ApplicationException();
+                }
+
+                List<string> ports = new();
+
+                // go through all the result rows
+                foreach (string queryResult in rows)
+                {
+                    // pull the port name out of the string.
+                    MatchCollection? matches = Regex.Matches(queryResult, ComPortNamePattern, RegexOptions.IgnoreCase);
+                    if (matches.Count == 0 || matches[0].Success == false)
+                    {
+                        logger.LogInformation("Failed to extract port name from device entry: {device}", queryResult);
+                        continue;
+                    }
+
+                    // there is only one match, and our capture group is number 1. (group 0 is the whole match)
+                    string portName = matches[0].Groups[1].Value;
+                    ports.Add(portName);
+                }
+
+                return ports;
+            }
+            catch (ApplicationException aex)
+            {
+                // eat it for now
+                logger.LogDebug(
+                    aex,
+                    "This error can be safely ignored.");
+
+                // we failed to find a port using cmi, fall back to
+                // returning every potential port as reported by SerialPort.
+                string[]? ports = SerialPort.GetPortNames();
+
+                //hack to skip COM1
+                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+
+                return ports;
+            }
         }
     }
 }
