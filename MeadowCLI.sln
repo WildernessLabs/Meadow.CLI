@@ -15,12 +15,9 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "MeadowLogger", "MeadowLogge
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VS2019", "VS2019", "{01672F83-BC02-42E2-961F-B3C2604B067F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI.Core.VS2019", "Meadow.CLI.Core\Meadow.CLI.Core.VS2019.csproj", "{A2C2A8AA-8026-48C0-A38A-45AB80323F17}"
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		MeadowLogger\MeadowLogger.projitems*{a04f6a20-2b23-4b29-9905-1b79a39bbf25}*SharedItemsImports = 13
-		MeadowLogger\MeadowLogger.projitems*{a2c2a8aa-8026-48c0-a38a-45ab80323f17}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,25 +76,12 @@ Global
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x64.Build.0 = Release|x64
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x86.ActiveCfg = Release|x86
 		{77078963-7FF2-4949-A8C2-1C36009D5FD6}.Release|x86.Build.0 = Release|x86
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|x64.Build.0 = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Debug|x86.Build.0 = Debug|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|x64.ActiveCfg = Release|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|x64.Build.0 = Release|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|x86.ActiveCfg = Release|Any CPU
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A04F6A20-2B23-4B29-9905-1B79A39BBF25} = {01672F83-BC02-42E2-961F-B3C2604B067F}
-		{A2C2A8AA-8026-48C0-A38A-45AB80323F17} = {01672F83-BC02-42E2-961F-B3C2604B067F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6FA96453-7A9C-4F78-89EE-676C4611C899}
