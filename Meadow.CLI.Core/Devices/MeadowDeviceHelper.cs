@@ -12,8 +12,6 @@ using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core.Devices
 {
     //a simple model object that represents a meadow device including connection
@@ -524,13 +522,7 @@ namespace Meadow.CLI.Core.Devices
 
         private void Dispose(bool disposing)
         {
-            lock (Logger)
-            {
-                if (disposing)
-                {
-                    _meadowDevice?.Dispose();
-                }
-            }
+            _meadowDevice?.Dispose();
         }
 
         public void Dispose()

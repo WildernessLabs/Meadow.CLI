@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 
 using Meadow.CLI.Core.Common;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core
 {
     public class DownloadManager

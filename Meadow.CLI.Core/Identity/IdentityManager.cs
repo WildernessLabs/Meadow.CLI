@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CredentialManagement;
 using IdentityModel.OidcClient;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 
 namespace Meadow.CLI.Core.Identity

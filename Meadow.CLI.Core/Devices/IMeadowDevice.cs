@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
