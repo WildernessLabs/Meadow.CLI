@@ -320,7 +320,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 ProcessStartInfo psi = new()
                 {
-                    FileName = "pwsh.exe",
+                    FileName = "powershell.exe",
                     Arguments = $"-NoLogo -NoProfile -NonInteractive -Command {queryArgument}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
