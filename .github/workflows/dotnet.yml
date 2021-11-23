@@ -14,8 +14,8 @@ jobs:
     steps:
     - name: Checkout current repo
       uses: actions/checkout@v2
-      with:
-        path: Meadow.CLI
+#      with:
+#        path: Meadow.CLI
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
