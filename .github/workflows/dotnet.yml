@@ -74,13 +74,23 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
 
-    - name: Build
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+      with:
+        vs-version: '[16.0, 17.0)'
+
+    - name: Build VS2019 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
 
     - name: Restore dependencies
       run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
 
-    - name: Build
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+      with:
+        vs-version: '[17.0, 18.0)'
+
+    - name: Build VS2022 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
 
   code_build:
@@ -110,6 +120,9 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore vs-code/src/csharp/VSCodeMeadow.sln
+
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
 
     - name: Build
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
