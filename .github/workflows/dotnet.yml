@@ -47,7 +47,7 @@ jobs:
     - name: Build
       run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
 
-win_build:
+  win_build:
     runs-on: windows-latest
     name: Build Win Extensions
 
@@ -83,7 +83,7 @@ win_build:
     - name: Build
       run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
 
-code_build:
+  code_build:
     runs-on: windows-latest
     name: Build VSCode Extension
 
