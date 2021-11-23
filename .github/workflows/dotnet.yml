@@ -15,13 +15,13 @@ jobs:
     - name: Checkout current repo
       uses: actions/checkout@v2
       with:
-        path: Meadow.CLI
+        path: main/Meadow.CLI
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
-        path: vs-win
+        path: main/vs-win
 # TODO Remove this ref once this gets merged into main
         ref: develop
 
@@ -34,7 +34,7 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
+      run: dotnet restore main/vs-win/VS_Meadow_Extension.2019.sln
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
@@ -42,10 +42,10 @@ jobs:
         vs-version: '[16.0, 17.0)'
 
     - name: Build VS2019 Extension
-      run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
+      run: msbuild main/vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
 
     - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
+      run: dotnet restore main/vs-win/VS_Meadow_Extension.2022.sln
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
@@ -53,7 +53,7 @@ jobs:
         vs-version: '[17.0, 18.0)'
 
     - name: Build VS2022 Extension
-      run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
+      run: msbuild main/vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
 
   mac_build:
     name: Build Mac Extension
