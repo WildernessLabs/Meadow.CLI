@@ -23,10 +23,6 @@ jobs:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
 
-#    - name: Set default Xamarin SDK versions
-#      run: |
-#        $VM_ASSETS/select-xamarin-sdk-v2.sh --mono=6.12 --mac=7.14
-
     - name: Set default Xcode 13.0
       run: |
         XCODE_ROOT=/Applications/Xcode_13.0.0.app
@@ -62,6 +58,8 @@ jobs:
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
+# TODO Remove this ref once this gets merged into main
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x
       uses: actions/setup-dotnet@v1
@@ -98,7 +96,7 @@ jobs:
     name: Build VSCode Extension
 
     steps:
-#    - name: Checkout current repo
+#  TODO Update VSCode to use side-by-side if possible - name: Checkout current repo
 #      uses: actions/checkout@v2
 #      with:
 #        path: Meadow.CLI
