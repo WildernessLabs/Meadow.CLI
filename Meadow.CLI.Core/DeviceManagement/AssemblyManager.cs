@@ -2,6 +2,9 @@
 using System.IO;
 using Mono.Cecil;
 using Mono.Collections.Generic;
+using System;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -12,6 +15,56 @@ namespace Meadow.CLI.Core.DeviceManagement
         private static readonly List<string> dependencyMap = new();
 
         private static string? meadowAssembliesPath = null;
+
+        public static IEnumerable<string> LinkDependencies(string file, string path, List<string> dependencies, bool includePdbs)
+        {
+            var prelink_dir = Path.Combine (path, "prelink_bin");
+            var prelink_app = Path.Combine (prelink_dir, file);
+            var prelink_os = Path.Combine (prelink_dir, "Meadow.dll");
+
+            if (Directory.Exists(prelink_dir))
+                Directory.Delete(prelink_dir, recursive: true);
+            Directory.CreateDirectory (prelink_dir);
+            File.Copy (Path.Combine(path, file), prelink_app, overwrite: true);
+            foreach (var dependency in dependencies) {
+                File.Copy (dependency,
+                            Path.Combine(prelink_dir, Path.GetFileName(dependency)),
+                            overwrite: true);
+                if (includePdbs)
+                {
+                    var pdbFile = Path.ChangeExtension(dependency, "pdb");
+                    if (File.Exists(pdbFile))
+                        File.Copy (pdbFile,
+                            Path.Combine(prelink_dir, Path.GetFileName(pdbFile)),
+                            overwrite: true);
+                }
+            }
+
+            var postlink_dir = Path.Combine (path, "postlink_bin");
+
+            if (Directory.Exists(postlink_dir))
+                Directory.Delete(postlink_dir, recursive: true);
+            Directory.CreateDirectory (postlink_dir);
+
+            var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var illinker_path = Path.Combine (base_path, "resources/illink.dll");
+            var descriptor_path = Path.Combine (base_path, "resources/meadow_link.xml");
+            var monolinker_args = $"{illinker_path} -x {descriptor_path} --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o {postlink_dir} -r {prelink_app} -a {prelink_os} -d {prelink_dir}";
+            Console.WriteLine(monolinker_args);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = "dotnet";
+                process.StartInfo.Arguments = monolinker_args;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = false;
+                process.Start();
+                process.WaitForExit();
+                if (process.ExitCode != 0)
+                    throw new Exception ("ILLinker execution failed!");
+            }
+
+            return Directory.EnumerateFiles(postlink_dir);
+        }
 
         public static List<string> GetDependencies(string file, string path, string osVersion)
         {

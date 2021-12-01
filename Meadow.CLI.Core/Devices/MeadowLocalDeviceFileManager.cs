@@ -594,6 +594,9 @@ namespace Meadow.CLI.Core.Devices
             var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
                 .Where(x => x.Contains("App.") == false).ToList();
 
+            var linked_dependencies = AssemblyManager.LinkDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+
+
             //add local files (this includes App.exe)
             foreach (var file in binaries)
             {
@@ -601,9 +604,9 @@ namespace Meadow.CLI.Core.Devices
             }
 
             //crawl dependencies
-            foreach (var file in dependencies)
+            foreach (var file in linked_dependencies)
             {
-                await AddFile(file, includePdbs);
+                await AddFile(file, false);
             }
             
             // delete unused files
