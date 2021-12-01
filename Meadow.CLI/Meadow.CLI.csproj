@@ -36,6 +36,11 @@
     <EmbeddedResource Remove="Internals\**" />
     <None Remove="Internals\**" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="resources/monolinker.exe" CopyToOutputDirectory="Always" />
+    <Content Include="resources/meadow_link.xml" CopyToOutputDirectory="Always" />
+    <Content Include="resources/Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

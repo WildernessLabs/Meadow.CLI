@@ -3,6 +3,8 @@ using System.IO;
 using Mono.Cecil;
 using Mono.Collections.Generic;
 using System;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -14,6 +16,58 @@ namespace Meadow.CLI.Core.DeviceManagement
         private static string? fileName;
 
         private static string meadow_override_path = null;
+
+        public static IEnumerable<string> LinkDependencies(string file, string path, List<string> dependencies, bool includePdbs)
+        {
+            var prelink_dir = Path.Combine (path, "prelink_bin");
+            var prelink_app = Path.Combine (prelink_dir, file);
+
+            if (Directory.Exists(prelink_dir))
+                Directory.Delete(prelink_dir, recursive: true);
+            Directory.CreateDirectory (prelink_dir);
+            File.Copy (Path.Combine(path, file), prelink_app, overwrite: true);
+            foreach (var dependency in dependencies) {
+                File.Copy (dependency,
+                            Path.Combine(prelink_dir, Path.GetFileName(dependency)),
+                            overwrite: true);
+                if (includePdbs)
+                {
+                    var pdbFile = Path.ChangeExtension(dependency, "pdb");
+                    if (File.Exists(pdbFile))
+                        File.Copy (pdbFile,
+                            Path.Combine(prelink_dir, Path.GetFileName(pdbFile)),
+                            overwrite: true);
+                }
+            }
+
+            var postlink_dir = Path.Combine (path, "postlink_bin");
+
+            if (Directory.Exists(postlink_dir))
+                Directory.Delete(postlink_dir, recursive: true);
+            Directory.CreateDirectory (postlink_dir);
+
+            var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var monolinker_path = Path.Combine (base_path, "resources/monolinker.exe");
+            var descriptor_path = Path.Combine (base_path, "resources/meadow_link.xml");
+            var monolinker_args = $"-x {descriptor_path} -l all -b true -g false -c link -o {postlink_dir} -a {prelink_app} -d {prelink_dir}";
+
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = monolinker_path;
+                process.StartInfo.Arguments = monolinker_args;
+                process.StartInfo.UseShellExecute = true;
+                process.StartInfo.RedirectStandardOutput = false;
+                process.Start();
+                process.WaitForExit();
+                if (process.ExitCode != 0)
+                    throw new Exception ("Monolinker execution failed!");
+            }
+
+            // copy netstandard.dll over, it is needed and seems to get linked out
+            File.Copy (Path.Combine(prelink_dir, "netstandard.dll"), Path.Combine(postlink_dir, "netstandard.dll"));
+
+            return Directory.EnumerateFiles(postlink_dir);
+        }
 
         public static List<string> GetDependencies(string file, string path, string osVersion)
         {

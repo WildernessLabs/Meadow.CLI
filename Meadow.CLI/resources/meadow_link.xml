@@ -1,0 +1,5 @@
+<linker>
+    <assembly fullname="Meadow.F7">
+         <type fullname="Meadow.Devices.F7Micro" />
+    </assembly>
+</linker>
