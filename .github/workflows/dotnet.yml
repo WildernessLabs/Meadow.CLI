@@ -48,18 +48,18 @@ jobs:
       env:
         DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
+#    - name: Restore dependencies
+#      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
 
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
-      with:
-        vs-version: '[17.0, 18.0)'
+#    - name: Add MSBuild to Path
+#      uses: microsoft/setup-msbuild@v1.1
+#      with:
+#        vs-version: '[17.0, 18.0)'
 
-    - name: Build VS2022 Extension
-      run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
-      env:
-        DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE'
+#    - name: Build VS2022 Extension
+#      run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
+#      env:
+#        DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE'
 
   mac_build:
     name: Build Mac Extension
