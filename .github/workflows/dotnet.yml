@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  2019_build:
+  build-2019:
     runs-on: windows-latest
     name: Build VS2019 Extension
 
@@ -48,7 +48,7 @@ jobs:
       env:
         DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
-  2022_build:
+  build-2022:
     runs-on: windows-2022
     name: Build VS2022 Extension
 
