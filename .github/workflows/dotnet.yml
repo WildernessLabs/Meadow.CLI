@@ -130,10 +130,10 @@ jobs:
     name: Build VSCode Extension
 
     steps:
-#  TODO Update VSCode to use side-by-side if possible - name: Checkout current repo
-#      uses: actions/checkout@v2
-#      with:
-#        path: Meadow.CLI
+    - name: Checkout current repo
+      uses: actions/checkout@v2
+      with:
+        path: Meadow.CLI
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
