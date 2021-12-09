@@ -24,6 +24,7 @@ jobs:
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x
       uses: actions/setup-dotnet@v1
@@ -63,6 +64,7 @@ jobs:
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x
       uses: actions/setup-dotnet@v1
