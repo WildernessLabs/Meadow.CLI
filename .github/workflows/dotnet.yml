@@ -24,8 +24,6 @@ jobs:
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
-# TODO Remove this ref once this gets merged into main
-        ref: dominique-AddCIActions
 
     - name: Setup .NET Core SDK 5.0.x
       uses: actions/setup-dotnet@v1
@@ -65,8 +63,6 @@ jobs:
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
-# TODO Remove this ref once this gets merged into main
-        ref: dominique-AddCIActions
 
     - name: Setup .NET Core SDK 5.0.x
       uses: actions/setup-dotnet@v1
