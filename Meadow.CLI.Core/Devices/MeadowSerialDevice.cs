@@ -100,6 +100,11 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
+            if(string.IsNullOrEmpty(portName))
+            {
+                throw new ArgumentException("Serial Port name cannot be empty");
+            }
+
             // Create a new SerialPort object with default settings
             var port = new SerialPort
                        {

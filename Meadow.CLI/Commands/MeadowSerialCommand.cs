@@ -58,6 +58,11 @@ namespace Meadow.CLI.Commands
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            if(string.IsNullOrEmpty(SerialPortName))
+            {
+                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogError("No serial port selected. Use 'meadow use port' to select a port");
+                Environment.Exit(-2);
+            }
             await base.ExecuteAsync(console);
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
             if (meadow == null)
