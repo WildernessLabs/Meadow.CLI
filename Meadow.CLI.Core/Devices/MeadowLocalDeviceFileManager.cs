@@ -584,7 +584,8 @@ namespace Meadow.CLI.Core.Devices
                 }
             }
 
-            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion);
+            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
+                .Where(x => x.Contains("App.") == false).ToList();
 
             //add local files (this includes App.exe)
             foreach (var file in binaries)
