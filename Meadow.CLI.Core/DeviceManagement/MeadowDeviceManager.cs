@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -290,14 +291,77 @@ namespace Meadow.CLI.Core.DeviceManagement
         public static IList<string> GetMeadowSerialPortsForWindows(ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+            {
                 throw new PlatformNotSupportedException("This method is only supported on Windows");
+            }
 
-            var ports = SerialPort.GetPortNames();
+            logger ??= NullLogger.Instance;
 
-            //hack to skip COM1
-            ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+            try
+            {
+                const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + MeadowCLI.Constants.WILDERNESS_LABS_USB_VID;
 
-            return ports;
+                // Win32_PnPEntity lives in root\CIMV2
+                const string wmiScope = "root\\CIMV2";
+
+                // escape special characters in the device id prefix
+                string escapedPrefix = WildernessLabsPnpDeviceIDPrefix.Replace("\\", "\\\\").Replace("_", "[_]");
+
+                // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
+                string query = @$"select * from Win32_PnPEntity where PNPClass = 'Ports' and PNPDeviceID like '{escapedPrefix}%'";
+
+                logger.LogDebug("Running WMI Query: {query}", query);
+
+                List<string> results = new();
+
+                // build the searcher for the query
+                ManagementObjectSearcher searcher = new(wmiScope, query);
+
+                // get the query results
+                foreach (ManagementObject moResult in searcher.Get())
+                {
+                    string caption = moResult["Caption"].ToString();
+                    string pnpDeviceId = moResult["PNPDeviceID"].ToString();
+
+                    // we could collect and return a fair bit of other info from the query:
+
+                    //string description = moResult["Description"].ToString();
+                    //string service = moResult["Service"].ToString();
+                    //string manufacturer = moResult["Manufacturer"].ToString();
+
+                    // the meadow serial is in the device id, after
+                    // the characters: USB\VID_XXXX&PID_XXXX\
+                    // so we'll just take a substring after 22 characters.
+                    const int serialNumberStartPosition = 22;
+                    string serialNumber = pnpDeviceId.Substring(serialNumberStartPosition);
+
+                    // unfortunately, the cleanest way to get the com port name from the Win32_PnPEntity class, is to extract
+                    // it from the caption string. Win32_SerialPort places it directly in `DeviceID`, but some Windows installs
+                    // don't always show all the ports. seealso: https://stackoverflow.com/questions/19840811
+                    string portName = caption.Substring(caption.LastIndexOf("(COM")).Replace("(", string.Empty).Replace(")", string.Empty);
+
+                    logger.LogDebug("Found Wilderness Labs device at `{portName}` with serial `{serialNumber}`", portName, serialNumber);
+                    results.Add(portName);
+                }
+
+                return results;
+            }
+            catch (ApplicationException aex)
+            {
+                // eat it for now
+                logger.LogDebug(
+                    aex,
+                    "This error can be safely ignored.");
+
+                // we failed to find a port using wmi, fall back to
+                // returning every potential port as reported by SerialPort.
+                string[]? ports = SerialPort.GetPortNames();
+
+                //hack to skip COM1
+                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+
+                return ports;
+            }
         }
     }
 }
