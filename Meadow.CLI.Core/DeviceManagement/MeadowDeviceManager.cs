@@ -8,7 +8,6 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -315,7 +314,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 List<string> results = new();
 
                 // build the searcher for the query
-                ManagementObjectSearcher searcher = new(wmiScope, query);
+                using ManagementObjectSearcher searcher = new(wmiScope, query);
 
                 // get the query results
                 foreach (ManagementObject moResult in searcher.Get())
