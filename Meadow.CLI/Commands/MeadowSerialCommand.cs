@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
@@ -50,6 +51,11 @@ namespace Meadow.CLI.Commands
             return _serialPort;
         }
 
+        private bool PortExists(string name)
+        {
+            return System.IO.Ports.SerialPort.GetPortNames().Contains(name);
+        }
+
         private void SetSerialPort(string value)
         {
             _serialPort = value;
@@ -58,6 +64,17 @@ namespace Meadow.CLI.Commands
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
+            if(string.IsNullOrEmpty(SerialPortName))
+            {
+                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogError("No serial port selected. Use 'meadow use port' to select a port");
+                Environment.Exit(-2);
+            }
+            if(!PortExists(SerialPortName))
+            {
+                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogError($"Selected serial port ({SerialPortName}) does not exist. Use 'meadow list ports' to view available options and 'meadow use port' to select a valid port");
+                Environment.Exit(-2);
+            }
+
             await base.ExecuteAsync(console);
             var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
             if (meadow == null)

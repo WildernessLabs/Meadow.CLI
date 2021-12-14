@@ -79,6 +79,10 @@
     "ListPorts": {
       "commandName": "Project",
       "commandLineArgs": "list ports"
+    },
+    "UsePort": {
+      "commandName": "Project",
+      "commandLineArgs": "use port COM5"
     }
   }
 }
