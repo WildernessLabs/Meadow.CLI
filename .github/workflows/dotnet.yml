@@ -26,7 +26,7 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+    - name: Setup .NET Core SDK 5.0.x and 6.0.x
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: |
@@ -36,18 +36,18 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
       with:
         vs-version: '[16.0, 17.0)'
 
+    - name: Restore dependencies
+      run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Restore
+
     - name: Build VS2019 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
       env:
-        DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
+        DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
 
   build-2022:
     runs-on: windows-2022
@@ -68,7 +68,7 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+    - name: Setup .NET Core SDK 5.0.x and 6.0.x
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: |
@@ -78,13 +78,13 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
       with:
         vs-version: '[17.0, 18.0)'
+
+    - name: Restore dependencies
+      run: msbuild vs-win/VS_Meadow_Extension.2022.sln /t:Restore
 
     - name: Build VS2022 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
@@ -114,7 +114,7 @@ jobs:
         echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
         sudo xcode-select -s $XCODE_ROOT
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+    - name: Setup .NET Core SDK 5.0.x and 6.0.x
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: |
@@ -125,13 +125,13 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore dependencies
-      run: dotnet restore vs-mac/VS4Mac_Meadow_Extension.sln
+      run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Restore
 
     - name: Build
       run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
 
   code_build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     name: Build VSCode Extension
 
     steps:
@@ -148,7 +148,7 @@ jobs:
         path: vs-code
         submodules: true
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+    - name: Setup .NET Core SDK 5.0.x and 6.0.x
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: |
@@ -158,11 +158,15 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
+      with:
+        vs-version: '[17.0, 18.0)'
+
+    - name: Restore dependencies
+      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Restore
 
     - name: Build
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
+      env:
+        DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
