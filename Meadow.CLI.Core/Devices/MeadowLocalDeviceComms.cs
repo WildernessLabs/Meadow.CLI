@@ -9,8 +9,6 @@ using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core.Devices
 {
     public partial class MeadowLocalDevice

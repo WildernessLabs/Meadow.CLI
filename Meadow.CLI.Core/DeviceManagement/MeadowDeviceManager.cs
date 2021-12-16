@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
