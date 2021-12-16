@@ -17,7 +17,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: VS2019
+        ref: dominique-SemiUnification
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: VS2019
+        ref: dominique-SemiUnification
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
