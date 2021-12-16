@@ -26,10 +26,12 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -66,10 +68,12 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -109,10 +113,12 @@ jobs:
         echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
         sudo xcode-select -s $XCODE_ROOT
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -140,10 +146,12 @@ jobs:
         path: vs-code
         submodules: true
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
