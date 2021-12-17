@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 
 using Meadow.CLI.Core.Common;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core
 {
     public class DownloadManager
@@ -58,9 +56,9 @@ namespace Meadow.CLI.Core
         };
         private readonly ILogger _logger;
 
-        public DownloadManager(ILoggerFactory loggerFactory)
+        public DownloadManager(ILogger logger)
         {
-            _logger = loggerFactory.CreateLogger<DownloadManager>();
+            _logger = logger;
         }
 
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
