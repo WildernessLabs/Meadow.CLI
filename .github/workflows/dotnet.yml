@@ -17,7 +17,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: dominique-SemiUnification
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -59,7 +59,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: dominique-SemiUnification
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -96,10 +96,11 @@ jobs:
     runs-on: macos-11
 
     steps:
-    - name: Checkout current repo
+    - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
+        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -123,19 +124,6 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-#    - name: Download VS2022
-#      run: |
-#        wget -qO VS4M.dmg https://download.visualstudio.microsoft.com/download/pr/e51a638e-b412-46bc-acb3-b8e5db884481/952e7238b8d0b15ed7037b0838a0ed36/visualstudioformacpreviewinstaller-17.0.0.92.dmg
-#        hdiutil attach VS4M.dmg
-#      shell: bash
-
-#    - name: Install VS2022
-#      run: |
-#        cd /Volumes/VS4M.dmg/
-#        open 'Install Visual Studio for Mac Preview.app'
-#        hdiutil detach /VS4M.dmg/
-#      shell: bash
-
     - name: Restore dependencies
       run: dotnet restore vs-mac/VS4Mac_Meadow_Extension.sln
 
@@ -147,10 +135,11 @@ jobs:
     name: Build VSCode Extension
 
     steps:
-    - name: Checkout current repo
+    - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
+        ref: develop
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
