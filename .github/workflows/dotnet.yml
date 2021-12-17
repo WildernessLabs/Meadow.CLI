@@ -113,19 +113,6 @@ jobs:
         echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
         sudo xcode-select -s $XCODE_ROOT
 
-    - name: Download MonoGame
-      run: |
-        wget -qO VS4M.dmg https://download.visualstudio.microsoft.com/download/pr/e51a638e-b412-46bc-acb3-b8e5db884481/952e7238b8d0b15ed7037b0838a0ed36/visualstudioformacpreviewinstaller-17.0.0.92.dmg
-        hdiutil attach VS4M.dmg
-      shell: bash
-
-    - name: Install MonoGame
-      run: |
-        cd /Volumes/VS4M.dmg/
-        open `Install Visual Studio for Mac Preview.app`
-        hdiutil detach /VS4M.dmg/
-      shell: bash
-
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
@@ -135,6 +122,19 @@ jobs:
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
+
+    - name: Download VS2022
+      run: |
+        wget -qO VS4M.dmg https://download.visualstudio.microsoft.com/download/pr/e51a638e-b412-46bc-acb3-b8e5db884481/952e7238b8d0b15ed7037b0838a0ed36/visualstudioformacpreviewinstaller-17.0.0.92.dmg
+        hdiutil attach VS4M.dmg
+      shell: bash
+
+    - name: Install VS2022
+      run: |
+        cd /Volumes/VS4M.dmg/
+        open `Install Visual Studio for Mac Preview.app`
+        hdiutil detach /VS4M.dmg/
+      shell: bash
 
     - name: Restore dependencies
       run: dotnet restore vs-mac/VS4Mac_Meadow_Extension.sln
