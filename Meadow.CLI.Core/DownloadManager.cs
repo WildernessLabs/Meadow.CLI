@@ -56,11 +56,6 @@ namespace Meadow.CLI.Core
         };
         private readonly ILogger _logger;
 
-        public DownloadManager(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<DownloadManager>();
-        }
-
         public DownloadManager(ILogger logger)
         {
             _logger = logger;
