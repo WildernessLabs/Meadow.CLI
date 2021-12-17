@@ -132,7 +132,7 @@ jobs:
     - name: Install VS2022
       run: |
         cd /Volumes/VS4M.dmg/
-        open `Install Visual Studio for Mac Preview.app`
+        open 'Install Visual Studio for Mac Preview.app'
         hdiutil detach /VS4M.dmg/
       shell: bash
 
