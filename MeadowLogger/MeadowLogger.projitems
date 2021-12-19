@@ -9,9 +9,22 @@
     <Import_RootNamespace>MeadowLogger</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)ILogger\FormattedLogValues.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ILogger\ILogger.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ILogger\MeadowLoggerExtensions.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ILogger\NullLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\IExternalScopeProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\ILoggerFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\ILoggerOfT.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\ILoggerProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\ISupportExternalScope.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventId.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\LoggerFactoryExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FormattedLogValues.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Abstractions\ILogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\LoggerExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LoggerInformation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LoggerOfT.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LogLevel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NullLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NullScope.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeNameHelper.cs" />
   </ItemGroup>
-</Project>  
+</Project>
