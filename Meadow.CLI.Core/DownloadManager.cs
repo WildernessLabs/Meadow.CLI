@@ -56,9 +56,9 @@ namespace Meadow.CLI.Core
         };
         private readonly ILogger _logger;
 
-        public DownloadManager(ILogger logger)
+        public DownloadManager(ILoggerFactory loggerFactory)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<DownloadManager>();
         }
 
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
