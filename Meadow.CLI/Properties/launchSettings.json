@@ -50,7 +50,7 @@
     },
     "DeployApp": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f C:\\Users\\brikim\\source\\repos\\MeadowApplication29\\MeadowApplication29\\bin\\Debug\\net472\\App.exe"
+      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\bin\\Debug\\netstandard2.1\\App.exe"
     },
     "DeleteFile": {
       "commandName": "Project",
