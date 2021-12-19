@@ -61,6 +61,11 @@ namespace Meadow.CLI.Core
             _logger = loggerFactory.CreateLogger<DownloadManager>();
         }
 
+        public DownloadManager(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
             string _versionCheckUrl = null;
@@ -91,16 +96,19 @@ namespace Meadow.CLI.Core
 
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
 
+            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
+            {
+                _logger.LogInformation(
+                    $"Installing OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
+                return;
+            }
+
+            /*
             var appVersion = Assembly.GetEntryAssembly()!
                                      .GetCustomAttribute<AssemblyFileVersionAttribute>()
                                      .Version;
 
-            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
-            {
-                _logger.LogInformation(
-                    $"Installing OS version {release.Version} is not supported by this tool anymore. The minimum version supported is 0.6.0.0.");
-                return;
-            }
+            
 
             if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
@@ -108,7 +116,7 @@ namespace Meadow.CLI.Core
                     $"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
 
                 return;
-            }
+            }*/
 
             var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
 
