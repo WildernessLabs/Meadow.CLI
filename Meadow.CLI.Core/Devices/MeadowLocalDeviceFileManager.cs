@@ -525,6 +525,7 @@ namespace Meadow.CLI.Core.Devices
             //rename App.dll to App.exe
             var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
             var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
+            var fileNamePdb = Path.Combine(fi.DirectoryName, "App.pdb");
 
             if (File.Exists(fileNameDll))
             {
@@ -541,11 +542,16 @@ namespace Meadow.CLI.Core.Devices
             }
 
             var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-                                   .Where(s => new FileInfo(s).Extension != ".dll");
-                                   //.Where(s => new FileInfo(s).Extension != ".pdb");
+                                   .Where(s => new FileInfo(s).Extension != ".dll")
+                                   .Where(s => new FileInfo(s).Extension != ".pdb");
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
+
+            if (includePdbs)
+            {
+                await AddFile(fileNamePdb, false);
+            }
 
             async Task AddFile(string file, bool includePdbs)
             {
@@ -575,7 +581,7 @@ namespace Meadow.CLI.Core.Devices
             }
 
             var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
-                .Where(x => x.Contains("App.dll") == false).ToList();
+                .Where(x => x.Contains("App.") == false).ToList();
 
             //add local files (this includes App.exe)
             foreach (var file in binaries)
@@ -588,7 +594,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 await AddFile(file, includePdbs);
             }
-
+            
             // delete unused files
             foreach (var devicefile in deviceFiles.Keys)
             {
