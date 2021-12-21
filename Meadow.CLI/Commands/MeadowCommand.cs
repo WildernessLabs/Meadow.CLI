@@ -20,7 +20,7 @@ namespace Meadow.CLI.Commands
             LoggerFactory = loggerFactory;
         }
 
-        [CommandOption('v', Description = "Log verbosity")]
+        [CommandOption("LogVerbosity", 'g', Description = "Log verbosity")]
         public string[] Verbosity { get; init; }
 
         public virtual async ValueTask ExecuteAsync(IConsole console)

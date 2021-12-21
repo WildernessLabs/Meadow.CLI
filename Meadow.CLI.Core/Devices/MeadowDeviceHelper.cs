@@ -12,8 +12,6 @@ using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core.Devices
 {
     //a simple model object that represents a meadow device including connection
@@ -105,6 +103,13 @@ namespace Meadow.CLI.Core.Devices
         public Task FlashEspAsync(string? sourcePath = null, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.FlashEspAsync(sourcePath, cancellationToken);
+        }
+
+        //Get's the OS version as a string, used by the download manager
+        public async Task<string> GetOSVersion(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            var deviceInfo = await GetDeviceInfoAsync(timeout, cancellationToken);
+            return deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
         }
 
         public Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -263,11 +268,11 @@ namespace Meadow.CLI.Core.Devices
             await MonoDisableAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            //check the device OS version, in order to download matching assemblies to it
-            var deviceInfo = await _meadowDevice.GetDeviceInfoAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
-            string osVersion = deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
-
-            await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken).ConfigureAwait(false);
+            string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken)
+                .ConfigureAwait(false);
+  
+            await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken)
+                .ConfigureAwait(false);
 
             await MonoEnableAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);

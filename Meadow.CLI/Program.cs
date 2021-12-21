@@ -46,7 +46,7 @@ namespace Meadow.CLI
                     builder.AddSerilog(Log.Logger, dispose:true);
                 });
 
-           services.AddSingleton<MeadowDeviceManager>();
+            services.AddSingleton<MeadowDeviceManager>();
             services.AddSingleton<DownloadManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();

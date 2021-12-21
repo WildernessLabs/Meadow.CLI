@@ -10,8 +10,6 @@ using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice : IMeadowDevice

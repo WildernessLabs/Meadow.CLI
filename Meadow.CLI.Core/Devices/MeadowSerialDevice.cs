@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -100,6 +99,11 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
+            if(string.IsNullOrEmpty(portName))
+            {
+                throw new ArgumentException("Serial Port name cannot be empty");
+            }
+
             // Create a new SerialPort object with default settings
             var port = new SerialPort
                        {

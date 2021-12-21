@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -517,12 +516,6 @@ namespace Meadow.CLI.Core.Devices
             await DeleteTemporaryFiles(cancellationToken);
 
             var fi = new FileInfo(applicationFilePath);
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                // for some strange reason, System.Net.Http.dll doesn't get copied to the output folder in VS.
-                // so, we need to copy it over from the meadow assemblies nuget.
-                CopySystemNetHttpDll(fi.DirectoryName);
-            }
 
             var deviceFiles = await GetFilesAndCrcsAsync(
                                       DefaultTimeout,
@@ -532,6 +525,7 @@ namespace Meadow.CLI.Core.Devices
             //rename App.dll to App.exe
             var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
             var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
+            var fileNamePdb = Path.Combine(fi.DirectoryName, "App.pdb");
 
             if (File.Exists(fileNameDll))
             {
@@ -547,15 +541,17 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
             }
 
-            //  var extensions = new List<string>
-            //                  { ".exe", ".bmp", ".jpg", ".jpeg", ".json", ".xml", ".yml", ".yaml", ".txt", ".pem" };
-
             var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
                                    .Where(s => new FileInfo(s).Extension != ".dll")
                                    .Where(s => new FileInfo(s).Extension != ".pdb");
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
             var files = new Dictionary<string, uint>();
+
+            if (includePdbs)
+            {
+                await AddFile(fileNamePdb, false);
+            }
 
             async Task AddFile(string file, bool includePdbs)
             {
@@ -584,7 +580,8 @@ namespace Meadow.CLI.Core.Devices
                 }
             }
 
-            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion);
+            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
+                .Where(x => x.Contains("App.") == false).ToList();
 
             //add local files (this includes App.exe)
             foreach (var file in binaries)
@@ -597,7 +594,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 await AddFile(file, includePdbs);
             }
-
+            
             // delete unused files
             foreach (var devicefile in deviceFiles.Keys)
             {
@@ -655,60 +652,6 @@ namespace Meadow.CLI.Core.Devices
             }
             return FilesOnDevice.ContainsKey(filename);
         }
-
-        private protected void CopySystemNetHttpDll(string targetDir)
-        {
-            try
-            {
-                var bclNugetPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    ".nuget",
-                    "packages",
-                    "wildernesslabs.meadow.assemblies");
-
-                if (Directory.Exists(bclNugetPath))
-                {
-                    List<Version> versions = new List<Version>();
-
-                    var versionFolders = Directory.EnumerateDirectories(bclNugetPath);
-                    foreach (var versionFolder in versionFolders)
-                    {
-                        var di = new DirectoryInfo(versionFolder);
-                        if (Version.TryParse(di.Name, out Version outVersion))
-                        {
-                            versions.Add(outVersion);
-                        }
-                    }
-
-                    if (versions.Any())
-                    {
-                        versions.Sort();
-
-                        var sourcePath = Path.Combine(
-                            bclNugetPath,
-                            versions.Last()
-                                    .ToString(),
-                            "lib",
-                            "net472");
-
-                        if (Directory.Exists(sourcePath))
-                        {
-                            if (File.Exists(Path.Combine(sourcePath, SystemHttpNetDllName)))
-                            {
-                                File.Copy(
-                                    Path.Combine(sourcePath, SystemHttpNetDllName),
-                                    Path.Combine(targetDir,  SystemHttpNetDllName));
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // eat this for now
-            }
-        }
-
         private void SetFileAndCrcsFromMessage(string fileListMember)
         {
             int fileNameStart = fileListMember.LastIndexOf('/') + 1;

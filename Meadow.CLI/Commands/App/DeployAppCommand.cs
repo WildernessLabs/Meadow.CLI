@@ -4,6 +4,7 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 
 namespace Meadow.CLI.Commands.App
@@ -30,15 +31,15 @@ namespace Meadow.CLI.Commands.App
         {
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
+          
+            var osVersion = await Meadow.GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken)
+                .ConfigureAwait(false);
 
-            //check the device OS version, in order to download matching assemblies to it
-            var deviceInfo = await Meadow.GetDeviceInfoAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
-            string osVersion = deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
-
-            await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion).ConfigureAwait(false);
+            await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion)
+                .ConfigureAwait(false);
 
             await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
-                        .ConfigureAwait(false);
+                .ConfigureAwait(false);
         }
     }
 }
