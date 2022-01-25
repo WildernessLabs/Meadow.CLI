@@ -1,5 +1,9 @@
 <linker>
-    <assembly fullname="Meadow.F7">
-         <type fullname="Meadow.Devices.F7Micro" />
+    <assembly fullname="mscorlib">
+        <type fullname="System.AppDomain" />
     </assembly>
+    <assembly fullname="Meadow" />
+    <assembly fullname="Meadow.F7" />
+    <assembly fullname="Meadow.Contracts" />
+    <assembly fullname="Meadow.Units" />
 </linker>
