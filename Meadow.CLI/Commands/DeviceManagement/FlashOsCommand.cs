@@ -12,6 +12,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
     public class FlashOsCommand : MeadowSerialCommand
     {
+        private MeadowDeviceInfo deviceInfo;
+        private const string MINIMUM_OS_VERSION = "0.6.1.0";
+
         public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
@@ -38,7 +41,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            string serialNumber;
+            string serialNumber = string.Empty;
             if (!SkipDfu)
             {
                 serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken).ConfigureAwait(false);
@@ -53,9 +56,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
                     return;
                 }
 
-                var deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
-                                             .ConfigureAwait(false);
-
+                deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
+                    .ConfigureAwait(false);
                 serialNumber = deviceInfo!.SerialNumber;
             }
 
@@ -79,7 +81,25 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 Logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             }
-            
+
+            // If we don't have it yet, go and get it now, otherwise reuse deviceInfo we've got.
+            if (deviceInfo == null)
+                deviceInfo = await meadow.GetDeviceInfoAsync (TimeSpan.FromSeconds (60), cancellationToken)
+                    .ConfigureAwait (false);
+
+            // Get Current Device Version
+            var currentOsVersion = new Version(deviceInfo?.MeadowOsVersion.Split (' ')[0]);
+
+            // If less that B6.1 flash
+            if (currentOsVersion.CompareTo (new Version(MINIMUM_OS_VERSION)) < 0) {
+                // Do the funky chicken
+                Logger.LogInformation ($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required." );
+                await meadow.EraseFlashAsync (cancellationToken)
+                    .ConfigureAwait (false);
+            }
+
+            await Task.Delay (2000).ConfigureAwait (false);
+
             Meadow = new MeadowDeviceHelper(meadow, Logger);
 
             await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
