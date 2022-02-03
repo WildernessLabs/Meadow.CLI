@@ -82,29 +82,29 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
-            // If we don't have it yet, go and get it now, otherwise reuse deviceInfo we've got.
-            if (deviceInfo == null)
-                deviceInfo = await meadow.GetDeviceInfoAsync (TimeSpan.FromSeconds (60), cancellationToken)
-                    .ConfigureAwait (false);
-
-            // Get Current Device Version
-            var currentOsVersion = new Version(deviceInfo?.MeadowOsVersion.Split (' ')[0]);
-
-            // If less that B6.1 flash
-            if (currentOsVersion.CompareTo (new Version(MINIMUM_OS_VERSION)) < 0) {
-                // Do the funky chicken
-                Logger.LogInformation ($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required." );
-                await meadow.EraseFlashAsync (cancellationToken)
-                    .ConfigureAwait (false);
-            }
-
             await Task.Delay (2000).ConfigureAwait (false);
 
-            Meadow = new MeadowDeviceHelper(meadow, Logger);
+            Meadow = new MeadowDeviceHelper (meadow, Logger);
 
-            await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
+            await Meadow.FlashOsAsync (RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
 
-            Meadow?.Dispose();
+            // Get Current Device Version
+            var currentOsVersion = new Version (Meadow.DeviceInfo?.MeadowOsVersion.Split (' ')[0]);
+
+            // If less that B6.1 flash
+            if (currentOsVersion.CompareTo (new Version (MINIMUM_OS_VERSION)) < 0) {
+                // Do the funky chicken
+                // Ask User 1st before wiping
+                Logger.LogInformation ($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
+                Logger.LogInformation ($"Would you like to proceed? (Y/N)");
+                var yesOrNo = await console.Input.ReadLineAsync ();
+                if (yesOrNo.ToLower () == "y") {
+                    await Meadow.MeadowDevice.EraseFlashAsync (cancellationToken)
+                        .ConfigureAwait (false);
+                }
+            }
+
+            Meadow?.Dispose ();
         }
     }
 }
