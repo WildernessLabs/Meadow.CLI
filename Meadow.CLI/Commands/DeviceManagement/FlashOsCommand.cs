@@ -35,6 +35,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("skipRuntime", 'k', Description = "Skip updating the runtime")]
         public bool SkipRuntime { get; init; }
 
+        [CommandOption ("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
+        public bool DontPrompt { get; init; }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -86,23 +89,25 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow = new MeadowDeviceHelper (meadow, Logger);
 
-            await Meadow.FlashOsAsync (RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
-
             // Get Current Device Version
             var currentOsVersion = new Version (Meadow.DeviceInfo?.MeadowOsVersion.Split (' ')[0]);
 
             // If less that B6.1 flash
             if (currentOsVersion.CompareTo (new Version (MINIMUM_OS_VERSION)) < 0) {
-                // Do the funky chicken
                 // Ask User 1st before wiping
                 Logger.LogInformation ($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
-                Logger.LogInformation ($"Would you like to proceed? (Y/N)");
-                var yesOrNo = await console.Input.ReadLineAsync ();
+                var yesOrNo = "y";
+                if (!DontPrompt) {
+                    Logger.LogInformation ($"Would you like to proceed? (Y/N)");
+                    yesOrNo = await console.Input.ReadLineAsync ();
+                }
                 if (yesOrNo.ToLower () == "y") {
                     await Meadow.MeadowDevice.EraseFlashAsync (cancellationToken)
                         .ConfigureAwait (false);
                 }
             }
+
+            await Meadow.FlashOsAsync (RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
 
             Meadow?.Dispose ();
         }
