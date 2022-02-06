@@ -71,12 +71,18 @@ namespace Meadow.CLI.Core.Internals.Dfu
             // if filename isn't specified fallback to download path
             if (string.IsNullOrEmpty(filename))
             {
+                if (!Directory.Exists(DownloadManager.FirmwareDownloadsFilePath))
+                {
+                    logger.LogError($"Latest version set to '{DownloadManager.FirmwareLatestVersion}' but folder does not exist");
+                    return false;
+                }
+
                 filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
             }
 
             if (!File.Exists(filename))
             {
-                logger.LogError("Please specify valid --File or download the latest with: meadow download os");
+                logger.LogError($"Unable to find file '{DownloadManager.OsFilename}'. Please specify valid --File or download the latest with: meadow download os");
                 return false;
             }
             else
