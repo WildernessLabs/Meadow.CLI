@@ -221,8 +221,8 @@ namespace Meadow.CLI.Core.Devices
 
                 if (File.Exists(sourceFilename))
                 {
-                    Logger.LogInformation(
-                        $"Using current directory '{DownloadManager.RuntimeFilename}'");
+                    Logger.LogWarning(
+                        $"*** OVERRIDE: USING CURRENT DIRECTORY FOR '{DownloadManager.RuntimeFilename}'");
                 }
                 else
                 {
