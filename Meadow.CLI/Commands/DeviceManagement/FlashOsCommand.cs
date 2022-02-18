@@ -85,31 +85,52 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
-            await Task.Delay (2000).ConfigureAwait (false);
+            await Task.Delay(2000).ConfigureAwait(false);
 
-            Meadow = new MeadowDeviceHelper (meadow, Logger);
+            Meadow = new MeadowDeviceHelper(meadow, Logger);
 
             // Get Current Device Version
-            var currentOsVersion = new Version (Meadow.DeviceInfo?.MeadowOsVersion.Split (' ')[0]);
+            var currentOsVersion = new Version(Meadow.DeviceInfo?.MeadowOsVersion.Split(' ')[0]);
 
             // If less that B6.1 flash
-            if (currentOsVersion.CompareTo (new Version (MINIMUM_OS_VERSION)) < 0) {
+            if (currentOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) < 0) {
                 // Ask User 1st before wiping
-                Logger.LogInformation ($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
+                Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
                 var yesOrNo = "y";
                 if (!DontPrompt) {
-                    Logger.LogInformation ($"Would you like to proceed? (Y/N)");
-                    yesOrNo = await console.Input.ReadLineAsync ();
+                    Logger.LogInformation($"Would you like to proceed? (Y/N)");
+                    yesOrNo = await console.Input.ReadLineAsync();
                 }
                 if (yesOrNo.ToLower () == "y") {
-                    await Meadow.MeadowDevice.EraseFlashAsync (cancellationToken)
-                        .ConfigureAwait (false);
+                    await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+
+                    /* TODO EraseFlashAsync leaves the port in a dodgy state, so we need to kill it and find it again
+                    Need a more elegant solution here. */
+                    Meadow?.Dispose();
+                    Meadow = null;
+
+                    await Task.Delay(2000).ConfigureAwait(false);
+
+                    var device = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                            serialNumber,
+                            Logger,
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (device == null) {
+                        Logger.LogInformation($"OH NO!! Meadow device not found. Please plug in your meadow device and run this command again.");
+                        return;
+                    }
+
+                    Meadow = new MeadowDeviceHelper(device, Logger);
                 }
             }
 
-            await Meadow.FlashOsAsync (RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
+            await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
 
-            Meadow?.Dispose ();
+            Meadow?.Dispose();
         }
     }
 }
