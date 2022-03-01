@@ -1,4 +1,4 @@
-# MeadowCLI
+<img src="Design/banner.jpg" style="margin-bottom:10px" />
 
 ## Build Status
 [![Build](https://github.com/WildernessLabs/Meadow.CLI/actions/workflows/dotnet.yml/badge.svg)](https://github.com/WildernessLabs/Meadow.CLI/actions)
