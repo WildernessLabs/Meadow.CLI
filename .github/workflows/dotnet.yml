@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-2019:
-    runs-on: windows-latest
+    runs-on: windows-2019
     name: Build VS2019 Extension
 
     steps:
@@ -41,8 +41,6 @@ jobs:
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
-      with:
-        vs-version: '[16.0, 17.0)'
 
     - name: Build VS2019 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
