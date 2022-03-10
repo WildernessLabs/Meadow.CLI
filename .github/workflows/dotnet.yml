@@ -166,7 +166,7 @@ jobs:
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   publish-nuget:
-#    if: startsWith(github.ref, 'refs/heads/main')
+    if: startsWith(github.ref, 'refs/heads/main')
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac, build-vs2022, build-vs2019]
     name: Publish Meadow.CLI nuget
