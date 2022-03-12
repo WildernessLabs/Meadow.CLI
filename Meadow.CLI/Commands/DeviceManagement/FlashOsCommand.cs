@@ -89,11 +89,13 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow = new MeadowDeviceHelper(meadow, Logger);
 
-            // Get Current Device Version
-            var currentOsVersion = new Version(Meadow.DeviceInfo?.MeadowOsVersion.Split(' ')[0]);
+            // Get Previous OS Version
+            // We just flashed the OS so it will show the current version 
+            // But the runtime hasn't been updated yet so should match the previous OS version
+            var previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(' ')[0]);
 
             // If less that B6.1 flash
-            if (currentOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) < 0) {
+            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) < 0) {
                 // Ask User 1st before wiping
                 Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
                 var yesOrNo = "y";
