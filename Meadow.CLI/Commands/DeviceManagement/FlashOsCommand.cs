@@ -92,21 +92,29 @@ namespace Meadow.CLI.Commands.DeviceManagement
             // Get Previous OS Version
             // We just flashed the OS so it will show the current version 
             // But the runtime hasn't been updated yet so should match the previous OS version
-            var previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(' ')[0]);
+            Version previousOsVersion;
+
+            try
+            {
+                previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(' ')[0]);
+            }
+            catch
+            {
+                previousOsVersion = new Version(MINIMUM_OS_VERSION);
+            }
 
             // If less that B6.1 flash
-            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) < 0) {
+            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0) {
                 // Ask User 1st before wiping
-                Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is required.");
+                Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is highly recommended.");
                 var yesOrNo = "y";
                 if (!DontPrompt) {
-                    Logger.LogInformation($"Would you like to proceed? (Y/N)");
+                    Logger.LogInformation($"Proceed? (Y/N) Press Y to erase flash, N to continue install without erasing");
                     yesOrNo = await console.Input.ReadLineAsync();
                 }
                 if (yesOrNo.ToLower () == "y") {
                     await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken)
                         .ConfigureAwait(false);
-
 
                     /* TODO EraseFlashAsync leaves the port in a dodgy state, so we need to kill it and find it again
                     Need a more elegant solution here. */
