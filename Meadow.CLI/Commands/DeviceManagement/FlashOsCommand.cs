@@ -104,7 +104,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             }
 
             // If less that B6.1 flash
-            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) < 0) {
+            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0) {
                 // Ask User 1st before wiping
                 Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is highly recommended.");
                 var yesOrNo = "y";
