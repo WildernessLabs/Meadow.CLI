@@ -63,7 +63,7 @@ namespace Meadow.CLI
             {
                 Console.WriteLine($"Operation failed: {ex.Message}");
 #if DEBUG
-                throw ex; //debug spew for debug builds
+                throw; //debug spew for debug builds
 #endif
             }
 
