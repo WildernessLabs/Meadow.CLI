@@ -14,8 +14,6 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
-        private protected static readonly string SystemHttpNetDllName = "System.Net.Http.dll";
-
         public async Task<IList<string>> GetFilesAndFoldersAsync(
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
