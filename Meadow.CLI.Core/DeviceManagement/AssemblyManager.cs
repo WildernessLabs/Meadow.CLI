@@ -2,7 +2,6 @@
 using System.IO;
 using Mono.Cecil;
 using Mono.Collections.Generic;
-using System;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -10,20 +9,28 @@ namespace Meadow.CLI.Core.DeviceManagement
 
     public static class AssemblyManager
     {
-        private static readonly List<string> dependencyMap = new List<string>();
-        private static string? fileName;
+        private static readonly List<string> dependencyMap = new();
 
-        private static string meadow_override_path = null;
+        private static string? meadowAssembliesPath = null;
 
         public static List<string> GetDependencies(string file, string path, string osVersion)
         {
-            meadow_override_path = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion, "meadow_assemblies");
-            if (!Directory.Exists(meadow_override_path))
-                meadow_override_path = path;
+            meadowAssembliesPath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion, "meadow_assemblies");
+
+            if (!Directory.Exists(meadowAssembliesPath))
+            {   //try crawling back to the last minor version ... ToDo osVersion should be a proper object
+                var lastMinorVersion = osVersion.Substring(0, osVersion.LastIndexOf('.')) + ".0";
+                meadowAssembliesPath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, lastMinorVersion, "meadow_assemblies");
+            }
+
+            if (!Directory.Exists(meadowAssembliesPath))
+            {
+                throw new FileNotFoundException($"Unable to locate local Meadow assemblies for v{osVersion}. Run `meadow download os` to download the latest meadow OS and libraries.");
+            }
 
             dependencyMap.Clear();
 
-            var refs = GetAssemblyNameReferences(fileName = file, path);
+            var refs = GetAssemblyNameReferences(file, path);
 
             var dependencies = GetDependencies(refs, dependencyMap, path);
 
@@ -32,7 +39,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         static (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
         {
-            string? ResolvePath (string fileName, string path)
+            static string? ResolvePath(string fileName, string path)
             {
                 string attempted_path = Path.Combine(path, fileName);
                 if (Path.GetExtension(fileName) != ".exe" &&
@@ -43,7 +50,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 return File.Exists(attempted_path) ? attempted_path : null;
             }
 
-            string? resolved_path = ResolvePath (fileName, meadow_override_path) ?? ResolvePath (fileName, path);
+            //ToDo - is it ever correct to fall back to the root path without a version?
+            string? resolved_path = ResolvePath(fileName, meadowAssembliesPath) ?? ResolvePath(fileName, path);
 
             if (resolved_path is null)
                 return (null, null);
