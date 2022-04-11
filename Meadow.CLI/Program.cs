@@ -46,7 +46,7 @@ namespace Meadow.CLI
                     builder.AddSerilog(Log.Logger, dispose:true);
                 });
 
-           services.AddSingleton<MeadowDeviceManager>();
+            services.AddSingleton<MeadowDeviceManager>();
             services.AddSingleton<DownloadManager>();
             AddCommandsAsServices(services);
             var serviceProvider = services.BuildServiceProvider();
@@ -63,7 +63,7 @@ namespace Meadow.CLI
             {
                 Console.WriteLine($"Operation failed: {ex.Message}");
 #if DEBUG
-                throw ex; //debug spew for debug builds
+                throw; //debug spew for debug builds
 #endif
             }
 
@@ -81,7 +81,8 @@ namespace Meadow.CLI
 
             var commands = types.Where(
                                        x => x.IsAssignableTo(typeof(MeadowSerialCommand))
-                                            || x.IsAssignableTo(typeof(MeadowCommand)))
+                                            || x.IsAssignableTo(typeof(MeadowCommand))
+                                            || x.IsAssignableTo(typeof(ICommand)))
                                    .Where(x => !x.IsAbstract);
 
             foreach (var command in commands)

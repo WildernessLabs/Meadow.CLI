@@ -5,6 +5,8 @@ using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 
+/* This command isn't supported
+
 namespace Meadow.CLI.Commands.FileSystem
 {
     [Command("fs format", Description = "Format a File System on the Meadow Board")]
@@ -36,3 +38,5 @@ namespace Meadow.CLI.Commands.FileSystem
         }
     }
 }
+
+*/

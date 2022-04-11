@@ -10,8 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -26,6 +24,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         internal const int MaxAllowableMsgPayloadLength =
             MaxAllowableMsgPacketLength - ProtocolHeaderSize;
+
+        public const string NoDevicesFound = "No Devices Found";
 
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)

@@ -7,8 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  build-2019:
-    runs-on: windows-latest
+  build-vs2019:
+    runs-on: windows-2019
     name: Build VS2019 Extension
 
     steps:
@@ -17,7 +17,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: VS2019
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -26,10 +26,12 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -39,15 +41,13 @@ jobs:
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
-      with:
-        vs-version: '[16.0, 17.0)'
 
     - name: Build VS2019 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
       env:
         DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
-  build-2022:
+  build-vs2022:
     runs-on: windows-2022
     name: Build VS2022 Extension
 
@@ -57,7 +57,7 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: VS2019
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -66,10 +66,12 @@ jobs:
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -87,15 +89,16 @@ jobs:
       env:
         DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
 
-  mac_build:
+  build-vsmac:
     name: Build Mac Extension
     runs-on: macos-11
 
     steps:
-    - name: Checkout current repo
+    - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
+        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -109,10 +112,12 @@ jobs:
         echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
         sudo xcode-select -s $XCODE_ROOT
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -123,15 +128,16 @@ jobs:
     - name: Build
       run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
 
-  code_build:
+  build-vscode:
     runs-on: windows-latest
     name: Build VSCode Extension
 
     steps:
-    - name: Checkout current repo
+    - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
+        ref: develop
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
@@ -140,10 +146,12 @@ jobs:
         path: vs-code
         submodules: true
 
-    - name: Setup .NET Core SDK 5.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
@@ -156,3 +164,38 @@ jobs:
 
     - name: Build
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
+
+  publish-nuget:
+    if: startsWith(github.ref, 'refs/heads/main')
+    runs-on: windows-latest
+    needs: [build-vscode, build-vsmac, build-vs2022, build-vs2019]
+    name: Publish Meadow.CLI nuget
+      
+    steps:
+    - name: Checkout Meadow.CLI.Core side-by-side
+      uses: actions/checkout@v2
+      with:
+        path: main
+        ref: develop
+
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          5.0.x
+          6.0.x
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+
+    - name: Restore dependencies
+      run: dotnet restore main/MeadowCLI.sln
+
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Build
+      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
+
+    - name: Publish
+      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}

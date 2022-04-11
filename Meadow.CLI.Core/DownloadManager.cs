@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 
 using Meadow.CLI.Core.Common;
 
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.CLI.Core
 {
     public class DownloadManager
@@ -63,19 +61,26 @@ namespace Meadow.CLI.Core
             _logger = loggerFactory.CreateLogger<DownloadManager>();
         }
 
+        public DownloadManager(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
-            string _versionCheckUrl = null;
-            if (version is null) {
+            string versionCheckUrl;
+            if (version is null) 
+            {
                 _logger.LogInformation("Downloading latest version file");
-                _versionCheckUrl = _versionCheckUrlRoot + "latest.json";
+                versionCheckUrl = _versionCheckUrlRoot + "latest.json";
             }
-            else {
+            else 
+            {
                 _logger.LogInformation("Download version file for release " + version);
-                _versionCheckUrl = _versionCheckUrlRoot + version + ".json";
+                versionCheckUrl = _versionCheckUrlRoot + version + ".json";
             }
-            string VersionCheckFile = new Uri(_versionCheckUrl).Segments.Last();
-            var versionCheckFile = await DownloadFileAsync(new Uri(_versionCheckUrl));
+            //string versionCheckFileName = new Uri(versionCheckUrl).Segments.Last();
+            var versionCheckFile = await DownloadFileAsync(new Uri(versionCheckUrl));
 
             var payload = File.ReadAllText(versionCheckFile);
             var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
@@ -93,16 +98,19 @@ namespace Meadow.CLI.Core
 
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
 
+            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
+            {
+                _logger.LogInformation(
+                    $"Installing OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
+                return;
+            }
+
+            /*
             var appVersion = Assembly.GetEntryAssembly()!
                                      .GetCustomAttribute<AssemblyFileVersionAttribute>()
                                      .Version;
 
-            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
-            {
-                _logger.LogInformation(
-                    $"Installing OS version {release.Version} is not supported by this tool anymore. The minimum version supported is 0.6.0.0.");
-                return;
-            }
+            
 
             if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
             {
@@ -110,16 +118,19 @@ namespace Meadow.CLI.Core
                     $"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
 
                 return;
-            }
+            }*/
 
             var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
 
             if (Directory.Exists(local_path))
             {
                 if (force)
+                {
                     CleanPath(local_path);
-                else {
-                     _logger.LogInformation( $"OS version {release.Version} is already installed." );
+                }
+                else 
+                {
+                     _logger.LogInformation( $"OS version {release.Version} is already installed.");
                      return;
                 }
             }
@@ -127,10 +138,12 @@ namespace Meadow.CLI.Core
             Directory.CreateDirectory(local_path);
 
             _logger.LogInformation("Downloading latest MCU firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path);
+            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path)
+                .ConfigureAwait(false);
 
             _logger.LogInformation("Downloading latest ESP32 firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path);
+            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path)
+                .ConfigureAwait(false);
 
             _logger.LogInformation(
                 $"Downloaded and extracted OS version {release.Version} to: {local_path}");

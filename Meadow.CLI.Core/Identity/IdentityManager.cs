@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CredentialManagement;
 using IdentityModel.OidcClient;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 
 namespace Meadow.CLI.Core.Identity
@@ -94,13 +93,9 @@ namespace Meadow.CLI.Core.Identity
         {
             string refreshToken = string.Empty;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 refreshToken = GetCredentials(WlRefreshCredentialName).password;
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                throw new NotSupportedException();
             }
             else
             {
@@ -141,7 +136,11 @@ namespace Meadow.CLI.Core.Identity
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                throw new NotSupportedException();
+                using (var libSecret = new LibSecret("WildernessLabs", credentialName))
+                {
+                    //Username & Password delimited with a space. String split, and returned as a tuple.
+                    return libSecret.GetSecret().Split(' ' ) switch { var a => (a[0], a[1]) };
+                }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -178,7 +177,10 @@ namespace Meadow.CLI.Core.Identity
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                throw new NotSupportedException();
+                using (var libSecret = new LibSecret("WildernessLabs", credentialName))
+                {
+                    libSecret.ClearSecret();
+                }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -207,7 +209,12 @@ namespace Meadow.CLI.Core.Identity
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                throw new NotSupportedException();
+                using (var libSecret = new LibSecret("WildernessLabs", credentialName))
+                {
+                    //Username & Password delimited with a space.
+                    libSecret.SetSecret($"{username} {password}");
+                    return true;
+                }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {

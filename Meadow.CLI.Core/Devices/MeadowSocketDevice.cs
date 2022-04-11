@@ -5,7 +5,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Core.Devices
 {
