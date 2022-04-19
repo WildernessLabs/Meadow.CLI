@@ -210,35 +210,23 @@ namespace Meadow.CLI.Core.Devices
                                                  CancellationToken cancellationToken = default)
         {
             var sourceFilename = fileName;
+            
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
-                // check local override
                 sourceFilename = Path.Combine(
-                    Directory.GetCurrentDirectory(),
+                    DownloadManager.FirmwareDownloadsFilePath,
                     DownloadManager.RuntimeFilename);
 
                 if (File.Exists(sourceFilename))
                 {
-                    Logger.LogWarning(
-                        $"*** OVERRIDE: USING CURRENT DIRECTORY FOR '{DownloadManager.RuntimeFilename}'");
+                    Logger.LogInformation("FileName not specified, using latest download.");
                 }
                 else
                 {
-                    sourceFilename = Path.Combine(
-                        DownloadManager.FirmwareDownloadsFilePath,
-                        DownloadManager.RuntimeFilename);
+                    Logger.LogInformation(
+                        "Unable to locate a runtime file. Either provide a path or download one.");
 
-                    if (File.Exists(sourceFilename))
-                    {
-                        Logger.LogInformation("FileName not specified, using latest download.");
-                    }
-                    else
-                    {
-                        Logger.LogInformation(
-                            "Unable to locate a runtime file. Either provide a path or download one.");
-
-                        return; // KeepConsoleOpen?
-                    }
+                    return; // KeepConsoleOpen?
                 }
             }
 
