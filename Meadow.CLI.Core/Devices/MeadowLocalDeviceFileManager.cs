@@ -218,7 +218,7 @@ namespace Meadow.CLI.Core.Devices
         {
             string sourceFilename = fileName ?? string.Empty;
             
-            if (osVersion != null && string.IsNullOrWhiteSpace(sourceFilename))
+            if (string.IsNullOrWhiteSpace(sourceFilename))
             {
                 if (string.IsNullOrWhiteSpace(osVersion) == false)
                 {
