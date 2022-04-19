@@ -22,8 +22,10 @@ namespace Meadow.CLI.Core
             "WildernessLabs",
             "Firmware");
 
-        public static string FirmwareLatestVersion {
-            get {
+        public static string FirmwareLatestVersion 
+        {
+            get 
+            {
                 string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
                 if (File.Exists(latest_txt))
                     return File.ReadAllText(latest_txt);
@@ -32,10 +34,13 @@ namespace Meadow.CLI.Core
              }
         }
 
-        public static string FirmwareDownloadsFilePath {
-            get { return Path.Combine(FirmwareDownloadsFilePathRoot, FirmwareLatestVersion); }
-        }
+        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion); 
 
+        public static string FirmwarePathForVersion(string firmwareVersion)
+        {
+            return Path.Combine(FirmwareDownloadsFilePathRoot, firmwareVersion);
+        }
+        
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
@@ -47,8 +52,7 @@ namespace Meadow.CLI.Core
         public static readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
         public static readonly string NetworkPartitionTableFilename = "partition-table.bin";
 
-        public static readonly string UpdateCommand =
-            "dotnet tool update WildernessLabs.Meadow.CLI --global";
+        public static readonly string UpdateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
         private static readonly HttpClient Client = new HttpClient()
         {

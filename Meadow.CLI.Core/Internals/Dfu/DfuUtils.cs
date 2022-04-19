@@ -63,7 +63,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlashAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlashAsync(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
@@ -77,7 +77,14 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     return false;
                 }
 
-                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
+                if(string.IsNullOrWhiteSpace(osVersion) == false)
+                {
+                    filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
+                }
+                else
+                {
+                    filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
+                }
             }
 
             if (!File.Exists(filename))

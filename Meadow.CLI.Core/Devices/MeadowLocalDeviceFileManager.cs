@@ -204,18 +204,34 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
+        public Task UpdateMonoRuntimeAsync(string? fileName,
+                                                 uint partition = 0,
+                                                 CancellationToken cancellationToken = default)
+        {
+            return UpdateMonoRuntimeAsync(fileName, null, partition, cancellationToken);
+        }
 
         public async Task UpdateMonoRuntimeAsync(string? fileName,
+                                                 string? osVersion,      
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
             string sourceFilename = fileName ?? string.Empty;
             
-            if (string.IsNullOrWhiteSpace(sourceFilename))
+            if (osVersion != null && string.IsNullOrWhiteSpace(sourceFilename))
             {
-                sourceFilename = Path.Combine(
-                    DownloadManager.FirmwareDownloadsFilePath,
-                    DownloadManager.RuntimeFilename);
+                if (string.IsNullOrWhiteSpace(osVersion) == false)
+                {
+                    sourceFilename = Path.Combine(
+                                        DownloadManager.FirmwarePathForVersion(osVersion), 
+                                        DownloadManager.OsFilename);
+                }
+                else
+                {
+                    sourceFilename = Path.Combine(
+                                        DownloadManager.FirmwareDownloadsFilePath,
+                                        DownloadManager.RuntimeFilename);
+                }
 
                 if (File.Exists(sourceFilename))
                 {
@@ -224,7 +240,6 @@ namespace Meadow.CLI.Core.Devices
                 else
                 {
                     Logger.LogInformation("Unable to locate a runtime file. Either provide a path or download one.");
-
                     return;
                 }
             }
