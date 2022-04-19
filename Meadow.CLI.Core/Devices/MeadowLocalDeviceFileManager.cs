@@ -216,7 +216,7 @@ namespace Meadow.CLI.Core.Devices
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
-            string sourceFilename = fileName ?? string.Empty;
+            var sourceFilename = fileName;
             
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {

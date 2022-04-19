@@ -17,7 +17,7 @@ namespace Meadow.CLI.Commands.Utility
         [CommandOption("force", 'f', Description = "Force re-download of the OS", IsRequired = false)]
         public bool Force { get; init; } = false;
 
-        [CommandOption("osVerion", 'v', Description = "Download a specific OS version - x.x.x.x", IsRequired = false)]
+        [CommandOption("osVersion", 'v', Description = "Download a specific OS version - x.x.x.x", IsRequired = false)]
         public string OsVersion { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
