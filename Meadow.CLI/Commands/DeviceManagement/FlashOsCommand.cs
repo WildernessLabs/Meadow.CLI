@@ -149,7 +149,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 }
             }
 
-            await Meadow.FlashOsAsync(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
+          await Meadow.FlashOsAsync(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
 
             Meadow?.Dispose();
         }

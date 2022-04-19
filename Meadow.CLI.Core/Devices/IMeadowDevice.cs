@@ -24,7 +24,11 @@ namespace Meadow.CLI.Core.Devices
         public Task UpdateMonoRuntimeAsync(string? fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public Task UpdateMonoRuntimeAsync(string? fileName, string? osVersion, uint partition = 0, CancellationToken cancellationToken = default);
         public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
+
+        public Task FlashEspAsync(CancellationToken cancellationToken = default);
         public Task FlashEspAsync(string? sourcePath, CancellationToken cancellationToken = default);
+        public Task FlashEspVersionAsync(string osVersion, CancellationToken cancellationToken = default);
+
         public Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default);
@@ -55,7 +59,6 @@ namespace Meadow.CLI.Core.Devices
         public Task<string?> GetDeviceMacAddressAsync(CancellationToken cancellationToken = default);
         public Task<bool> InitializeAsync(CancellationToken cancellationToken);
         public bool IsDeviceInitialized();
-        public Task FlashEspAsync(CancellationToken cancellationToken = default);
         public Task<bool> IsFileOnDevice(string filename, CancellationToken cancellationToken = default);
     }
 }
