@@ -209,7 +209,7 @@ namespace Meadow.CLI.Core.Devices
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
-            var sourceFilename = fileName;
+            string sourceFilename = fileName ?? string.Empty;
             
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
@@ -223,14 +223,12 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Logger.LogInformation(
-                        "Unable to locate a runtime file. Either provide a path or download one.");
+                    Logger.LogInformation("Unable to locate a runtime file. Either provide a path or download one.");
 
-                    return; // KeepConsoleOpen?
+                    return;
                 }
             }
-
-            if (!File.Exists(sourceFilename))
+            else if (!File.Exists(sourceFilename))
             {
                 sourceFilename = Path.Combine(Directory.GetCurrentDirectory(), sourceFilename);
 
