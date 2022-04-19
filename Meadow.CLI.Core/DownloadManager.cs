@@ -70,10 +70,11 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
+        //ToDo rename this method - DownloadOSAsync?
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
             string versionCheckUrl;
-            if (version is null) 
+            if (version is null || string.IsNullOrWhiteSpace(version)) 
             {
                 _logger.LogInformation("Downloading latest version file");
                 versionCheckUrl = _versionCheckUrlRoot + "latest.json";
