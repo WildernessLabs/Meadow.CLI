@@ -406,8 +406,18 @@ namespace Meadow.CLI.Core.Devices
                                  "Meadow was expected to have Mono Disabled");
 
                     Logger.LogInformation("Updating ESP");
-                    await _meadowDevice.FlashEspAsync(cancellationToken)
+
+                    if(osVersion != null)
+                    {
+                        await _meadowDevice.FlashEspVersionAsync(osVersion, cancellationToken)
                                        .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await _meadowDevice.FlashEspAsync(cancellationToken)
+                                       .ConfigureAwait(false);
+                    }
+                    
 
                     // Reset the meadow again to ensure flash worked.
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)

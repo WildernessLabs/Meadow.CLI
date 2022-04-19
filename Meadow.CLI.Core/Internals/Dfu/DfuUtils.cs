@@ -69,14 +69,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
             device ??= GetDevice();
 
             // if filename isn't specified fallback to download path
-            if (string.IsNullOrEmpty(filename))
+            if (string.IsNullOrWhiteSpace(filename))
             {
-                if (!Directory.Exists(DownloadManager.FirmwareDownloadsFilePath))
-                {
-                    logger.LogError($"Latest version set to '{DownloadManager.FirmwareLatestVersion}' but folder does not exist");
-                    return false;
-                }
-
                 if(string.IsNullOrWhiteSpace(osVersion) == false)
                 {
                     filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
@@ -84,6 +78,12 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 else
                 {
                     filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
+                }
+
+                if (!File.Exists(filename))
+                {
+                    logger.LogError($"Unable to flash {filename} - file or folder does not exist");
+                    return false;
                 }
             }
 

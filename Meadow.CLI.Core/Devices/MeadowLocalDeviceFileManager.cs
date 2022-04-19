@@ -374,6 +374,16 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
+        public Task FlashEspAsync(CancellationToken cancellationToken = default)
+        {
+            return FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, cancellationToken);
+        }
+
+        public Task FlashEspVersionAsync(string espVersion, CancellationToken cancellationToken = default)
+        {
+            return FlashEspAsync(DownloadManager.FirmwarePathForVersion(espVersion), cancellationToken);
+        }
+
         public async Task FlashEspAsync(string? sourcePath,
                                         CancellationToken cancellationToken = default)
         {
