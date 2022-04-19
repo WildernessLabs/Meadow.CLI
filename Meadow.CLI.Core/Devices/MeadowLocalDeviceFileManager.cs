@@ -232,8 +232,13 @@ namespace Meadow.CLI.Core.Devices
 
             if (!File.Exists(sourceFilename))
             {
-                Logger.LogInformation($"File '{sourceFilename}' not found");
-                return;
+                sourceFilename = Path.Combine(Directory.GetCurrentDirectory(), sourceFilename);
+
+                if (!File.Exists(sourceFilename))
+                {
+                    Logger.LogInformation($"File '{sourceFilename}' not found");
+                    return;
+                }
             }
 
             var targetFileName = Path.GetFileName(sourceFilename);
