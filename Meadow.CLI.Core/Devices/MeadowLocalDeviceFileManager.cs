@@ -235,7 +235,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (File.Exists(sourceFilename))
                 {
-                    Logger.LogInformation("FileName not specified, using latest download.");
+                    Logger.LogInformation($"Writing {sourceFilename} runtime");
                 }
                 else
                 {
