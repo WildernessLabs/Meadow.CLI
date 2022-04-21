@@ -52,7 +52,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (!SkipDfu)
             {
-                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken, OSVersion).ConfigureAwait(false);
+                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken).ConfigureAwait(false);
             }
             else
             {
