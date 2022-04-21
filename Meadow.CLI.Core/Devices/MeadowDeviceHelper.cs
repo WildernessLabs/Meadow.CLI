@@ -383,7 +383,8 @@ namespace Meadow.CLI.Core.Devices
                                  "Meadow was expected to have Mono Disabled");
 
                     await _meadowDevice.UpdateMonoRuntimeAsync(
-                        runtimePath, osVersion,
+                        runtimePath, 
+                        osVersion,
                         cancellationToken: cancellationToken);
 
                     await Task.Delay(2000);
@@ -409,7 +410,7 @@ namespace Meadow.CLI.Core.Devices
 
                     if(osVersion != null)
                     {
-                        await _meadowDevice.FlashEspVersionAsync(osVersion, cancellationToken)
+                        await _meadowDevice.FlashEspAsync(cancellationToken, osVersion)
                                        .ConfigureAwait(false);
                     }
                     else
@@ -455,10 +456,11 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public static async Task<string> DfuFlashAsync(string serialPortName, 
-            string osPath, 
+            string osPath,
+            string? osVersion,
             ILogger logger, 
-            CancellationToken cancellationToken = default,
-            string osVersion = "")
+            CancellationToken cancellationToken = default
+            )
         {
             var dfuAttempts = 0;
 
@@ -529,7 +531,7 @@ namespace Meadow.CLI.Core.Devices
             string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             logger.LogInformation("Device in DFU Mode, flashing OS");
-            var res = await DfuUtils.DfuFlashAsync(osPath, osVersion, dfuDevice, logger).ConfigureAwait(false);
+            var res = await DfuUtils.DfuFlashAsync(osPath, osVersion ?? "", dfuDevice, logger).ConfigureAwait(false);
             if (res)
             {
                 logger.LogInformation("Device Flashed.");

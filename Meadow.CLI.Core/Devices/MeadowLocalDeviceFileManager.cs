@@ -374,14 +374,13 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public Task FlashEspAsync(CancellationToken cancellationToken = default)
+        public Task FlashEspAsync(CancellationToken cancellationToken = default, string? osVersion = null)
         {
-            return FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, cancellationToken);
-        }
-
-        public Task FlashEspVersionAsync(string espVersion, CancellationToken cancellationToken = default)
-        {
-            return FlashEspAsync(DownloadManager.FirmwarePathForVersion(espVersion), cancellationToken);
+            if(osVersion == null || string.IsNullOrWhiteSpace(osVersion))
+            {
+                return FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, cancellationToken);
+            }
+            return FlashEspAsync(DownloadManager.FirmwarePathForVersion(osVersion), cancellationToken);
         }
 
         public async Task FlashEspAsync(string? sourcePath,
