@@ -106,15 +106,15 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow install dfu-util");
+                    logger.LogError("dfu-util not found - to install, run: `meadow install dfu-util` (may require administrator mode)");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    logger.LogError("dfu-util not found. To install run: brew install dfu-util");
+                    logger.LogError("dfu-util not found - to install run: `brew install dfu-util`");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    logger.LogError("dfu-util not found. Install using package manager, for example: apt install dfu-util");
+                    logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
                 }
                 return false;
             }
@@ -211,7 +211,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 using (var process = new Process())
                 {
-                    process.StartInfo.FileName = "dfu-util";
+                    process.StartInfo.FileName = "dfu-util2";
                     process.StartInfo.Arguments = $"--version";
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.RedirectStandardOutput = true;
