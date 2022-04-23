@@ -100,9 +100,9 @@ namespace Meadow.CLI.Core.Devices
                 cancellationToken);
         }
 
-        public Task FlashEspAsync(string? sourcePath = null, CancellationToken cancellationToken = default)
+        public Task FlashEspAsync(string? sourcePath = null, string? osVersion = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.FlashEspAsync(sourcePath, cancellationToken);
+            return _meadowDevice.FlashEspAsync(sourcePath, osVersion, cancellationToken);
         }
 
         //Get's the OS version as a string, used by the download manager
@@ -408,18 +408,9 @@ namespace Meadow.CLI.Core.Devices
 
                     Logger.LogInformation("Updating ESP");
 
-                    if(osVersion != null)
-                    {
-                        await _meadowDevice.FlashEspAsync(cancellationToken, osVersion)
+                    await _meadowDevice.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, osVersion, cancellationToken)
                                        .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await _meadowDevice.FlashEspAsync(cancellationToken)
-                                       .ConfigureAwait(false);
-                    }
                     
-
                     // Reset the meadow again to ensure flash worked.
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)
                                        .ConfigureAwait(false);
