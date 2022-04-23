@@ -381,8 +381,9 @@ namespace Meadow.CLI.Core.Devices
             if (osVersion == null) {
                 sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
             }
-            else
-                sourcePath ??= DownloadManager.FirmwarePathForVersion (osVersion);
+            else {
+                sourcePath ??= DownloadManager.FirmwarePathForVersion(osVersion);
+            }
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
