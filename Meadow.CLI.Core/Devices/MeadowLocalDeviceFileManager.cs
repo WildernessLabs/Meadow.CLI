@@ -374,19 +374,16 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public Task FlashEspAsync(CancellationToken cancellationToken = default, string? osVersion = null)
-        {
-            if(osVersion == null || string.IsNullOrWhiteSpace(osVersion))
-            {
-                return FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, cancellationToken);
-            }
-            return FlashEspAsync(DownloadManager.FirmwarePathForVersion(osVersion), cancellationToken);
-        }
-
         public async Task FlashEspAsync(string? sourcePath,
+                                        string? osVersion = null,
                                         CancellationToken cancellationToken = default)
         {
-            sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            if (osVersion == null) {
+                sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            }
+            else
+                sourcePath ??= DownloadManager.FirmwarePathForVersion (osVersion);
+
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
