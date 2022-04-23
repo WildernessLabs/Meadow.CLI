@@ -39,6 +39,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
         public bool DontPrompt { get; init; }
 
+        [CommandOption("osVersion", 'v', Description = "Flash a specific downloaded OS version - x.x.x.x")]
+        public string OSVersion { get; init; }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -49,7 +52,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (!SkipDfu)
             {
-                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken).ConfigureAwait(false);
+                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -146,7 +149,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 }
             }
 
-            await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
+            await Meadow.FlashOsAsync(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
 
             Meadow?.Dispose();
         }

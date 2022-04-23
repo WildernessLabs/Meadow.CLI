@@ -100,9 +100,9 @@ namespace Meadow.CLI.Core.Devices
                 cancellationToken);
         }
 
-        public Task FlashEspAsync(string? sourcePath = null, CancellationToken cancellationToken = default)
+        public Task FlashEspAsync(string? sourcePath = null, string? osVersion = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.FlashEspAsync(sourcePath, cancellationToken);
+            return _meadowDevice.FlashEspAsync(sourcePath, osVersion, cancellationToken);
         }
 
         //Get's the OS version as a string, used by the download manager
@@ -367,7 +367,7 @@ namespace Meadow.CLI.Core.Devices
             _meadowDevice = meadow ?? throw new Exception($"Meadow not found. Serial Number {serialNumber}");
         }
 
-        public async Task FlashOsAsync(string? runtimePath = null, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
+        public async Task FlashOsAsync(string? runtimePath = null, string? osVersion = null, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -383,7 +383,8 @@ namespace Meadow.CLI.Core.Devices
                                  "Meadow was expected to have Mono Disabled");
 
                     await _meadowDevice.UpdateMonoRuntimeAsync(
-                        runtimePath,
+                        runtimePath, 
+                        osVersion,
                         cancellationToken: cancellationToken);
 
                     await Task.Delay(2000);
@@ -406,9 +407,10 @@ namespace Meadow.CLI.Core.Devices
                                  "Meadow was expected to have Mono Disabled");
 
                     Logger.LogInformation("Updating ESP");
-                    await _meadowDevice.FlashEspAsync(cancellationToken)
-                                       .ConfigureAwait(false);
 
+                    await _meadowDevice.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, osVersion, cancellationToken)
+                                       .ConfigureAwait(false);
+                    
                     // Reset the meadow again to ensure flash worked.
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)
                                        .ConfigureAwait(false);
@@ -444,7 +446,12 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public static async Task<string> DfuFlashAsync(string serialPortName, string osPath, ILogger logger, CancellationToken cancellationToken = default)
+        public static async Task<string> DfuFlashAsync(string serialPortName, 
+            string osPath,
+            string? osVersion,
+            ILogger logger, 
+            CancellationToken cancellationToken = default
+            )
         {
             var dfuAttempts = 0;
 
@@ -515,7 +522,7 @@ namespace Meadow.CLI.Core.Devices
             string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             logger.LogInformation("Device in DFU Mode, flashing OS");
-            var res = await DfuUtils.DfuFlashAsync(osPath, dfuDevice, logger).ConfigureAwait(false);
+            var res = await DfuUtils.DfuFlashAsync(osPath, osVersion ?? "", dfuDevice, logger).ConfigureAwait(false);
             if (res)
             {
                 logger.LogInformation("Device Flashed.");

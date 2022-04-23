@@ -204,27 +204,42 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
-
-        public async Task UpdateMonoRuntimeAsync(string? fileName,
+        public Task UpdateMonoRuntimeAsync(string? fileName,
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
-            string sourceFilename = fileName ?? string.Empty;
+            return UpdateMonoRuntimeAsync(fileName, null, partition, cancellationToken);
+        }
+
+        public async Task UpdateMonoRuntimeAsync(string? fileName,
+                                                 string? osVersion,      
+                                                 uint partition = 0,
+                                                 CancellationToken cancellationToken = default)
+        {
+            var sourceFilename = fileName;
             
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
-                sourceFilename = Path.Combine(
-                    DownloadManager.FirmwareDownloadsFilePath,
-                    DownloadManager.RuntimeFilename);
+                if (string.IsNullOrWhiteSpace(osVersion) == false)
+                {
+                    sourceFilename = Path.Combine(
+                                        DownloadManager.FirmwarePathForVersion(osVersion), 
+                                        DownloadManager.OsFilename);
+                }
+                else
+                {
+                    sourceFilename = Path.Combine(
+                                        DownloadManager.FirmwareDownloadsFilePath,
+                                        DownloadManager.RuntimeFilename);
+                }
 
                 if (File.Exists(sourceFilename))
                 {
-                    Logger.LogInformation("FileName not specified, using latest download.");
+                    Logger.LogInformation($"Writing {sourceFilename} runtime");
                 }
                 else
                 {
                     Logger.LogInformation("Unable to locate a runtime file. Either provide a path or download one.");
-
                     return;
                 }
             }
@@ -360,9 +375,16 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task FlashEspAsync(string? sourcePath,
+                                        string? osVersion = null,
                                         CancellationToken cancellationToken = default)
         {
-            sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            if (osVersion == null) {
+                sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            }
+            else {
+                sourcePath ??= DownloadManager.FirmwarePathForVersion(osVersion);
+            }
+
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
