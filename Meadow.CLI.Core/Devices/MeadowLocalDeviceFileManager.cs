@@ -224,7 +224,7 @@ namespace Meadow.CLI.Core.Devices
                 {
                     sourceFilename = Path.Combine(
                                         DownloadManager.FirmwarePathForVersion(osVersion), 
-                                        DownloadManager.OsFilename);
+                                        DownloadManager.RuntimeFilename);
                 }
                 else
                 {
