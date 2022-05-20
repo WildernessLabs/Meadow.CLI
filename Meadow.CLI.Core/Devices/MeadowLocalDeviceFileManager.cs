@@ -382,7 +382,7 @@ namespace Meadow.CLI.Core.Devices
                 sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
             }
             else {
-                sourcePath ??= DownloadManager.FirmwarePathForVersion(osVersion);
+                sourcePath = DownloadManager.FirmwarePathForVersion(osVersion);
             }
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
