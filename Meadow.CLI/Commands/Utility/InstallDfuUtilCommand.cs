@@ -23,9 +23,16 @@ namespace Meadow.CLI.Commands.Utility
             var cancellationToken = console.RegisterCancellationHandler();
             await base.ExecuteAsync(console);
 
-            if (OperatingSystem.IsWindows() && IsAdministrator())
+            if (OperatingSystem.IsWindows())
             {
-                await DownloadManager.InstallDfuUtilAsync(Environment.Is64BitOperatingSystem, cancellationToken);
+                if(IsAdministrator())
+                {
+                    await DownloadManager.InstallDfuUtilAsync(Environment.Is64BitOperatingSystem, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogInformation("To install on Windows, you'll need to open a Command Prompt or Terminal as an administrator");
+                }
             }
             else if (OperatingSystem.IsMacOS())
             {

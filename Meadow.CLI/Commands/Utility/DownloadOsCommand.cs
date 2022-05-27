@@ -10,21 +10,21 @@ namespace Meadow.CLI.Commands.Utility
     [Command("download os", Description = "Downloads the latest Meadow.OS to the host PC")]
     public class DownloadOsCommand : MeadowCommand
     {
-        private readonly ILogger<InstallDfuUtilCommand> _logger;
         public DownloadOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory) : base(downloadManager, loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }
 
         [CommandOption("force", 'f', Description = "Force re-download of the OS", IsRequired = false)]
-        public bool force { get; init; } = false;
+        public bool Force { get; init; } = false;
+
+        [CommandOption("osVersion", 'v', Description = "Download a specific OS version - x.x.x.x", IsRequired = false)]
+        public string OsVersion { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            var cancellationToken = console.RegisterCancellationHandler();
             await base.ExecuteAsync(console);
 
-            await DownloadManager.DownloadLatestAsync(null, force).ConfigureAwait(false);
+            await DownloadManager.DownloadLatestAsync(OsVersion, Force).ConfigureAwait(false);
         }
     }
 }

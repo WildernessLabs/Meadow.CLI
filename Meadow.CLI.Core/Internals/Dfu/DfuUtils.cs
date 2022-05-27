@@ -63,21 +63,28 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlashAsync(string filename = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlashAsync(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
 
             // if filename isn't specified fallback to download path
-            if (string.IsNullOrEmpty(filename))
+            if (string.IsNullOrWhiteSpace(filename))
             {
-                if (!Directory.Exists(DownloadManager.FirmwareDownloadsFilePath))
+                if(string.IsNullOrWhiteSpace(osVersion) == false)
                 {
-                    logger.LogError($"Latest version set to '{DownloadManager.FirmwareLatestVersion}' but folder does not exist");
-                    return false;
+                    filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
+                }
+                else
+                {
+                    filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
                 }
 
-                filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
+                if (!File.Exists(filename))
+                {
+                    logger.LogError($"Unable to flash {filename} - file or folder does not exist");
+                    return false;
+                }
             }
 
             if (!File.Exists(filename))
@@ -99,15 +106,15 @@ namespace Meadow.CLI.Core.Internals.Dfu
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    logger.LogError("dfu-util not found. To install, run in administrator mode: meadow install dfu-util");
+                    logger.LogError("dfu-util not found - to install, run: `meadow install dfu-util` (may require administrator mode)");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    logger.LogError("dfu-util not found. To install run: brew install dfu-util");
+                    logger.LogError("dfu-util not found - to install run: `brew install dfu-util`");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    logger.LogError("dfu-util not found. Install using package manager, for example: apt install dfu-util");
+                    logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
                 }
                 return false;
             }

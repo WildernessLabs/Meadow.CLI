@@ -4,7 +4,6 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 
 namespace Meadow.CLI.Commands.App
@@ -35,8 +34,16 @@ namespace Meadow.CLI.Commands.App
             var osVersion = await Meadow.GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken)
                 .ConfigureAwait(false);
 
-            await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion)
+            try
+            {
+                await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion)
                 .ConfigureAwait(false);
+            }
+            catch
+            {   //OS binaries failed to download
+                //Either no internet connection or we're depoying to a pre-release OS version 
+                console.Output.WriteLine("Meadow assemblies download failed, using local copy");
+            }
 
             await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
                 .ConfigureAwait(false);

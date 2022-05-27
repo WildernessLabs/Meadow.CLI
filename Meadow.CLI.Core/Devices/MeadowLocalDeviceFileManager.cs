@@ -14,8 +14,6 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
-        private protected static readonly string SystemHttpNetDllName = "System.Net.Http.dll";
-
         public async Task<IList<string>> GetFilesAndFoldersAsync(
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
@@ -206,48 +204,54 @@ namespace Meadow.CLI.Core.Devices
             return SendCommandAsync(command, cancellationToken);
         }
 
+        public Task UpdateMonoRuntimeAsync(string? fileName,
+                                                 uint partition = 0,
+                                                 CancellationToken cancellationToken = default)
+        {
+            return UpdateMonoRuntimeAsync(fileName, null, partition, cancellationToken);
+        }
 
         public async Task UpdateMonoRuntimeAsync(string? fileName,
+                                                 string? osVersion,      
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
             var sourceFilename = fileName;
+            
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
-                // check local override
-                sourceFilename = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    DownloadManager.RuntimeFilename);
-
-                if (File.Exists(sourceFilename))
+                if (string.IsNullOrWhiteSpace(osVersion) == false)
                 {
-                    Logger.LogWarning(
-                        $"*** OVERRIDE: USING CURRENT DIRECTORY FOR '{DownloadManager.RuntimeFilename}'");
+                    sourceFilename = Path.Combine(
+                                        DownloadManager.FirmwarePathForVersion(osVersion), 
+                                        DownloadManager.RuntimeFilename);
                 }
                 else
                 {
                     sourceFilename = Path.Combine(
-                        DownloadManager.FirmwareDownloadsFilePath,
-                        DownloadManager.RuntimeFilename);
+                                        DownloadManager.FirmwareDownloadsFilePath,
+                                        DownloadManager.RuntimeFilename);
+                }
 
-                    if (File.Exists(sourceFilename))
-                    {
-                        Logger.LogInformation("FileName not specified, using latest download.");
-                    }
-                    else
-                    {
-                        Logger.LogInformation(
-                            "Unable to locate a runtime file. Either provide a path or download one.");
-
-                        return; // KeepConsoleOpen?
-                    }
+                if (File.Exists(sourceFilename))
+                {
+                    Logger.LogInformation($"Writing {sourceFilename} runtime");
+                }
+                else
+                {
+                    Logger.LogInformation("Unable to locate a runtime file. Either provide a path or download one.");
+                    return;
                 }
             }
-
-            if (!File.Exists(sourceFilename))
+            else if (!File.Exists(sourceFilename))
             {
-                Logger.LogInformation($"File '{sourceFilename}' not found");
-                return;
+                sourceFilename = Path.Combine(Directory.GetCurrentDirectory(), sourceFilename);
+
+                if (!File.Exists(sourceFilename))
+                {
+                    Logger.LogInformation($"File '{sourceFilename}' not found");
+                    return;
+                }
             }
 
             var targetFileName = Path.GetFileName(sourceFilename);
@@ -371,9 +375,16 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task FlashEspAsync(string? sourcePath,
+                                        string? osVersion = null,
                                         CancellationToken cancellationToken = default)
         {
-            sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            if (osVersion == null) {
+                sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
+            }
+            else {
+                sourcePath = DownloadManager.FirmwarePathForVersion(osVersion);
+            }
+
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),

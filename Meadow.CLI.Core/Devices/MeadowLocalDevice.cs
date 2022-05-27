@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -333,42 +330,6 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public abstract Task<bool> InitializeAsync(CancellationToken cancellationToken);
-
-        public async Task FlashEspAsync(CancellationToken cancellationToken = default)
-        {
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
-
-            await WriteFileToEspFlashAsync(
-                    Path.Combine(
-                        DownloadManager.FirmwareDownloadsFilePath,
-                        DownloadManager.NetworkMeadowCommsFilename),
-                    mcuDestAddress: "0x10000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            await Task.Delay(5000, cancellationToken)
-                      .ConfigureAwait(false);
-
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
-
-            await WriteFileToEspFlashAsync(
-                    Path.Combine(
-                        DownloadManager.FirmwareDownloadsFilePath,
-                        DownloadManager.NetworkBootloaderFilename),
-                    mcuDestAddress: "0x1000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
-
-            await WriteFileToEspFlashAsync(
-                    Path.Combine(
-                        DownloadManager.FirmwareDownloadsFilePath,
-                        DownloadManager.NetworkPartitionTableFilename),
-                    mcuDestAddress: "0x8000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-        }
 
         public abstract bool IsDeviceInitialized();
 

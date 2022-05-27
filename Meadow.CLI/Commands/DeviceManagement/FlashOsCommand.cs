@@ -13,6 +13,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
     public class FlashOsCommand : MeadowSerialCommand
     {
         private MeadowDeviceInfo deviceInfo;
+
         private const string MINIMUM_OS_VERSION = "0.6.1.0";
 
         public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
@@ -26,7 +27,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("runtimeFile", 'r', Description = "Path to the Meadow Runtime binary")]
         public string RuntimeFile { get; init; }
 
-        [CommandOption("skipDfu",'d', Description = "Skip DFU flash")]
+        [CommandOption("skipDfu", 'd', Description = "Skip DFU flash")]
         public bool SkipDfu { get; init; }
 
         [CommandOption("skipEsp", 'e', Description = "Skip ESP flash")]
@@ -35,8 +36,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("skipRuntime", 'k', Description = "Skip updating the runtime")]
         public bool SkipRuntime { get; init; }
 
-        [CommandOption ("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
+        [CommandOption("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
         public bool DontPrompt { get; init; }
+
+        [CommandOption("osVersion", 'v', Description = "Flash a specific downloaded OS version - x.x.x.x")]
+        public string OSVersion { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -45,9 +49,18 @@ namespace Meadow.CLI.Commands.DeviceManagement
             Meadow?.Dispose();
 
             string serialNumber = string.Empty;
+
             if (!SkipDfu)
             {
-                serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, Logger, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    Logger.LogInformation("Unable to flash Meadow OS");
+                    return;
+                }
             }
             else
             {
@@ -104,15 +117,20 @@ namespace Meadow.CLI.Commands.DeviceManagement
             }
 
             // If less that B6.1 flash
-            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0) {
+            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0)
+            {
                 // Ask User 1st before wiping
-                Logger.LogInformation($"Your OS version is older than {MINIMUM_OS_VERSION}. A bulk flash erase is highly recommended.");
+                Logger.LogInformation($"Your OS or runtime version is older than {MINIMUM_OS_VERSION}. A flash erase is highly recommended.");
                 var yesOrNo = "y";
-                if (!DontPrompt) {
+
+                if (!DontPrompt)
+                {
                     Logger.LogInformation($"Proceed? (Y/N) Press Y to erase flash, N to continue install without erasing");
                     yesOrNo = await console.Input.ReadLineAsync();
                 }
-                if (yesOrNo.ToLower () == "y") {
+
+                if (yesOrNo.ToLower() == "y")
+                {
                     await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken)
                         .ConfigureAwait(false);
 
@@ -129,7 +147,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
                             cancellationToken: cancellationToken)
                         .ConfigureAwait(false);
 
-                    if (device == null) {
+                    if (device == null)
+                    {
                         Logger.LogInformation($"OH NO!! Meadow device not found. Please plug in your meadow device and run this command again.");
                         return;
                     }
@@ -138,7 +157,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 }
             }
 
-            await Meadow.FlashOsAsync(RuntimeFile, SkipRuntime, SkipEsp, cancellationToken);
+            await Meadow.FlashOsAsync(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
 
             Meadow?.Dispose();
         }
