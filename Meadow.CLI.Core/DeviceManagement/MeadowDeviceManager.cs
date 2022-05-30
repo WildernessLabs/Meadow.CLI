@@ -34,10 +34,6 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                // Because on Windows we now append the Device ID as "COMx(DevicIDyyy), we've got to split it before using the COM port.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    serialPort = serialPort.Split('(')[0];
-
                 logger.LogInformation($"Connecting to Meadow on {serialPort}");
                 IMeadowDevice? meadow = null;
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
@@ -344,7 +340,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     var serialNumber = splits[2];
 
                     logger.LogDebug($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
-                    results.Add($"{port}({serialNumber})");
+                    results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
                 }
 
                 return results.ToArray();
