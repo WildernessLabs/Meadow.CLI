@@ -7,9 +7,9 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  build-vs2019:
+  build-vswin-2019:
     runs-on: windows-2019
-    name: Build VS2019 Extension
+    name: Build Win 2019 Extension
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
@@ -47,9 +47,9 @@ jobs:
       env:
         DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
-  build-vs2022:
+  build-vswin-2022:
     runs-on: windows-2022
-    name: Build VS2022 Extension
+    name: Build Win 2022 Extension
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
@@ -133,6 +133,45 @@ jobs:
     - name: Build
       run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
 
+  build-vsmac-2022:
+    name: Build Mac 2022 Extension
+    runs-on: macos-11
+
+    steps:
+    - name: Checkout Meadow.CLI.Core side-by-side
+      uses: actions/checkout@v2
+      with:
+        path: Meadow.CLI
+        ref: develop
+
+    - name: Checkout Mac Extension side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/VS_Mac_Meadow_Extension
+        path: vs-mac
+
+    - name: Set default Xcode 13.0
+      run: |
+        XCODE_ROOT=/Applications/Xcode_13.0.0.app
+        echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
+        sudo xcode-select -s $XCODE_ROOT
+
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          5.0.x
+          6.0.x
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+
+    - name: Restore dependencies
+      run: dotnet restore vs-mac/VS4Mac_Meadow_Extension.sln
+
+    - name: Build
+      run: dotnet msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
+
   build-vscode:
     runs-on: windows-latest
     name: Build VSCode Extension
@@ -173,7 +212,7 @@ jobs:
   publish-nuget:
     if: startsWith(github.ref, 'refs/heads/main')
     runs-on: windows-latest
-    needs: [build-vscode, build-vsmac-2019, build-vs2022, build-vs2019]
+    needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
     name: Publish Meadow.CLI nuget
       
     steps:
