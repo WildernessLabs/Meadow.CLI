@@ -261,7 +261,7 @@ namespace Meadow.CLI.Core
             }
             catch (Exception ex)
             {
-             //   _logger.LogInformation(ex, "Error checking for updates to Meadow.CLI");
+                _logger.LogDebug(ex, "Error checking for updates to Meadow.CLI");
             }
 
             return (false, string.Empty, string.Empty);
