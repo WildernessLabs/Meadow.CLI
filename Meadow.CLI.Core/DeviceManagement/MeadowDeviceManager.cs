@@ -27,6 +27,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public const string NoDevicesFound = "No Devices Found";
 
+        private static object lockobj = new object();
+
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
         {
@@ -102,21 +104,31 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static IList<string> GetSerialPorts()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            try
             {
-                return GetMeadowSerialPortsForLinux();
+                lock (lockobj)
+                {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        return GetMeadowSerialPortsForLinux();
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        return GetMeadowSerialPortsForOsx();
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        return GetMeadowSerialPortsForWindows();
+                    }
+                    else
+                    {
+                        throw new Exception("Unknown operating system.");
+                    }
+                }
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            catch (Exception ex)
             {
-                return GetMeadowSerialPortsForOsx();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return GetMeadowSerialPortsForWindows();
-            }
-            else
-            {
-                throw new Exception("Unknown operating system.");
+                throw new DeviceNotFoundException($"Error Finding Meadow Devices on available Serial Ports: {ex.Message}");
             }
         }
 
