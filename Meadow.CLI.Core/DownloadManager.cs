@@ -99,9 +99,13 @@ namespace Meadow.CLI.Core
             if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
             {
                 Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
+                //we'll write latest.txt regardless of version if it doesn't exist
+                File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
-
-            File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+            else if(version == null)
+            {   //otherwise only update if we're pulling the latest release OS
+                File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+            }
 
             if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
             {
@@ -109,21 +113,6 @@ namespace Meadow.CLI.Core
                     $"Installing OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
                 return;
             }
-
-            /*
-            var appVersion = Assembly.GetEntryAssembly()!
-                                     .GetCustomAttribute<AssemblyFileVersionAttribute>()
-                                     .Version;
-
-            
-
-            if (release.MinCLIVersion.ToVersion() > appVersion.ToVersion())
-            {
-                _logger.LogInformation(
-                    $"Installing OS version {release.Version} requires the latest CLI. To update, run: {UpdateCommand}");
-
-                return;
-            }*/
 
             var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
 
