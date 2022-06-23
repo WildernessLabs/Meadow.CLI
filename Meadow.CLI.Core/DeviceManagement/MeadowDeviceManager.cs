@@ -104,31 +104,25 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public static IList<string> GetSerialPorts()
         {
-            try
-            {
-                lock (lockobj)
-                {
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    {
-                        return GetMeadowSerialPortsForLinux();
-                    }
-                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    {
-                        return GetMeadowSerialPortsForOsx();
-                    }
-                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        return GetMeadowSerialPortsForWindows();
-                    }
-                    else
-                    {
-                        throw new Exception("Unknown operating system.");
+            try {
+
+                if (RuntimeInformation.IsOSPlatform (OSPlatform.Linux)) {
+                    return GetMeadowSerialPortsForLinux ();
+                }
+                else if (RuntimeInformation.IsOSPlatform (OSPlatform.OSX)) {
+                    return GetMeadowSerialPortsForOsx ();
+                }
+                else if (RuntimeInformation.IsOSPlatform (OSPlatform.Windows)) {
+                    lock (lockobj) {
+                        return GetMeadowSerialPortsForWindows ();
                     }
                 }
+                else {
+                    throw new Exception ("Unknown operating system.");
+                }
             }
-            catch (Exception ex)
-            {
-                throw new DeviceNotFoundException($"Error Finding Meadow Devices on available Serial Ports: {ex.Message}");
+            catch (Exception ex) {
+                throw new DeviceNotFoundException ($"Error Finding Meadow Devices on available Serial Ports: {ex.Message}");
             }
         }
 
