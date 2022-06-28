@@ -28,6 +28,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public const string NoDevicesFound = "No Devices Found";
 
+        private static object lockObject = new object();
+
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
         {
@@ -112,7 +114,10 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return await GetMeadowSerialPortsForOsx ();
                 }
                 else if (RuntimeInformation.IsOSPlatform (OSPlatform.Windows)) {
-                    return await GetMeadowSerialPortsForWindows ();
+                    lock (lockObject)
+                    {
+                        return GetMeadowSerialPortsForWindows();
+                    }
                 }
                 else {
                     throw new Exception ("Unknown operating system.");
@@ -286,76 +291,74 @@ namespace Meadow.CLI.Core.DeviceManagement
             });
         }
 
-        public async static Task<IList<string>> GetMeadowSerialPortsForWindows (ILogger? logger = null)
+        public static IList<string> GetMeadowSerialPortsForWindows (ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Windows");
 
-            return await Task.Run (() => {
-                logger ??= NullLogger.Instance;
+            logger ??= NullLogger.Instance;
 
-                try {
-                    const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + MeadowCLI.Constants.WILDERNESS_LABS_USB_VID;
+            try {
+                const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + MeadowCLI.Constants.WILDERNESS_LABS_USB_VID;
 
-                    // Win32_PnPEntity lives in root\CIMV2
-                    const string wmiScope = "root\\CIMV2";
+                // Win32_PnPEntity lives in root\CIMV2
+                const string wmiScope = "root\\CIMV2";
 
-                    // escape special characters in the device id prefix
-                    string escapedPrefix = WildernessLabsPnpDeviceIDPrefix.Replace ("\\", "\\\\").Replace ("_", "[_]");
+                // escape special characters in the device id prefix
+                string escapedPrefix = WildernessLabsPnpDeviceIDPrefix.Replace ("\\", "\\\\").Replace ("_", "[_]");
 
-                    // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
-                    string query = @$"SELECT Name, Caption, PNPDeviceID FROM Win32_PnPEntity WHERE PNPClass = 'Ports' AND PNPDeviceID like '{escapedPrefix}%'";
+                // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
+                string query = @$"SELECT Name, Caption, PNPDeviceID FROM Win32_PnPEntity WHERE PNPClass = 'Ports' AND PNPDeviceID like '{escapedPrefix}%'";
 
-                    logger.LogDebug ("Running WMI Query: {query}", query);
+                logger.LogDebug ("Running WMI Query: {query}", query);
 
-                    List<string> results = new ();
+                List<string> results = new ();
 
-                    // build the searcher for the query
-                    using ManagementObjectSearcher searcher = new (wmiScope, query);
+                // build the searcher for the query
+                using ManagementObjectSearcher searcher = new (wmiScope, query);
 
-                    // get the query results
-                    foreach (ManagementObject moResult in searcher.Get ()) {
-                        // Try Caption and if not Name, they both seems to contain the COM port 
-                        string portLongName = moResult["Caption"].ToString ();
-                        if (string.IsNullOrEmpty (portLongName))
-                            portLongName = moResult["Name"].ToString ();
-                        string pnpDeviceId = moResult["PNPDeviceID"].ToString ();
+                // get the query results
+                foreach (ManagementObject moResult in searcher.Get ()) {
+                    // Try Caption and if not Name, they both seems to contain the COM port 
+                    string portLongName = moResult["Caption"].ToString ();
+                    if (string.IsNullOrEmpty (portLongName))
+                        portLongName = moResult["Name"].ToString ();
+                    string pnpDeviceId = moResult["PNPDeviceID"].ToString ();
 
-                        // we could collect and return a fair bit of other info from the query:
+                    // we could collect and return a fair bit of other info from the query:
 
-                        //string description = moResult["Description"].ToString();
-                        //string service = moResult["Service"].ToString();
-                        //string manufacturer = moResult["Manufacturer"].ToString();
+                    //string description = moResult["Description"].ToString();
+                    //string service = moResult["Service"].ToString();
+                    //string manufacturer = moResult["Manufacturer"].ToString();
 
-                        var comIndex = portLongName.IndexOf ("(COM") + 1;
-                        var copyLength = portLongName.IndexOf (")") - comIndex;
-                        var port = portLongName.Substring (comIndex, copyLength);
+                    var comIndex = portLongName.IndexOf ("(COM") + 1;
+                    var copyLength = portLongName.IndexOf (")") - comIndex;
+                    var port = portLongName.Substring (comIndex, copyLength);
 
-                        // the meadow serial is in the device id, after
-                        // the characters: USB\VID_XXXX&PID_XXXX\
-                        // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
-                        var splits = pnpDeviceId.Split ('\\');
-                        var serialNumber = splits[2];
+                    // the meadow serial is in the device id, after
+                    // the characters: USB\VID_XXXX&PID_XXXX\
+                    // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
+                    var splits = pnpDeviceId.Split ('\\');
+                    var serialNumber = splits[2];
 
-                        logger.LogDebug ($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
-                        results.Add ($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
-                    }
-
-                    return results.ToArray ();
+                    logger.LogDebug ($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
+                    results.Add ($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
                 }
-                catch (ApplicationException aex) {
-                    // eat it for now
-                    logger.LogDebug (aex, "This error can be safely ignored.");
 
-                    // Since WMI Failed fall back to using SerialPort
-                    var ports = SerialPort.GetPortNames ();
+                return results.ToArray ();
+            }
+            catch (ApplicationException aex) {
+                // eat it for now
+                logger.LogDebug (aex, "This error can be safely ignored.");
 
-                    //hack to skip COM1
-                    ports = ports.Where ((source, index) => source != "COM1").Distinct ().ToArray ();
+                // Since WMI Failed fall back to using SerialPort
+                var ports = SerialPort.GetPortNames ();
 
-                    return ports;
-                }
-            });
+                //hack to skip COM1
+                ports = ports.Where ((source, index) => source != "COM1").Distinct ().ToArray ();
+
+                return ports;
+            }
         }
     }
 }
