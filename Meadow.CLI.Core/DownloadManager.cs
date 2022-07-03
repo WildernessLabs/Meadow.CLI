@@ -238,7 +238,7 @@ namespace Meadow.CLI.Core
                                          .Version;
 
                 var json = await Client.GetStringAsync(
-                               $"https://api.nuget.org/v3-flatcontainer/{packageId}/index.json");
+                               $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json");
 
                 var result = JsonSerializer.Deserialize<PackageVersions>(json);
 
