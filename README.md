@@ -1,4 +1,4 @@
-<img src="Design/banner.jpg" style="margin-bottom:10px" />
+<img alt="Meadow CLI project banner stating Meadow's Command-Line-Interface to interact with the board and perform functions via a terminal/command-line window." src="Design/banner.jpg" style="margin-bottom:10px" />
 
 ## Build Status
 [![Build](https://github.com/WildernessLabs/Meadow.CLI/actions/workflows/dotnet.yml/badge.svg)](https://github.com/WildernessLabs/Meadow.CLI/actions)
@@ -92,8 +92,8 @@ DESCRIPTION
 
 OPTIONS
 * -f|--files        The file(s) to delete from the Meadow Files System
-  -v                Log verbosity
-  -s|--port         Meadow COM port Default: "COM19".
+  -s|--SerialPort   Meadow COM port Default: "COM19".
+  -g|--LogVerbosity  Log verbosity
   -h|--help         Shows help text.
 ```
 
@@ -148,7 +148,7 @@ meadow device name
 ### Debugging
 **NOTE THIS IS NOT YET FULLY IMPLEMENTED, IT WILL NOT WORK**
 ```
-meadow debug -p XXXX
+meadow debug --DebugPort XXXX
 ```
 This starts listening on the specified port for a debugger to attach
 
