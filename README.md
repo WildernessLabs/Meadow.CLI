@@ -148,7 +148,7 @@ meadow device name
 ### Debugging
 **NOTE THIS IS NOT YET FULLY IMPLEMENTED, IT WILL NOT WORK**
 ```
-meadow debug -s XXXX
+meadow debug --DebugPort XXXX
 ```
 This starts listening on the specified port for a debugger to attach
 
