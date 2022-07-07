@@ -182,6 +182,7 @@ jobs:
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
+        ref: develop
         submodules: true
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
@@ -191,16 +192,31 @@ jobs:
           5.0.x
           6.0.x
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+    - name: Setup Nuget
+      uses: Nuget/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.sln
+    - name: Setup Node.js 14
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install NPM
+      run: |
+        npm install
+        npm update
+
+    - name: Install vsce
+      run: |
+        npm i -g vsce
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Build
+    - name: Restore VSCode Extension dependencies
+      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Restore /p:Configuration=Release
+
+    - name: Build VSCode Extension
+      id: VSCode-Extension
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   publish-nuget:
