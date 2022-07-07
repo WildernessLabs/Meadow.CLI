@@ -8,6 +8,7 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Meadow.CLI.Core.Devices;
 using Meadow.CLI.Core.Exceptions;
 
@@ -26,6 +27,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         public const string NoDevicesFound = "No Devices Found";
+
+        private static object lockObject = new object();
 
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
@@ -100,23 +103,28 @@ namespace Meadow.CLI.Core.DeviceManagement
             }
         }
 
-        public static IList<string> GetSerialPorts()
+        public async static Task<IList<string>> GetSerialPorts()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return GetMeadowSerialPortsForLinux();
+            try {
+
+                if (RuntimeInformation.IsOSPlatform (OSPlatform.Linux)) {
+                    return await GetMeadowSerialPortsForLinux ();
+                }
+                else if (RuntimeInformation.IsOSPlatform (OSPlatform.OSX)) {
+                    return await GetMeadowSerialPortsForOsx ();
+                }
+                else if (RuntimeInformation.IsOSPlatform (OSPlatform.Windows)) {
+                    lock (lockObject)
+                    {
+                        return GetMeadowSerialPortsForWindows();
+                    }
+                }
+                else {
+                    throw new Exception ("Unknown operating system.");
+                }
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                return GetMeadowSerialPortsForOsx();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return GetMeadowSerialPortsForWindows();
-            }
-            else
-            {
-                throw new Exception("Unknown operating system.");
+            catch (Exception ex) {
+                throw new DeviceNotFoundException ($"Error Finding Meadow Devices on available Serial Ports: {ex.Message}");
             }
         }
 
@@ -130,7 +138,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             while (attempts < maxAttempts)
             {
 
-                var ports = GetSerialPorts();
+                var ports = await GetSerialPorts();
                 foreach (var port in ports)
                 {
                     try
@@ -196,132 +204,126 @@ namespace Meadow.CLI.Core.DeviceManagement
                 $"Could not find a connected Meadow with the serial number {serialNumber}");
         }
 
-        public static IList<string> GetMeadowSerialPortsForOsx(ILogger? logger = null)
+        public async static Task<IList<string>> GetMeadowSerialPortsForOsx(ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
                 throw new PlatformNotSupportedException("This method is only supported on macOS");
 
-            logger ??= NullLogger.Instance;
-            logger.LogDebug("Get Meadow Serial ports");
-            var ports = new List<string>();
+            return await Task.Run (() => {
+                logger ??= NullLogger.Instance;
+                logger.LogDebug ("Get Meadow Serial ports");
+                var ports = new List<string> ();
 
-            var psi = new ProcessStartInfo
-                      {
-                          FileName = "/usr/sbin/ioreg",
-                          UseShellExecute = false,
-                          RedirectStandardOutput = true,
-                          Arguments = "-r -c IOUSBHostDevice -l"
-                      };
+                var psi = new ProcessStartInfo {
+                    FileName = "/usr/sbin/ioreg",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    Arguments = "-r -c IOUSBHostDevice -l"
+                };
 
-            string output = string.Empty;
+                string output = string.Empty;
 
-            using (var p = Process.Start(psi))
-            {
-                if (p != null)
-                {
-                    output = p.StandardOutput.ReadToEnd();
-                    p.WaitForExit();
-                }
-            }
-
-            //split into lines
-            var lines = output.Split("\n\r".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-
-            var foundMeadow = false;
-            foreach (var line in lines)
-            {
-                if (line.Contains("Meadow F7 Micro"))
-                {
-                    foundMeadow = true;
-                }
-                else if (line.IndexOf("+-o", StringComparison.Ordinal) == 0)
-                {
-                    foundMeadow = false;
+                using (var p = Process.Start (psi)) {
+                    if (p != null) {
+                        output = p.StandardOutput.ReadToEnd ();
+                        p.WaitForExit ();
+                    }
                 }
 
-                //now find the IODialinDevice entry which contains the serial port name
-                if (foundMeadow && line.Contains("IODialinDevice"))
-                {
-                    int startIndex = line.IndexOf("/");
-                    int endIndex = line.IndexOf("\"", startIndex + 1);
-                    var port = line.Substring(startIndex, endIndex - startIndex);
-                    logger.LogDebug($"Found Meadow at {port}", port);
+                //split into lines
+                var lines = output.Split ("\n\r".ToCharArray (), StringSplitOptions.RemoveEmptyEntries);
 
-                    ports.Add(port);
-                    foundMeadow = false;
+                var foundMeadow = false;
+                foreach (var line in lines) {
+                    if (line.Contains ("Meadow F7 Micro")) {
+                        foundMeadow = true;
+                    }
+                    else if (line.IndexOf ("+-o", StringComparison.Ordinal) == 0) {
+                        foundMeadow = false;
+                    }
+
+                    //now find the IODialinDevice entry which contains the serial port name
+                    if (foundMeadow && line.Contains ("IODialinDevice")) {
+                        int startIndex = line.IndexOf ("/");
+                        int endIndex = line.IndexOf ("\"", startIndex + 1);
+                        var port = line.Substring (startIndex, endIndex - startIndex);
+                        logger.LogDebug ($"Found Meadow at {port}", port);
+
+                        ports.Add (port);
+                        foundMeadow = false;
+                    }
                 }
-            }
-            logger.LogDebug("Found {count} ports", ports.Count);
-            return ports;
+                logger.LogDebug ("Found {count} ports", ports.Count);
+
+                return ports;
+            });
         }
 
-        public static IList<string> GetMeadowSerialPortsForLinux(ILogger? logger = null)
+        public async static Task<IList<string>> GetMeadowSerialPortsForLinux (ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Linux");
 
-            const string devicePath = "/dev/serial/by-id";
-            logger ??= NullLogger.Instance;
-            var psi = new ProcessStartInfo()
-                      {
-                          FileName = "ls",
-                          Arguments = $"-l {devicePath}",
-                          UseShellExecute = false,
-                          RedirectStandardOutput = true
-                      };
+            return await Task.Run (() => {
+                const string devicePath = "/dev/serial/by-id";
+                logger ??= NullLogger.Instance;
+                var psi = new ProcessStartInfo () {
+                    FileName = "ls",
+                    Arguments = $"-l {devicePath}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                };
 
-            using var proc = Process.Start(psi);
-            proc.WaitForExit(1000);
-            var output = proc.StandardOutput.ReadToEnd();
+                using var proc = Process.Start (psi);
+                proc.WaitForExit (1000);
+                var output = proc.StandardOutput.ReadToEnd ();
 
-            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                  .Where(x => x.Contains("Wilderness_Labs"))
-                  .Select(
-                      line =>
-                      {
-                          var parts = line.Split(' ');
-                          var source = parts[8];
-                          var target = parts[10];
-                          var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                          return port;
-                      }).ToArray();
+                return output.Split (new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                      .Where (x => x.Contains ("Wilderness_Labs"))
+                      .Select (
+                          line => {
+                              var parts = line.Split (' ');
+                              var source = parts[8];
+                              var target = parts[10];
+                              var port = Path.GetFullPath (Path.Combine (devicePath, target));
+                              return port;
+                          }).ToArray ();
+            });
         }
 
-        public static IList<string> GetMeadowSerialPortsForWindows(ILogger? logger = null)
+        public static IList<string> GetMeadowSerialPortsForWindows (ILogger? logger = null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Windows");
 
             logger ??= NullLogger.Instance;
 
-            try
-            {
+            try {
                 const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + MeadowCLI.Constants.WILDERNESS_LABS_USB_VID;
 
                 // Win32_PnPEntity lives in root\CIMV2
                 const string wmiScope = "root\\CIMV2";
 
                 // escape special characters in the device id prefix
-                string escapedPrefix = WildernessLabsPnpDeviceIDPrefix.Replace("\\", "\\\\").Replace("_", "[_]");
+                string escapedPrefix = WildernessLabsPnpDeviceIDPrefix.Replace ("\\", "\\\\").Replace ("_", "[_]");
 
                 // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
                 string query = @$"SELECT Name, Caption, PNPDeviceID FROM Win32_PnPEntity WHERE PNPClass = 'Ports' AND PNPDeviceID like '{escapedPrefix}%'";
 
-                logger.LogDebug("Running WMI Query: {query}", query);
+                logger.LogDebug ("Running WMI Query: {query}", query);
 
-                List<string> results = new();
+                List<string> results = new ();
 
                 // build the searcher for the query
-                using ManagementObjectSearcher searcher = new(wmiScope, query);
+                using ManagementObjectSearcher searcher = new (wmiScope, query);
 
                 // get the query results
-                foreach (ManagementObject moResult in searcher.Get())
-                {
+                foreach (ManagementObject moResult in searcher.Get ()) {
                     // Try Caption and if not Name, they both seems to contain the COM port 
-                    string portLongName = moResult["Caption"].ToString();
-                    if (string.IsNullOrEmpty(portLongName))
-                        portLongName = moResult["Name"].ToString();
-                    string pnpDeviceId = moResult["PNPDeviceID"].ToString();
+                    string portLongName = moResult["Caption"].ToString ();
+                    if (string.IsNullOrEmpty (portLongName))
+                        portLongName = moResult["Name"].ToString ();
+                    string pnpDeviceId = moResult["PNPDeviceID"].ToString ();
 
                     // we could collect and return a fair bit of other info from the query:
 
@@ -329,32 +331,31 @@ namespace Meadow.CLI.Core.DeviceManagement
                     //string service = moResult["Service"].ToString();
                     //string manufacturer = moResult["Manufacturer"].ToString();
 
-                    var comIndex = portLongName.IndexOf("(COM") + 1;
-                    var copyLength = portLongName.IndexOf(")") - comIndex;
-                    var port = portLongName.Substring(comIndex, copyLength);
+                    var comIndex = portLongName.IndexOf ("(COM") + 1;
+                    var copyLength = portLongName.IndexOf (")") - comIndex;
+                    var port = portLongName.Substring (comIndex, copyLength);
 
                     // the meadow serial is in the device id, after
                     // the characters: USB\VID_XXXX&PID_XXXX\
                     // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
-                    var splits = pnpDeviceId.Split('\\');
+                    var splits = pnpDeviceId.Split ('\\');
                     var serialNumber = splits[2];
 
-                    logger.LogDebug($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
-                    results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                    logger.LogDebug ($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
+                    results.Add ($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
                 }
 
-                return results.ToArray();
+                return results.ToArray ();
             }
-            catch (ApplicationException aex)
-            {
+            catch (ApplicationException aex) {
                 // eat it for now
-                logger.LogDebug(aex, "This error can be safely ignored.");
+                logger.LogDebug (aex, "This error can be safely ignored.");
 
                 // Since WMI Failed fall back to using SerialPort
-                var ports = SerialPort.GetPortNames();
+                var ports = SerialPort.GetPortNames ();
 
                 //hack to skip COM1
-                ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
+                ports = ports.Where ((source, index) => source != "COM1").Distinct ().ToArray ();
 
                 return ports;
             }

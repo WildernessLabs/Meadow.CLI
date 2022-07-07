@@ -133,7 +133,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while listening for debugging connections");
+                _logger.LogError(ex, "An error occurred while connecting to Visual Studio");
             }
         }
 
