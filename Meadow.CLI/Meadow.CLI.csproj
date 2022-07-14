@@ -10,7 +10,7 @@
     <Authors>Peter Moody, Adrian Stevens, Brian Kim, Pete Garafano, Dominique Louis</Authors>
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>0.19.4</PackageVersion>
+    <PackageVersion>0.19.5</PackageVersion>
     <Platforms>x64;x86</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
@@ -35,12 +35,6 @@
     <Compile Remove="Internals\**" />
     <EmbeddedResource Remove="Internals\**" />
     <None Remove="Internals\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="resources/illink.dll" CopyToOutputDirectory="Always" />
-    <Content Include="resources/meadow_link.xml" CopyToOutputDirectory="Always" />
-    <Content Include="resources/Mono.Cecil.dll" CopyToOutputDirectory="Always" />
-    <Content Include="resources/illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

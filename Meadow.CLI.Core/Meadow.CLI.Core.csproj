@@ -11,7 +11,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<Version>0.19.4</Version>
+	<Version>0.19.5</Version>
     <Platforms>x64;x86</Platforms>
   </PropertyGroup>
 
@@ -25,6 +25,13 @@
     <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
     <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />
     <Compile Remove="Internals\Dfu\WIP.NativeMethods.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<Content Include="resources/illink.dll" CopyToOutputDirectory="Always" />
+	<Content Include="resources/meadow_link.xml" CopyToOutputDirectory="Always" />
+	<Content Include="resources/Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+	<Content Include="resources/illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,6 +61,25 @@
 
   <ItemGroup>
     <None Remove="Microsoft.Net.Compilers.Toolset" />
+    <None Remove="resources\illink.dll" />
+    <None Remove="resources\illink.runtimeconfig.json" />
+    <None Remove="resources\meadow_link.xml" />
+    <None Remove="resources\Mono.Cecil.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="resources\illink.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\illink.runtimeconfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\meadow_link.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="resources\Mono.Cecil.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Update="libusb-1.0.dll">
