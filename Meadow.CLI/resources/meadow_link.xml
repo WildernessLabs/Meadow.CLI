@@ -5,4 +5,5 @@
     <assembly fullname="Meadow.F7" />
     <assembly fullname="Meadow.Contracts" />
     <assembly fullname="Meadow.Units" />
+    <assembly fullname="Meadow.Logging" />
 </linker>
