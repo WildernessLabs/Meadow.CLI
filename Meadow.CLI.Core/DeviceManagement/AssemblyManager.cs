@@ -59,21 +59,29 @@ namespace Meadow.CLI.Core.DeviceManagement
             var descriptor_path = Path.Combine (base_path, "Resources", "meadow_link.xml");
 
             var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
-            Console.WriteLine(monolinker_args);
+            //  Console.WriteLine(monolinker_args);
+
+            Console.WriteLine("Trimming assemblies to reduce size (may take several seconds)...");
 
             using (var process = new Process())
             {
                 process.StartInfo.FileName = "dotnet";
                 process.StartInfo.Arguments = monolinker_args;
                 process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = false;
+                //process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.RedirectStandardOutput = true;
                 process.Start();
-                process.WaitForExit();
+                // To avoid deadlocks, read the output stream first and then wait
+                process.StandardOutput.ReadToEnd();
+                process.WaitForExit(60000);
                 if (process.ExitCode != 0)
                 {
-                    throw new Exception("ILLinker execution failed!");
+                    throw new Exception("Linking failed - ILLinker execution error!");
                 }
             }
+
+            Console.WriteLine("Trimming complete");
 
             return Directory.EnumerateFiles(postlink_dir);
         }
