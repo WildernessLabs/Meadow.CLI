@@ -47,8 +47,8 @@ namespace Meadow.CLI.Core.DeviceManagement
             Directory.CreateDirectory (postlink_dir);
 
             var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var illinker_path = Path.Combine (base_path, "resources/illink.dll");
-            var descriptor_path = Path.Combine (base_path, "resources/meadow_link.xml");
+            var illinker_path = Path.Combine (base_path, "Resources/illink.dll");
+            var descriptor_path = Path.Combine (base_path, "Resources/meadow_link.xml");
             var monolinker_args = $"{illinker_path} -x {descriptor_path} --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o {postlink_dir} -r {prelink_app} -a {prelink_os} -d {prelink_dir}";
             Console.WriteLine(monolinker_args);
             using (var process = new Process())
