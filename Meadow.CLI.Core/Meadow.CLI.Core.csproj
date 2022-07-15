@@ -11,13 +11,14 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	<Version>0.19.5</Version>
+    <Version>0.19.5</Version>
     <Platforms>x64;x86</Platforms>
   </PropertyGroup>
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Internals\Dfu\DfuContext.cs" />
     <Compile Remove="Internals\Dfu\DfuSharp.cs" />
@@ -28,10 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
-	<Content Include="resources/illink.dll" CopyToOutputDirectory="Always" />
-	<Content Include="resources/meadow_link.xml" CopyToOutputDirectory="Always" />
-	<Content Include="resources/Mono.Cecil.dll" CopyToOutputDirectory="Always" />
-	<Content Include="resources/illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\illink.dll" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\meadow_link.xml" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,25 +62,10 @@
 
   <ItemGroup>
     <None Remove="Microsoft.Net.Compilers.Toolset" />
-    <None Remove="resources\illink.dll" />
-    <None Remove="resources\illink.runtimeconfig.json" />
-    <None Remove="resources\meadow_link.xml" />
-    <None Remove="resources\Mono.Cecil.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="resources\illink.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="resources\illink.runtimeconfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="resources\meadow_link.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="resources\Mono.Cecil.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <None Remove="Resources\illink.dll" />
+    <None Remove="Resources\illink.runtimeconfig.json" />
+    <None Remove="Resources\meadow_link.xml" />
+    <None Remove="Resources\Mono.Cecil.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Update="libusb-1.0.dll">

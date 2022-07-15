@@ -22,6 +22,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Internals\Dfu\DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />
+    <Compile Remove="Internals\Dfu\WIP.NativeMethods.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<Content Include="Resources\illink.dll" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\meadow_link.xml" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+	<Content Include="Resources\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
     <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
     <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
@@ -38,6 +54,13 @@
     <PackageReference Include="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Microsoft.Net.Compilers.Toolset" />
+    <None Remove="Resources\illink.dll" />
+    <None Remove="Resources\illink.runtimeconfig.json" />
+    <None Remove="Resources\meadow_link.xml" />
+    <None Remove="Resources\Mono.Cecil.dll" />
+  </ItemGroup>
   <ItemGroup>
     <None Update="libusb-1.0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
