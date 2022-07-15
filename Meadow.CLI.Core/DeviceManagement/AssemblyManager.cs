@@ -23,13 +23,19 @@ namespace Meadow.CLI.Core.DeviceManagement
             var prelink_os = Path.Combine (prelink_dir, "Meadow.dll");
 
             if (Directory.Exists(prelink_dir))
+            {
                 Directory.Delete(prelink_dir, recursive: true);
+            }
+                
             Directory.CreateDirectory (prelink_dir);
             File.Copy (Path.Combine(path, file), prelink_app, overwrite: true);
-            foreach (var dependency in dependencies) {
+            
+            foreach (var dependency in dependencies) 
+            {
                 File.Copy (dependency,
                             Path.Combine(prelink_dir, Path.GetFileName(dependency)),
                             overwrite: true);
+
                 if (includePdbs)
                 {
                     var pdbFile = Path.ChangeExtension(dependency, "pdb");
@@ -43,14 +49,18 @@ namespace Meadow.CLI.Core.DeviceManagement
             var postlink_dir = Path.Combine (path, "postlink_bin");
 
             if (Directory.Exists(postlink_dir))
+            {
                 Directory.Delete(postlink_dir, recursive: true);
+            }
             Directory.CreateDirectory (postlink_dir);
 
             var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var illinker_path = Path.Combine (base_path, "Resources/illink.dll");
-            var descriptor_path = Path.Combine (base_path, "Resources/meadow_link.xml");
-            var monolinker_args = $"{illinker_path} -x {descriptor_path} --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o {postlink_dir} -r {prelink_app} -a {prelink_os} -d {prelink_dir}";
+            var illinker_path = Path.Combine (base_path, "Resources", "illink.dll");
+            var descriptor_path = Path.Combine (base_path, "Resources", "meadow_link.xml");
+
+            var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
             Console.WriteLine(monolinker_args);
+
             using (var process = new Process())
             {
                 process.StartInfo.FileName = "dotnet";
@@ -60,7 +70,9 @@ namespace Meadow.CLI.Core.DeviceManagement
                 process.Start();
                 process.WaitForExit();
                 if (process.ExitCode != 0)
-                    throw new Exception ("ILLinker execution failed!");
+                {
+                    throw new Exception("ILLinker execution failed!");
+                }
             }
 
             return Directory.EnumerateFiles(postlink_dir);
