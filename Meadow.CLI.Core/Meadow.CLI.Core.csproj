@@ -13,12 +13,65 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>0.19.5</Version>
     <Platforms>x64;x86</Platforms>
+    <Configurations>Debug;Release;Debug x64;Debug x86;Release x64;Release x86</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug x64|x64' ">
+    <IntermediateOutputPath>obj\x64\Debug x64</IntermediateOutputPath>
+    <DebugType></DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x64\Debug x64</OutputPath>
+    <DefineConstants></DefineConstants>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <NoWarn></NoWarn>
+    <LangVersion>Default</LangVersion>
+    <NoStdLib>false</NoStdLib>
+    <Nullable></Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug x86|x86' ">
+    <IntermediateOutputPath>obj\x86\Debug x86</IntermediateOutputPath>
+    <DebugType></DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x86\Debug x86</OutputPath>
+    <DefineConstants></DefineConstants>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <NoWarn></NoWarn>
+    <LangVersion>Default</LangVersion>
+    <NoStdLib>false</NoStdLib>
+    <Nullable></Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release x64|x64' ">
+    <IntermediateOutputPath>obj\x64\Release x64</IntermediateOutputPath>
+    <DebugType></DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x64\Release x64</OutputPath>
+    <DefineConstants></DefineConstants>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <NoWarn></NoWarn>
+    <LangVersion>Default</LangVersion>
+    <NoStdLib>false</NoStdLib>
+    <Nullable></Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release x86|x86' ">
+    <IntermediateOutputPath>obj\x86\Release x86</IntermediateOutputPath>
+    <DebugType></DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x86\Release x86</OutputPath>
+    <DefineConstants></DefineConstants>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <NoWarn></NoWarn>
+    <LangVersion>Default</LangVersion>
+    <NoStdLib>false</NoStdLib>
+    <Nullable></Nullable>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Internals\Dfu\DfuContext.cs" />
     <Compile Remove="Internals\Dfu\DfuSharp.cs" />
