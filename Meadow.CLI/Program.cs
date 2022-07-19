@@ -61,7 +61,7 @@ namespace Meadow.CLI
             }
             catch(Exception ex)
             {
-                Console.WriteLine($"Operation failed: {ex.Message}");
+                Console.WriteLine($"Operation failed:\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
 #if DEBUG
                 throw; //debug spew for debug builds
 #endif

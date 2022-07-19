@@ -443,6 +443,7 @@ namespace Meadow.CLI.Core.Devices
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error flashing OS to Meadow");
+                Console.WriteLine ($"Unhandled Exception in FlashOsAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -490,6 +491,7 @@ namespace Meadow.CLI.Core.Devices
                     logger.LogDebug(
                         "An exception occurred while switching device to DFU Mode. Exception: {0}",
                         ex);
+                    Console.WriteLine ($"Unhandled Exception in DfuFlashAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 }
 
                 switch (dfuAttempts)

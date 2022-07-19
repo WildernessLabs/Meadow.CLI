@@ -108,6 +108,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while listening for debugging connections");
+                Console.WriteLine ($"Unhandled Exception in StartListener():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -134,6 +135,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while connecting to Visual Studio");
+                Console.WriteLine ($"Unhandled Exception in OnConnect():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -239,9 +241,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     _logger.LogInformation("Visual Studio has stopped debugging");
                     _logger.LogTrace(ode, "Visual Studio has stopped debugging");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error receiving data from Visual Studio");
+                    _logger.LogError(ex, "Error receiving data from Visual Studio");
+                    Console.WriteLine ($"Unhandled Exception in SendToMeadowAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                     throw;
                 }
             }
@@ -280,9 +283,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     // TODO _logger.LogInformation("Operation Cancelled");
                     // TODP _logger.LogTrace(oce, "Operation Cancelled");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error sending data to Visual Studio");
+                    _logger.LogError(ex, "Error sending data to Visual Studio");
+                    Console.WriteLine ($"Unhandled Exception in SendToVisualStudio():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                     if (_cts.IsCancellationRequested)
                         throw;
                 }

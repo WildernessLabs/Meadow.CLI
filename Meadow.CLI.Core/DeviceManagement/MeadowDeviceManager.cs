@@ -53,6 +53,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     catch (Exception ex)
                     {
                         logger.LogInformation(ex, "An error occurred while attempting to create Meadow");
+                        Console.WriteLine ($"Unhandled Exception in GetMeadowForSerialPort.createTask():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                         throw;
                     }
                     return null;
@@ -89,6 +90,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 // TODO: Remove exception catch here and let the caller handle it or wrap it up in our own exception type.
                 logger.LogError(ex, "Failed to connect to Meadow on {serialPort}", serialPort);
+                Console.WriteLine ($"Unhandled Exception in GetMeadowForSerialPort():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw;
             }
         }
@@ -124,6 +126,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
             }
             catch (Exception ex) {
+                Console.WriteLine ($"Unhandled Exception in GetSerialPorts():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw new DeviceNotFoundException ($"Error Finding Meadow Devices on available Serial Ports: {ex.Message}");
             }
         }

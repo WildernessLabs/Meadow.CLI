@@ -25,8 +25,9 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 GetDevice();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine ($"Unhandled Exception in CheckForValidDevice():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 return false;
             }
         }
@@ -199,6 +200,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             catch (Exception ex)
             {
                 logger.LogError($"There was a problem executing dfu-util: {ex.Message}");
+                Console.WriteLine ($"Unhandled Exception in DfuFlashAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 return false;
             }
 

@@ -88,6 +88,7 @@ namespace Meadow.CLI.Core.Devices
                 catch (Exception ex)
                 {
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
+                    Console.WriteLine ($"Unhandled Exception in InitializeAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 }
                 //ToDo: Adrian - review - increased delay from 100ms to 500ms
                 await Task.Delay(500, cancellationToken)

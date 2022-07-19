@@ -22,7 +22,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception:{ex.Message}");
+                Console.WriteLine ($"Unhandled Exception in ReceiveSimpleText.Execute():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 return false;
             }
         }

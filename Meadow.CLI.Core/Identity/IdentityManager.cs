@@ -76,6 +76,7 @@ namespace Meadow.CLI.Core.Identity
             catch(Exception ex)
             {
                 _logger.LogError(ex, "An error occurred");
+                Console.WriteLine ($"Unhandled Exception:\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 return false;
             }
         }

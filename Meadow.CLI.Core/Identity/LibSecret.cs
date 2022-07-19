@@ -86,6 +86,7 @@ namespace Meadow.CLI.Core.Identity
             }
             catch (Exception ex)
             {
+                Console.WriteLine ($"Unhandled Exception in HandleError():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw new InvalidOperationException($"An exception was encountered while processing libsecret error: {ex}", ex);
             }
 

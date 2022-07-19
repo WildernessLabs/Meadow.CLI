@@ -147,9 +147,10 @@ namespace Meadow.CLI.Core.Devices
                     "Transfer Complete, wrote {count} bytes to Meadow",
                     fileBufOffset);
             }
-            catch (Exception except)
+            catch (Exception ex)
             {
-                Logger.LogError(except, "Exception sending command to Meadow");
+                Logger.LogError(ex, "Exception sending command to Meadow");
+                Console.WriteLine ($"Unhandled Exception in SendTheEntireFile():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw;
             }
         }
@@ -184,9 +185,9 @@ namespace Meadow.CLI.Core.Devices
                 await EncodeAndSendPacket(fullMsg, 0, transmitSize, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (Exception except)
+            catch (Exception ex)
             {
-                Console.WriteLine($"An exception was caught: {except}");
+                Console.WriteLine ($"Unhandled Exception in BuildAndSendDataPacketRequest():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw;
             }
         }
@@ -300,9 +301,10 @@ namespace Meadow.CLI.Core.Devices
                     throw;
                 }
             }
-            catch (Exception except)
+            catch (Exception ex)
             {
-                Logger.LogTrace(except, "EncodeAndSendPacket threw");
+                Logger.LogTrace(ex, "EncodeAndSendPacket threw");
+                Console.WriteLine ($"Unhandled Exception in EncodeAndSendPacket():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 throw;
             }
         }

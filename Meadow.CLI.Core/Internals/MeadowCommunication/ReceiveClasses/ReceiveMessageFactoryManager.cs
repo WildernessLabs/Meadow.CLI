@@ -54,6 +54,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 // I saw a few time, that this exception was being thrown. It was caused by
                 // corrupted data being processed.
                 _logger.LogWarning(ex, $"Request type was: 0x{requestType:x}");
+                Console.WriteLine ($"Unhandled Exception in CreateProcessor():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 return null;
             }
         }

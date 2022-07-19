@@ -218,6 +218,7 @@ namespace Meadow.CLI.Core
                     ex.Message.Contains("Access to the path")
                         ? $"Run terminal as administrator and try again."
                         : "Unexpected error");
+                Console.WriteLine ($"Unhandled Exception in InstallDfuUtilAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
             finally
             {
@@ -251,6 +252,7 @@ namespace Meadow.CLI.Core
             catch (Exception ex)
             {
                 _logger.LogDebug(ex, "Error checking for updates to Meadow.CLI");
+                Console.WriteLine ($"Unhandled Exception in CheckForUpdatesAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
 
             return (false, string.Empty, string.Empty);
@@ -291,6 +293,7 @@ namespace Meadow.CLI.Core
             {
                 _logger.LogWarning("Unable to delete temporary file");
                 _logger.LogDebug(ex, "Unable to delete temporary file");
+                Console.WriteLine ($"Unhandled Exception in DownloadAndExtractFileAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -307,6 +310,7 @@ namespace Meadow.CLI.Core
                 {
                     _logger.LogWarning("Failed to delete file {file} in firmware path", file.FullName);
                     _logger.LogDebug(ex, "Failed to delete file");
+                    Console.WriteLine ($"Unhandled Exception in CleanPath.DeleteFiles():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 }
             }
             foreach (DirectoryInfo dir in di.GetDirectories())
@@ -319,6 +323,7 @@ namespace Meadow.CLI.Core
                 {
                     _logger.LogWarning("Failed to delete directory {directory} in firmware path", dir.FullName);
                     _logger.LogDebug(ex, "Failed to delete directory");
+                    Console.WriteLine ($"Unhandled Exception in CleanPath.DeleteDirectories():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                 }
             }
         }

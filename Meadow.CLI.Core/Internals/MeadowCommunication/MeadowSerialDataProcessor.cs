@@ -100,6 +100,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             catch (Exception ex)
             {
                 _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
+                Console.WriteLine ($"Unhandled Exception in ReadSocketAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -195,6 +196,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     catch (Exception ex)
                     {
                         _logger.LogTrace(ex, "An error occurred while listening to the serial port.");
+                        Console.WriteLine ($"Unhandled Exception in ReadSerialPortAsync Inner():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
                         await Task.Delay(100, _cts.Token)
                                   .ConfigureAwait(false);
                     }
@@ -212,6 +214,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             catch (Exception ex)
             {
                 _logger.LogTrace($"Exception: {ex} may mean the target connection dropped");
+                Console.WriteLine ($"Unhandled Exception in ReadSerialPortAsync Outer():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -334,6 +337,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             catch (Exception ex)
             {
                 _logger.LogDebug(ex, "An error occurred parsing a received packet");
+                Console.WriteLine ($"Unhandled Exception in ParseAndProcessReceivedPacket():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
 
@@ -374,6 +378,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             catch (Exception ex)
             {
                 _logger.LogTrace(ex, "Exception during disposal");
+                Console.WriteLine ($"Unhandled Exception in Dispose():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
             }
         }
     }
