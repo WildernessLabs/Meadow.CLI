@@ -518,143 +518,135 @@ namespace Meadow.CLI.Core.Devices
                                          bool includePdbs = false,
                                          CancellationToken cancellationToken = default)
         {
-            if (!File.Exists(applicationFilePath))
-            {
-                Console.WriteLine($"{applicationFilePath} not found.");
-                return;
-            }
+            try {
 
-            await DeleteTemporaryFiles(cancellationToken);
 
-            var fi = new FileInfo(applicationFilePath);
-
-            var deviceFiles = await GetFilesAndCrcsAsync(
-                                      DefaultTimeout,
-                                      cancellationToken: cancellationToken)
-                                  .ConfigureAwait(false);
-
-            //rename App.dll to App.exe
-            var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
-            var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
-            var fileNamePdb = Path.Combine(fi.DirectoryName, "App.pdb");
-
-            if (File.Exists(fileNameDll))
-            {
-                if (File.Exists(fileNameExe))
-                {
-                    File.Delete(fileNameExe);
-                }
-                File.Copy(fileNameDll, fileNameExe);
-            }
-
-            foreach (var f in deviceFiles)
-            {
-                Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
-            }
-
-            var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-                                   .Where(s => new FileInfo(s).Extension != ".dll")
-                                   .Where(s => new FileInfo(s).Extension != ".pdb");
-                //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
-
-            var files = new Dictionary<string, uint>();
-
-            if (includePdbs)
-            {
-                await AddFile(fileNamePdb, false);
-            }
-
-            async Task AddFile(string file, bool includePdbs)
-            {
-                if(files.ContainsKey(Path.GetFileName(file)))
-                {
+                if (!File.Exists (applicationFilePath)) {
+                    Console.WriteLine ($"{applicationFilePath} not found.");
                     return;
                 }
 
-                using FileStream fs = File.Open(file, FileMode.Open);
-                var len = (int)fs.Length;
-                var bytes = new byte[len];
+                await DeleteTemporaryFiles (cancellationToken);
 
-                await fs.ReadAsync(bytes, 0, len, cancellationToken);
+                var fi = new FileInfo (applicationFilePath);
 
-                //0x
-                var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
+                var deviceFiles = await GetFilesAndCrcsAsync (
+                                          DefaultTimeout,
+                                          cancellationToken: cancellationToken)
+                                      .ConfigureAwait (false);
 
-                Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
-                files.Add(file, crc);
-                if (includePdbs)
-                {
-                    var pdbFile = Path.ChangeExtension(file, "pdb");
-                    if (File.Exists(pdbFile))
-                        await AddFile(pdbFile, false)
-                            .ConfigureAwait(false);
-                }
-            }
+                //rename App.dll to App.exe
+                var fileNameDll = Path.Combine (fi.DirectoryName, "App.dll");
+                var fileNameExe = Path.Combine (fi.DirectoryName, "App.exe");
+                var fileNamePdb = Path.Combine (fi.DirectoryName, "App.pdb");
 
-            var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
-                .Where(x => x.Contains("App.") == false).ToList();
-
-            var linked_dependencies = AssemblyManager.LinkDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
-
-
-            //add local files (this includes App.exe)
-            foreach (var file in binaries)
-            {
-                await AddFile(file, false);
-            }
-
-            //crawl dependencies
-            foreach (var file in linked_dependencies)
-            {
-                await AddFile(file, false);
-            }
-            
-            // delete unused files
-            foreach (var devicefile in deviceFiles.Keys)
-            {
-                bool found = false;
-                foreach (var localfile in files.Keys)
-                {
-                    if (Path.GetFileName(localfile).Equals(devicefile))
-                        found = true;
-                }
-                if (!found)
-                {
-                    await DeleteFileAsync(devicefile, cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
-
-                    Logger.LogInformation("Removing file: {file}", devicefile);
-                }
-            }
-
-            // write new files
-            foreach (var file in files)
-            {
-                var filename = Path.GetFileName(file.Key);
-                if (deviceFiles.ContainsKey(filename) && deviceFiles[filename] == file.Value)
-                {
-                    Logger.LogInformation("Skipping file (hash match): {file}", filename);
-                    continue;
+                if (File.Exists (fileNameDll)) {
+                    if (File.Exists (fileNameExe)) {
+                        File.Delete (fileNameExe);
+                    }
+                    File.Copy (fileNameDll, fileNameExe);
                 }
 
-                if (!File.Exists(file.Key))
-                {
-                    Logger.LogInformation("{file} not found", filename);
-                    continue;
+                foreach (var f in deviceFiles) {
+                    Logger.LogInformation ("Found {file} (CRC: {crc})", f.Key, f.Value);
                 }
 
-                Logger.LogInformation("Writing file: {file}", filename);
-                await WriteFileAsync(
-                        file.Key,
-                        filename,
-                        DefaultTimeout,
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                var binaries = Directory.EnumerateFiles (fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+                                       .Where (s => new FileInfo (s).Extension != ".dll")
+                                       .Where (s => new FileInfo (s).Extension != ".pdb");
+                //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
-                Logger.LogInformation("Wrote file: {file}", file.Key);
+                var files = new Dictionary<string, uint> ();
+
+                if (includePdbs) {
+                    await AddFile (fileNamePdb, false);
+                }
+
+                async Task AddFile (string file, bool includePdbs)
+                {
+                    if (files.ContainsKey (Path.GetFileName (file))) {
+                        return;
+                    }
+
+                    using FileStream fs = File.Open (file, FileMode.Open);
+                    var len = (int)fs.Length;
+                    var bytes = new byte[len];
+
+                    await fs.ReadAsync (bytes, 0, len, cancellationToken);
+
+                    //0x
+                    var crc = CrcTools.Crc32part (bytes, len, 0); // 0x04C11DB7);
+
+                    Logger.LogDebug ("{file} crc is {crc:X8}", file, crc);
+                    files.Add (file, crc);
+                    if (includePdbs) {
+                        var pdbFile = Path.ChangeExtension (file, "pdb");
+                        if (File.Exists (pdbFile))
+                            await AddFile (pdbFile, false)
+                                .ConfigureAwait (false);
+                    }
+                }
+
+                var dependencies = AssemblyManager.GetDependencies (fi.Name, fi.DirectoryName, osVersion)
+                    .Where (x => x.Contains ("App.") == false).ToList ();
+
+                var linked_dependencies = await AssemblyManager.LinkDependencies (fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+
+                //add local files (this includes App.exe)
+                foreach (var file in binaries) {
+                    await AddFile (file, false);
+                }
+
+                //crawl dependencies
+                foreach (var file in linked_dependencies) {
+                    await AddFile (file, false);
+                }
+
+                // delete unused files
+                foreach (var devicefile in deviceFiles.Keys) {
+                    bool found = false;
+                    foreach (var localfile in files.Keys) {
+                        if (Path.GetFileName (localfile).Equals (devicefile))
+                            found = true;
+                    }
+                    if (!found) {
+                        await DeleteFileAsync (devicefile, cancellationToken: cancellationToken)
+                            .ConfigureAwait (false);
+
+                        Logger.LogInformation ("Removing file: {file}", devicefile);
+                    }
+                }
+
+                // write new files
+                foreach (var file in files) {
+                    var filename = Path.GetFileName (file.Key);
+                    if (deviceFiles.ContainsKey (filename) && deviceFiles[filename] == file.Value) {
+                        Logger.LogInformation ("Skipping file (hash match): {file}", filename);
+                        continue;
+                    }
+
+                    if (!File.Exists (file.Key)) {
+                        Logger.LogInformation ("{file} not found", filename);
+                        continue;
+                    }
+
+                    Logger.LogInformation ("Writing file: {file}", filename);
+                    await WriteFileAsync (
+                            file.Key,
+                            filename,
+                            DefaultTimeout,
+                            cancellationToken)
+                        .ConfigureAwait (false);
+
+                    Logger.LogInformation ("Wrote file: {file}", file.Key);
+                }
+
+                Logger.LogInformation ("{file} deploy complete", fi.Name);
             }
-
-            Logger.LogInformation("{file} deploy complete", fi.Name);
+            catch (Exception ex) {
+                Logger.LogError ($"Unhandled Exception: {ex.Message} \nStack Trace :\n{ex.StackTrace}");
+                Console.WriteLine ($"Unhandled Exception in DeployAppAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
+            }
         }
 
         public async Task<bool> IsFileOnDevice(string filename, CancellationToken cancellationToken)
