@@ -29,11 +29,13 @@ namespace Meadow.CLI.Core.Devices
                 var response = await SendCommandAsync(command, cancellationToken)
                                    .ConfigureAwait(false);
 
+                string responseMessage = string.Empty;
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
+                    if (response.Message != null)
+                        responseMessage = response.Message;
                     throw new MeadowCommandException(command,
-                        "Meadow rejected download request with ",
-                        response);
+                        "Meadow rejected download request with " + responseMessage, response);
                 }
 
                 switch (command.RequestType)
