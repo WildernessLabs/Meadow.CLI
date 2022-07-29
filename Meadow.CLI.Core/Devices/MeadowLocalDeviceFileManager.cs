@@ -115,12 +115,17 @@ namespace Meadow.CLI.Core.Devices
             using var md5 = MD5.Create();
 
             byte[] fileBytes;
-            using (FileStream stream = File.Open(sourceFileName, FileMode.Open))
+            using (var stream = File.Open(sourceFileName, FileMode.Open))
             {
-                fileBytes = new byte[stream.Length];
-                await stream.ReadAsync(fileBytes, 0, (int)stream.Length)
+                var streamLength = (int)stream.Length;
+                fileBytes = new byte[streamLength];
+                var bytesRead = await stream.ReadAsync(fileBytes, 0, streamLength, cancellationToken)
                     .ConfigureAwait(false);
+                if (bytesRead != streamLength) {
+                    throw new InvalidDataException($"Read bytes: {bytesRead} from {sourceFileName} does not match stream Length: {streamLength}!");
+				}
             }
+
             var hash = md5.ComputeHash(fileBytes);
             string md5Hash = BitConverter.ToString(hash)
                                          .Replace("-", "")
