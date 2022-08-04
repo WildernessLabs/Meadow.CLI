@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -31,10 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
-	<Content Include="Resources\illink.dll" CopyToOutputDirectory="Always" />
-	<Content Include="Resources\meadow_link.xml" CopyToOutputDirectory="Always" />
-	<Content Include="Resources\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
-	<Content Include="Resources\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\illink.dll" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\meadow_link.xml" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,13 +54,6 @@
     <PackageReference Include="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="Microsoft.Net.Compilers.Toolset" />
-    <None Remove="Resources\illink.dll" />
-    <None Remove="Resources\illink.runtimeconfig.json" />
-    <None Remove="Resources\meadow_link.xml" />
-    <None Remove="Resources\Mono.Cecil.dll" />
-  </ItemGroup>
   <ItemGroup>
     <None Update="libusb-1.0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
