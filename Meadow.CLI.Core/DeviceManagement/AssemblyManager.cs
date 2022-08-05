@@ -56,7 +56,6 @@ namespace Meadow.CLI.Core.DeviceManagement
             var descriptor_path = Path.Combine (base_path, "Resources", "meadow_link.xml");
 
             var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
-            //  Console.WriteLine(monolinker_args);
 
             Console.WriteLine ("Trimming assemblies to reduce size (may take several seconds)...");
 
@@ -64,20 +63,28 @@ namespace Meadow.CLI.Core.DeviceManagement
                 process.StartInfo.FileName = "dotnet";
                 process.StartInfo.Arguments = monolinker_args;
                 process.StartInfo.UseShellExecute = false;
-                //process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.Start ();
 
                 // To avoid deadlocks, read the output stream first and then wait
-                String result;
-                using (StreamReader reader = process.StandardOutput) {
-                    result = await reader.ReadToEndAsync ();
-                    Console.WriteLine ("StandardOutput Contains: " + result);
+                string stdOutReaderResult;
+                using (StreamReader stdOutReader = process.StandardOutput) {
+                    stdOutReaderResult = await stdOutReader.ReadToEndAsync ();
+                    Console.WriteLine ("StandardOutput Contains: " + stdOutReaderResult);
                 }
+
+                string stdErrorReaderResult;
+                using (StreamReader stdErrorReader = process.StandardError) {
+                    stdErrorReaderResult = await stdErrorReader.ReadToEndAsync ();
+                    Console.WriteLine ("StandardError Contains: " + stdErrorReaderResult);
+                }
+
                 process.WaitForExit (60000);
                 if (process.ExitCode != 0) {
-                    throw new Exception ("Trimming failed - ILLinker execution error!");
+                    // TODO when Debugging throw new Exception ($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+                    throw new Exception ($"Trimming failed - ILLinker execution error!\nExit Code: {process.ExitCode}");
                 }
             }
 
