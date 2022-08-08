@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -20,6 +20,22 @@
     <DefineConstants>TRACE;VS2019</DefineConstants>
     <AssemblyName>Meadow.CLI.Core</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Internals\Dfu\DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />
+    <Compile Remove="Internals\Dfu\WIP.NativeMethods.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\illink.dll" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\meadow_link.xml" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+    <Content Include="Resources\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
