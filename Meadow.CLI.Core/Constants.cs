@@ -10,5 +10,6 @@ namespace MeadowCLI
         public const string CLI_VERSION = "0.19.5";
         public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0006;         // Used for transmission
         public const string WILDERNESS_LABS_USB_VID = "2E6A";
+        public const string CLOUD_HOST_URI = "https://www.meadowcloud.co";
     }
 }
