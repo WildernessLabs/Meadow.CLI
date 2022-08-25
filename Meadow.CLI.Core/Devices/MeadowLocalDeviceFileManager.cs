@@ -119,8 +119,13 @@ namespace Meadow.CLI.Core.Devices
             {
                 var streamLength = (int)stream.Length;
                 fileBytes = new byte[streamLength];
-                var bytesRead = await stream.ReadAsync(fileBytes, 0, streamLength, cancellationToken)
-                    .ConfigureAwait(false);
+                var bytesRead = 0;
+
+                while (stream.Position < streamLength) {
+                    bytesRead += await stream.ReadAsync (fileBytes, bytesRead, streamLength, cancellationToken)
+                        .ConfigureAwait (false);
+                }
+
                 if (bytesRead != streamLength) {
                     throw new InvalidDataException($"Read bytes: {bytesRead} from {sourceFileName} does not match stream Length: {streamLength}!");
 				}
