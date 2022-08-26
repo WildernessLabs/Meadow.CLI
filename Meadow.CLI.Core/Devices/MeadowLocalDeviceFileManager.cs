@@ -128,7 +128,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (bytesRead != streamLength) {
                     throw new InvalidDataException($"Read bytes: {bytesRead} from {sourceFileName} does not match stream Length: {streamLength}!");
-				}
+                }
             }
 
             var hash = md5.ComputeHash(fileBytes);
