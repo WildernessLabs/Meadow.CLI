@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         private const string IL_LINKER_DIR = "lib";
 
-        public static async Task<IEnumerable<string>> LinkDependencies (string file, string path, List<string> dependencies, bool includePdbs)
+        public static async Task<IEnumerable<string>?> TrimDependencies (string file, string path, List<string> dependencies, bool includePdbs)
         {
             var prelink_dir = Path.Combine (path, "prelink_bin");
             var prelink_app = Path.Combine (prelink_dir, file);
@@ -85,8 +85,12 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 process.WaitForExit (60000);
                 if (process.ExitCode != 0) {
-                    // TODO when Debugging throw new Exception ($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
-                    throw new Exception ($"Trimming failed - ILLinker execution error!\nExit Code: {process.ExitCode}");
+#if DEBUG
+                    Console.WriteLine($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+#else
+                    Console.WriteLine($"Trimming failed - ILLinker execution error!\nExit Code: {process.ExitCode}");
+#endif
+                    return null;
                 }
             }
 
