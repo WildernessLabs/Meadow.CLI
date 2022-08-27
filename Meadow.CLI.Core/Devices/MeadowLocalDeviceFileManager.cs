@@ -113,7 +113,24 @@ namespace Meadow.CLI.Core.Devices
 
             // If ESP32 file we must also send the MD5 has of the file
             using var md5 = MD5.Create();
-            var fileBytes = File.ReadAllBytes(sourceFileName);
+
+            byte[] fileBytes;
+            using (var stream = File.Open(sourceFileName, FileMode.Open))
+            {
+                var streamLength = (int)stream.Length;
+                fileBytes = new byte[streamLength];
+                var bytesRead = 0;
+
+                while (stream.Position < streamLength) {
+                    bytesRead += await stream.ReadAsync (fileBytes, bytesRead, streamLength, cancellationToken)
+                        .ConfigureAwait (false);
+                }
+
+                if (bytesRead != streamLength) {
+                    throw new InvalidDataException($"Read bytes: {bytesRead} from {sourceFileName} does not match stream Length: {streamLength}!");
+                }
+            }
+
             var hash = md5.ComputeHash(fileBytes);
             string md5Hash = BitConverter.ToString(hash)
                                          .Replace("-", "")
