@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement.Tools;
+using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,9 +10,6 @@ using System.IO.Ports;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.DeviceManagement.Tools;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
@@ -179,7 +179,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                 // We had some part of the message from a previous iteration
                                 else
                                 {
-                                    message.AddSegment(buffer.Slice(0,messageEnd));
+                                    message.AddSegment(buffer.Slice(0, messageEnd));
                                     buffer = buffer.Slice(messageEnd + 1);
                                     var msg = message.ToArray();
                                     DecodeAndProcessPacket(msg, _cts.Token);
@@ -278,7 +278,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            _logger.LogInformation("Meadow StdInfo: {message}", responseString);
+                            if (!SuppressOutput)
+                            {
+                                _logger.LogInformation("Meadow StdInfo: {message}", responseString);
+                            }
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
@@ -319,15 +322,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             break;
 
                         case HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
-                        {
-                            var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
+                            {
+                                var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
 
-                            OnReceiveData?.Invoke(
-                                this,
-                                new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+                                OnReceiveData?.Invoke(
+                                    this,
+                                    new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
 
-                            break;
-                        }
+                                break;
+                            }
                     }
                 }
             }
