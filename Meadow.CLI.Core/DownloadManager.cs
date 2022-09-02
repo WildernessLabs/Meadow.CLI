@@ -110,7 +110,7 @@ namespace Meadow.CLI.Core
             if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
             {
                 _logger.LogInformation(
-                    $"Installing OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
+                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
                 return;
             }
 
@@ -124,7 +124,7 @@ namespace Meadow.CLI.Core
                 }
                 else 
                 {
-                     _logger.LogInformation( $"OS version {release.Version} is already installed.");
+                     _logger.LogInformation( $"OS version {release.Version} is already downloaded.");
                      return;
                 }
             }
