@@ -5,13 +5,11 @@
 
 ## Getting Started
 
-Note: For macOS users, [this line](https://github.com/WildernessLabs/MeadowCLI/blob/master/MeadowCLI/DfuSharp.cs#L29) needs to be changed to `libusb-1.0` TODO: determine OS at runtime or handle fallback
-
 The CLI tool supports DFU flashing for `nuttx.bin` and `nuttx_user.bin`. When the application is run with `-d`, it looks for `nuttx.bin` and `nuttx_user.bin` in the application directory and if not found, it will abort. Optionally, paths for the files can be specific with `--osFile` and `--userFile`.
 
 The CLI tool also supports device and file management including file transfers, flash partitioning, and MCU reset.
 
-To run MeadowCLI on Windows, run meadow.exe from the command prompt. On Mac and Windows, call **mono meadow.exe**.
+To run Meadow.CLI on Windows, run meadow.exe from the command prompt. On Mac and Windows, call **mono meadow.exe**.
 
 ## Options
 
@@ -28,8 +26,9 @@ On Mac and Linux, the serial port will show up in the **/dev** folder, generally
 Appending `-v` or `-vv` to any command will increase the logging verbosity to `Debug` and `Trace` respectively. `Trace` should only be necessary when debugging issues with the CLI.
 
 ### Available Commands
-```
-meadow v0.13.0
+
+```console
+meadow v0.19.4
 
 USAGE
   meadow [options]
@@ -41,29 +40,31 @@ OPTIONS
 
 COMMANDS
   debug             Debug a Meadow Application
-  download os       Downloads the latest Meadow.OS to the host PC.
+  download os       Downloads the latest Meadow.OS to the host PC
   install dfu-util  Install the DfuUtil utility
   listen            Listen for console output from Meadow
+  list ports        List available COM ports
+  set developer     Set developer value
   trace disable     Disable Trace Logging on the Meadow
   trace enable      Enable trace logging on the Meadow
   trace level       Enable trace logging on the Meadow
+  uart trace        Configure trace logs to go to UART
   flash erase       Erase the flash on the Meadow Board
-  flash verify      Verify the contents of the flash were deleted.
-  qspi write        Write a QSPI value to the Meadow
+  flash verify      Verify the contents of the flash were deleted
+  qspi init         Init the QSPI on the Meadow
   qspi read         Read a QSPI value from the Meadow
   qspi write        Write a QSPI value to the Meadow
-  nsh disable       Disables NSH on the Meadow device.
-  nsh enable        Enables NSH on the Meadow device.
-  mono disable      Sets mono to NOT run on the Meadow board then resets it.
-  mono enable       Sets mono to run on the Meadow board and then resets it.
-  mono flash        Uploads the mono runtime file to the Meadow device. Does NOT move it into place.
-  mono state        Returns whether or not mono is enabled or disabled on the Meadow device.
-  mono update rt    Uploads the mono runtime files to the Meadow device and moves them into place.
-  file delete       Delete files from the Meadow File System
+  nsh disable       Disables NSH on the Meadow device
+  nsh enable        Enables NSH on the Meadow device
+  mono disable      Sets mono to NOT run on the Meadow board then resets it
+  mono enable       Sets mono to run on the Meadow board and then resets it
+  mono flash        Uploads the mono runtime file to the Meadow device. Does NOT move it into place
+  mono state        Returns whether or not mono is enabled or disabled on the Meadow device
+  mono update rt    Uploads the mono runtime files to the Meadow device and moves them into place
+  file delete       Delete files from the Meadow File System Subcommands: file delete all.
   file initial      Get the initial bytes from a file
   file list         List files in the on-board filesystem
   file write        Write files to the Meadow File System
-  fs format         Format a File System on the Meadow Board
   fs renew          Create a File System on the Meadow Board
   esp32 restart     Restart the ESP32
   esp32 file write  Write files to the ESP File System
@@ -72,29 +73,37 @@ COMMANDS
   device info       Get the device info
   device mac        Read the ESP32's MAC address
   device name       Get the name of the Meadow
+  use port          Set the preferred serial port
   cloud login       Log into the Meadow Service
   cloud logout      Logout of the Meadow Service
   app deploy        Deploy the specified app to the Meadow
-
-You can run `meadow [command] --help` to show help on a specific command.
 ```
 
 ### Getting Help
-Specifying `--help` with no command will output the list of available commands. Specifying `--help` with a command (eg: `meadow file delete --help`) will output command specific help.
-```
-meadow v0.13.0
+
+Specifying `--help` with no command will output the list of available commands. Specifying `--help` after a command (e.g., `meadow file delete --help`) will output command specific help.
+
+```console
+meadow v0.19.4
 
 USAGE
   meadow file delete --files <values...> [options]
+  meadow file delete [command] [...]
 
 DESCRIPTION
   Delete files from the Meadow File System
 
 OPTIONS
 * -f|--files        The file(s) to delete from the Meadow Files System
-  -s|--SerialPort   Meadow COM port Default: "COM19".
+  -s|--SerialPort   Meadow COM port Default: "COM10".
   -g|--LogVerbosity  Log verbosity
   -h|--help         Shows help text.
+
+COMMANDS
+  all               Delete all files from the Meadow File System
+
+You can run `meadow file delete [command] --help` to show help on a specific command.
+Done!
 ```
 
 ## Useful commands
@@ -103,6 +112,13 @@ OPTIONS
 ```
 meadow flash os
 ```
+
+#### Meadow.CLI download location
+
+If you need to find or clear out any of the OS download files retrieved by Meadow.CLI, they are located in a WildernessLabs folder in the user directory.
+
+macOS: `~/.local/share/WildernessLabs/Firmware/`
+Windows: `%LOCALAPPDATA%\WildernessLabs\Firmware`
 
 ### Listen for Meadow Console.WriteLine
 ```
