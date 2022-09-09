@@ -566,24 +566,29 @@ namespace Meadow.CLI.Core.Devices
         public bool DeviceAndAppVersionsMatch(string executablePath, CancellationToken cancellationToken = default)
         {
             var deviceVersion = DeviceInfo.HardwareVersion;
-            var assembly = Assembly.Load(System.IO.File.ReadAllBytes(executablePath));
-            var baseType = assembly.GetTypes()[0].BaseType.ToString();
-            string appVersion = string.Empty;
+            var assembly = Assembly.LoadFrom(executablePath);
+            try {
+                var baseType = assembly.GetTypes()[0].BaseType.ToString();
+                string appVersion = string.Empty;
 
-            // IIRC using Linq would be way slower.
-            foreach (var item in deviceVersionTable)
-            {
-                if (baseType.Contains(item.Value))
+                // IIRC using Linq would be way slower.
+                foreach (var item in deviceVersionTable)
                 {
-                    appVersion = item.Value;
-                    break;
+                    if (baseType.Contains(item.Value))
+                    {
+                        appVersion = item.Value;
+                        break;
+                    }
+                }
+
+                if (deviceVersionTable[deviceVersion] != appVersion)
+                {
+                    Logger.LogInformation($"Current device version is: {deviceVersion}. Current application version is {appVersion}. Update your application version to {deviceVersionTable[deviceVersion]} to deploy to this Meadow device.");
+                    return false;
                 }
             }
-
-            if (deviceVersionTable[deviceVersion] != appVersion)
-            {
-                Logger.LogInformation($"Current device version is: {deviceVersion}. Current application version is {appVersion}. Update your application version to {deviceVersionTable[deviceVersion]} to deploy to this Meadow device.");
-                return false;
+            finally {
+                assembly = null;
             }
 
             return true;
