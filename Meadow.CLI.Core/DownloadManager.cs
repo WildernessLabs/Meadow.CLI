@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meadow.CLI.Core.Common;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -8,10 +9,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Meadow.CLI.Core.Common;
-
 namespace Meadow.CLI.Core
 {
+
     public class DownloadManager
     {
         readonly string _versionCheckUrlRoot =
@@ -22,25 +22,25 @@ namespace Meadow.CLI.Core
             "WildernessLabs",
             "Firmware");
 
-        public static string FirmwareLatestVersion 
+        public static string FirmwareLatestVersion
         {
-            get 
+            get
             {
                 string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
                 if (File.Exists(latest_txt))
                     return File.ReadAllText(latest_txt);
                 else
                     throw new FileNotFoundException("OS download was not found.");
-             }
+            }
         }
 
-        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion); 
+        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion);
 
         public static string FirmwarePathForVersion(string firmwareVersion)
         {
             return Path.Combine(FirmwareDownloadsFilePathRoot, firmwareVersion);
         }
-        
+
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
@@ -74,12 +74,12 @@ namespace Meadow.CLI.Core
         public async Task DownloadLatestAsync(string? version = null, bool force = false)
         {
             string versionCheckUrl;
-            if (version is null || string.IsNullOrWhiteSpace(version)) 
+            if (version is null || string.IsNullOrWhiteSpace(version))
             {
                 _logger.LogInformation("Downloading latest version file");
                 versionCheckUrl = _versionCheckUrlRoot + "latest.json";
             }
-            else 
+            else
             {
                 _logger.LogInformation("Download version file for release " + version);
                 versionCheckUrl = _versionCheckUrlRoot + version + ".json";
@@ -96,13 +96,13 @@ namespace Meadow.CLI.Core
                 throw ex;
             }
 
-            if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
             {
                 Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
                 //we'll write latest.txt regardless of version if it doesn't exist
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
-            else if(version == null)
+            else if (version == null)
             {   //otherwise only update if we're pulling the latest release OS
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
@@ -122,10 +122,10 @@ namespace Meadow.CLI.Core
                 {
                     CleanPath(local_path);
                 }
-                else 
+                else
                 {
-                     _logger.LogInformation( $"OS version {release.Version} is already downloaded.");
-                     return;
+                    _logger.LogInformation($"OS version {release.Version} is already downloaded.");
+                    return;
                 }
             }
 
