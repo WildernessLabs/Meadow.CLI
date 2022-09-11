@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -554,6 +555,43 @@ namespace Meadow.CLI.Core.Devices
         ~MeadowDeviceHelper()
         {
             Dispose(false);
+        }
+
+        private Dictionary<string, string> deviceVersionTable = new Dictionary<string, string> ()
+        {
+            { "F7v1", "F7FeatherV1" },
+            { "F7v2", "F7FeatherV2" },
+        };
+
+        public bool DeviceAndAppVersionsMatch(string executablePath, CancellationToken cancellationToken = default)
+        {
+            var deviceVersion = DeviceInfo.HardwareVersion;
+            var assembly = Assembly.LoadFrom(executablePath);
+            try {
+                var baseType = assembly.GetTypes()[0].BaseType.ToString();
+                string appVersion = string.Empty;
+
+                // IIRC using Linq would be way slower.
+                foreach (var item in deviceVersionTable)
+                {
+                    if (baseType.Contains(item.Value))
+                    {
+                        appVersion = item.Value;
+                        break;
+                    }
+                }
+
+                if (deviceVersionTable[deviceVersion] != appVersion)
+                {
+                    Logger.LogInformation($"Current device version is: {deviceVersion}. Current application version is {appVersion}. Update your application version to {deviceVersionTable[deviceVersion]} to deploy to this Meadow device.");
+                    return false;
+                }
+            }
+            finally {
+                assembly = null;
+            }
+
+            return true;
         }
     }
 }
