@@ -671,8 +671,8 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogInformation ("{file} deploy complete", fi.Name);
             }
             catch (Exception ex) {
-                Logger.LogError ($"Unhandled Exception: {ex.Message} \nStack Trace :\n{ex.StackTrace}");
-                Console.WriteLine ($"Unhandled Exception in DeployAppAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
+                Logger.LogError($"An unhandled exception occurred in DeployAppAsync().");
+                Logger.LogError($"Error:\n{ex.Message} \nStack Trace :\n{ex.StackTrace}");
             }
         }
 

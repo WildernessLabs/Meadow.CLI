@@ -105,9 +105,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         break;
                 }
             }
+            catch (SocketException soex) {
+                _logger.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
+                _logger.LogError($"Error:\n{soex.Message} \nStack Trace:\n{soex.StackTrace}");
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while listening for debugging connections");
+                _logger.LogError("An unhandled exception occurred while listening for debugging connections.");
+                _logger.LogError($"Error:\n{ex.Message} \nStack Trace:\n{ex.StackTrace}");
             }
         }
 
