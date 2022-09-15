@@ -439,7 +439,7 @@ namespace Meadow.CLI.Core.Devices
                                        .ConfigureAwait(false);
 
                 Logger.LogInformation(
-                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion} ESP: {deviceInfo.CoProcessorOsVersion}");
+                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, Mono: {deviceInfo.MonoVersion}, Coprocessor: {deviceInfo.CoProcessorOsVersion}");
             }
             catch (Exception ex)
             {
