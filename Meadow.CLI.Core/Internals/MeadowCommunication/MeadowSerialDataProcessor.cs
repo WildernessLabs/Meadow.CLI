@@ -138,7 +138,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             SerialMessage? message = null;
             try
             {
-                while (!_cts.IsCancellationRequested)
+                while (!_cts.IsCancellationRequested && _serialPort != null)
                 {
                     try
                     {
