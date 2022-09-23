@@ -7,11 +7,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono update rt", Description = "Uploads the mono runtime files to the Meadow device and moves them into place")]
+    [Command("mono update rt", Description = "Uploads the mono runtime files to the Meadow device and moves it into place")]
     public class MonoUpdateRuntimeCommand : MeadowSerialCommand
     {
         [CommandOption("filename",'f', Description = "The local name of the mono runtime file - Default is empty")]
         public string Filename {get; init;}
+
+        [CommandOption("osVersion", 'v', Description = "Flash the mono runtime from a specific downloaded OS version - x.x.x.x")]
+        public string OSVersion { get; init; }
 
         private readonly ILogger<MonoRunStateCommand> _logger;
 
@@ -27,7 +30,7 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.UpdateMonoRuntimeAsync(Filename, cancellationToken: cancellationToken);
+            await Meadow.UpdateMonoRuntimeAsync(Filename, OSVersion, cancellationToken: cancellationToken);
 
             await Meadow.ResetMeadowAsync(cancellationToken)
                         .ConfigureAwait(false);
