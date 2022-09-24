@@ -76,7 +76,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.RenewFileSystemAsync(cancellationToken);
         }
 
-        public async Task UpdateMonoRuntimeAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
+        public async Task UpdateMonoRuntimeAsync(string? fileName = null, string? osVersion = null, uint partition = 0, CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Starting Mono Runtime Update");
             Logger.LogDebug("Calling Mono Disable");
@@ -89,7 +89,7 @@ namespace Meadow.CLI.Core.Devices
 
             Logger.LogInformation("Updating Mono Runtime");
 
-            await _meadowDevice.UpdateMonoRuntimeAsync(fileName, partition, cancellationToken).ConfigureAwait(false);
+            await _meadowDevice.UpdateMonoRuntimeAsync(fileName, osVersion, partition, cancellationToken).ConfigureAwait(false);
         }
 
         public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
