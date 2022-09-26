@@ -76,7 +76,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.RenewFileSystemAsync(cancellationToken);
         }
 
-        public async Task UpdateMonoRuntimeAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
+        public async Task UpdateMonoRuntimeAsync(string? fileName = null, string? osVersion = null, uint partition = 0, CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Starting Mono Runtime Update");
             Logger.LogDebug("Calling Mono Disable");
@@ -89,7 +89,7 @@ namespace Meadow.CLI.Core.Devices
 
             Logger.LogInformation("Updating Mono Runtime");
 
-            await _meadowDevice.UpdateMonoRuntimeAsync(fileName, partition, cancellationToken).ConfigureAwait(false);
+            await _meadowDevice.UpdateMonoRuntimeAsync(fileName, osVersion, partition, cancellationToken).ConfigureAwait(false);
         }
 
         public Task WriteFileToEspFlashAsync(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
@@ -295,21 +295,31 @@ namespace Meadow.CLI.Core.Devices
         /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
         public async Task<DebuggingServer> StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
         {
-            await MonoEnableAsync(cancellationToken: cancellationToken);
+            Logger.LogDebug ("Enabling Mono");
+            await MonoEnableAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ($"StartDebugging on port: {port}");
             await _meadowDevice.StartDebuggingAsync(port, cancellationToken)
-                               .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ("Waiting for Meadow to cycle");
             await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-            await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
+            Logger.LogDebug ("Re-initialize the device");
+            await ReInitializeMeadowAsync(cancellationToken)
+                .ConfigureAwait(false);
+
             if (_meadowDevice == null)
                 throw new DeviceNotFoundException();
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
-            await debuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
+
+            Logger.LogDebug ("Tell the Debugging Server to Start Listening");
+            await debuggingServer.StartListeningAsync(cancellationToken)
+                .ConfigureAwait(false);
             return debuggingServer;
         }
 
