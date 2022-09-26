@@ -295,21 +295,31 @@ namespace Meadow.CLI.Core.Devices
         /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
         public async Task<DebuggingServer> StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
         {
-            await MonoEnableAsync(cancellationToken: cancellationToken);
+            Logger.LogDebug ("Enabling Mono");
+            await MonoEnableAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ($"StartDebugging on port: {port}");
             await _meadowDevice.StartDebuggingAsync(port, cancellationToken)
-                               .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ("Waiting for Meadow to cycle");
             await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-            await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
+            Logger.LogDebug ("Re-initialize the device");
+            await ReInitializeMeadowAsync(cancellationToken)
+                .ConfigureAwait(false);
+
             if (_meadowDevice == null)
                 throw new DeviceNotFoundException();
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
-            await debuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
+
+            Logger.LogDebug ("Tell the Debugging Server to Start Listening");
+            await debuggingServer.StartListeningAsync(cancellationToken)
+                .ConfigureAwait(false);
             return debuggingServer;
         }
 
