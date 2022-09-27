@@ -275,8 +275,11 @@ namespace Meadow.CLI.Core.Devices
             await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken)
                 .ConfigureAwait(false);
 
-            await MonoEnableAsync(cancellationToken: cancellationToken)
+            await MonoEnableAsync(true, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
+
+            await Task.Delay(2000, cancellationToken)
+                       .ConfigureAwait(false);
         }
 
         public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
