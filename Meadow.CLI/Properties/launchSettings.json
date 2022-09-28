@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "download os"
+      "commandLineArgs": "download os -v 0.6.7.19 -f"
     },
     "Login": {
       "commandName": "Project",
@@ -18,7 +18,7 @@
     },
     "FlashOS": {
       "commandName": "Project",
-      "commandLineArgs": "flash os"
+      "commandLineArgs": "flash os -v 0.6.7.18 -s COM4 --skipdfu"
     },
     "EraseFlash": {
       "commandName": "Project",
@@ -26,7 +26,7 @@
     },
     "MonoUpdateRt": {
       "commandName": "Project",
-      "commandLineArgs": "mono update rt"
+      "commandLineArgs": "mono update rt -v 0.6.7.18 -s COM3"
     },
     "FlashEsp": {
       "commandName": "Project",
@@ -50,11 +50,11 @@
     },
     "DeployApp": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\bin\\Debug\\netstandard2.1\\App.exe"
+      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\Blinky\\BlinkyFs\\bin\\Debug\\netstandard2.1\\App.exe -s COM13"
     },
     "DeleteFile": {
       "commandName": "Project",
-      "commandLineArgs": "file delete -f App.exe"
+      "commandLineArgs": "file delete -all"
     },
     "WriteFile": {
       "commandName": "Project",
@@ -82,7 +82,7 @@
     },
     "UsePort": {
       "commandName": "Project",
-      "commandLineArgs": "use port COM5"
+      "commandLineArgs": "listen -s COM16"
     }
   }
 }
