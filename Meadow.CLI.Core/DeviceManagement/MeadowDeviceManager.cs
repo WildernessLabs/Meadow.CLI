@@ -354,7 +354,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 return results.ToArray ();
             }
-            catch (ApplicationException aex) {
+            catch (Exception aex) {
                 // eat it for now
                 logger.LogDebug (aex, "This error can be safely ignored.");
 
