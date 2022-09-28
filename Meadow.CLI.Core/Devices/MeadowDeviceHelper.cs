@@ -282,7 +282,7 @@ namespace Meadow.CLI.Core.Devices
                 .ConfigureAwait(false);
 
             await Task.Delay(2000, cancellationToken)
-                       .ConfigureAwait(false);
+                .ConfigureAwait(false);
         }
 
         public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
