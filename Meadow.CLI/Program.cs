@@ -17,8 +17,8 @@ namespace Meadow.CLI
         public static async Task<int> Main(string[] args)
         {
             var logLevel = LogEventLevel.Information;
-            var logModifier = args.FirstOrDefault(a => a.Contains("-v"))
-                                  ?.Count(x => x == 'v') ?? 0;
+            var logModifier = args.FirstOrDefault(a => a.Contains("-m"))
+                                  ?.Count(x => x == 'm') ?? 0;
 
             logLevel -= logModifier;
             if (logLevel < 0)

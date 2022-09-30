@@ -84,6 +84,7 @@ namespace Meadow.CLI.Core.Devices
                 .ConfigureAwait(false);
 
             await ReInitializeMeadowAsync(cancellationToken);
+
             Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
                          "Meadow was expected to have Mono Disabled");
 
@@ -132,23 +133,25 @@ namespace Meadow.CLI.Core.Devices
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
             bool monoRunState;
-            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false)) || force
+            while ((monoRunState = await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) || force)
                 && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Disable Request (Forced? {forced})", force);
                 await _meadowDevice.MonoDisableAsync(cancellationToken);
 
-                Logger.LogDebug("Waiting for Meadow to cycle");
+                Logger.LogDebug("Waiting for Meadow to restart");
                 await Task.Delay(3000, cancellationToken)
                           .ConfigureAwait(false);
 
-                Logger.LogDebug("Re-initialize the device");
+                Logger.LogDebug("Reinitialize the device");
                 await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
                 force = false;
             }
 
             if (monoRunState)
+            {
                 throw new Exception("Failed to stop mono.");
+            }
         }
 
         public async Task MonoEnableAsync(bool force = false, CancellationToken cancellationToken = default)
@@ -162,11 +165,11 @@ namespace Meadow.CLI.Core.Devices
                 await _meadowDevice.MonoEnableAsync(cancellationToken)
                                    .ConfigureAwait(false);
 
-                Logger.LogDebug("Waiting for Meadow to cycle");
+                Logger.LogDebug("Waiting for Meadow to restart");
                 await Task.Delay(1000, cancellationToken)
                           .ConfigureAwait(false);
 
-                Logger.LogDebug("Re-initialize the device");
+                Logger.LogDebug("Reinitialize the device");
                 await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
                 force = false;
             }
@@ -275,7 +278,10 @@ namespace Meadow.CLI.Core.Devices
             await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken)
                 .ConfigureAwait(false);
 
-            await MonoEnableAsync(cancellationToken: cancellationToken)
+            await MonoEnableAsync(true, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            await Task.Delay(2000, cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -295,21 +301,31 @@ namespace Meadow.CLI.Core.Devices
         /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
         public async Task<DebuggingServer> StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
         {
-            await MonoEnableAsync(cancellationToken: cancellationToken);
+            Logger.LogDebug ("Enabling Mono");
+            await MonoEnableAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ($"StartDebugging on port: {port}");
             await _meadowDevice.StartDebuggingAsync(port, cancellationToken)
-                               .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
+            Logger.LogDebug ("Waiting for Meadow to restart");
             await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
-            await ReInitializeMeadowAsync(cancellationToken).ConfigureAwait(false);
+            Logger.LogDebug ("Reinitialize the device");
+            await ReInitializeMeadowAsync(cancellationToken)
+                .ConfigureAwait(false);
+
             if (_meadowDevice == null)
                 throw new DeviceNotFoundException();
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
-            await debuggingServer.StartListeningAsync(cancellationToken).ConfigureAwait(false);
+
+            Logger.LogDebug ("Tell the Debugging Server to Start Listening");
+            await debuggingServer.StartListeningAsync(cancellationToken)
+                .ConfigureAwait(false);
             return debuggingServer;
         }
 
@@ -379,10 +395,6 @@ namespace Meadow.CLI.Core.Devices
 
                     await Task.Delay(2000);
 
-                    // Again, verify that Mono is disabled
-                    Trace.Assert(await _meadowDevice.GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
-                                 "Meadow was expected to have Mono Disabled");
-
                     await _meadowDevice.UpdateMonoRuntimeAsync(
                         runtimePath, 
                         osVersion,
@@ -404,8 +416,8 @@ namespace Meadow.CLI.Core.Devices
                 {
                     await MonoDisableAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                    Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
-                                 "Meadow was expected to have Mono Disabled");
+                    //Trace.Assert(await GetMonoRunStateAsync(cancellationToken).ConfigureAwait(false) == false,
+                    //             "Meadow was expected to have Mono Disabled");
 
                     Logger.LogInformation("Updating ESP");
 
@@ -439,7 +451,7 @@ namespace Meadow.CLI.Core.Devices
                                        .ConfigureAwait(false);
 
                 Logger.LogInformation(
-                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion} ESP: {deviceInfo.CoProcessorOsVersion}");
+                    $"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, Mono: {deviceInfo.MonoVersion}, Coprocessor: {deviceInfo.CoProcessorOsVersion}");
             }
             catch (Exception ex)
             {
@@ -451,8 +463,7 @@ namespace Meadow.CLI.Core.Devices
             string osPath,
             string? osVersion,
             ILogger logger, 
-            CancellationToken cancellationToken = default
-            )
+            CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
 
@@ -467,13 +478,11 @@ namespace Meadow.CLI.Core.Devices
                         break;
                     }
                     catch (MultipleDfuDevicesException)
-                    {
-                        // This is bad, we can't just blindly flash with multiple devices, let the user know
+                    {   // This is bad, we can't just blindly flash with multiple devices, let the user know
                         throw;
                     }
                     catch (DeviceNotFoundException)
-                    {
-                        // eat it.
+                    {   // eat it.
                     }
 
                     // No DFU device found, lets try to set the meadow to DFU mode.
