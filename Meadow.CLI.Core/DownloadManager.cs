@@ -1,5 +1,4 @@
-﻿using Meadow.CLI.Core.Common;
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,9 +8,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Meadow.CLI.Core.Common;
+
 namespace Meadow.CLI.Core
 {
-
     public class DownloadManager
     {
         readonly string _versionCheckUrlRoot =
@@ -22,25 +22,25 @@ namespace Meadow.CLI.Core
             "WildernessLabs",
             "Firmware");
 
-        public static string FirmwareLatestVersion
+        public static string FirmwareLatestVersion 
         {
-            get
+            get 
             {
                 string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
                 if (File.Exists(latest_txt))
                     return File.ReadAllText(latest_txt);
                 else
                     throw new FileNotFoundException("OS download was not found.");
-            }
+             }
         }
 
-        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion);
+        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion); 
 
         public static string FirmwarePathForVersion(string firmwareVersion)
         {
             return Path.Combine(FirmwareDownloadsFilePathRoot, firmwareVersion);
         }
-
+        
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
@@ -70,8 +70,7 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
-        //ToDo rename this method - DownloadOSAsync?
-        public async Task DownloadLatestAsync(string? version = null, bool force = false)
+        async Task<string?> DownloadMeadowOSVersionFile(string? version)
         {
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
@@ -81,28 +80,51 @@ namespace Meadow.CLI.Core
             }
             else
             {
-                _logger.LogInformation("Download version file for release " + version);
+                _logger.LogInformation("Downloading version file for Meadow OS " + version);
                 versionCheckUrl = _versionCheckUrlRoot + version + ".json";
             }
-            //string versionCheckFileName = new Uri(versionCheckUrl).Segments.Last();
-            var versionCheckFile = await DownloadFileAsync(new Uri(versionCheckUrl));
 
-            var payload = File.ReadAllText(versionCheckFile);
-            var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
-            if (release == null)
+            string versionCheckFile = string.Empty;
+
+            try
             {
-                var ex = new Exception("Unable to identify release.");
-                _logger.LogError(ex, "Unable to identify release. Payload: {payload}", payload);
-                throw ex;
+                versionCheckFile = await DownloadFileAsync(new Uri(versionCheckUrl));
+            }
+            catch
+            {
+                return null;
             }
 
-            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            return versionCheckFile;
+        }
+
+        //ToDo rename this method - DownloadOSAsync?
+        public async Task DownloadLatestAsync(string? version = null, bool force = false)
+        {
+            var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
+
+            if(versionCheckFilePath == null)
+            {
+                _logger.LogError($"Meadow OS {version} cannot be downloaded or is not available");
+                return;
+            }
+
+            var payload = File.ReadAllText(versionCheckFilePath);
+            var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
+
+            if (release == null)
+            {
+                _logger.LogError($"Unable to read release details for Meadow OS {version}. Payload: {payload}");
+                return;
+            }
+
+            if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
             {
                 Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
                 //we'll write latest.txt regardless of version if it doesn't exist
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
-            else if (version == null)
+            else if(version == null)
             {   //otherwise only update if we're pulling the latest release OS
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
@@ -122,25 +144,40 @@ namespace Meadow.CLI.Core
                 {
                     CleanPath(local_path);
                 }
-                else
+                else 
                 {
-                    _logger.LogInformation($"OS version {release.Version} is already downloaded.");
-                    return;
+                     _logger.LogInformation( $"Meadow OS version {release.Version} is already downloaded.");
+                     return;
                 }
             }
 
             Directory.CreateDirectory(local_path);
 
-            _logger.LogInformation("Downloading latest MCU firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path)
-                .ConfigureAwait(false);
+            try
+            {
+                _logger.LogInformation($"Downloading Meadow OS");
+                await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                _logger.LogError($"Unable to download Meadow OS {version}");
+                return;
+            }
 
-            _logger.LogInformation("Downloading latest ESP32 firmware");
-            await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path)
-                .ConfigureAwait(false);
+            try
+            {
+                _logger.LogInformation("Downloading coprocessor firmware");
+                await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                _logger.LogError($"Unable to download coprocessor firmware {version}");
+                return;
+            }
 
-            _logger.LogInformation(
-                $"Downloaded and extracted OS version {release.Version} to: {local_path}");
+            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}");
         }
 
         public async Task InstallDfuUtilAsync(bool is64Bit = true,

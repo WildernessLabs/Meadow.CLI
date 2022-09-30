@@ -28,7 +28,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public const string NoDevicesFound = "No Devices Found";
 
-        private static object lockObject = new object();
+        static object lockObject = new object();
+        static IMeadowDevice? meadow = null;
 
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
@@ -37,8 +38,14 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
+                if (meadow != null)
+                {
+                    meadow.Dispose();
+                    meadow = null;
+                }
+
                 logger.LogInformation($"Connecting to Meadow on {serialPort}");
-                IMeadowDevice? meadow = null;
+                
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
                 var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
                           .ConfigureAwait(false);
@@ -347,7 +354,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 return results.ToArray ();
             }
-            catch (ApplicationException aex) {
+            catch (Exception aex) {
                 // eat it for now
                 logger.LogDebug (aex, "This error can be safely ignored.");
 
