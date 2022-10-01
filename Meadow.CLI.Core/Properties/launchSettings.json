@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Meadow.CLI.Core": {
-      "commandName": "Project",
-      "commandLineArgs": "meadow file write -f F:\\repos\\wilderness\\Meadow.Core.Samples\\Source\\Meadow.Core.Samples\\IO\\PWM\\bin\\Debug\\netstandard2.1\\System.Text.Json.dll"
-    }
-  }
-}
