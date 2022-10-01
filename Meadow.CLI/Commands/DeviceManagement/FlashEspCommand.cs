@@ -1,9 +1,12 @@
-﻿using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Exceptions;
 using Microsoft.Extensions.Logging;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.DeviceManagement
 {
@@ -23,9 +26,27 @@ namespace Meadow.CLI.Commands.DeviceManagement
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.FlashEspAsync(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion, 
-                                       cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
+            try
+            {
+                await Meadow.FlashEspAsync(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion,
+                                           cancellationToken: cancellationToken)
+                            .ConfigureAwait(false);
+            }
+            catch (FileNotFoundException)
+            {
+                Logger.LogError("Unable to flash ESP: Requested File Not Found");
+                return;
+            }
+            catch (MeadowCommandException mce)
+            {
+                Logger.LogError($"Unable to flash ESP: Command failed with '{mce.MeadowMessage ?? "no message"}'");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Unable to flash ESP: {ex.Message}");
+                return;
+            }
 
             await Meadow.ResetMeadowAsync(cancellationToken)
                         .ConfigureAwait(false);
