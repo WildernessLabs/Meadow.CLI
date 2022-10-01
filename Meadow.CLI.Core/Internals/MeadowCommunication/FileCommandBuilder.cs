@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement.Tools;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.DeviceManagement.Tools;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
@@ -134,7 +133,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             return this;
         }
 
-        public async Task<FileCommand> BuildAsync()
+        public FileCommand Build()
         {
             if (RequestType != HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME)
             {
@@ -204,9 +203,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 FileSize,
                 Partition,
                 McuAddress,
-                FileBytes, 
-                ResponsePredicate, 
-                CompletionPredicate, 
+                FileBytes,
+                ResponsePredicate,
+                CompletionPredicate,
                 ToString());
         }
 
