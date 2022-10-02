@@ -121,7 +121,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             try
             {
                 _logger.LogInformation("Visual Studio has Connected");
-                lock (this)
+                lock (_lck)
                 {
                     _debuggerConnected = true;
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)

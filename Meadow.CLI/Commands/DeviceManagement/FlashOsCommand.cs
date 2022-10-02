@@ -64,23 +64,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
             }
             else
             {
-                Logger.LogInformation("Skipping DFU flash step.");
-                using var device = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, false, Logger).ConfigureAwait(false);
-                if (device == null)
-                {
-                    Logger.LogWarning("Cannot find Meadow on {port}", SerialPortName);
-                    return;
-                }
-
-                deviceInfo = await device.GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken)
-                    .ConfigureAwait(false);
-                serialNumber = deviceInfo!.SerialNumber;
+                Logger.LogInformation("Skipping step to flash Meadow OS");
             }
 
             //try to find Meadow on the existing serial port first
             IMeadowDevice meadow = null;
-
-            await Task.Delay(2000).ConfigureAwait(false);
 
             if (string.IsNullOrWhiteSpace(SerialPortName) == false)
             {
@@ -97,8 +85,6 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 Logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             }
-
-            await Task.Delay(2000).ConfigureAwait(false);
 
             Meadow = new MeadowDeviceHelper(meadow, Logger);
 
@@ -149,7 +135,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                     if (device == null)
                     {
-                        Logger.LogInformation($"OH NO!! Meadow device not found. Please plug in your meadow device and run this command again.");
+                        Logger.LogInformation($"Meadow device not found. Please plug in your meadow device and run this command again.");
                         return;
                     }
 
