@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -15,7 +14,7 @@ namespace Meadow.CLI.Core.Devices
 
         public ILogger Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
-        public MeadowDeviceInfo DeviceInfo { get; protected set; }
+        public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
         public IDictionary<string, uint> FilesOnDevice { get; } = new SortedDictionary<string, uint>();
 
@@ -29,8 +28,10 @@ namespace Meadow.CLI.Core.Devices
                                         int encodedToSend,
                                         CancellationToken cancellationToken = default);
 
-        public async Task<MeadowDeviceInfo> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async Task<MeadowDeviceInfo?> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
+            DeviceInfo = null;
+
             var command = new SimpleCommandBuilder(
                               HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION)
                           .WithTimeout(timeout)
@@ -41,13 +42,25 @@ namespace Meadow.CLI.Core.Devices
 
             try
             {
+                var retryCount = 1;
+
+            Retry:
                 var commandResponse =
                     await SendCommandAsync(command, cancellationToken)
                         .ConfigureAwait(false);
 
                 if (commandResponse.IsSuccess)
                 {
-                    return new MeadowDeviceInfo(commandResponse.Message!);
+                    if (commandResponse.Message == String.Empty)
+                    { // TODO: this feels like a bug lower down or in HCOM, but I can reproduce it regularly (3 Oct 2022)
+                        if (--retryCount >= 0)
+                        {
+                            goto Retry;
+                        }
+                    }
+
+                    DeviceInfo = new MeadowDeviceInfo(commandResponse.Message!);
+                    return DeviceInfo;
                 }
 
                 throw new DeviceInfoException();

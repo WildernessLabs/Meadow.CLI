@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
+using System;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.Devices
         {
         }
 
-        private MeadowSerialDevice(string serialPortName,
+        internal MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
                                    ILogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
@@ -99,26 +99,26 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
-            if(string.IsNullOrEmpty(portName))
+            if (string.IsNullOrEmpty(portName))
             {
                 throw new ArgumentException("Serial Port name cannot be empty");
             }
 
             // Create a new SerialPort object with default settings
             var port = new SerialPort
-                       {
-                           PortName = portName,
-                           BaudRate = 115200, // This value is ignored when using ACM
-                           Parity = Parity.None,
-                           DataBits = 8,
-                           StopBits = StopBits.One,
-                           Handshake = Handshake.None,
+            {
+                PortName = portName,
+                BaudRate = 115200, // This value is ignored when using ACM
+                Parity = Parity.None,
+                DataBits = 8,
+                StopBits = StopBits.One,
+                Handshake = Handshake.None,
 
-                           // Set the read/write timeouts
-                           ReadTimeout = 5000,
-                           WriteTimeout = 5000
-                       };
-            
+                // Set the read/write timeouts
+                ReadTimeout = 5000,
+                WriteTimeout = 5000
+            };
+
             if (port.IsOpen)
                 port.Close();
 
