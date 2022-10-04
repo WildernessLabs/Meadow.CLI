@@ -1,5 +1,6 @@
 ﻿using Meadow.CLI.Core.Devices;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
 using System.Threading.Tasks;
@@ -34,6 +35,33 @@ namespace Meadow.CLI.Core
             Task.Run(ConnectionStateMonitorProc);
         }
 
+        public Task<bool> WaitForConnection(TimeSpan timeout)
+        {
+            var keepTrying = true;
+
+            var tasks = new List<Task>();
+
+            if (timeout.TotalMilliseconds > 0)
+            {
+                tasks.Add(Task.Delay(timeout));
+            }
+
+            tasks.Add(Task.Run(async () =>
+            {
+                while (keepTrying)
+                {
+                    if (IsConnected) return;
+                    await Task.Delay(500);
+                }
+            }));
+
+            Task.WaitAny(tasks.ToArray());
+
+            keepTrying = false;
+
+            return Task.FromResult(IsConnected);
+        }
+
         public void Connect()
         {
             if (_port.IsOpen)
@@ -44,7 +72,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _port.Open();
-                Device = new MeadowSerialDevice(Name, _port, Logger);
+                Device = new MeadowSerialDevice_Old(Name, _port, Logger);
             }
             catch (FileNotFoundException fnf)
             {

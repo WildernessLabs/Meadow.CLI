@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Meadow.CLI.Core.Internals.Dfu;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -92,6 +94,97 @@ namespace Meadow.CLI.Core
                 }
             }
             return list.ToArray();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <param name="version">Either a specific version or null to push the latest</param>
+        /// <param name="logger"></param>
+        /// <returns></returns>
+        public static async Task PushFirmwareToDevice(IMeadowConnection connection, string? version = null, ILogger? logger = null)
+        {
+            try
+            {
+                if (connection == null) throw new ArgumentNullException("connection");
+                if (connection.Device == null) throw new ArgumentNullException("connection.Device");
+                if (!connection.IsConnected)
+                {
+                    if (!await connection.WaitForConnection(TimeSpan.FromSeconds(5)))
+                    {
+                        throw new Exception("No device connected");
+                    }
+                }
+
+                connection.AutoReconnect = false;
+
+                await connection.Device.EnterDfuModeAsync();
+
+                // device resets here into DFU mode
+
+                // TODO: we need a "wait for DFU device is available"
+                await Task.Delay(10000);
+
+                var success = await DfuUtils.DfuFlashAsync(
+                    string.Empty,
+                    version,
+                    null,
+                    logger);
+
+                // device will reset here - need to reconnect
+                await Task.Delay(10000);
+                connection.Connect();
+
+                await connection.Device.MonoDisableAsync();
+
+                await Task.Delay(2000);
+                connection.Disconnect();
+                await Task.Delay(5000);
+
+                connection.Connect();
+                while (!connection.IsConnected)
+                {
+                    // wait for re-connection?
+                    await Task.Delay(1000);
+                }
+
+                await connection.Device.UpdateMonoRuntimeAsync(null, version);
+
+                await Task.Delay(2000);
+                connection.Disconnect();
+                await Task.Delay(5000);
+
+                connection.Connect();
+                while (!connection.IsConnected)
+                {
+                    // wait for re-connection?
+                    await Task.Delay(1000);
+                }
+
+                await connection.Device.MonoDisableAsync();
+
+                await Task.Delay(2000);
+
+                while (!connection.IsConnected)
+                {
+                    // wait for re-connection?
+                    await Task.Delay(1000);
+                }
+
+                await connection.Device.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, version);
+
+                // Reset the meadow again to ensure flash worked.
+                await connection.Device.ResetMeadowAsync();
+
+                await Task.Delay(2000);
+                connection.Disconnect();
+                await Task.Delay(5000);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Error flashing OS to Meadow");
+            }
         }
     }
 }

@@ -1,15 +1,13 @@
-﻿using System;
+﻿using LibUsbDotNet;
+using LibUsbDotNet.Main;
+using Meadow.CLI.Core.Exceptions;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
-using LibUsbDotNet;
-using LibUsbDotNet.Main;
-
-using Meadow.CLI.Core.Exceptions;
 
 namespace Meadow.CLI.Core.Internals.Dfu
 {
@@ -63,7 +61,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlashAsync(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlashAsync(string filename = "", string? osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
@@ -71,7 +69,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             // if filename isn't specified fallback to download path
             if (string.IsNullOrWhiteSpace(filename))
             {
-                if(string.IsNullOrWhiteSpace(osVersion) == false)
+                if (string.IsNullOrWhiteSpace(osVersion) == false)
                 {
                     filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
                 }
@@ -127,7 +125,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
-                } 
+                }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     if (dfuUtilVersion != "0.9")
@@ -164,16 +162,17 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                                  // Ignore empty output
                                                  if (logLine == null)
                                                      continue;
-                                                 
+
                                                  if (logLine.Contains("%"))
                                                  {
                                                      var operation = logLine.Substring(0,
                                                          logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
                                                      var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
                                                      var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
-                                                     Console.SetCursorPosition(0, Console.CursorTop);
                                                      if (progress != "100%")
-                                                         Console.Write($"{operation} {progress}");
+                                                     {
+                                                         logger.LogInformation($"{operation} {progress}");
+                                                     }
                                                  }
                                                  else
                                                  {
@@ -244,7 +243,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     case 0x0033: // ERROR_REM_NOT_LIST
                     case 0x013D: // ERROR_MR_MID_NOT_FOUND
                         return string.Empty;
-                    
+
                     default:
                         throw;
                 }

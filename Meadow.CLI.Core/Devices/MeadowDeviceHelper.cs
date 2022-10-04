@@ -1,17 +1,15 @@
-﻿using System;
+﻿using LibUsbDotNet.Main;
+using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
-using LibUsbDotNet.Main;
-
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -274,7 +272,7 @@ namespace Meadow.CLI.Core.Devices
 
             string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken)
                 .ConfigureAwait(false);
-  
+
             await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -301,19 +299,19 @@ namespace Meadow.CLI.Core.Devices
         /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
         public async Task<DebuggingServer> StartDebuggingSessionAsync(int port, CancellationToken cancellationToken)
         {
-            Logger.LogDebug ("Enabling Mono");
+            Logger.LogDebug("Enabling Mono");
             await MonoEnableAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            Logger.LogDebug ($"StartDebugging on port: {port}");
+            Logger.LogDebug($"StartDebugging on port: {port}");
             await _meadowDevice.StartDebuggingAsync(port, cancellationToken)
                 .ConfigureAwait(false);
 
-            Logger.LogDebug ("Waiting for Meadow to restart");
+            Logger.LogDebug("Waiting for Meadow to restart");
             await Task.Delay(1000, cancellationToken)
                 .ConfigureAwait(false);
 
-            Logger.LogDebug ("Reinitialize the device");
+            Logger.LogDebug("Reinitialize the device");
             await ReInitializeMeadowAsync(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -323,7 +321,7 @@ namespace Meadow.CLI.Core.Devices
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
 
-            Logger.LogDebug ("Tell the Debugging Server to Start Listening");
+            Logger.LogDebug("Tell the Debugging Server to Start Listening");
             await debuggingServer.StartListeningAsync(cancellationToken)
                 .ConfigureAwait(false);
             return debuggingServer;
@@ -355,7 +353,7 @@ namespace Meadow.CLI.Core.Devices
             string? serialPort = null;
             IMeadowDevice? meadow = null;
 
-            if(_meadowDevice is MeadowSerialDevice device)
+            if (_meadowDevice is MeadowSerialDevice_Old device)
             {
                 serialPort = device.SerialPort?.PortName;
             }
@@ -376,7 +374,7 @@ namespace Meadow.CLI.Core.Devices
                                                     Logger,
                                                     cancellationToken: cancellationToken)
                                                 .ConfigureAwait(false);
-            
+
 
             await Task.Delay(1000, cancellationToken)
                       .ConfigureAwait(false);
@@ -396,7 +394,7 @@ namespace Meadow.CLI.Core.Devices
                     await Task.Delay(2000);
 
                     await _meadowDevice.UpdateMonoRuntimeAsync(
-                        runtimePath, 
+                        runtimePath,
                         osVersion,
                         cancellationToken: cancellationToken);
 
@@ -423,7 +421,7 @@ namespace Meadow.CLI.Core.Devices
 
                     await _meadowDevice.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, osVersion, cancellationToken)
                                        .ConfigureAwait(false);
-                    
+
                     // Reset the meadow again to ensure flash worked.
                     await _meadowDevice.ResetMeadowAsync(cancellationToken)
                                        .ConfigureAwait(false);
@@ -459,10 +457,10 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public static async Task<string> DfuFlashAsync(string serialPortName, 
+        public static async Task<string> DfuFlashAsync(string serialPortName,
             string osPath,
             string? osVersion,
-            ILogger logger, 
+            ILogger logger,
             CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
@@ -566,7 +564,7 @@ namespace Meadow.CLI.Core.Devices
             Dispose(false);
         }
 
-        private Dictionary<string, string> deviceVersionTable = new Dictionary<string, string> ()
+        private Dictionary<string, string> deviceVersionTable = new Dictionary<string, string>()
         {
             { "F7v1", "F7FeatherV1" },
             { "F7v2", "F7FeatherV2" },
@@ -576,7 +574,8 @@ namespace Meadow.CLI.Core.Devices
         {
             var deviceVersion = DeviceInfo.HardwareVersion;
             var assembly = Assembly.LoadFrom(executablePath);
-            try {
+            try
+            {
                 var baseType = assembly.GetTypes()[0].BaseType.ToString();
                 string appVersion = string.Empty;
 
@@ -596,7 +595,8 @@ namespace Meadow.CLI.Core.Devices
                     return false;
                 }
             }
-            finally {
+            finally
+            {
                 assembly = null;
             }
 

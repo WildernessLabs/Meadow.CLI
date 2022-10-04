@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.Devices
 {
-    public class MeadowSerialDevice : MeadowLocalDevice
+    public class MeadowSerialDevice_Old : MeadowLocalDevice
     {
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
-        public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
+        public MeadowSerialDevice_Old(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
         }
 
-        internal MeadowSerialDevice(string serialPortName,
+        internal MeadowSerialDevice_Old(string serialPortName,
                                    SerialPort serialPort,
                                    ILogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)

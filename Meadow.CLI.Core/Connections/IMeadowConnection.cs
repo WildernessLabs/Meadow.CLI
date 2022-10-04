@@ -1,4 +1,6 @@
 ﻿using Meadow.CLI.Core.Devices;
+using System;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core
 {
@@ -14,6 +16,7 @@ namespace Meadow.CLI.Core
         public bool IsConnected { get; }
         public bool AutoReconnect { get; set; }
 
+        Task<bool> WaitForConnection(TimeSpan timeout);
         public void Connect();
         public void Disconnect();
     }
