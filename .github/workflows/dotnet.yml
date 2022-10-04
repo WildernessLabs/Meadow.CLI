@@ -258,6 +258,6 @@ jobs:
         name: WildernessLabs.Meadow.CLI
         path: '**\*.nupkg'
 
-    #if: startsWith(github.ref, 'refs/heads/main')
-    #- name: Publish Nuget
-    #  run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+    - if: startsWith(github.ref, 'refs/heads/main')
+      name: Publish Nuget
+      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
