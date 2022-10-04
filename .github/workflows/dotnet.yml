@@ -224,7 +224,7 @@ jobs:
   build-nuget:
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
-    name: Publish Meadow.CLI nuget
+    name: Build and Optionally Publish WildernessLabs.Meadow.CLI and Meadow.CLI nugets
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
@@ -256,14 +256,14 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: WildernessLabs.Meadow.CLI
-        path: 'main\Meadow.CLI\Meadow.CLI\bin\Release\*.nupkg'
+        path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
     - name: Upload Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI
-        path: 'main\Meadow.CLI\Meadow.CLI.Core\bin\Release\*.nupkg'
+        path: 'main\Meadow.CLI.Core\bin\Release\*.nupkg'
 
     - if: startsWith(github.ref, 'refs/heads/main')
-      name: Publish Nuget
+      name: Publish Nugets
       run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
