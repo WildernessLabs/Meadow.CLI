@@ -225,7 +225,7 @@ jobs:
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
     name: Publish Meadow.CLI nuget
-    
+
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
@@ -249,7 +249,7 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Build
+    - name: Build WildernessLabs.Meadow.CLI
       run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
 
     - name: Upload mpack Artifacts
@@ -258,6 +258,6 @@ jobs:
         name: WildernessLabs.Meadow.CLI
         path: '**\*.nupkg'
 
-    if: startsWith(github.ref, 'refs/heads/main')
-    - name: Publish Nuget
-      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+    #if: startsWith(github.ref, 'refs/heads/main')
+    #- name: Publish Nuget
+    #  run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
