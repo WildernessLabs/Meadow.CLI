@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meadow.CLI.Core.Common;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -8,39 +9,34 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Meadow.CLI.Core.Common;
-
 namespace Meadow.CLI.Core
 {
     public class DownloadManager
     {
-        readonly string _versionCheckUrlRoot =
-            "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
-
         public static readonly string FirmwareDownloadsFilePathRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
             "Firmware");
 
-        public static string FirmwareLatestVersion 
+        public static string FirmwareLatestVersion
         {
-            get 
+            get
             {
                 string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
                 if (File.Exists(latest_txt))
                     return File.ReadAllText(latest_txt);
                 else
                     throw new FileNotFoundException("OS download was not found.");
-             }
+            }
         }
 
-        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion); 
+        public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion);
 
         public static string FirmwarePathForVersion(string firmwareVersion)
         {
             return Path.Combine(FirmwareDownloadsFilePathRoot, firmwareVersion);
         }
-        
+
         public static readonly string WildernessLabsTemp = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WildernessLabs",
@@ -51,6 +47,8 @@ namespace Meadow.CLI.Core
         public static readonly string NetworkBootloaderFilename = "bootloader.bin";
         public static readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
         public static readonly string NetworkPartitionTableFilename = "partition-table.bin";
+        internal static readonly string VersionCheckUrlRoot =
+            "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
 
         public static readonly string UpdateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
@@ -58,6 +56,7 @@ namespace Meadow.CLI.Core
         {
             Timeout = TimeSpan.FromMinutes(5)
         };
+
         private readonly ILogger _logger;
 
         public DownloadManager(ILoggerFactory loggerFactory)
@@ -70,18 +69,18 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
-        async Task<string?> DownloadMeadowOSVersionFile(string? version)
+        internal async Task<string?> DownloadMeadowOSVersionFile(string? version)
         {
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
             {
                 _logger.LogInformation("Downloading latest version file");
-                versionCheckUrl = _versionCheckUrlRoot + "latest.json";
+                versionCheckUrl = VersionCheckUrlRoot + "latest.json";
             }
             else
             {
                 _logger.LogInformation("Downloading version file for Meadow OS " + version);
-                versionCheckUrl = _versionCheckUrlRoot + version + ".json";
+                versionCheckUrl = VersionCheckUrlRoot + version + ".json";
             }
 
             string versionCheckFile = string.Empty;
@@ -103,7 +102,7 @@ namespace Meadow.CLI.Core
         {
             var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
 
-            if(versionCheckFilePath == null)
+            if (versionCheckFilePath == null)
             {
                 _logger.LogError($"Meadow OS {version} cannot be downloaded or is not available");
                 return;
@@ -118,13 +117,13 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            if(!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
             {
                 Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
                 //we'll write latest.txt regardless of version if it doesn't exist
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
-            else if(version == null)
+            else if (version == null)
             {   //otherwise only update if we're pulling the latest release OS
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
             }
@@ -144,10 +143,10 @@ namespace Meadow.CLI.Core
                 {
                     CleanPath(local_path);
                 }
-                else 
+                else
                 {
-                     _logger.LogInformation( $"Meadow OS version {release.Version} is already downloaded.");
-                     return;
+                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded.");
+                    return;
                 }
             }
 
