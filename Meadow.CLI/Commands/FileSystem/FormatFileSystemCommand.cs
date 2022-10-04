@@ -34,7 +34,7 @@ namespace Meadow.CLI.Commands.FileSystem
             _logger.LogInformation($"Formatting file system on partition {Partition}");
 
             await Meadow.FormatFileSystemAsync(cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
+                        .;
         }
     }
 }

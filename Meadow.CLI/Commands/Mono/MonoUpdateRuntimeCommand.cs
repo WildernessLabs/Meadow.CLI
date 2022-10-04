@@ -32,8 +32,7 @@ namespace Meadow.CLI.Commands.Mono
 
             await Meadow.UpdateMonoRuntimeAsync(Filename, OSVersion, cancellationToken: cancellationToken);
 
-            await Meadow.ResetMeadowAsync(cancellationToken)
-                        .ConfigureAwait(false);
+            await Meadow.ResetMeadowAsync(cancellationToken);
 
             _logger.LogInformation("Mono Flashed Successfully");
         }

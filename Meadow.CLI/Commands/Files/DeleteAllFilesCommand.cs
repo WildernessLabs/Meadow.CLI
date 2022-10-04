@@ -40,8 +40,7 @@ namespace Meadow.CLI.Commands.Files
             var files = await Meadow.GetFilesAndCrcsAsync(
                                         TimeSpan.FromSeconds(60),
                                         Partition,
-                                        cancellationToken)
-                                    .ConfigureAwait(false);
+                                        cancellationToken);
 
             if (files.Any() == false)
             {
@@ -53,8 +52,7 @@ namespace Meadow.CLI.Commands.Files
             {
                 _logger.LogInformation($"Deleting {file} from partition {Partition}");
 
-                await Meadow.DeleteFileAsync(file.Key, (uint)Partition, cancellationToken)
-                            .ConfigureAwait(false);
+                await Meadow.DeleteFileAsync(file.Key, (uint)Partition, cancellationToken);
             }
         }
     }

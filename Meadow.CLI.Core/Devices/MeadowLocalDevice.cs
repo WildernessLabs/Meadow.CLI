@@ -45,9 +45,7 @@ namespace Meadow.CLI.Core.Devices
                 var retryCount = 1;
 
             Retry:
-                var commandResponse =
-                    await SendCommandAsync(command, cancellationToken)
-                        .ConfigureAwait(false);
+                var commandResponse = await SendCommandAsync(command, cancellationToken);
 
                 if (commandResponse.IsSuccess)
                 {
@@ -75,10 +73,9 @@ namespace Meadow.CLI.Core.Devices
         //this will request the device name and return true it was successfully
         public async Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            var info = await GetDeviceInfoAsync(timeout, cancellationToken)
-                           .ConfigureAwait(false);
+            var info = await GetDeviceInfoAsync(timeout, cancellationToken);
 
-            return info.Product;
+            return info?.Product ?? String.Empty;
         }
 
         public async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default)
@@ -91,8 +88,7 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var commandResponse =
-                await SendCommandAsync(command, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendCommandAsync(command, cancellationToken);
 
             var result = false;
             switch (commandResponse.Message)
@@ -120,8 +116,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommandAsync(command, cancellationToken);
         }
 
         public async Task MonoEnableAsync(CancellationToken cancellationToken = default)
@@ -133,8 +128,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommandAsync(command, cancellationToken);
         }
 
         public Task MonoFlashAsync(CancellationToken cancellationToken = default)
@@ -157,8 +151,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommandAsync(command, cancellationToken);
         }
 
         public Task EnterDfuModeAsync(CancellationToken cancellationToken = default)
@@ -336,8 +329,7 @@ namespace Meadow.CLI.Core.Devices
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS).Build();
 
             var commandResponse =
-                await SendCommandAsync(command, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendCommandAsync(command, cancellationToken);
 
             return commandResponse.Message;
         }
