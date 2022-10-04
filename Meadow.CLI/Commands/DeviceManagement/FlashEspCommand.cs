@@ -26,6 +26,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
+            await Meadow.MonoDisableAsync(false, cancellationToken);
+
             try
             {
                 await Meadow.FlashEspAsync(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion,
