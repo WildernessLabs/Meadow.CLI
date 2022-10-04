@@ -221,8 +221,7 @@ jobs:
       id: VSCode-Extension
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
-  publish-nuget:
-    if: startsWith(github.ref, 'refs/heads/main')
+  build-nuget:
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
     name: Publish Meadow.CLI nuget
@@ -253,5 +252,12 @@ jobs:
     - name: Build
       run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
 
-    - name: Publish
+    - name: Upload mpack Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: WildernessLabs.Meadow.CLI
+        path: '**\*.nupkg'
+
+    if: startsWith(github.ref, 'refs/heads/main')
+    - name: Publish Nuget
       run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
