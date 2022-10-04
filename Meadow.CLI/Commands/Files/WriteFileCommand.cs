@@ -79,8 +79,7 @@ namespace Meadow.CLI.Commands.Files
                                                  Files[i],
                                                  targetFileName,
                                                  TimeSpan.FromSeconds(60),
-                                                 cancellationToken)
-                                             .ConfigureAwait(false);
+                                                 cancellationToken);
 
                     _logger.LogDebug($"File written successfully? {result}");
                 }

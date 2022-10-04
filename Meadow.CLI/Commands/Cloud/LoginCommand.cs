@@ -22,8 +22,7 @@ namespace Meadow.CLI.Commands.Cloud
             var cancellationToken = console.RegisterCancellationHandler();
 
             var identityManager = new IdentityManager(_logger);
-            var loginResult = await identityManager.LoginAsync(cancellationToken)
-                                                   .ConfigureAwait(false);
+            var loginResult = await identityManager.LoginAsync(cancellationToken);
 
             if (loginResult)
             {

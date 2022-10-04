@@ -25,8 +25,7 @@ namespace Meadow.CLI.Commands.Storage
             var cancellationToken = console.RegisterCancellationHandler();
 
             _logger.LogInformation("Erasing flash.");
-            await Meadow.EraseFlashAsync(cancellationToken)
-                        .ConfigureAwait(false);
+            await Meadow.EraseFlashAsync(cancellationToken);
         }
     }
 }

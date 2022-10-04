@@ -24,7 +24,7 @@ namespace Meadow.CLI.Commands.Nsh
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.NshDisableAsync(cancellationToken).ConfigureAwait(false);
+            await Meadow.NshDisableAsync(cancellationToken);
         }
     }
 }
