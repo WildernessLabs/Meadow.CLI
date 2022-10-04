@@ -87,7 +87,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                versionCheckFile = await DownloadFileAsync(new Uri(versionCheckUrl));
+                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
             }
             catch
             {
@@ -155,7 +155,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _logger.LogInformation($"Downloading Meadow OS");
-                await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path);
+                await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
             }
             catch
             {
@@ -166,7 +166,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _logger.LogInformation("Downloading coprocessor firmware");
-                await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path);
+                await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
             }
             catch
             {
@@ -177,7 +177,7 @@ namespace Meadow.CLI.Core
             _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}");
         }
 
-        public async Task InstallDfuUtilAsync(bool is64Bit = true,
+        public async Task InstallDfuUtil(bool is64Bit = true,
                                               CancellationToken cancellationToken = default)
         {
             try
@@ -289,7 +289,7 @@ namespace Meadow.CLI.Core
             return (false, string.Empty, string.Empty);
         }
 
-        private async Task<string> DownloadFileAsync(Uri uri, CancellationToken cancellationToken = default)
+        private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -307,9 +307,9 @@ namespace Meadow.CLI.Core
             return downloadFileName;
         }
 
-        private async Task DownloadAndExtractFileAsync(Uri uri, string target_path, CancellationToken cancellationToken = default)
+        private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
         {
-            var downloadFileName = await DownloadFileAsync(uri, cancellationToken);
+            var downloadFileName = await DownloadFile(uri, cancellationToken);
 
             _logger.LogDebug("Extracting firmware to {path}", target_path);
             ZipFile.ExtractToDirectory(

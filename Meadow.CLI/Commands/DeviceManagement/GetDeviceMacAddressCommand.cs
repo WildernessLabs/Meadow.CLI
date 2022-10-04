@@ -25,7 +25,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var macAddress = await Meadow.GetDeviceMacAddressAsync(cancellationToken);
+            var macAddress = await Meadow.GetDeviceMacAddress(cancellationToken);
             if (macAddress == null)
             {
                 _logger.LogInformation("Unable to retrieve device mac address");

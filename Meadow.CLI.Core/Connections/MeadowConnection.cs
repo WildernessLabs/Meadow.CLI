@@ -85,7 +85,7 @@ namespace Meadow.CLI.Core
                         {
                             // wait a bit - the serial port can connect before the Meadow is ready
                             await Task.Delay(1000);
-                            _ = await Device.GetDeviceInfoAsync(TimeSpan.FromSeconds(2));
+                            _ = await Device.GetDeviceInfo(TimeSpan.FromSeconds(2));
                         }
 
                         ConnectionStateChanged.Invoke(this, nowState);

@@ -52,7 +52,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that is linked internally to the running task</param>
         /// <returns>A <see cref="Task"/> representing the startup operation</returns>
-        public async Task StartListeningAsync(CancellationToken cancellationToken)
+        public async Task StartListening(CancellationToken cancellationToken)
         {
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _listenerTask = Task.Factory.StartNew(StartListener, TaskCreationOptions.LongRunning);
@@ -74,7 +74,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// Stop the <see cref="DebuggingServer"/>
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the shutdown operation</returns>
-        public async Task StopListeningAsync()
+        public async Task StopListening()
         {
             _listener?.Stop();
             _debuggerConnected = false;
@@ -221,7 +221,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0);
+                            await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
                             meadowBuffer = Array.Empty<byte>();
                         }
                         else

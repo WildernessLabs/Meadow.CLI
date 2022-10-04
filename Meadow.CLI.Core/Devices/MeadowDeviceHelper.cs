@@ -36,24 +36,24 @@ namespace Meadow.CLI.Core.Devices
 
         public Task<IDictionary<string, uint>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetFilesAndCrcsAsync(timeout, partition, cancellationToken);
+            return _meadowDevice.GetFilesAndCrcs(timeout, partition, cancellationToken);
         }
 
-        public Task<IList<string>> GetFilesAndFoldersAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetFilesAndFoldersAsync(timeout, cancellationToken);
+            return _meadowDevice.GetFilesAndFolders(timeout, cancellationToken);
         }
 
         public Task<FileTransferResult> WriteFile(string sourceFileName, string destinationFileName, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.WriteFileAsync(sourceFileName, destinationFileName, timeout, cancellationToken);
+            return _meadowDevice.WriteFile(sourceFileName, destinationFileName, timeout, cancellationToken);
         }
 
         public Task DeleteFile(string fileName,
                                     uint partition = 0,
                                     CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.DeleteFileAsync(fileName, partition, cancellationToken);
+            return _meadowDevice.DeleteFile(fileName, partition, cancellationToken);
         }
 
         public Task EraseFlash(CancellationToken cancellationToken = default)
@@ -63,17 +63,17 @@ namespace Meadow.CLI.Core.Devices
 
         public Task VerifyErasedFlash(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.VerifyErasedFlashAsync(cancellationToken);
+            return _meadowDevice.VerifyErasedFlash(cancellationToken);
         }
 
-        public Task FormatFileSystemAsync(uint partition = 0, CancellationToken cancellationToken = default)
+        public Task FormatFileSystem(uint partition = 0, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.FormatFileSystemAsync(partition, cancellationToken);
+            return _meadowDevice.FormatFileSystem(partition, cancellationToken);
         }
 
         public Task RenewFileSystem(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.RenewFileSystemAsync(cancellationToken);
+            return _meadowDevice.RenewFileSystem(cancellationToken);
         }
 
         public async Task UpdateMonoRuntime(string? fileName = null, string? osVersion = null, uint partition = 0, CancellationToken cancellationToken = default)
@@ -82,19 +82,19 @@ namespace Meadow.CLI.Core.Devices
             Logger.LogDebug("Calling Mono Disable");
             await MonoDisable(cancellationToken: cancellationToken);
 
-            await ReInitializeMeadowAsync(cancellationToken);
+            await ReInitializeMeadow(cancellationToken);
 
             Trace.Assert(await GetMonoRunState(cancellationToken) == false,
                          "Meadow was expected to have Mono Disabled");
 
             Logger.LogInformation("Updating Mono Runtime");
 
-            await _meadowDevice.UpdateMonoRuntimeAsync(fileName, osVersion, partition, cancellationToken);
+            await _meadowDevice.UpdateMonoRuntime(fileName, osVersion, partition, cancellationToken);
         }
 
         public Task WriteFileToEspFlash(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.WriteFileToEspFlashAsync(
+            return _meadowDevice.WriteFileToEspFlash(
                 fileName,
                 partition,
                 mcuDestAddress,
@@ -103,7 +103,7 @@ namespace Meadow.CLI.Core.Devices
 
         public Task FlashEsp(string? sourcePath = null, string? osVersion = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.FlashEspAsync(sourcePath, osVersion, cancellationToken);
+            return _meadowDevice.FlashEsp(sourcePath, osVersion, cancellationToken);
         }
 
         //Get's the OS version as a string, used by the download manager
@@ -115,17 +115,17 @@ namespace Meadow.CLI.Core.Devices
 
         public Task<MeadowDeviceInfo> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetDeviceInfoAsync(timeout, cancellationToken);
+            return _meadowDevice.GetDeviceInfo(timeout, cancellationToken);
         }
 
-        public Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<string?> GetDeviceName(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetDeviceNameAsync(timeout, cancellationToken);
+            return _meadowDevice.GetDeviceName(timeout, cancellationToken);
         }
 
         public Task<bool> GetMonoRunState(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetMonoRunStateAsync(cancellationToken);
+            return _meadowDevice.GetMonoRunState(cancellationToken);
         }
 
         public async Task MonoDisable(bool force = false, CancellationToken cancellationToken = default)
@@ -136,13 +136,13 @@ namespace Meadow.CLI.Core.Devices
                 && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Disable Request (Forced? {forced})", force);
-                await _meadowDevice.MonoDisableAsync(cancellationToken);
+                await _meadowDevice.MonoDisable(cancellationToken);
 
                 Logger.LogDebug("Waiting for Meadow to restart");
                 await Task.Delay(3000, cancellationToken);
 
                 Logger.LogDebug("Reinitialize the device");
-                await ReInitializeMeadowAsync(cancellationToken);
+                await ReInitializeMeadow(cancellationToken);
                 force = false;
             }
 
@@ -160,13 +160,13 @@ namespace Meadow.CLI.Core.Devices
                 && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Enable Request (Forced? {forced})", force);
-                await _meadowDevice.MonoEnableAsync(cancellationToken);
+                await _meadowDevice.MonoEnable(cancellationToken);
 
                 Logger.LogDebug("Waiting for Meadow to restart");
                 await Task.Delay(1000, cancellationToken);
 
                 Logger.LogDebug("Reinitialize the device");
-                await ReInitializeMeadowAsync(cancellationToken);
+                await ReInitializeMeadow(cancellationToken);
                 force = false;
             }
 
@@ -176,44 +176,44 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task ResetMeadow(CancellationToken cancellationToken = default)
         {
-            await _meadowDevice.ResetMeadowAsync(cancellationToken);
+            await _meadowDevice.ResetMeadow(cancellationToken);
             await Task.Delay(1000, cancellationToken);
-            await ReInitializeMeadowAsync(cancellationToken);
+            await ReInitializeMeadow(cancellationToken);
         }
 
         public Task MonoFlash(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.MonoFlashAsync(cancellationToken);
+            return _meadowDevice.MonoFlash(cancellationToken);
         }
 
-        public Task EnterDfuModeAsync(CancellationToken cancellationToken = default)
+        public Task EnterDfuMode(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.EnterDfuModeAsync(cancellationToken);
+            return _meadowDevice.EnterDfuMode(cancellationToken);
         }
 
         public Task NshEnable(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.NshEnableAsync(cancellationToken);
+            return _meadowDevice.NshEnable(cancellationToken);
         }
 
         public Task NshDisable(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.NshDisableAsync(cancellationToken);
+            return _meadowDevice.NshDisable(cancellationToken);
         }
 
         public Task TraceEnable(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.TraceEnableAsync(cancellationToken);
+            return _meadowDevice.TraceEnable(cancellationToken);
         }
 
         public Task SetTraceLevel(uint traceLevel, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.SetTraceLevelAsync(traceLevel, cancellationToken);
+            return _meadowDevice.SetTraceLevel(traceLevel, cancellationToken);
         }
 
         public Task TraceDisable(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.TraceDisableAsync(cancellationToken);
+            return _meadowDevice.TraceDisable(cancellationToken);
         }
 
         public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
@@ -248,17 +248,17 @@ namespace Meadow.CLI.Core.Devices
 
         public Task QspiWrite(int value, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.QspiWriteAsync(value, cancellationToken);
+            return _meadowDevice.QspiWrite(value, cancellationToken);
         }
 
         public Task QspiRead(int value, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.QspiReadAsync(value, cancellationToken);
+            return _meadowDevice.QspiRead(value, cancellationToken);
         }
 
         public Task QspiInit(int value, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.QspiInitAsync(value, cancellationToken);
+            return _meadowDevice.QspiInit(value, cancellationToken);
         }
 
         public async Task DeployApp(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default)
@@ -267,16 +267,16 @@ namespace Meadow.CLI.Core.Devices
 
             string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
-            await _meadowDevice.DeployAppAsync(fileName, osVersion, includePdbs, cancellationToken);
+            await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, cancellationToken);
 
             await MonoEnable(true, cancellationToken: cancellationToken);
 
             await Task.Delay(2000, cancellationToken);
         }
 
-        public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
+        public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.ForwardVisualStudioDataToMonoAsync(
+            return _meadowDevice.ForwardVisualStudioDataToMono(
                 debuggerData,
                 userData,
                 cancellationToken);
@@ -294,13 +294,13 @@ namespace Meadow.CLI.Core.Devices
             await MonoEnable(cancellationToken: cancellationToken);
 
             Logger.LogDebug ($"StartDebugging on port: {port}");
-            await _meadowDevice.StartDebuggingAsync(port, cancellationToken);
+            await _meadowDevice.StartDebugging(port, cancellationToken);
 
             Logger.LogDebug ("Waiting for Meadow to restart");
             await Task.Delay(1000, cancellationToken);
 
             Logger.LogDebug ("Reinitialize the device");
-            await ReInitializeMeadowAsync(cancellationToken);
+            await ReInitializeMeadow(cancellationToken);
 
             if (_meadowDevice == null)
                 throw new DeviceNotFoundException();
@@ -309,7 +309,7 @@ namespace Meadow.CLI.Core.Devices
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
 
             Logger.LogDebug ("Tell the Debugging Server to Start Listening");
-            await debuggingServer.StartListeningAsync(cancellationToken);
+            await debuggingServer.StartListening(cancellationToken);
             return debuggingServer;
         }
 
@@ -320,12 +320,12 @@ namespace Meadow.CLI.Core.Devices
 
         public Task RestartEsp32(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.RestartEsp32Async(cancellationToken);
+            return _meadowDevice.RestartEsp32(cancellationToken);
         }
 
-        public Task<string?> GetDeviceMacAddressAsync(CancellationToken cancellationToken = default)
+        public Task<string?> GetDeviceMacAddress(CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetDeviceMacAddressAsync(cancellationToken);
+            return _meadowDevice.GetDeviceMacAddress(cancellationToken);
         }
 
         public bool IsDeviceInitialized()
@@ -333,7 +333,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.IsDeviceInitialized();
         }
 
-        public async Task ReInitializeMeadowAsync(CancellationToken cancellationToken = default)
+        public async Task ReInitializeMeadow(CancellationToken cancellationToken = default)
         {
             var serialNumber = DeviceInfo.SerialNumber;
             string? serialPort = null;
@@ -365,7 +365,7 @@ namespace Meadow.CLI.Core.Devices
             _meadowDevice = meadow ?? throw new Exception($"Meadow not found. Serial Number {serialNumber}");
         }
 
-        public async Task FlashOsAsync(string? runtimePath = null, string? osVersion = null, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
+        public async Task WriteRuntimeAndEspBins(string? runtimePath = null, string? osVersion = null, bool skipRuntime = false, bool skipEsp = false, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -375,14 +375,14 @@ namespace Meadow.CLI.Core.Devices
 
                     await Task.Delay(2000);
 
-                    await _meadowDevice.UpdateMonoRuntimeAsync(
+                    await _meadowDevice.UpdateMonoRuntime(
                         runtimePath, 
                         osVersion,
                         cancellationToken: cancellationToken);
 
                     await Task.Delay(2000);
 
-                    await ReInitializeMeadowAsync(cancellationToken);
+                    await ReInitializeMeadow(cancellationToken);
 
                     await Task.Delay(2000);
                 }
@@ -395,19 +395,19 @@ namespace Meadow.CLI.Core.Devices
                 {
                     await MonoDisable(cancellationToken: cancellationToken);
 
-                    //Trace.Assert(await GetMonoRunStateAsync(cancellationToken) == false,
+                    //Trace.Assert(await GetMonoRunState(cancellationToken) == false,
                     //             "Meadow was expected to have Mono Disabled");
 
                     Logger.LogInformation("Updating ESP");
 
-                    await _meadowDevice.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, osVersion, cancellationToken);
+                    await _meadowDevice.FlashEsp(DownloadManager.FirmwareDownloadsFilePath, osVersion, cancellationToken);
 
                     // Reset the meadow again to ensure flash worked.
-                    await _meadowDevice.ResetMeadowAsync(cancellationToken);
+                    await _meadowDevice.ResetMeadow(cancellationToken);
 
                     await Task.Delay(3000);
 
-                    await ReInitializeMeadowAsync(cancellationToken);
+                    await ReInitializeMeadow(cancellationToken);
                 }
                 else
                 {
@@ -415,14 +415,14 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 //Logger.LogInformation("Enabling Mono and Resetting");
-                //await MonoEnableAsync(cancellationToken);
+                //await MonoEnable(cancellationToken);
 
                 // This is to ensure the ESP info has updated in HCOM on the Meadow
                 await Task.Delay(3000, cancellationToken);
 
                 // TODO: Verify that the device info returns the expected version
                 var deviceInfo = await _meadowDevice
-                                       .GetDeviceInfoAsync(TimeSpan.FromSeconds(60), cancellationToken);
+                                       .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
                 Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
                                     $"Mono: {deviceInfo.MonoVersion}, " +
@@ -466,7 +466,7 @@ namespace Meadow.CLI.Core.Devices
                     if (device != null)
                     {
                         logger.LogInformation("Entering DFU Mode");
-                        await device.EnterDfuModeAsync(cancellationToken);
+                        await device.EnterDfuMode(cancellationToken);
                     }
                 }
                 catch (Exception ex)
@@ -505,7 +505,7 @@ namespace Meadow.CLI.Core.Devices
             string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
 
             logger.LogInformation("Device in DFU Mode, flashing OS");
-            var res = await DfuUtils.DfuFlashAsync(osPath, osVersion ?? "", dfuDevice, logger);
+            var res = await DfuUtils.DfuFlash(osPath, osVersion ?? "", dfuDevice, logger);
             if (res)
             {
                 logger.LogInformation("Device Flashed.");

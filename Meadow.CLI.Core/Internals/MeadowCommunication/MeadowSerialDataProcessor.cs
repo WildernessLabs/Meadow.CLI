@@ -61,18 +61,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
-            _dataProcessorTask = Task.Factory.StartNew(ReadSerialPortAsync, TaskCreationOptions.LongRunning);
+            _dataProcessorTask = Task.Factory.StartNew(ReadSerialPort, TaskCreationOptions.LongRunning);
         }
 
         public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this._socket = socket;
-            _dataProcessorTask = Task.Factory.StartNew(ReadSocketAsync, TaskCreationOptions.LongRunning);
+            _dataProcessorTask = Task.Factory.StartNew(ReadSocket, TaskCreationOptions.LongRunning);
         }
 
         //-------------------------------------------------------------
         // All received data handled here
-        private async Task ReadSocketAsync()
+        private async Task ReadSocket()
         {
             byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
@@ -133,7 +133,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        private async Task ReadSerialPortAsync()
+        private async Task ReadSerialPort()
         {
             SerialMessage? message = null;
             try

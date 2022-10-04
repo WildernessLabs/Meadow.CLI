@@ -64,7 +64,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return null;
                 }
 
-                await meadow.InitializeAsync(CancellationToken.None);
+                await meadow.Initialize(CancellationToken.None);
 
                 return meadow;
             }
@@ -154,7 +154,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                         if (device == null)
                             continue;
 
-                        var deviceInfo = await device.GetDeviceInfoAsync(
+                        var deviceInfo = await device.GetDeviceInfo(
                                              TimeSpan.FromSeconds(60),
                                              cancellationToken);
 

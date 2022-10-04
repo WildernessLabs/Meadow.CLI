@@ -40,7 +40,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
+        public override async Task Write(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
         {
             if (SerialPort == null || SerialPort.IsOpen == false)
             {
@@ -51,7 +51,7 @@ namespace Meadow.CLI.Core.Devices
             await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken);
         }
 
-        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public override async Task<bool> Initialize(CancellationToken cancellationToken)
         {
             var initTimeout = TimeSpan.FromSeconds(60);
             var now = DateTime.UtcNow;
@@ -67,7 +67,7 @@ namespace Meadow.CLI.Core.Devices
                         // TODO: Find a way to flush all the garbage startup messages
                         await Task.Delay(1000, cancellationToken);
 
-                        DeviceInfo = await GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                        DeviceInfo = await GetDeviceInfo(TimeSpan.FromSeconds(5), cancellationToken);
 
                         return true;
                     }

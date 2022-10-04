@@ -26,7 +26,7 @@ namespace Meadow.CLI.Core.Devices
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-                var response = await SendCommandAsync(command, cancellationToken);
+                var response = await SendCommand(command, cancellationToken);
 
                 string responseMessage = string.Empty;
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
@@ -131,7 +131,7 @@ namespace Meadow.CLI.Core.Devices
                              "Cannot build trailer for unknown command")
                 };
 
-                await SendCommandAsync(trailerCommand, cancellationToken);
+                await SendCommand(trailerCommand, cancellationToken);
 
 
                 // bufferOffset should point to the byte after the last byte
@@ -189,7 +189,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        private protected async Task<CommandResponse> SendCommandAsync(
+        private protected async Task<CommandResponse> SendCommand(
             Command command,
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
@@ -271,7 +271,7 @@ namespace Meadow.CLI.Core.Devices
                     using var cts = new CancellationTokenSource(DefaultTimeout);
                     cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
                     var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-                    await WriteAsync(encodedBytes, encodedToSend, combinedCts.Token);
+                    await Write(encodedBytes, encodedToSend, combinedCts.Token);
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {

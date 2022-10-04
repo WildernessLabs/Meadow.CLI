@@ -25,7 +25,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var deviceName = await Meadow.GetDeviceNameAsync(TimeSpan.FromSeconds(60), cancellationToken: cancellationToken);
+            var deviceName = await Meadow.GetDeviceName(TimeSpan.FromSeconds(60), cancellationToken: cancellationToken);
 
             _logger.LogInformation($"Device Name: {deviceName}");
         }
