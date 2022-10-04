@@ -47,7 +47,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 logger.LogInformation($"Connecting to Meadow on {serialPort}");
                 
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
-                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000));
+                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
+                          .ConfigureAwait(false);
 
                 if (completedTask != createTask || meadow == null)
                 {
@@ -149,7 +150,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, false, logger);
+                        var device = await GetMeadowForSerialPort(port, false, logger)
+                                         .ConfigureAwait(false);
 
                         if (device == null)
                             continue;
@@ -199,7 +201,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                     }
                 }
 
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(1000, cancellationToken)
+                          .ConfigureAwait(false);
 
                 attempts++;
             }

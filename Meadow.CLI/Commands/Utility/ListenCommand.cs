@@ -34,7 +34,8 @@ namespace Meadow.CLI.Commands.Utility
             Meadow.MeadowDevice.DataProcessor.OnReceiveData += ResponseHandler;
             try
             {
-                await Task.Delay(-1, cancellationToken);
+                await Task.Delay(-1, cancellationToken)
+                          .ConfigureAwait(false);
             }
             catch
             {

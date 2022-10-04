@@ -76,7 +76,7 @@ namespace Meadow.CLI.Commands
             }
 
             await base.ExecuteAsync(console);
-            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger);
+            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger).ConfigureAwait(false);
             if (meadow == null)
             {
                 LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");

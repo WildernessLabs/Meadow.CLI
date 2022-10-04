@@ -33,10 +33,10 @@ namespace Meadow.CLI.Commands.Trace
 
             var task = Developer switch
             {
-                1 => Meadow.SetDeveloper1(Value, cancellationToken),
-                2 => Meadow.SetDeveloper2(Value, cancellationToken),
-                3 => Meadow.SetDeveloper3(Value, cancellationToken),
-                4 => Meadow.SetDeveloper4(Value, cancellationToken),
+                1 => Meadow.SetDeveloper1(Value, cancellationToken).ConfigureAwait(false),
+                2 => Meadow.SetDeveloper2(Value, cancellationToken).ConfigureAwait(false),
+                3 => Meadow.SetDeveloper3(Value, cancellationToken).ConfigureAwait(false),
+                4 => Meadow.SetDeveloper4(Value, cancellationToken).ConfigureAwait(false),
                 _ => throw new ArgumentOutOfRangeException(nameof(Developer), Developer, "Valid values are 1 - 4")
             };
 

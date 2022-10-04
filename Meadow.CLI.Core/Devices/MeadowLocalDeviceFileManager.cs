@@ -43,7 +43,8 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseHandler(handler)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken);
+            await SendCommandAsync(command, cancellationToken)
+                .ConfigureAwait(false);
 
             return items;
         }
@@ -79,7 +80,8 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData((uint)partition)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken);
+            await SendCommandAsync(command, cancellationToken)
+                .ConfigureAwait(false);
 
             return FilesOnDevice;
         }
@@ -121,7 +123,8 @@ namespace Meadow.CLI.Core.Devices
 
                 while (stream.Position < streamLength)
                 {
-                    bytesRead += await stream.ReadAsync(fileBytes, bytesRead, streamLength, cancellationToken);
+                    bytesRead += await stream.ReadAsync(fileBytes, bytesRead, streamLength, cancellationToken)
+                        .ConfigureAwait(false);
                 }
 
                 if (bytesRead != streamLength)
@@ -146,7 +149,8 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var sw = Stopwatch.StartNew();
-            await SendTheEntireFile(command, true, cancellationToken);
+            await SendTheEntireFile(command, true, cancellationToken)
+                .ConfigureAwait(false);
 
             sw.Stop();
             return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
@@ -164,7 +168,8 @@ namespace Meadow.CLI.Core.Devices
                     .WithCompletionResponseType(MeadowMessageType.Concluded)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken);
+            await SendCommandAsync(command, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         public Task EraseFlashAsync(CancellationToken cancellationToken = default)
@@ -275,7 +280,8 @@ namespace Meadow.CLI.Core.Devices
                           .WithSourceFileName(sourceFilename)
                           .Build();
 
-            await SendTheEntireFile(command, true, cancellationToken);
+            await SendTheEntireFile(command, true, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         public async Task WriteFileToEspFlashAsync(string fileName,
@@ -315,7 +321,8 @@ namespace Meadow.CLI.Core.Devices
                               .WithSourceFileName(fileName)
                               .Build();
 
-                await SendTheEntireFile(command, true, cancellationToken);
+                await SendTheEntireFile(command, true, cancellationToken)
+                    .ConfigureAwait(false);
             }
             else
             {
@@ -373,7 +380,8 @@ namespace Meadow.CLI.Core.Devices
                                   .WithSourceFileName(fileElement[i + 1])
                                   .Build();
 
-                    await SendTheEntireFile(command, lastFile, cancellationToken);
+                    await SendTheEntireFile(command, lastFile, cancellationToken)
+                        .ConfigureAwait(false);
                 }
             }
         }
@@ -395,25 +403,31 @@ namespace Meadow.CLI.Core.Devices
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddress: "0x10000",
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken);
+            await Task.Delay(1000, cancellationToken)
+                      .ConfigureAwait(false);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddress: "0x1000",
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken);
+            await Task.Delay(1000, cancellationToken)
+                      .ConfigureAwait(false);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
             await WriteFileToEspFlashAsync(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddress: "0x8000",
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            await Task.Delay(1000, cancellationToken);
+            await Task.Delay(1000, cancellationToken)
+                      .ConfigureAwait(false);
         }
 
         public async Task<string?> GetInitialBytesFromFile(string fileName,
@@ -534,7 +548,8 @@ namespace Meadow.CLI.Core.Devices
 
                 var deviceFiles = await GetFilesAndCrcsAsync(
                                           DefaultTimeout,
-                                          cancellationToken: cancellationToken);
+                                          cancellationToken: cancellationToken)
+                                      .ConfigureAwait(false);
 
                 //rename App.dll to App.exe
                 var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
@@ -589,7 +604,8 @@ namespace Meadow.CLI.Core.Devices
                     {
                         var pdbFile = Path.ChangeExtension(file, "pdb");
                         if (File.Exists(pdbFile))
-                            await AddFile(pdbFile, false);
+                            await AddFile(pdbFile, false)
+                                .ConfigureAwait(false);
                     }
                 }
 
@@ -632,7 +648,8 @@ namespace Meadow.CLI.Core.Devices
                     }
                     if (!found)
                     {
-                        await DeleteFileAsync(devicefile, cancellationToken: cancellationToken);
+                        await DeleteFileAsync(devicefile, cancellationToken: cancellationToken)
+                            .ConfigureAwait(false);
 
                         Logger.LogInformation("Removing file: {file}", devicefile);
                     }
@@ -659,7 +676,8 @@ namespace Meadow.CLI.Core.Devices
                             file.Key,
                             filename,
                             DefaultTimeout,
-                            cancellationToken);
+                            cancellationToken)
+                        .ConfigureAwait(false);
 
                     Logger.LogInformation("Wrote file: {file}", file.Key);
                 }
@@ -677,7 +695,8 @@ namespace Meadow.CLI.Core.Devices
         {
             if (FilesOnDevice.Any() == false)
             {
-                await GetFilesAndCrcsAsync(DefaultTimeout, 0, cancellationToken);
+                await GetFilesAndCrcsAsync(DefaultTimeout, 0, cancellationToken)
+                    .ConfigureAwait(false);
             }
             return FilesOnDevice.ContainsKey(filename);
         }

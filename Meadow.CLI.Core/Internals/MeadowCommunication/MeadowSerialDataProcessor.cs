@@ -81,11 +81,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 while (!_cts.IsCancellationRequested)
                 {
                     var segment = new ArraySegment<byte>(buffer);
-                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None);
+                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
 
                     DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token);
 
-                    await Task.Delay(50);
+                    await Task.Delay(50).ConfigureAwait(false);
                 }
             }
             catch (ThreadAbortException)
@@ -145,11 +145,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         // Reconnection happens higher up
                         while (!_serialPort.IsOpen)
                         {
-                            await Task.Delay(100);
+                            await Task.Delay(100)
+                                      .ConfigureAwait(false);
                         }
 
                         var b = new byte[1024];
-                        var receivedLength = await _serialPort.BaseStream.ReadAsync(b, 0, b.Length);
+                        var receivedLength = await _serialPort.BaseStream.ReadAsync(b, 0, b.Length)
+                                                              .ConfigureAwait(false);
 
                         var buffer = b.AsMemory(0, receivedLength);
                         while (buffer.Length > 0)
@@ -193,7 +195,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     catch (Exception ex)
                     {
                         _logger.LogTrace(ex, "An error occurred while listening to the serial port.");
-                        await Task.Delay(100, _cts.Token);
+                        await Task.Delay(100, _cts.Token)
+                                  .ConfigureAwait(false);
                     }
                 }
             }

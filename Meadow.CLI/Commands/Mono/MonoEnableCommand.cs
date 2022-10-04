@@ -27,7 +27,8 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoEnableAsync(Force, cancellationToken);
+            await Meadow.MonoEnableAsync(Force, cancellationToken)
+                        .ConfigureAwait(false);
             _logger.LogInformation("Mono Enabled Successfully");
         }
     }

@@ -54,7 +54,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken);
+                    serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -75,7 +75,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 meadow = await MeadowDeviceManager.GetMeadowForSerialPort(
                     SerialPortName,
                     true,
-                    Logger);
+                    Logger).ConfigureAwait(false);
             }
 
             if (meadow == null)
@@ -83,7 +83,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
                 serialNumber,
                 Logger,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
             Meadow = new MeadowDeviceHelper(meadow, Logger);
@@ -117,19 +117,21 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                 if (yesOrNo.ToLower() == "y")
                 {
-                    await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken);
+                    await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
                     /* TODO EraseFlashAsync leaves the port in a dodgy state, so we need to kill it and find it again
                     Need a more elegant solution here. */
                     Meadow?.Dispose();
                     Meadow = null;
 
-                    await Task.Delay(2000);
+                    await Task.Delay(2000).ConfigureAwait(false);
 
                     var device = await MeadowDeviceManager.FindMeadowBySerialNumber(
                             serialNumber,
                             Logger,
-                            cancellationToken: cancellationToken);
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
 
                     if (device == null)
                     {

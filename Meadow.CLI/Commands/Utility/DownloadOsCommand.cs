@@ -23,7 +23,7 @@ namespace Meadow.CLI.Commands.Utility
         {
             await base.ExecuteAsync(console);
 
-            await DownloadManager.DownloadLatestAsync(OsVersion, Force);
+            await DownloadManager.DownloadLatestAsync(OsVersion, Force).ConfigureAwait(false);
         }
     }
 }

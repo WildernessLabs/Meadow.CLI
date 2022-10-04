@@ -24,7 +24,8 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var runState = await Meadow.GetMonoRunStateAsync(cancellationToken);
+            var runState = await Meadow.GetMonoRunStateAsync(cancellationToken)
+                                       .ConfigureAwait(false);
 
             _logger.LogInformation($"Mono Run State: {(runState ? "Enabled" : "Disabled")}");
         }

@@ -64,7 +64,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     return;
                 }
 
-                await Task.Delay(100, cancellationToken);
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
             }
 
             throw new Exception("DebuggingServer did not start listening within the 60 second timeout.");
@@ -82,7 +82,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _cancellationTokenSource?.Cancel(false);
 
             if (_listenerTask != null)
-                await _listenerTask;
+                await _listenerTask.ConfigureAwait(false);
         }
 
         private async Task StartListener()
@@ -221,7 +221,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0);
+                            await _meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0).ConfigureAwait(false);
                             meadowBuffer = Array.Empty<byte>();
                         }
                         else

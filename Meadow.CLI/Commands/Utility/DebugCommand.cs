@@ -29,7 +29,7 @@ namespace Meadow.CLI.Commands.Utility
             await base.ExecuteAsync(console);
 
             var cancellationToken = console.RegisterCancellationHandler();
-            using (var server = await Meadow.StartDebuggingSessionAsync(Port, cancellationToken))
+            using (var server = await Meadow.StartDebuggingSessionAsync(Port, cancellationToken).ConfigureAwait(false))
             {
                 _logger.LogInformation("Debugging server started. Press enter to exit");
                 await console.Input.ReadLineAsync();

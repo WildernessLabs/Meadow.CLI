@@ -48,7 +48,7 @@ namespace Meadow.CLI.Core.Devices
                 throw new DeviceDisconnectedException();
             }
 
-            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken);
+            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken).ConfigureAwait(false);
         }
 
         public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
@@ -65,7 +65,8 @@ namespace Meadow.CLI.Core.Devices
                         Logger.LogDebug("Initializing Meadow for the first time");
 
                         // TODO: Find a way to flush all the garbage startup messages
-                        await Task.Delay(1000, cancellationToken);
+                        await Task.Delay(1000, cancellationToken)
+                                  .ConfigureAwait(false);
 
                         DeviceInfo = await GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
 
@@ -89,7 +90,8 @@ namespace Meadow.CLI.Core.Devices
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
                 //ToDo: Adrian - review - increased delay from 100ms to 500ms
-                await Task.Delay(500, cancellationToken);
+                await Task.Delay(500, cancellationToken)
+                          .ConfigureAwait(false);
             }
 
             throw new Exception($"Device not ready after {initTimeout}s");

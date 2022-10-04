@@ -39,7 +39,8 @@ namespace Meadow.CLI.Commands.Files
             var files = await Meadow.GetFilesAndCrcsAsync(
                                         TimeSpan.FromSeconds(60),
                                         Partition,
-                                        cancellationToken);
+                                        cancellationToken)
+                                    .ConfigureAwait(false);
 
             if (files.Any())
             {

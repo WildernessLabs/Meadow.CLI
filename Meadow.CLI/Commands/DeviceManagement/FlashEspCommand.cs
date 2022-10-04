@@ -31,7 +31,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
             try
             {
                 await Meadow.FlashEspAsync(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion,
-                                           cancellationToken: cancellationToken);
+                                           cancellationToken: cancellationToken)
+                            .ConfigureAwait(false);
             }
             catch (FileNotFoundException)
             {
@@ -49,7 +50,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 return;
             }
 
-            await Meadow.ResetMeadowAsync(cancellationToken);
+            await Meadow.ResetMeadowAsync(cancellationToken)
+                        .ConfigureAwait(false);
         }
     }
 }

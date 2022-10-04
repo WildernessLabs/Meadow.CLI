@@ -29,13 +29,15 @@ namespace Meadow.CLI.Commands.Trace
 
             if (Enable)
             {
-                await Meadow.Uart1Trace(cancellationToken);
+                await Meadow.Uart1Trace(cancellationToken)
+                            .ConfigureAwait(false);
 
                 _logger.LogInformation("Sending trace output to UART");
             }
             else
             {
-                await Meadow.Uart1Apps(cancellationToken);
+                await Meadow.Uart1Apps(cancellationToken)
+                            .ConfigureAwait(false);
                 _logger.LogInformation("Sending App output to UART");
             }
         }
