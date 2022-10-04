@@ -222,42 +222,42 @@ jobs:
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   build-nuget:
-    -name: Publish Meadow.CLI nuget
-      runs-on: windows-latest
-      needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
+    name: Publish Meadow.CLI nuget
+    runs-on: windows-latest
+    needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
       
-      steps:
-      - name: Checkout Meadow.CLI.Core side-by-side
-        uses: actions/checkout@v2
-        with:
-          path: main
-          ref: develop
+    steps:
+    - name: Checkout Meadow.CLI.Core side-by-side
+      uses: actions/checkout@v2
+      with:
+        path: main
+        ref: develop
 
-      - name: Setup .NET Core SDK 5.0.x & 6.0.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: |
-            5.0.x
-            6.0.x
+    - name: Setup .NET Core SDK 5.0.x & 6.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          5.0.x
+          6.0.x
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.5
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
 
-      - name: Restore dependencies
-        run: dotnet restore main/MeadowCLI.sln
+    - name: Restore dependencies
+      run: dotnet restore main/MeadowCLI.sln
 
-      - name: Add MSBuild to Path
-        uses: microsoft/setup-msbuild@v1.1
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
 
-      - name: Build
-        run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
+    - name: Build
+      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
 
-      - name: Upload mpack Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: WildernessLabs.Meadow.CLI
-          path: '**\*.nupkg'
+    - name: Upload mpack Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: WildernessLabs.Meadow.CLI
+        path: '**\*.nupkg'
 
-      if: startsWith(github.ref, 'refs/heads/main')
-      - name: Publish Nuget
-        run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+    if: startsWith(github.ref, 'refs/heads/main')
+    - name: Publish Nuget
+      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
