@@ -2,11 +2,26 @@
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core
 {
     public static class FirmwareManager
     {
+        public static async Task<string?> GetRemoteFirmwareInfo(string versionNumber, ILogger logger)
+        {
+            var manager = new DownloadManager(logger);
+
+            return await manager.DownloadMeadowOSVersionFile(versionNumber);
+        }
+
+        public static async Task GetRemoteFirmware(string versionNumber, ILogger logger)
+        {
+            var manager = new DownloadManager(logger);
+
+            await manager.DownloadLatestAsync(versionNumber, true);
+        }
+
         public static string GetLatestFirmwareVersion()
         {
             var di = new DirectoryInfo(DownloadManager.FirmwareDownloadsFilePathRoot);
