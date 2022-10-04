@@ -222,10 +222,10 @@ jobs:
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   build-nuget:
-    name: Publish Meadow.CLI nuget
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
-      
+    name: Publish Meadow.CLI nuget
+    
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
       uses: actions/checkout@v2
