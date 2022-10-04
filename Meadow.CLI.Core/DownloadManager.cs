@@ -98,7 +98,7 @@ namespace Meadow.CLI.Core
         }
 
         //ToDo rename this method - DownloadOSAsync?
-        public async Task DownloadLatestAsync(string? version = null, bool force = false)
+        public async Task DownloadOsBinaries(string? version = null, bool force = false)
         {
             var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
 
@@ -261,7 +261,7 @@ namespace Meadow.CLI.Core
             }
         }
 
-        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdatesAsync()
+        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates()
         {
             try
             {

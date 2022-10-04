@@ -45,7 +45,7 @@ namespace Meadow.CLI.Commands.Files
                 {
                     _logger.LogInformation($"Deleting {file} from partition {Partition}");
 
-                    await Meadow.DeleteFileAsync(file, Partition, cancellationToken);
+                    await Meadow.DeleteFile(file, Partition, cancellationToken);
                 }
             }
         }

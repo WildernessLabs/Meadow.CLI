@@ -27,7 +27,7 @@ namespace Meadow.CLI.Commands.Qspi
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.QspiReadAsync(Value, cancellationToken);
+            await Meadow.QspiRead(Value, cancellationToken);
         }
     }
 }

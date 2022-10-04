@@ -26,11 +26,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoDisableAsync(false, cancellationToken);
+            await Meadow.MonoDisable(false, cancellationToken);
 
             try
             {
-                await Meadow.FlashEspAsync(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion,
+                await Meadow.FlashEsp(osVersion: string.IsNullOrWhiteSpace(OSVersion) ? null : OSVersion,
                                            cancellationToken: cancellationToken);
             }
             catch (FileNotFoundException)
@@ -49,7 +49,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 return;
             }
 
-            await Meadow.ResetMeadowAsync(cancellationToken);
+            await Meadow.ResetMeadow(cancellationToken);
         }
     }
 }

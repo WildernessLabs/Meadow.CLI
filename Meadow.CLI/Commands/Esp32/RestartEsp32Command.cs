@@ -24,7 +24,7 @@ namespace Meadow.CLI.Commands.Esp32
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.RestartEsp32Async(cancellationToken);
+            await Meadow.RestartEsp32(cancellationToken);
         }
     }
 }

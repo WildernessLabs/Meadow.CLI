@@ -29,7 +29,7 @@ namespace Meadow.CLI.Core.Identity
         /// Kick off login
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> LoginAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> Login(CancellationToken cancellationToken = default)
         {
             try
             {

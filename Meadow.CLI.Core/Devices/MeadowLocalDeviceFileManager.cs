@@ -167,7 +167,7 @@ namespace Meadow.CLI.Core.Devices
             await SendCommandAsync(command, cancellationToken);
         }
 
-        public Task EraseFlashAsync(CancellationToken cancellationToken = default)
+        public Task EraseFlash(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE)

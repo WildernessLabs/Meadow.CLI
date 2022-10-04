@@ -24,7 +24,7 @@ namespace Meadow.CLI.Commands.Trace
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.TraceDisableAsync(cancellationToken);
+            await Meadow.TraceDisable(cancellationToken);
         }
     }
 }

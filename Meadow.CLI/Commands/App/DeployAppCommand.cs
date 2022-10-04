@@ -35,7 +35,7 @@ namespace Meadow.CLI.Commands.App
 
             try
             {
-                await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion);
+                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion);
             }
             catch
             {   //OS binaries failed to download
@@ -43,7 +43,7 @@ namespace Meadow.CLI.Commands.App
                 console.Output.WriteLine("Meadow assemblies download failed, using local copy");
             }
 
-            await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken);
+            await Meadow.DeployApp(File, IncludePdbs, cancellationToken);
         }
     }
 }

@@ -61,7 +61,7 @@ namespace Meadow.CLI.Commands.Esp32
             }
             else
             {
-                await Meadow.WriteFileToEspFlashAsync(Filename, 0, McuDestAddress, cancellationToken);
+                await Meadow.WriteFileToEspFlash(Filename, 0, McuDestAddress, cancellationToken);
 
                 _logger.LogDebug("File written successfully");
             }

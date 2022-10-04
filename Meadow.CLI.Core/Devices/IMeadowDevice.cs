@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.Devices
         public Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default);
         public Task<FileTransferResult> WriteFileAsync(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task DeleteFileAsync(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
-        public Task EraseFlashAsync(CancellationToken cancellationToken = default);
+        public Task EraseFlash(CancellationToken cancellationToken = default);
         public Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default);
         public Task FormatFileSystemAsync(uint partition = 0, CancellationToken cancellationToken = default);
         public Task RenewFileSystemAsync(CancellationToken cancellationToken = default);

@@ -54,7 +54,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    serialNumber = await MeadowDeviceHelper.DfuFlashAsync(SerialPortName, OsFile, OSVersion, Logger, cancellationToken);
+                    serialNumber = await MeadowDeviceHelper.DfuFlash(SerialPortName, OsFile, OSVersion, Logger, cancellationToken);
                 }
                 catch
                 {
@@ -117,7 +117,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                 if (yesOrNo.ToLower() == "y")
                 {
-                    await Meadow.MeadowDevice.EraseFlashAsync(cancellationToken);
+                    await Meadow.MeadowDevice.EraseFlash(cancellationToken);
 
                     /* TODO EraseFlashAsync leaves the port in a dodgy state, so we need to kill it and find it again
                     Need a more elegant solution here. */
