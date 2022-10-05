@@ -188,6 +188,7 @@ jobs:
       with:
         dotnet-version: |
           5.0.x
+          6.0.x
 
     - name: Setup Nuget
       uses: Nuget/setup-nuget@v1.0.5
