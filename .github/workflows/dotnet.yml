@@ -238,20 +238,23 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore main/MeadowCLI.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
+    - name: Restore WildernessLabs.Meadow.CLI dependencies
+      run: msbuild main\Meadow.CLI\Meadow.CLI.csproj /t:Restore /p:Configuration=Release
+
     - name: Build WildernessLabs.Meadow.CLI
-      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
+      run: msbuild main\Meadow.CLI\Meadow.CLI.csproj /t:Rebuild /p:Configuration=Release
 
     - name: Upload WildernessLabs.Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: WildernessLabs.Meadow.CLI
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
+
+    - name: Build Meadow.CLI
+      run: msbuild main\Meadow.CLI.Core\Meadow.CLI.Core.csproj /t:Rebuild /p:Configuration=Release
 
     - name: Upload Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
