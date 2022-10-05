@@ -243,7 +243,7 @@ jobs:
       run: dotnet msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
 
     - name: Build WildernessLabs.Meadow.CLI
-      run: dotnet msbuildmain/MeadowCLI.sln /t:Rebuild /p:Configuration=Release /p:TargetFramework=net5.0
+      run: dotnet msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release /p:TargetFramework=net5.0
 
     - name: Upload WildernessLabs.Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
