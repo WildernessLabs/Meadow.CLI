@@ -240,10 +240,10 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore WildernessLabs.Meadow.CLI dependencies
-      run: dotnet msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
+      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
 
     - name: Build WildernessLabs.Meadow.CLI
-      run: dotnet msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release /p:TargetFramework=net5.0
+      run: msbuild main/MeadowCLI.sln /t:Build /p:Configuration=Release
 
     - name: Upload WildernessLabs.Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
