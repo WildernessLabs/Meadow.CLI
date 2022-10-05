@@ -239,16 +239,16 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore WildernessLabs.Meadow.CLI dependencies
-      run: dotnet build main/MeadowCLI.sln /t:Restore /p:Configuration=Release
+      run: dotnet build main/Meadow.CLI/Meadow.CLI.csproj /t:Restore /p:Configuration=Release "/p:Platform=Any CPU"
 
     - name: Build WildernessLabs.Meadow.CLI
-      run: dotnet build main/MeadowCLI.sln /t:Build /p:Configuration=Release "/p:Platform=Any CPU"
+      run: dotnet build main/Meadow.CLI/Meadow.CLI.csproj /t:Rebuild /p:Configuration=Release "/p:Platform=Any CPU"
 
     - name: Upload WildernessLabs.Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: WildernessLabs.Meadow.CLI
-        path: 'main/Meadow.CLI/bin/Release/*.nupkg'
+        path: 'main/Meadow.CLI/bin/Any CPU/Release/*.nupkg'
 
     # - name: Build Meadow.CLI
     #   run: dotnet msbuild main/Meadow.CLI.Core/Meadow.CLI.Core.csproj /t:Rebuild /p:Configuration=Release
@@ -257,7 +257,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI
-        path: 'main/Meadow.CLI.Core/bin/Release/*.nupkg'
+        path: 'main/Meadow.CLI.Core/bin/Any CPU/Release/*.nupkg'
 
     - if: startsWith(github.ref, 'refs/heads/main')
       name: Publish Nugets
