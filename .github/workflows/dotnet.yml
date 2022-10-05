@@ -242,13 +242,10 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Restore WildernessLabs.Meadow.CLI dependencies
-      run: msbuild main\Meadow.CLI.Core\Meadow.CLI.Core.csproj /t:Restore /p:Configuration=Release
-
-    - name: Restore WildernessLabs.Meadow.CLI dependencies
-      run: msbuild main\Meadow.CLI\Meadow.CLI.csproj /t:Restore /p:Configuration=Release /p:TargetFramework=net5.0 /p:TargetFramework=netstandard2.0
+      run: msbuild main\MeadowCLI.sln /t:Restore /p:Configuration=Release /p:TargetFramework=net5.0
 
     - name: Build WildernessLabs.Meadow.CLI
-      run: msbuild main\Meadow.CLI\Meadow.CLI.csproj /t:Rebuild /p:Configuration=Release /p:TargetFramework=net5.0
+      run: msbuild main\MeadowCLI.sln /t:Rebuild /p:Configuration=Release /p:TargetFramework=net5.0
 
     - name: Upload WildernessLabs.Meadow.CLI Artifacts
       uses: actions/upload-artifact@v2
