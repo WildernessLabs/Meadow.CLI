@@ -242,6 +242,9 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Restore WildernessLabs.Meadow.CLI dependencies
+      run: msbuild main\Meadow.CLI.Core\Meadow.CLI.Core.csproj /t:Restore /p:Configuration=Release
+
+    - name: Restore WildernessLabs.Meadow.CLI dependencies
       run: msbuild main\Meadow.CLI\Meadow.CLI.csproj /t:Restore /p:Configuration=Release /p:TargetFramework=net5.0
 
     - name: Build WildernessLabs.Meadow.CLI
