@@ -52,7 +52,7 @@ namespace Meadow.CLI.Core
 
         public static readonly string UpdateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
-        private static readonly HttpClient Client = new HttpClient()
+        private static readonly HttpClient Client = new()
         {
             Timeout = TimeSpan.FromMinutes(5)
         };
@@ -83,11 +83,11 @@ namespace Meadow.CLI.Core
                 versionCheckUrl = VersionCheckUrlRoot + version + ".json";
             }
 
-            string versionCheckFile = string.Empty;
+            string versionCheckFile;
 
             try
             {
-                versionCheckFile = await DownloadFileAsync(new Uri(versionCheckUrl));
+                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
             }
             catch
             {
@@ -98,7 +98,7 @@ namespace Meadow.CLI.Core
         }
 
         //ToDo rename this method - DownloadOSAsync?
-        public async Task DownloadLatestAsync(string? version = null, bool force = false)
+        public async Task DownloadOsBinaries(string? version = null, bool force = false)
         {
             var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
 
@@ -155,8 +155,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _logger.LogInformation($"Downloading Meadow OS");
-                await DownloadAndExtractFileAsync(new Uri(release.DownloadURL), local_path)
-                    .ConfigureAwait(false);
+                await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
             }
             catch
             {
@@ -167,8 +166,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _logger.LogInformation("Downloading coprocessor firmware");
-                await DownloadAndExtractFileAsync(new Uri(release.NetworkDownloadURL), local_path)
-                    .ConfigureAwait(false);
+                await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
             }
             catch
             {
@@ -179,7 +177,7 @@ namespace Meadow.CLI.Core
             _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}");
         }
 
-        public async Task InstallDfuUtilAsync(bool is64Bit = true,
+        public async Task InstallDfuUtil(bool is64Bit = true,
                                               CancellationToken cancellationToken = default)
         {
             try
@@ -196,19 +194,18 @@ namespace Meadow.CLI.Core
                 const string downloadUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-0.10-binaries.zip";
 
                 var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/", StringComparison.Ordinal) + 1);
-                var response = await Client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                                           .ConfigureAwait(false);
+                var response = await Client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
                 if (response.IsSuccessStatusCode == false)
                 {
                     throw new Exception("Failed to download dfu-util");
                 }
 
-                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var downloadFileStream = new DownloadFileStream(stream, _logger))
                 using (var fs = File.OpenWrite(Path.Combine(WildernessLabsTemp, downloadFileName)))
                 {
-                    await downloadFileStream.CopyToAsync(fs).ConfigureAwait(false);
+                    await downloadFileStream.CopyToAsync(fs);
                 }
 
                 ZipFile.ExtractToDirectory(
@@ -264,7 +261,7 @@ namespace Meadow.CLI.Core
             }
         }
 
-        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdatesAsync()
+        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates()
         {
             try
             {
@@ -292,28 +289,27 @@ namespace Meadow.CLI.Core
             return (false, string.Empty, string.Empty);
         }
 
-        private async Task<string> DownloadFileAsync(Uri uri, CancellationToken cancellationToken = default)
+        private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                                                     .ConfigureAwait(false);
+            using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
             var downloadFileName = Path.GetTempFileName();
             _logger.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
-            using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            using (var stream = await response.Content.ReadAsStreamAsync())
             using (var downloadFileStream = new DownloadFileStream(stream, _logger))
             using (var firmwareFile = File.OpenWrite(downloadFileName))
             {
-                await downloadFileStream.CopyToAsync(firmwareFile).ConfigureAwait(false);
+                await downloadFileStream.CopyToAsync(firmwareFile);
             }
             return downloadFileName;
         }
 
-        private async Task DownloadAndExtractFileAsync(Uri uri, string target_path, CancellationToken cancellationToken = default)
+        private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
         {
-            var downloadFileName = await DownloadFileAsync(uri, cancellationToken).ConfigureAwait(false);
+            var downloadFileName = await DownloadFile(uri, cancellationToken);
 
             _logger.LogDebug("Extracting firmware to {path}", target_path);
             ZipFile.ExtractToDirectory(

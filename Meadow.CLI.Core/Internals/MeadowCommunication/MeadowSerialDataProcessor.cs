@@ -61,18 +61,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public MeadowSerialDataProcessor(SerialPort serialPort, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             _serialPort = serialPort;
-            _dataProcessorTask = Task.Factory.StartNew(ReadSerialPortAsync, TaskCreationOptions.LongRunning);
+            _dataProcessorTask = Task.Factory.StartNew(ReadSerialPort, TaskCreationOptions.LongRunning);
         }
 
         public MeadowSerialDataProcessor(Socket socket, ILogger? logger = null) : this(logger ?? new NullLogger<MeadowSerialDataProcessor>())
         {
             this._socket = socket;
-            _dataProcessorTask = Task.Factory.StartNew(ReadSocketAsync, TaskCreationOptions.LongRunning);
+            _dataProcessorTask = Task.Factory.StartNew(ReadSocket, TaskCreationOptions.LongRunning);
         }
 
         //-------------------------------------------------------------
         // All received data handled here
-        private async Task ReadSocketAsync()
+        private async Task ReadSocket()
         {
             byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
 
@@ -81,11 +81,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 while (!_cts.IsCancellationRequested)
                 {
                     var segment = new ArraySegment<byte>(buffer);
-                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None).ConfigureAwait(false);
+                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None);
 
                     DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token);
 
-                    await Task.Delay(50).ConfigureAwait(false);
+                    await Task.Delay(50);
                 }
             }
             catch (ThreadAbortException)
@@ -133,7 +133,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             }
         }
 
-        private async Task ReadSerialPortAsync()
+        private async Task ReadSerialPort()
         {
             SerialMessage? message = null;
             try
@@ -145,13 +145,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                         // Reconnection happens higher up
                         while (!_serialPort.IsOpen)
                         {
-                            await Task.Delay(100)
-                                      .ConfigureAwait(false);
+                            await Task.Delay(100);
                         }
 
                         var b = new byte[1024];
-                        var receivedLength = await _serialPort.BaseStream.ReadAsync(b, 0, b.Length)
-                                                              .ConfigureAwait(false);
+                        var receivedLength = await _serialPort.BaseStream.ReadAsync(b, 0, b.Length);
 
                         var buffer = b.AsMemory(0, receivedLength);
                         while (buffer.Length > 0)
@@ -195,8 +193,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     catch (Exception ex)
                     {
                         _logger.LogTrace(ex, "An error occurred while listening to the serial port.");
-                        await Task.Delay(100, _cts.Token)
-                                  .ConfigureAwait(false);
+                        await Task.Delay(100, _cts.Token);
                     }
                 }
             }

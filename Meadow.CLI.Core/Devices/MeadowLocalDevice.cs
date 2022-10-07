@@ -24,11 +24,11 @@ namespace Meadow.CLI.Core.Devices
             DataProcessor = dataProcessor;
         }
 
-        public abstract Task WriteAsync(byte[] encodedBytes,
+        public abstract Task Write(byte[] encodedBytes,
                                         int encodedToSend,
                                         CancellationToken cancellationToken = default);
 
-        public async Task<MeadowDeviceInfo?> GetDeviceInfoAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async Task<MeadowDeviceInfo?> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             DeviceInfo = null;
 
@@ -45,9 +45,7 @@ namespace Meadow.CLI.Core.Devices
                 var retryCount = 1;
 
             Retry:
-                var commandResponse =
-                    await SendCommandAsync(command, cancellationToken)
-                        .ConfigureAwait(false);
+                var commandResponse = await SendCommand(command, cancellationToken);
 
                 if (commandResponse.IsSuccess)
                 {
@@ -73,15 +71,14 @@ namespace Meadow.CLI.Core.Devices
 
         //device name is processed when the message is received
         //this will request the device name and return true it was successfully
-        public async Task<string?> GetDeviceNameAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async Task<string?> GetDeviceName(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            var info = await GetDeviceInfoAsync(timeout, cancellationToken)
-                           .ConfigureAwait(false);
+            var info = await GetDeviceInfo(timeout, cancellationToken);
 
-            return info.Product;
+            return info?.Product ?? String.Empty;
         }
 
-        public async Task<bool> GetMonoRunStateAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> GetMonoRunState(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Sending Mono Run State Request");
 
@@ -91,8 +88,7 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var commandResponse =
-                await SendCommandAsync(command, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendCommand(command, cancellationToken);
 
             var result = false;
             switch (commandResponse.Message)
@@ -111,7 +107,7 @@ namespace Meadow.CLI.Core.Devices
             return result;
         }
 
-        public async Task MonoDisableAsync(CancellationToken cancellationToken = default)
+        public async Task MonoDisable(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Sending Mono Disable Request");
             var command =
@@ -120,11 +116,10 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
         }
 
-        public async Task MonoEnableAsync(CancellationToken cancellationToken = default)
+        public async Task MonoEnable(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Sending Mono Enable Request");
             var command =
@@ -133,11 +128,10 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
         }
 
-        public Task MonoFlashAsync(CancellationToken cancellationToken = default)
+        public Task MonoFlash(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH)
@@ -146,10 +140,10 @@ namespace Meadow.CLI.Core.Devices
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public async Task ResetMeadowAsync(CancellationToken cancellationToken = default)
+        public async Task ResetMeadow(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESET_PRIMARY_MCU)
@@ -157,11 +151,10 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.SerialReconnect)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
         }
 
-        public Task EnterDfuModeAsync(CancellationToken cancellationToken = default)
+        public Task EnterDfuMode(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENTER_DFU_MODE)
@@ -169,36 +162,36 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseFilter(x => true)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task NshEnableAsync(CancellationToken cancellationToken = default)
+        public Task NshEnable(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH)
                     .WithUserData(1)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task NshDisableAsync(CancellationToken cancellationToken = default)
+        public Task NshDisable(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_ENABLE_DISABLE_NSH)
                     .WithUserData(0)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task TraceEnableAsync(CancellationToken cancellationToken = default)
+        public Task TraceEnable(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_HOST)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task Uart1Trace(CancellationToken cancellationToken = default)
@@ -207,26 +200,26 @@ namespace Meadow.CLI.Core.Devices
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task TraceDisableAsync(CancellationToken cancellationToken = default)
+        public Task TraceDisable(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_HOST)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task SetTraceLevelAsync(uint traceLevel, CancellationToken cancellationToken = default)
+        public Task SetTraceLevel(uint traceLevel, CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_CHANGE_TRACE_LEVEL)
                     .WithUserData(traceLevel)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
@@ -236,7 +229,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData(userData)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
@@ -246,7 +239,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData(userData)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
@@ -256,7 +249,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData(userData)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
@@ -266,7 +259,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData(userData)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         public Task Uart1Apps(CancellationToken cancellationToken = default)
@@ -275,40 +268,40 @@ namespace Meadow.CLI.Core.Devices
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_NO_TRACE_TO_UART)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task QspiWriteAsync(int value, CancellationToken cancellationToken = default)
+        public Task QspiWrite(int value, CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_WRITE)
                     .WithUserData((uint)value)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task QspiReadAsync(int value, CancellationToken cancellationToken = default)
+        public Task QspiRead(int value, CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_READ)
                     .WithUserData((uint)value)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task QspiInitAsync(int value, CancellationToken cancellationToken = default)
+        public Task QspiInit(int value, CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_S25FL_QSPI_INIT)
                     .WithUserData((uint)value)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public async Task StartDebuggingAsync(int port, CancellationToken cancellationToken)
+        public async Task StartDebugging(int port, CancellationToken cancellationToken)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_START_DBG_SESSION)
@@ -316,33 +309,32 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseType(MeadowMessageType.Accepted)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken);
+            await SendCommand(command, cancellationToken);
         }
 
-        public Task RestartEsp32Async(CancellationToken cancellationToken = default)
+        public Task RestartEsp32(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_RESTART_ESP32)
                     .WithCompletionResponseType(MeadowMessageType.Concluded)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public async Task<string?> GetDeviceMacAddressAsync(CancellationToken cancellationToken = default)
+        public async Task<string?> GetDeviceMacAddress(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_READ_ESP_MAC_ADDRESS).Build();
 
             var commandResponse =
-                await SendCommandAsync(command, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendCommand(command, cancellationToken);
 
             return commandResponse.Message;
         }
 
-        public abstract Task<bool> InitializeAsync(CancellationToken cancellationToken);
+        public abstract Task<bool> Initialize(CancellationToken cancellationToken);
 
         public abstract bool IsDeviceInitialized();
 

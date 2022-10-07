@@ -40,7 +40,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
+        public override async Task Write(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
         {
             if (SerialPort == null || SerialPort.IsOpen == false)
             {
@@ -48,10 +48,10 @@ namespace Meadow.CLI.Core.Devices
                 throw new DeviceDisconnectedException();
             }
 
-            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken).ConfigureAwait(false);
+            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken);
         }
 
-        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public override async Task<bool> Initialize(CancellationToken cancellationToken)
         {
             var initTimeout = TimeSpan.FromSeconds(60);
             var now = DateTime.UtcNow;
@@ -65,10 +65,9 @@ namespace Meadow.CLI.Core.Devices
                         Logger.LogDebug("Initializing Meadow for the first time");
 
                         // TODO: Find a way to flush all the garbage startup messages
-                        await Task.Delay(1000, cancellationToken)
-                                  .ConfigureAwait(false);
+                        await Task.Delay(1000, cancellationToken);
 
-                        DeviceInfo = await GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                        DeviceInfo = await GetDeviceInfo(TimeSpan.FromSeconds(5), cancellationToken);
 
                         return true;
                     }
@@ -90,8 +89,7 @@ namespace Meadow.CLI.Core.Devices
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
                 //ToDo: Adrian - review - increased delay from 100ms to 500ms
-                await Task.Delay(500, cancellationToken)
-                          .ConfigureAwait(false);
+                await Task.Delay(500, cancellationToken);
             }
 
             throw new Exception($"Device not ready after {initTimeout}s");

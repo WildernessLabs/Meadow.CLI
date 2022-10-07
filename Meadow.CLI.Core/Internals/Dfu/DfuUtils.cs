@@ -63,7 +63,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlashAsync(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static async Task<bool> DfuFlash(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();

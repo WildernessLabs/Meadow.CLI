@@ -35,7 +35,7 @@ namespace Meadow.CLI.Commands
             Version currentVersion, latestVersion;
             if (lastUpdateCheck.AddDays(1) < DateTimeOffset.UtcNow || SettingsManager.GetSetting(Setting.LatestVersion) == null)
             {
-                var (ue, lv, cv) = await DownloadManager.CheckForUpdatesAsync();
+                var (ue, lv, cv) = await DownloadManager.CheckForUpdates();
                 SettingsManager.SaveSetting(Setting.LastUpdateCheck, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
                 SettingsManager.SaveSetting(Setting.LatestVersion, lv);
                 updateExists = ue;

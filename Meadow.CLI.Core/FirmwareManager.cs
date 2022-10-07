@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core
         {
             var manager = new DownloadManager(logger);
 
-            await manager.DownloadLatestAsync(versionNumber, true);
+            await manager.DownloadOsBinaries(versionNumber, true);
         }
 
         public static string GetLatestFirmwareVersion()

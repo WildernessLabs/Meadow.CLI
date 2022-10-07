@@ -30,10 +30,9 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.UpdateMonoRuntimeAsync(Filename, OSVersion, cancellationToken: cancellationToken);
+            await Meadow.UpdateMonoRuntime(Filename, OSVersion, cancellationToken: cancellationToken);
 
-            await Meadow.ResetMeadowAsync(cancellationToken)
-                        .ConfigureAwait(false);
+            await Meadow.ResetMeadow(cancellationToken);
 
             _logger.LogInformation("Mono Flashed Successfully");
         }
