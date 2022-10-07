@@ -11,7 +11,7 @@
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageVersion>0.19.8</PackageVersion>
-    <Platforms>x64;x86</Platforms>
+    <Platforms>AnyCPU;x64;x86</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/WildernessLabs/Meadow.CLI</RepositoryUrl>
