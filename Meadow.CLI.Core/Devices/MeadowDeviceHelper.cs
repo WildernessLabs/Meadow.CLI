@@ -131,8 +131,8 @@ namespace Meadow.CLI.Core.Devices
         public async Task MonoDisable(bool force = false, CancellationToken cancellationToken = default)
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
-            bool monoRunState;
-            while ((monoRunState = await GetMonoRunState(cancellationToken) || force)
+            bool monoRunState = await GetMonoRunState(cancellationToken);
+            while ((monoRunState == true || force)
                 && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Disable Request (Forced? {forced})", force);
@@ -144,6 +144,9 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogDebug("Reinitialize the device");
                 await ReInitializeMeadow(cancellationToken);
                 force = false;
+
+                Logger.LogDebug("Check Mono state");
+                monoRunState = await GetMonoRunState(cancellationToken);
             }
 
             if (monoRunState)
@@ -155,8 +158,8 @@ namespace Meadow.CLI.Core.Devices
         public async Task MonoEnable(bool force = false, CancellationToken cancellationToken = default)
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
-            bool monoRunState;
-            while ((monoRunState = await GetMonoRunState(cancellationToken)) == false || force
+            bool monoRunState = await GetMonoRunState(cancellationToken);
+            while ((monoRunState == false || force)
                 && endTime > DateTime.UtcNow)
             {
                 Logger.LogDebug("Sending Mono Enable Request (Forced? {forced})", force);
@@ -168,6 +171,9 @@ namespace Meadow.CLI.Core.Devices
                 Logger.LogDebug("Reinitialize the device");
                 await ReInitializeMeadow(cancellationToken);
                 force = false;
+
+                Logger.LogDebug("Check Mono state");
+                monoRunState = await GetMonoRunState(cancellationToken);
             }
 
             if (!monoRunState)
