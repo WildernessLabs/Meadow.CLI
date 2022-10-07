@@ -112,6 +112,7 @@ namespace Meadow.CLI.Core.Devices
             // If ESP32 file we must also send the MD5 has of the file
             using var md5 = MD5.Create();
 
+            Logger.LogInformation ("  Reading File Stream Asynchronously");
             byte[] fileBytes;
             using (var stream = File.Open(sourceFileName, FileMode.Open))
             {
@@ -137,6 +138,7 @@ namespace Meadow.CLI.Core.Devices
 
             var fileCrc32 = CrcTools.Crc32part(fileBytes, fileBytes.Length, 0);
 
+            Logger.LogInformation ("  Building HCOM_MDOW_REQUEST_START_FILE_TRANSFER FileCommand");
             var command =
                 new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
                     .WithSourceFileName(sourceFileName)
@@ -146,9 +148,11 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var sw = Stopwatch.StartNew();
+
             await SendTheEntireFile(command, true, cancellationToken);
 
             sw.Stop();
+
             return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
         }
 
