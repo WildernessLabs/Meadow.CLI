@@ -296,16 +296,13 @@ namespace Meadow.CLI.Core.Devices
         /// <returns>A running <see cref="DebuggingServer"/> that is available for connections</returns>
         public async Task<DebuggingServer> StartDebuggingSession(int port, CancellationToken cancellationToken)
         {
-            Logger.LogDebug ("Enabling Mono");
-            await MonoEnable(cancellationToken: cancellationToken);
-
-            Logger.LogDebug ($"StartDebugging on port: {port}");
+            Logger.LogDebug($"StartDebugging on port: {port}");
             await _meadowDevice.StartDebugging(port, cancellationToken);
 
-            Logger.LogDebug ("Waiting for Meadow to restart");
+            Logger.LogDebug("Waiting for Meadow to restart");
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogDebug ("Reinitialize the device");
+            Logger.LogDebug("Reinitialize the device");
             await ReInitializeMeadow(cancellationToken);
 
             if (_meadowDevice == null)
@@ -314,7 +311,7 @@ namespace Meadow.CLI.Core.Devices
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(_meadowDevice, endpoint, Logger);
 
-            Logger.LogDebug ("Tell the Debugging Server to Start Listening");
+            Logger.LogDebug("Tell the Debugging Server to Start Listening");
             await debuggingServer.StartListening(cancellationToken);
             return debuggingServer;
         }
