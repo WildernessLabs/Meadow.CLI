@@ -31,7 +31,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private Task? _listenerTask;
         private bool _isReady;
         public bool Disposed;
-        private bool _debuggerConnected;
 
         // Constructor
         /// <summary>
@@ -45,6 +44,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             LocalEndpoint = localEndpoint;
             _meadow = meadow;
             _logger = logger;
+            _listener = new TcpListener(LocalEndpoint);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         public async Task StopListening()
         {
             _listener?.Stop();
-            _debuggerConnected = false;
+
             if (_cancellationTokenSource != null)
                 _cancellationTokenSource?.Cancel(false);
 
@@ -89,21 +89,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                _listener = new TcpListener(LocalEndpoint);
                 _listener.Start();
                 LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
                 _isReady = true;
 
-                // We only one to listen until the debugger is connected (presumably) then we can stop spinning.
-                while (!_debuggerConnected)
-                {
-                    // Wait for client to connect
-                    TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
-                    OnConnect(tcpClient);
-                    if (_debuggerConnected)
-                        break;
-                }
+                // This call will wait for the client to connect, before continuing. We shouldn't need a loop.
+                TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
+                OnConnect(tcpClient);
             }
             catch (SocketException soex) {
                 _logger.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
@@ -120,10 +113,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                _logger.LogInformation("Visual Studio has Connected");
                 lock (_lck)
                 {
-                    _debuggerConnected = true;
+                    _logger.LogInformation ("Visual Studio has Connected");
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                     {
                         _logger.LogDebug("Closing active client");
