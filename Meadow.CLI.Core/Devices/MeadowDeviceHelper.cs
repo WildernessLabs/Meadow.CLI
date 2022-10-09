@@ -302,8 +302,8 @@ namespace Meadow.CLI.Core.Devices
             Logger.LogDebug("Waiting for Meadow to restart");
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogDebug("Reinitialize the device");
-            await ReInitializeMeadow(cancellationToken);
+            //Logger.LogDebug("Reinitialize the device");
+            //await ReInitializeMeadow(cancellationToken);
 
             if (_meadowDevice == null)
                 throw new DeviceNotFoundException();
