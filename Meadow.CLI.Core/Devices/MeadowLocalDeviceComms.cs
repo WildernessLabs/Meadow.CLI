@@ -23,7 +23,6 @@ namespace Meadow.CLI.Core.Devices
             _packetCrc32 = 0;
             _lastProgress = 0;
 
-            Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
                 var response = await SendCommand(command, cancellationToken);
@@ -37,6 +36,8 @@ namespace Meadow.CLI.Core.Devices
                         "Meadow rejected download request with " + responseMessage, response);
                 }
 
+
+                Logger.LogInformation ($" SendTheEntireFile Switching on RequestType: {command.RequestType}");
                 switch (command.RequestType)
                 {
                     // if it's an ESP start file transfer and the download started ok.
@@ -194,11 +195,13 @@ namespace Meadow.CLI.Core.Devices
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
+            Logger.LogInformation ($"  SendCommand WaitAsync {command} to device");
             await _comPortSemaphore.WaitAsync(cancellationToken);
 
             try
             {
                 Logger.LogTrace($"{caller} is sending {command.RequestType}");
+                Logger.LogInformation ($"  {caller} is sending {command.RequestType}");
 
                 CommandResponse resp;
                 if (command.IsAcknowledged)
