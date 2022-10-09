@@ -15,6 +15,7 @@ namespace Meadow.CLI.Core
         private const int CommsTimeoutSeconds = 2;
 
         private readonly SerialPort _port;
+        private Task<Task> _connectionTask;
 
         public IMeadowDevice? Device { get; private set; }
         public string Name { get; }
@@ -31,7 +32,7 @@ namespace Meadow.CLI.Core
             _port.ReadTimeout = DefaultTimeout;
             _port.WriteTimeout = DefaultTimeout;
 
-            Task.Run(ConnectionStateMonitorProc);
+            _connectionTask = Task.Factory.StartNew(ConnectionStateMonitorProc, TaskCreationOptions.LongRunning);
         }
 
         public void Connect()
