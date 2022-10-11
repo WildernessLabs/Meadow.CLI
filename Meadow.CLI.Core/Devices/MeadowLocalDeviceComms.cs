@@ -195,13 +195,12 @@ namespace Meadow.CLI.Core.Devices
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
-            Logger.LogInformation ($"  SendCommand WaitAsync {command} to device");
+            Logger.LogInformation ($"  SendCommand WaitAsync {command} to device.{Environment.NewLine}");
             await _comPortSemaphore.WaitAsync(cancellationToken);
 
             try
             {
                 Logger.LogTrace($"{caller} is sending {command.RequestType}");
-                Logger.LogInformation ($"  {caller} is sending {command.RequestType}");
 
                 CommandResponse resp;
                 if (command.IsAcknowledged)
