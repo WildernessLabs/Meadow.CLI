@@ -236,9 +236,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     _logger.LogInformation("Visual Studio has stopped debugging");
                     _logger.LogTrace(ode, "Visual Studio has stopped debugging");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error receiving data from Visual Studio");
+                    _logger.LogError($"Error receiving data from Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
                     throw;
                 }
             }
@@ -251,16 +251,19 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     {
                         if (_networkStream != null && _networkStream.CanWrite)
                         {
-                            var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
-                            _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
-                            if (!_tcpClient.Connected)
+                            while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
                             {
-                                _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
-                                return;
-                            }
+                                var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
+                                _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
+                                if (!_tcpClient.Connected)
+                                {
+                                    _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
+                                    return;
+                                }
 
-                            await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
-                            _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                                await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
+                                _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                            }
                         }
                         else
                         {
@@ -277,9 +280,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     // TODO _logger.LogInformation("Operation Cancelled");
                     // TODP _logger.LogTrace(oce, "Operation Cancelled");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error sending data to Visual Studio");
+                    _logger.LogError ($"Error sending data to Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+
                     if (_cts.IsCancellationRequested)
                         throw;
                 }
