@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Mono
 {
     [Command("mono disable", Description = "Sets mono to NOT run on the Meadow board then resets it")]
-    public class MonoDisableCommand : MeadowSerialCommand
+    public class MonoDisableCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<MonoDisableCommand> _logger;
         

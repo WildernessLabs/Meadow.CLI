@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Meadow.CLI.Commands.DeviceManagement
 {
     [Command("flash esp", Description = "Flash the ESP co-processor")]
-    public class FlashEspCommand : MeadowSerialCommand
+    public class FlashEspCommand : MeadowSerialPortCommand
     {
         [CommandOption("osVersion", 'v', Description = "Flash the ESP from a specific downloaded OS version - x.x.x.x")]
         public string OSVersion { get; init; }

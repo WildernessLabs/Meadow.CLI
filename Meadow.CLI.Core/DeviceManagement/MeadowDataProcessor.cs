@@ -9,6 +9,10 @@ namespace Meadow.CLI.Core.DeviceManagement
         public EventHandler<MeadowMessageEventArgs>? OnReceiveData;
         public BlockingCollection<byte[]> DebuggerMessages = new BlockingCollection<byte[]>();
         public abstract void Dispose();
+
+        public int MaxAllowableMsgPacketLength => 512;
+        public int MaxEstimatedSizeOfEncodedPayload => MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
+        public int ProtocolHeaderSize => 12;
     }
 
     public class MeadowMessageEventArgs : EventArgs

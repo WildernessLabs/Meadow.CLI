@@ -9,7 +9,7 @@ using System;
 namespace Meadow.CLI.Commands.App
 {
     [Command("app deploy", Description = "Deploy the specified app to the Meadow")]
-    public class DeployAppCommand : MeadowSerialCommand
+    public class DeployAppCommand : MeadowSerialPortCommand
     {
         [CommandOption(
             "file",

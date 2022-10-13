@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Trace
 {
     [Command("set developer", Description = "Set developer value")]
-    public class SetDeveloperValueCommand : MeadowSerialCommand
+    public class SetDeveloperValueCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<SetDeveloperValueCommand> _logger;
 

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Files
 {
     [Command("file initial", Description = "Get the initial bytes from a file")]
-    public class InitialFileBytesCommand : MeadowSerialCommand
+    public class InitialFileBytesCommand : MeadowSerialPortCommand
     {
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to list the files")]

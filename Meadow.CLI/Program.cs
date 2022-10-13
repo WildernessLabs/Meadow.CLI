@@ -80,7 +80,7 @@ namespace Meadow.CLI
             var types = assembly.GetTypes();
 
             var commands = types.Where(
-                                       x => x.IsAssignableTo(typeof(MeadowSerialCommand))
+                                       x => x.IsAssignableTo(typeof(MeadowSerialPortCommand))
                                             || x.IsAssignableTo(typeof(MeadowCommand))
                                             || x.IsAssignableTo(typeof(ICommand)))
                                    .Where(x => !x.IsAbstract);

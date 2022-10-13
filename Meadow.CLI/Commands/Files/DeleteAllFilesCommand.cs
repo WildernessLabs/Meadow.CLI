@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Files
 {
     [Command("file delete all", Description = "Delete all files from the Meadow File System")]
-    public class DeleteAllFilesCommand : MeadowSerialCommand
+    public class DeleteAllFilesCommand : MeadowSerialPortCommand
     {
         public IList<string> Files { get; init; }
 

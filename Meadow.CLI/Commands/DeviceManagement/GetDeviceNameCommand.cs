@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement
 {
     [Command("device name", Description = "Get the name of the Meadow")]
-    public class GetDeviceNameCommand : MeadowSerialCommand
+    public class GetDeviceNameCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<GetDeviceNameCommand> _logger;
 

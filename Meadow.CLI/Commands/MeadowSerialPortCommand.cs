@@ -11,16 +11,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands
 {
-    public abstract class MeadowSerialCommand : MeadowCommand, ICommand, IDisposable
+    public abstract class MeadowSerialPortCommand : MeadowCommand, ICommand, IDisposable
     {
         private protected ILogger Logger;
         private protected MeadowDeviceHelper Meadow;
 
-        private protected MeadowSerialCommand(DownloadManager downloadManager,
+        private protected MeadowSerialPortCommand(DownloadManager downloadManager,
                                               ILoggerFactory loggerFactory)
             : base(downloadManager, loggerFactory)
         {
-            Logger = loggerFactory.CreateLogger<MeadowSerialCommand>();
+            Logger = loggerFactory.CreateLogger<MeadowSerialPortCommand>();
         }
 
         [CommandOption("SerialPort", 's', Description = "Meadow COM port")]
@@ -29,9 +29,6 @@ namespace Meadow.CLI.Commands
             get => GetSerialPort();
             set => SetSerialPort(value);
         }
-
-        //[CommandOption("listen", 'k', Description = "Keep port open to listen for output")]
-        //public bool Listen {get; init;}
 
         private string _serialPort;
 
@@ -63,12 +60,12 @@ namespace Meadow.CLI.Commands
         {
             if(string.IsNullOrEmpty(SerialPortName))
             {
-                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogError("No serial port selected. Use 'meadow use port' to select a port");
+                LoggerFactory.CreateLogger<MeadowSerialPortCommand>().LogError("No serial port selected. Use 'meadow use port' to select a port");
                 Environment.Exit(-2);
             }
             if(!PortExists(SerialPortName))
             {
-                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogError($"Selected serial port ({SerialPortName}) does not exist. Use 'meadow list ports' to view available options and 'meadow use port' to select a valid port");
+                LoggerFactory.CreateLogger<MeadowSerialPortCommand>().LogError($"Selected serial port ({SerialPortName}) does not exist. Use 'meadow list ports' to view available options and 'meadow use port' to select a valid port");
                 Environment.Exit(-2);
             }
 
@@ -76,7 +73,7 @@ namespace Meadow.CLI.Commands
             var meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(SerialPortName, logger: Logger);
             if (meadow == null)
             {
-                LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");
+                LoggerFactory.CreateLogger<MeadowSerialPortCommand>().LogCritical("Unable to find Meadow.");
                 Environment.Exit(-1);
             }
 

@@ -10,16 +10,13 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement
 {
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
-    public class FlashOsCommand : MeadowSerialCommand
+    public class FlashOsCommand : MeadowSerialPortCommand
     {
-        private MeadowDeviceInfo deviceInfo;
-
         private const string MINIMUM_OS_VERSION = "0.6.1.0";
 
         public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
             : base(downloadManager, loggerFactory)
-        {
-        }
+        { }
 
         [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
         public string OsFile { get; init; }
@@ -72,19 +69,10 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (string.IsNullOrWhiteSpace(SerialPortName) == false)
             {
-                meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(
-                    SerialPortName,
-                    true,
-                    Logger);
+                meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(SerialPortName, true, Logger);
             }
 
-            if (meadow == null)
-            {
-                meadow = await MeadowSerialPortManager.FindMeadowBySerialNumber(
-                serialNumber,
-                Logger,
-                cancellationToken: cancellationToken);
-            }
+            meadow ??= await MeadowSerialPortManager.FindMeadowBySerialNumber(serialNumber, Logger, cancellationToken: cancellationToken);
 
             Meadow = new MeadowDeviceHelper(meadow, Logger);
 

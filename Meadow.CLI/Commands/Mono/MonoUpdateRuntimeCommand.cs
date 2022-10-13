@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Mono
 {
     [Command("mono update rt", Description = "Uploads the mono runtime to the Meadow device, erases the runtime flash and copies the runtime binary from the file partition to the runtime flash")]
-    public class MonoUpdateRuntimeCommand : MeadowSerialCommand
+    public class MonoUpdateRuntimeCommand : MeadowSerialPortCommand
     {
         [CommandOption("filename",'f', Description = "The local name of the mono runtime file - Default is empty")]
         public string Filename {get; init;}

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Files
 {
     [Command("file delete", Description = "Delete files from the Meadow File System")]
-    public class DeleteFileCommand : MeadowSerialCommand
+    public class DeleteFileCommand : MeadowSerialPortCommand
     {
         [CommandOption(
             "files",

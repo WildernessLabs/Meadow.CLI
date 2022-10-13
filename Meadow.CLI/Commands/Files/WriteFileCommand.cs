@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Files
 {
     [Command("file write", Description = "Write files to the Meadow File System")]
-    public class WritesFileCommand : MeadowSerialCommand
+    public class WritesFileCommand : MeadowSerialPortCommand
     {
         [CommandOption(
             "files",

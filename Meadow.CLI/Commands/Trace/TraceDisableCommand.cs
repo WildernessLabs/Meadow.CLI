@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Trace
 {
     [Command("trace disable", Description = "Disable Trace Logging on the Meadow")]
-    public class TraceDisableCommand : MeadowSerialCommand
+    public class TraceDisableCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<TraceDisableCommand> _logger;
 

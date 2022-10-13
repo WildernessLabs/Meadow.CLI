@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Utility
 {
     [Command("listen", Description = "Listen for console output from Meadow")]
-    public class ListenCommand : MeadowSerialCommand
+    public class ListenCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
 

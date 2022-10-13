@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Storage
 {
     [Command("flash verify", Description = "Verify the contents of the flash were deleted")]
-    public class VerifyFlashCommand : MeadowSerialCommand
+    public class VerifyFlashCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<VerifyFlashCommand> _logger;
 

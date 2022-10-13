@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Qspi
 {
     [Command("qspi write", Description = "Write a QSPI value to the Meadow")]
-    public class QspiWriteCommand : MeadowSerialCommand
+    public class QspiWriteCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<QspiWriteCommand> _logger;
 

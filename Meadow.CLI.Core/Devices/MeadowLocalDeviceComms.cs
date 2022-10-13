@@ -8,7 +8,6 @@ using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
-using Newtonsoft.Json.Schema;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -31,13 +30,13 @@ namespace Meadow.CLI.Core.Devices
             while (fileBufOffset <= fileSize - 1) // equal would mean past the end
             {
                 int numBytesToSend;
-                if (fileBufOffset + MeadowSerialPortManager.MaxAllowableMsgPacketLength > fileSize - 1)
+                if (fileBufOffset + DataProcessor.MaxAllowableMsgPacketLength > fileSize - 1)
                 {
                     numBytesToSend = fileSize - fileBufOffset; // almost done, last packet
                 }
                 else
                 {
-                    numBytesToSend = MeadowSerialPortManager.MaxAllowableMsgPacketLength;
+                    numBytesToSend = DataProcessor.MaxAllowableMsgPacketLength;
                 }
 
                 await BuildAndSendDataPacketRequest(
@@ -147,11 +146,11 @@ namespace Meadow.CLI.Core.Devices
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-            //    var response = await SendCommand(command, cancellationToken);
+                var response = await SendCommand(command, cancellationToken);
 
-            //    ValidateSendCommandAndResponse(command, response);
+                ValidateSendCommandAndResponse(command, response);
 
-            //    await TransferFile(command.FileBytes, command.FileSize, cancellationToken);
+                await TransferFile(command.FileBytes, command.FileSize, cancellationToken);
 
                 // Build and send the correct trailer command - i.e. the command that should follow the file write 
                 var trailerCommand = GetTrailerCommand(command, lastInSeries);
@@ -237,8 +236,7 @@ namespace Meadow.CLI.Core.Devices
                 _packetCrc32 = CrcTools.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
 
                 // Add 2, first to account for start delimiter and second for end
-                byte[] encodedBytes =
-                    new byte[MeadowSerialPortManager.MaxEstimatedSizeOfEncodedPayload + 2];
+                byte[] encodedBytes = new byte[DataProcessor.MaxEstimatedSizeOfEncodedPayload + 2];
 
                 // Skip first byte so it can be a start delimiter
                 int encodedToSend = CobsTools.CobsEncoding(
@@ -253,8 +251,7 @@ namespace Meadow.CLI.Core.Devices
                 {
                     if (encodedBytes[i] == 0x00)
                     {
-                        throw new InvalidProgramException(
-                            "All zeros should have been removed. There's one at offset of {i}");
+                        throw new InvalidProgramException($"All zeros should have been removed. There's one at offset of {i}");
                     }
                 }
 
@@ -266,7 +263,6 @@ namespace Meadow.CLI.Core.Devices
 
                 try
                 {
-
                     using var cts = new CancellationTokenSource(DefaultTimeout);
                     cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
                     var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Files
 {
     [Command("file list", Description = "List files in the on-board filesystem")]
-    public class ListFilesCommand : MeadowSerialCommand
+    public class ListFilesCommand : MeadowSerialPortCommand
     {
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to list the files")]

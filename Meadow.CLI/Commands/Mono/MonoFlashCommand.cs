@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Mono
 {
     [Command("mono flash", Description = "Erases the runtime flash and copies the runtime binary from the file partition to the runtime flash")]
-    public class MonoFlashCommand : MeadowSerialCommand
+    public class MonoFlashCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<MonoRunStateCommand> _logger;
 

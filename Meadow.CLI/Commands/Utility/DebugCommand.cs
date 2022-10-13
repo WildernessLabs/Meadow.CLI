@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Utility
 {
     [Command("debug", Description = "Debug a Meadow Application")]
-    public class DebugCommand : MeadowSerialCommand
+    public class DebugCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
 

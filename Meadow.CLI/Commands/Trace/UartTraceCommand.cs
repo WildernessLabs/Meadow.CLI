@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Trace
 {
     [Command("uart trace", Description = "Configure trace logs to go to UART")]
-    public class UartTraceCommand : MeadowSerialCommand
+    public class UartTraceCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<UartTraceCommand> _logger;
 

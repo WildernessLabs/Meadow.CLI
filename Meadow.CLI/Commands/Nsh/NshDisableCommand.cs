@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Nsh
 {
     [Command("nsh disable", Description = "Disables NSH on the Meadow device")]
-    public class NshDisableCommand : MeadowSerialCommand
+    public class NshDisableCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<NshDisableCommand> _logger;
 

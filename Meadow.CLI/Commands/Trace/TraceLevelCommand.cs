@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Trace
 {
     [Command("trace level", Description = "Enable trace logging on the Meadow")]
-    public class TraceLevelCommand : MeadowSerialCommand
+    public class TraceLevelCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<TraceLevelCommand> _logger;
 

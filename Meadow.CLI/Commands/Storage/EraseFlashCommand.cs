@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.Storage
 {
     [Command("flash erase", Description = "Erase the flash on the Meadow Board")]
-    public class EraseFlashCommand : MeadowSerialCommand
+    public class EraseFlashCommand : MeadowSerialPortCommand
     {
         private readonly ILogger<EraseFlashCommand> _logger;
 
