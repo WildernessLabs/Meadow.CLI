@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Trace
     {
         private readonly ILogger<TraceLevelCommand> _logger;
 
-        public TraceLevelCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public TraceLevelCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<TraceLevelCommand>();
         }

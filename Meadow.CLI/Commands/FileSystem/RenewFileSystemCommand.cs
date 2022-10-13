@@ -10,8 +10,8 @@ namespace Meadow.CLI.Commands.FileSystem
     [Command("fs renew", Description = "Create a File System on the Meadow Board")]
     public class RenewFileSystemCommand : MeadowSerialCommand
     {
-        public RenewFileSystemCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public RenewFileSystemCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
         }
 

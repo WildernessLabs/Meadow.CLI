@@ -14,16 +14,13 @@ namespace Meadow.CLI.Commands
     public abstract class MeadowSerialCommand : MeadowCommand, ICommand, IDisposable
     {
         private protected ILogger Logger;
-        private protected MeadowDeviceManager MeadowDeviceManager;
         private protected MeadowDeviceHelper Meadow;
 
         private protected MeadowSerialCommand(DownloadManager downloadManager,
-                                              ILoggerFactory loggerFactory,
-                                              MeadowDeviceManager meadowDeviceManager)
+                                              ILoggerFactory loggerFactory)
             : base(downloadManager, loggerFactory)
         {
             Logger = loggerFactory.CreateLogger<MeadowSerialCommand>();
-            MeadowDeviceManager = meadowDeviceManager;
         }
 
         [CommandOption("SerialPort", 's', Description = "Meadow COM port")]
@@ -76,7 +73,7 @@ namespace Meadow.CLI.Commands
             }
 
             await base.ExecuteAsync(console);
-            var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(SerialPortName, logger: Logger);
+            var meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(SerialPortName, logger: Logger);
             if (meadow == null)
             {
                 LoggerFactory.CreateLogger<MeadowSerialCommand>().LogCritical("Unable to find Meadow.");

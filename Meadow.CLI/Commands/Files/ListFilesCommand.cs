@@ -22,8 +22,8 @@ namespace Meadow.CLI.Commands.Files
 
         private readonly ILogger<ListFilesCommand> _logger;
 
-        public ListFilesCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public ListFilesCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<ListFilesCommand>();
         }

@@ -16,8 +16,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("osVersion", 'v', Description = "Flash the ESP from a specific downloaded OS version - x.x.x.x")]
         public string OSVersion { get; init; }
 
-        public FlashEspCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public FlashEspCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
         }
 

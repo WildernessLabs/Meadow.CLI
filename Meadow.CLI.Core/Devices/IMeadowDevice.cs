@@ -33,7 +33,7 @@ namespace Meadow.CLI.Core.Devices
         public Task MonoDisable(CancellationToken cancellationToken = default);
         public Task MonoEnable(CancellationToken cancellationToken = default);
         public Task ResetMeadow(CancellationToken cancellationToken = default);
-        public Task MonoFlash(CancellationToken cancellationToken = default);
+        public Task FlashMonoRuntime(CancellationToken cancellationToken = default);
         public Task EnterDfuMode(CancellationToken cancellationToken = default);
         public Task NshEnable(CancellationToken cancellationToken = default);
         public Task NshDisable(CancellationToken cancellationToken = default);

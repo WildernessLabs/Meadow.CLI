@@ -24,7 +24,7 @@ namespace Meadow.CLI.Commands.Utility
         {
             await base.ExecuteAsync(console);
 
-            foreach (var port in await MeadowDeviceManager.GetSerialPorts())
+            foreach (var port in await MeadowSerialPortManager.GetSerialPorts())
             {
                 _logger.LogInformation("Found Meadow: {port}", port);
             }

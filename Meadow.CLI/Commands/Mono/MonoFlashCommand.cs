@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Mono
 {
-    [Command("mono flash", Description = "Uploads the mono runtime file to the Meadow device. Does NOT move it into place")]
+    [Command("mono flash", Description = "Erases the runtime flash and copies the runtime binary from the file partition to the runtime flash")]
     public class MonoFlashCommand : MeadowSerialCommand
     {
         private readonly ILogger<MonoRunStateCommand> _logger;
 
-        public MonoFlashCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public MonoFlashCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<MonoRunStateCommand>();
         }
@@ -24,9 +24,9 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoFlash(cancellationToken);
+            await Meadow.FlashMonoRuntime(cancellationToken);
 
-            _logger.LogInformation($"Mono Flashed Successfully");
+            _logger.LogInformation($"Mono flashed successfully");
         }
     }
 }

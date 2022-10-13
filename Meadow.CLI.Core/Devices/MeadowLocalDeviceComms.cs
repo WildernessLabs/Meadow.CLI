@@ -8,6 +8,7 @@ using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Newtonsoft.Json.Schema;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -16,152 +17,151 @@ namespace Meadow.CLI.Core.Devices
         uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
 
-        public async Task SendTheEntireFile(FileCommand command,
+        async Task TransferFile(byte[]? fileData, int fileSize, CancellationToken cancellationToken)
+        {
+            if (fileData == null)
+            {
+                throw new Exception("No file data present while attempting to write file");
+            }
+
+            var fileBufOffset = 0;
+            ushort sequenceNumber = 1;
+
+            Logger.LogInformation("Starting File Transfer...");
+            while (fileBufOffset <= fileSize - 1) // equal would mean past the end
+            {
+                int numBytesToSend;
+                if (fileBufOffset + MeadowSerialPortManager.MaxAllowableMsgPacketLength > fileSize - 1)
+                {
+                    numBytesToSend = fileSize - fileBufOffset; // almost done, last packet
+                }
+                else
+                {
+                    numBytesToSend = MeadowSerialPortManager.MaxAllowableMsgPacketLength;
+                }
+
+                await BuildAndSendDataPacketRequest(
+                        fileData,
+                        fileBufOffset,
+                        numBytesToSend,
+                        sequenceNumber,
+                        cancellationToken);
+
+                fileBufOffset += numBytesToSend;
+
+                sequenceNumber++;
+            }
+
+            // bufferOffset should point to the byte after the last byte
+            Debug.Assert(fileBufOffset == fileSize);
+
+            Logger.LogTrace(
+                "Total bytes sent {count} in {packetCount} packets. PacketCRC:{_crc}",
+                fileBufOffset,
+                sequenceNumber,
+                $"{_packetCrc32:x08}");
+
+            Logger.LogInformation("Transfer Complete, wrote {count} bytes to Meadow", fileBufOffset);
+        }
+
+        /// <summary>
+        /// Method to get the correct "trailer" or following command after sending a files 
+        /// </summary>
+        /// <param name="command">The command used to send the file</param>
+        /// <param name="lastInSeries">Is this the final file if multiple files are being sent together</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        Command GetTrailerCommand(FileCommand command, bool lastInSeries)
+        {
+            //--------------------------------------------------------------
+            // Build and send the correct trailer
+            // TODO: Move this into the Command object
+            return command.RequestType switch
+            {
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER =>
+                    new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER)
+                        .WithUserData(lastInSeries ? 1U : 0U)
+                        .Build(),
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME =>
+                    new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
+                        .WithUserData(lastInSeries ? 1U : 0U)
+                        .WithTimeout(TimeSpan.FromSeconds(60))
+                        .Build(),
+                HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
+                    new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
+                        .WithUserData(lastInSeries ? 1U : 0U)
+                        .Build(),
+                _ => throw new ArgumentOutOfRangeException(nameof(command.RequestType), "Cannot build trailer for unknown command")
+            };
+        }
+
+        /// <summary>
+        /// Validate the send command and response when sending a file to Meadow
+        /// This should really be split up across distinct methods .. but one step at a time
+        /// </summary>
+        /// <exception cref="MeadowCommandException"></exception>
+        void ValidateSendCommandAndResponse(Command command, CommandResponse response)
+        {
+            if (response.MessageType == MeadowMessageType.DownloadStartFail)
+            {
+                throw new MeadowCommandException(command, $"Meadow rejected download request with {response.Message}", response);
+            }
+
+            switch (command.RequestType)
+            {
+                // if it's an ESP start file transfer and the download started ok.
+                case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType == MeadowMessageType.DownloadStartOkay:
+                    Logger.LogDebug("ESP32 download request accepted");
+                    break;
+                // if it's an ESP file transfer start and it failed to start
+                case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType == MeadowMessageType.DownloadStartFail:
+                    Logger.LogDebug("ESP32 download request rejected");
+                    throw new MeadowCommandException(command,
+                                                     "Halting download due to an error while preparing Meadow for download",
+                                                     response);
+                case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
+                        when response.MessageType != MeadowMessageType.DownloadStartOkay:
+                    throw response.MessageType switch
+                    {
+                        MeadowMessageType.DownloadStartFail => new MeadowCommandException(command,
+                            "Halting download due to an error while preparing Meadow for download",
+                            response),
+                        MeadowMessageType.Concluded => new MeadowCommandException(command,
+                            "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely",
+                            response),
+                        _ => new MeadowCommandException(command,
+                                                        $"Halting download due to an unexpected Meadow message type {response.MessageType} received",
+                                                        response)
+                    };
+            }
+        }
+
+        public async Task SendFileAndTrailerCommand(FileCommand command,
                                             bool lastInSeries,
                                             CancellationToken cancellationToken)
         {
             _packetCrc32 = 0;
-            _lastProgress = 0;
 
             Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-                var response = await SendCommand(command, cancellationToken);
+            //    var response = await SendCommand(command, cancellationToken);
 
-                string responseMessage = string.Empty;
-                if (response.MessageType == MeadowMessageType.DownloadStartFail)
-                {
-                    if (response.Message != null)
-                        responseMessage = response.Message;
-                    throw new MeadowCommandException(command,
-                        "Meadow rejected download request with " + responseMessage, response);
-                }
+            //    ValidateSendCommandAndResponse(command, response);
 
-                switch (command.RequestType)
-                {
-                    // if it's an ESP start file transfer and the download started ok.
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
-                        when response.MessageType == MeadowMessageType.DownloadStartOkay:
-                        Logger.LogDebug("ESP32 download request accepted");
-                        break;
-                    // if it's an ESP file transfer start and it failed to start
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
-                        when response.MessageType == MeadowMessageType.DownloadStartFail:
-                        Logger.LogDebug("ESP32 download request rejected");
-                        throw new MeadowCommandException(command,
-                                                         "Halting download due to an error while preparing Meadow for download",
-                                                         response);
-                    case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
-                        when response.MessageType != MeadowMessageType.DownloadStartOkay:
-                        throw response.MessageType switch
-                        {
-                            MeadowMessageType.DownloadStartFail => new MeadowCommandException(command,
-                                "Halting download due to an error while preparing Meadow for download",
-                                response),
-                            MeadowMessageType.Concluded => new MeadowCommandException(command,
-                                "Halting download due to an unexpectedly Meadow 'Concluded' received prematurely",
-                                response),
-                            _ => new MeadowCommandException(command,
-                                                            $"Halting download due to an unexpected Meadow message type {response.MessageType} received",
-                                                            response)
-                        };
-                }
+            //    await TransferFile(command.FileBytes, command.FileSize, cancellationToken);
 
-                var fileBufOffset = 0;
-                ushort sequenceNumber = 1;
-
-                Logger.LogInformation("Starting File Transfer...");
-                while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
-                {
-                    int numBytesToSend;
-                    if (fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength
-                      > command.FileSize - 1)
-                    {
-                        numBytesToSend =
-                            command.FileSize - fileBufOffset; // almost done, last packet
-                    }
-                    else
-                    {
-                        numBytesToSend = MeadowDeviceManager.MaxAllowableMsgPacketLength;
-                    }
-
-                    if (command.FileBytes == null)
-                    {
-                        throw new MeadowCommandException(command, "File bytes are missing for file command");
-                    }
-
-                    await BuildAndSendDataPacketRequest(
-                            command.FileBytes,
-                            fileBufOffset,
-                            numBytesToSend,
-                            sequenceNumber,
-                            cancellationToken);
-
-                    var progress = (decimal)fileBufOffset / command.FileSize;
-                    WriteProgress(progress);
-
-                    fileBufOffset += numBytesToSend;
-
-                    sequenceNumber++;
-                }
-
-                // echo the device responses
-                //await Task.Delay(250, cancellationToken); // if we're too fast, we'll finish and the device will still echo a little
-
-                //--------------------------------------------------------------
-                // Build and send the correct trailer
-                // TODO: Move this into the Command object
-                var trailerCommand = command.RequestType switch
-                {
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER =>
-                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER)
-                            .WithUserData(lastInSeries ? 1U : 0U)
-                            .Build(),
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME =>
-                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END)
-                            .WithUserData(lastInSeries ? 1U : 0U)
-                            .WithTimeout(TimeSpan.FromSeconds(60))
-                            .Build(),
-                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
-                        new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
-                            .WithUserData(lastInSeries ? 1U : 0U)
-                            .Build(),
-                    _ => throw new ArgumentOutOfRangeException(
-                             nameof(command.RequestType),
-                             "Cannot build trailer for unknown command")
-                };
-
+                // Build and send the correct trailer command - i.e. the command that should follow the file write 
+                var trailerCommand = GetTrailerCommand(command, lastInSeries);
                 await SendCommand(trailerCommand, cancellationToken);
-
-
-                // bufferOffset should point to the byte after the last byte
-                Debug.Assert(fileBufOffset == command.FileSize);
-                Logger.LogTrace(
-                    "Total bytes sent {count} in {packetCount} packets. PacketCRC:{_crc}",
-                    fileBufOffset,
-                    sequenceNumber,
-                    $"{_packetCrc32:x08}");
-
-                Logger.LogInformation(
-                    "Transfer Complete, wrote {count} bytes to Meadow",
-                    fileBufOffset);
             }
             catch (Exception except)
             {
                 Logger.LogError(except, "Exception sending command to Meadow");
                 throw;
             }
-        }
-
-        private int _lastProgress = 0;
-
-        private void WriteProgress(decimal i)
-        {
-            //var intProgress = Convert.ToInt32(i * 100);
-            //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
-
-            //Logger.LogInformation("Operation Progress: {progress:P0}", i);
-            //_lastProgress = intProgress;
         }
 
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
@@ -225,7 +225,6 @@ namespace Meadow.CLI.Core.Devices
                 _comPortSemaphore.Release();
             }
         }
-
         
         private async Task EncodeAndSendPacket(byte[] messageBytes,
                                                int messageOffset,
@@ -239,7 +238,7 @@ namespace Meadow.CLI.Core.Devices
 
                 // Add 2, first to account for start delimiter and second for end
                 byte[] encodedBytes =
-                    new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload + 2];
+                    new byte[MeadowSerialPortManager.MaxEstimatedSizeOfEncodedPayload + 2];
 
                 // Skip first byte so it can be a start delimiter
                 int encodedToSend = CobsTools.CobsEncoding(
@@ -385,7 +384,7 @@ namespace Meadow.CLI.Core.Devices
             if (result)
             {
                 Logger.LogTrace(
-                    "Returning to {caller} with {message}",
+                    $"Returning to {caller} with {message}",
                     caller,
                     string.IsNullOrWhiteSpace(message) ? "[empty]" : message);
 

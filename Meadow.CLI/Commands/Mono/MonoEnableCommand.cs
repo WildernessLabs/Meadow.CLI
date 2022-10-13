@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Mono
     {
         private readonly ILogger<MonoEnableCommand> _logger;
         
-        public MonoEnableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public MonoEnableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<MonoEnableCommand>();
         }

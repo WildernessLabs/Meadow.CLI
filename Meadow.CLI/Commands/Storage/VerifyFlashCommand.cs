@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Storage
     {
         private readonly ILogger<VerifyFlashCommand> _logger;
 
-        public VerifyFlashCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public VerifyFlashCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<VerifyFlashCommand>();
         }

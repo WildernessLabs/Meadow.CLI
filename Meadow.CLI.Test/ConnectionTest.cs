@@ -24,7 +24,7 @@ namespace Meadow.CLI.Test
         public async Task FlashOsTest()
         {
             var cts = new CancellationTokenSource();
-            var deviceManager = new MeadowDeviceManager();
+            var deviceManager = new MeadowSerialPortManager();
             //await deviceManager.FlashOs(port, string.Empty, string.Empty, cancellationToken: cts.Token);
         }
 
@@ -32,7 +32,7 @@ namespace Meadow.CLI.Test
         public async Task MonoDisableTest()
         {
             var cts = new CancellationTokenSource();
-            using var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance);
+            using var meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance);
             Assert.IsNotNull(meadow, "Initial connection");
             
             await meadow.MonoDisable(cts.Token);
@@ -44,7 +44,7 @@ namespace Meadow.CLI.Test
         public async Task MonoEnableTest()
         {
             var cts = new CancellationTokenSource();
-            using var meadow = await MeadowDeviceManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance);
+            using var meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(port, logger: NullLogger.Instance);
             Assert.IsNotNull(meadow, "Initial connection");
             
             await meadow.MonoEnable(cts.Token);

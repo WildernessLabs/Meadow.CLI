@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Utility
     {
         private readonly ILogger<InstallDfuUtilCommand> _logger;
 
-        public DebugCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public DebugCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<InstallDfuUtilCommand>();
         }

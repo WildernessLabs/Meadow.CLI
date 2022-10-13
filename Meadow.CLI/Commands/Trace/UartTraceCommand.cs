@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Trace
     {
         private readonly ILogger<UartTraceCommand> _logger;
 
-        public UartTraceCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public UartTraceCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<UartTraceCommand>();
         }

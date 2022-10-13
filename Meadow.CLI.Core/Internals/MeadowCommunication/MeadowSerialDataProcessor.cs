@@ -74,7 +74,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         // All received data handled here
         private async Task ReadSocket()
         {
-            byte[] buffer = new byte[MeadowDeviceManager.MaxEstimatedSizeOfEncodedPayload];
+            byte[] buffer = new byte[MeadowSerialPortManager.MaxEstimatedSizeOfEncodedPayload];
 
             try
             {
@@ -214,7 +214,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         private bool DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
         {
-            var decodedBuffer = ArrayPool<byte>.Shared.Rent(MeadowDeviceManager.MaxAllowableMsgPacketLength);
+            var decodedBuffer = ArrayPool<byte>.Shared.Rent(MeadowSerialPortManager.MaxAllowableMsgPacketLength);
             var packetLength = packetBuffer.Length;
             // It's possible that we may find a series of 0x00 values in the buffer.
             // This is because when the sender is blocked (because this code isn't
@@ -231,10 +231,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             var decodedSize = CobsTools.CobsDecoding(packetBuffer, ref decodedBuffer);
 
             // If a message is too short it is ignored
-            if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
+            if (decodedSize < MeadowSerialPortManager.ProtocolHeaderSize)
                 return false;
 
-            Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
+            Debug.Assert(decodedSize <= MeadowSerialPortManager.MaxAllowableMsgPacketLength);
 
             // Process the received packet
             ParseAndProcessReceivedPacket(decodedBuffer.AsSpan(0, decodedSize).ToArray(),

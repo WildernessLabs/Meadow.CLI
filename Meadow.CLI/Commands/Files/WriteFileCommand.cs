@@ -34,8 +34,8 @@ namespace Meadow.CLI.Commands.Files
 
         private readonly ILogger<WritesFileCommand> _logger;
 
-        public WritesFileCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public WritesFileCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<WritesFileCommand>();
         }

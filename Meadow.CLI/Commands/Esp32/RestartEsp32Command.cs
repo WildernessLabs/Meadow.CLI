@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Esp32
     {
         private readonly ILogger<WriteEsp32FileCommand> _logger;
 
-        public RestartEsp32Command(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public RestartEsp32Command(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<WriteEsp32FileCommand>();
         }

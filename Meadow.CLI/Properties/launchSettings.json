@@ -1,8 +1,44 @@
 {
   "profiles": {
+    "DeleteFile": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete -all"
+    },
+    "DeployApp": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\Blinky\\BlinkyFs\\bin\\Debug\\netstandard2.1\\App.exe -s COM13"
+    },
     "Download": {
       "commandName": "Project",
       "commandLineArgs": "download os -v 0.6.7.19 -f"
+    },
+    "EraseFlash": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erash"
+    },
+    "FlashEsp": {
+      "commandName": "Project",
+      "commandLineArgs": "flash esp"
+    },
+    "FlashOS": {
+      "commandName": "Project",
+      "commandLineArgs": "flash os -v 0.6.7.18 -s COM4 --skipdfu"
+    },
+    "GetDeviceInfo": {
+      "commandName": "Project",
+      "commandLineArgs": "device info"
+    },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "-h"
+    },
+    "ListFiles": {
+      "commandName": "Project",
+      "commandLineArgs": "file list -i"
+    },
+    "ListPorts": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
     },
     "Login": {
       "commandName": "Project",
@@ -12,49 +48,29 @@
       "commandName": "Project",
       "commandLineArgs": "cloud logout"
     },
-    "StartDebugging": {
-      "commandName": "Project",
-      "commandLineArgs": "debug"
-    },
-    "FlashOS": {
-      "commandName": "Project",
-      "commandLineArgs": "flash os -v 0.6.7.18 -s COM4 --skipdfu"
-    },
-    "EraseFlash": {
-      "commandName": "Project",
-      "commandLineArgs": "flash erash"
-    },
-    "MonoUpdateRt": {
-      "commandName": "Project",
-      "commandLineArgs": "mono update rt -v 0.6.7.18 -s COM3"
-    },
-    "FlashEsp": {
-      "commandName": "Project",
-      "commandLineArgs": "flash esp"
-    },
     "MonoDisable": {
       "commandName": "Project",
       "commandLineArgs": "mono disable"
     },
     "MonoEnable": {
       "commandName": "Project",
-      "commandLineArgs": "mono enable"
+      "commandLineArgs": "mono enable -s COM13"
     },
-    "GetDeviceInfo": {
+    "MonoFlash": {
       "commandName": "Project",
-      "commandLineArgs": "device info"
+      "commandLineArgs": "mono flash -s COM13"
     },
-    "ListFiles": {
+    "MonoUpdateRt": {
       "commandName": "Project",
-      "commandLineArgs": "file list -i"
+      "commandLineArgs": "mono update rt -v 0.6.7.46 -s COM13"
     },
-    "DeployApp": {
+    "StartDebugging": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\Blinky\\BlinkyFs\\bin\\Debug\\netstandard2.1\\App.exe -s COM13"
+      "commandLineArgs": "debug"
     },
-    "DeleteFile": {
+    "Version": {
       "commandName": "Project",
-      "commandLineArgs": "file delete -all"
+      "commandLineArgs": "version"
     },
     "WriteFile": {
       "commandName": "Project",
@@ -67,18 +83,6 @@
     "RegisterDevice": {
       "commandName": "Project",
       "commandLineArgs": "--RegisterDevice -s COM12"
-    },
-    "Version": {
-      "commandName": "Project",
-      "commandLineArgs": "version"
-    },
-    "Help": {
-      "commandName": "Project",
-      "commandLineArgs": "-h"
-    },
-    "ListPorts": {
-      "commandName": "Project",
-      "commandLineArgs": "list ports"
     },
     "UsePort": {
       "commandName": "Project",

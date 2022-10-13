@@ -15,8 +15,8 @@ namespace Meadow.CLI.Commands.Qspi
         [CommandOption("value",'v', Description = "The QSPI Value to write", IsRequired = true)]
         public int Value {get; init;}
 
-        public QspiWriteCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public QspiWriteCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<QspiWriteCommand>();
         }

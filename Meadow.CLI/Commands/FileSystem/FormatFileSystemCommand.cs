@@ -20,7 +20,7 @@ namespace Meadow.CLI.Commands.FileSystem
         private readonly ILogger<FormatFileSystemCommand> _logger;
 
         public FormatFileSystemCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<FormatFileSystemCommand>();
         }

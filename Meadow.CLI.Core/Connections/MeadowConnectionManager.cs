@@ -43,7 +43,7 @@ namespace Meadow.CLI.Core
         {
             while (true)
             {
-                var allPorts = await MeadowDeviceManager.GetSerialPorts();
+                var allPorts = await MeadowSerialPortManager.GetSerialPorts();
 
                 var added = allPorts.Except(_connections.Keys);
                 var removed = _connections.Keys.Except(allPorts);

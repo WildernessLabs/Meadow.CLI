@@ -16,8 +16,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         private const string MINIMUM_OS_VERSION = "0.6.1.0";
 
-        public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
         }
 
@@ -72,7 +72,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (string.IsNullOrWhiteSpace(SerialPortName) == false)
             {
-                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(
+                meadow = await MeadowSerialPortManager.GetMeadowForSerialPort(
                     SerialPortName,
                     true,
                     Logger);
@@ -80,7 +80,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (meadow == null)
             {
-                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                meadow = await MeadowSerialPortManager.FindMeadowBySerialNumber(
                 serialNumber,
                 Logger,
                 cancellationToken: cancellationToken);
@@ -126,7 +126,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                     await Task.Delay(2000);
 
-                    var device = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                    var device = await MeadowSerialPortManager.FindMeadowBySerialNumber(
                             serialNumber,
                             Logger,
                             cancellationToken: cancellationToken);

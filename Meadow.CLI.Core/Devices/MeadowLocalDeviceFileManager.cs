@@ -146,7 +146,7 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var sw = Stopwatch.StartNew();
-            await SendTheEntireFile(command, true, cancellationToken);
+            await SendFileAndTrailerCommand(command, true, cancellationToken);
 
             sw.Stop();
             return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
@@ -267,15 +267,14 @@ namespace Meadow.CLI.Core.Devices
             var targetFileName = Path.GetFileName(sourceFilename);
 
             Logger.LogDebug("Sending Mono Update Runtime Request");
-            var command =
-                new FileCommandBuilder(
+            var command = new FileCommandBuilder(
                           HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME)
                           .WithPartition(partition)
                           .WithDestinationFileName(targetFileName)
                           .WithSourceFileName(sourceFilename)
                           .Build();
 
-            await SendTheEntireFile(command, true, cancellationToken);
+            await SendFileAndTrailerCommand(command, true, cancellationToken);
         }
 
         public async Task WriteFileToEspFlash(string fileName,
@@ -315,7 +314,7 @@ namespace Meadow.CLI.Core.Devices
                               .WithSourceFileName(fileName)
                               .Build();
 
-                await SendTheEntireFile(command, true, cancellationToken);
+                await SendFileAndTrailerCommand(command, true, cancellationToken);
             }
             else
             {
@@ -373,7 +372,7 @@ namespace Meadow.CLI.Core.Devices
                                   .WithSourceFileName(fileElement[i + 1])
                                   .Build();
 
-                    await SendTheEntireFile(command, lastFile, cancellationToken);
+                    await SendFileAndTrailerCommand(command, lastFile, cancellationToken);
                 }
             }
         }

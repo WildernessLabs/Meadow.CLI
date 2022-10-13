@@ -131,7 +131,7 @@ namespace Meadow.CLI.Core.Devices
             await SendCommand(command, cancellationToken);
         }
 
-        public Task MonoFlash(CancellationToken cancellationToken = default)
+        public Task FlashMonoRuntime(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH)

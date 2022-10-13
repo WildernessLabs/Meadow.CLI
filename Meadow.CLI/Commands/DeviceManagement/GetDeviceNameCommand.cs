@@ -13,8 +13,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
     {
         private readonly ILogger<GetDeviceNameCommand> _logger;
 
-        public GetDeviceNameCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public GetDeviceNameCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<GetDeviceNameCommand>();
         }

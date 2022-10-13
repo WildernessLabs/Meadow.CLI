@@ -13,8 +13,8 @@ namespace Meadow.CLI.Commands.Trace
     {
         private readonly ILogger<SetDeveloperValueCommand> _logger;
 
-        public SetDeveloperValueCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public SetDeveloperValueCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<SetDeveloperValueCommand>();
         }

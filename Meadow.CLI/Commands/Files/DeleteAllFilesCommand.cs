@@ -22,8 +22,8 @@ namespace Meadow.CLI.Commands.Files
 
         private readonly ILogger<DeleteFileCommand> _logger;
 
-        public DeleteAllFilesCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public DeleteAllFilesCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<DeleteFileCommand>();
         }

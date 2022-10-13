@@ -12,8 +12,8 @@ namespace Meadow.CLI.Commands.Nsh
     {
         private readonly ILogger<NshEnableCommand> _logger;
         
-        public NshEnableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
-            : base(downloadManager, loggerFactory, meadowDeviceManager)
+        public NshEnableCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory)
+            : base(downloadManager, loggerFactory)
         {
             _logger = LoggerFactory.CreateLogger<NshEnableCommand>();
         }
