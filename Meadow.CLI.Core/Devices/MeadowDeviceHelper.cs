@@ -70,13 +70,7 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task WriteFileToEspFlash(string fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default)
-        {
-            return MeadowDevice.WriteFileToEspFlash(
-                fileName,
-                partition,
-                mcuDestAddress,
-                cancellationToken);
-        }
+            => MeadowDevice.WriteFileToEspFlash(fileName, partition, mcuDestAddress, cancellationToken);
 
         public Task FlashEsp(string? sourcePath = null, string? osVersion = null, CancellationToken cancellationToken = default)
             => MeadowDevice.FlashEsp(sourcePath, osVersion, cancellationToken);
@@ -92,19 +86,16 @@ namespace Meadow.CLI.Core.Devices
             => MeadowDevice.GetDeviceInfo(timeout, cancellationToken);
 
         public Task<string?> GetDeviceName(TimeSpan timeout, CancellationToken cancellationToken = default)
-        {
-            return MeadowDevice.GetDeviceName(timeout, cancellationToken);
-        }
+            => MeadowDevice.GetDeviceName(timeout, cancellationToken);
 
         public Task<bool> GetMonoRunState(CancellationToken cancellationToken = default)
-        {
-            return MeadowDevice.GetMonoRunState(cancellationToken);
-        }
+            => MeadowDevice.GetMonoRunState(cancellationToken);
 
         public async Task MonoDisable(bool force = false, CancellationToken cancellationToken = default)
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
             bool monoRunState;
+
             while ((monoRunState = await GetMonoRunState(cancellationToken) || force)
                 && endTime > DateTime.UtcNow)
             {
@@ -129,6 +120,7 @@ namespace Meadow.CLI.Core.Devices
         {
             var endTime = DateTime.UtcNow.Add(TimeSpan.FromSeconds(60));
             bool monoRunState;
+
             while ((monoRunState = await GetMonoRunState(cancellationToken)) == false || force
                 && endTime > DateTime.UtcNow)
             {
@@ -144,7 +136,9 @@ namespace Meadow.CLI.Core.Devices
             }
 
             if (!monoRunState)
+            {
                 throw new Exception("Failed to enable mono.");
+            }
         }
 
         public async Task ResetMeadow(CancellationToken cancellationToken = default)
@@ -156,17 +150,23 @@ namespace Meadow.CLI.Core.Devices
 
         public Task FlashMonoRuntime(CancellationToken cancellationToken = default) => MeadowDevice.FlashMonoRuntime(cancellationToken);
 
-        public Task EnterDfuMode(CancellationToken cancellationToken = default) =>MeadowDevice.EnterDfuMode(cancellationToken);
+        public Task EnterDfuMode(CancellationToken cancellationToken = default) 
+            => MeadowDevice.EnterDfuMode(cancellationToken);
 
-        public Task NshEnable(CancellationToken cancellationToken = default) =>MeadowDevice.NshEnable(cancellationToken);
+        public Task NshEnable(CancellationToken cancellationToken = default) 
+            => MeadowDevice.NshEnable(cancellationToken);
 
-        public Task NshDisable(CancellationToken cancellationToken = default) => MeadowDevice.NshDisable(cancellationToken);
+        public Task NshDisable(CancellationToken cancellationToken = default) 
+            => MeadowDevice.NshDisable(cancellationToken);
 
-        public Task TraceEnable(CancellationToken cancellationToken = default) => MeadowDevice.TraceEnable(cancellationToken);
+        public Task TraceEnable(CancellationToken cancellationToken = default) 
+            => MeadowDevice.TraceEnable(cancellationToken);
 
-        public Task SetTraceLevel(uint traceLevel, CancellationToken cancellationToken = default) =>MeadowDevice.SetTraceLevel(traceLevel, cancellationToken);
+        public Task SetTraceLevel(uint traceLevel, CancellationToken cancellationToken = default) 
+            => MeadowDevice.SetTraceLevel(traceLevel, cancellationToken);
 
-        public Task TraceDisable(CancellationToken cancellationToken = default) => MeadowDevice.TraceDisable(cancellationToken);
+        public Task TraceDisable(CancellationToken cancellationToken = default) 
+            => MeadowDevice.TraceDisable(cancellationToken);
 
         public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
             => MeadowDevice.SetDeveloper1(userData, cancellationToken);
@@ -185,7 +185,7 @@ namespace Meadow.CLI.Core.Devices
 
         public Task Uart1Trace(CancellationToken cancellationToken = default)
             => MeadowDevice.Uart1Trace(cancellationToken);
-
+        
         public Task QspiWrite(int value, CancellationToken cancellationToken = default)
             => MeadowDevice.QspiWrite(value, cancellationToken);
 
@@ -209,12 +209,7 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
-        {
-            return MeadowDevice.ForwardVisualStudioDataToMono(
-                debuggerData,
-                userData,
-                cancellationToken);
-        }
+            => MeadowDevice.ForwardVisualStudioDataToMono(debuggerData, userData, cancellationToken);
 
         /// <summary>
         /// Start a session to debug an application on the Meadow
@@ -237,7 +232,9 @@ namespace Meadow.CLI.Core.Devices
             await ReInitializeMeadow(cancellationToken);
 
             if (MeadowDevice == null)
+            {
                 throw new DeviceNotFoundException();
+            }
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
             var debuggingServer = new DebuggingServer(MeadowDevice, endpoint, Logger);
@@ -248,9 +245,7 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default)
-        {
-            return MeadowDevice.GetInitialBytesFromFile(fileName, partition, cancellationToken);
-        }
+            => MeadowDevice.GetInitialBytesFromFile(fileName, partition, cancellationToken);
 
         public Task RestartEsp32(CancellationToken cancellationToken = default)
             => MeadowDevice.RestartEsp32(cancellationToken);
@@ -399,9 +394,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 catch (Exception ex)
                 {
-                    logger.LogDebug(
-                        "An exception occurred while switching device to DFU Mode. Exception: {0}",
-                        ex);
+                    logger.LogDebug("An exception occurred while switching device to DFU Mode. Exception: {0}", ex);
                 }
 
                 switch (dfuAttempts)
@@ -409,13 +402,11 @@ namespace Meadow.CLI.Core.Devices
                     case 5:
                         logger.LogInformation(
                             "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
-
                         Console.ReadKey();
                         break;
                     case 10:
                         logger.LogInformation(
                             "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
-
                         Console.ReadKey();
                         break;
                     case > 15:

@@ -25,20 +25,18 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public abstract Task Write(byte[] encodedBytes,
-                                        int encodedToSend,
-                                        CancellationToken cancellationToken = default);
+                                   int encodedToSend,
+                                   CancellationToken cancellationToken = default);
 
         public async Task<MeadowDeviceInfo?> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             DeviceInfo = null;
 
-            var command = new SimpleCommandBuilder(
-                              HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_DEVICE_INFORMATION)
                           .WithTimeout(timeout)
                           .WithResponseType(MeadowMessageType.DeviceInfo)
                           .WithCompletionResponseType(MeadowMessageType.Concluded)
                           .Build();
-
 
             try
             {
@@ -49,7 +47,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (commandResponse.IsSuccess)
                 {
-                    if (commandResponse.Message == String.Empty)
+                    if (commandResponse.Message == string.Empty)
                     { // TODO: this feels like a bug lower down or in HCOM, but I can reproduce it regularly (3 Oct 2022)
                         if (--retryCount >= 0)
                         {
@@ -75,20 +73,18 @@ namespace Meadow.CLI.Core.Devices
         {
             var info = await GetDeviceInfo(timeout, cancellationToken);
 
-            return info?.Product ?? String.Empty;
+            return info?.Product ?? string.Empty;
         }
 
         public async Task<bool> GetMonoRunState(CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Sending Mono Run State Request");
 
-            var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_RUN_STATE)
                     .WithResponseType(MeadowMessageType.Data)
                     .Build();
 
-            var commandResponse =
-                await SendCommand(command, cancellationToken);
+            var commandResponse = await SendCommand(command, cancellationToken);
 
             var result = false;
             switch (commandResponse.Message)
