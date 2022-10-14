@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.Devices
 {
-    public class MeadowSerialDevice : MeadowLocalDevice
+    internal class MeadowSerialDevice : MeadowLocalDevice
     {
-        private readonly string _serialPortName;
+        private readonly string serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
         public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
@@ -23,7 +23,7 @@ namespace Meadow.CLI.Core.Devices
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
         {
             SerialPort = serialPort;
-            _serialPortName = serialPortName;
+            this.serialPortName = serialPortName;
         }
 
         public override bool IsDeviceInitialized()
@@ -56,6 +56,7 @@ namespace Meadow.CLI.Core.Devices
             var initTimeout = TimeSpan.FromSeconds(60);
             var now = DateTime.UtcNow;
             var then = now.Add(initTimeout);
+
             while (DateTime.UtcNow < then)
             {
                 try
@@ -81,8 +82,7 @@ namespace Meadow.CLI.Core.Devices
                 catch (DeviceDisconnectedException ddEx)
                 {
                     // eat it
-                    Logger.LogTrace(ddEx,
-                                    "Caught exception while waiting for device to be ready. Retrying.");
+                    Logger.LogTrace(ddEx, "Caught exception while waiting for device to be ready. Retrying.");
                 }
                 catch (Exception ex)
                 {
@@ -118,7 +118,9 @@ namespace Meadow.CLI.Core.Devices
             };
 
             if (port.IsOpen)
+            {
                 port.Close();
+            }
 
             int retries = 15;
 
