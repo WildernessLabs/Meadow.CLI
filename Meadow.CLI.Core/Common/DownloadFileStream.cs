@@ -23,7 +23,11 @@ namespace Meadow.CLI.Core.Common
         public override bool CanSeek => false;
         public override bool CanWrite => false;
         public override long Length => _stream.Length;
-        public override long Position { get => _position;  set => throw new NotImplementedException(); }
+        public override long Position 
+        { 
+            get => _position;  
+            set => throw new NotImplementedException(); 
+        }
 
         public override void Flush()
         {

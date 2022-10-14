@@ -32,23 +32,28 @@ namespace Meadow.CLI.Core.DeviceManagement
             Directory.CreateDirectory (prelink_dir);
             File.Copy (Path.Combine (path, file), prelink_app, overwrite: true);
 
-            foreach (var dependency in dependencies) {
+            foreach (var dependency in dependencies)
+            {
                 File.Copy (dependency,
                             Path.Combine (prelink_dir, Path.GetFileName (dependency)),
                             overwrite: true);
 
-                if (includePdbs) {
+                if (includePdbs) 
+                {
                     var pdbFile = Path.ChangeExtension (dependency, "pdb");
-                    if (File.Exists (pdbFile))
-                        File.Copy (pdbFile,
-                            Path.Combine (prelink_dir, Path.GetFileName (pdbFile)),
+                    if (File.Exists(pdbFile))
+                    {
+                        File.Copy(pdbFile,
+                            Path.Combine(prelink_dir, Path.GetFileName(pdbFile)),
                             overwrite: true);
+                    }
                 }
             }
 
             var postlink_dir = Path.Combine (path, "postlink_bin");
 
-            if (Directory.Exists (postlink_dir)) {
+            if (Directory.Exists (postlink_dir)) 
+            {
                 Directory.Delete (postlink_dir, recursive: true);
             }
             Directory.CreateDirectory (postlink_dir);

@@ -135,9 +135,8 @@ namespace Meadow.CLI.Core.Devices
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_FLASH)
-                    .WithCompletionFilter(
-                        e => e.Message.StartsWith("Mono runtime successfully flashed."))
-                    .WithTimeout(TimeSpan.FromMinutes(5))
+                    .WithCompletionFilter(e => e.Message.StartsWith("Mono runtime successfully flashed."))
+                    .WithTimeout(TimeSpan.FromSeconds(60))
                     .Build();
 
             return SendCommand(command, cancellationToken);

@@ -14,7 +14,7 @@ namespace Meadow.CLI.Core.Devices
     public partial class MeadowLocalDevice
     {
         uint _packetCrc32;
-        private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _comPortSemaphore = new(1, 1);
 
         async Task TransferFile(byte[]? fileData, int fileSize, CancellationToken cancellationToken)
         {
@@ -337,6 +337,7 @@ namespace Meadow.CLI.Core.Devices
             }
 
             Logger.LogTrace("Attaching response handler(s)");
+
             Debug.Assert(DataProcessor != null);
             if (command.ResponseHandler != null)
             {
@@ -359,7 +360,9 @@ namespace Meadow.CLI.Core.Devices
                 timeoutCancellationTokenSource.Token.Register(() => tcs.TrySetCanceled());
                 await tcs.Task;
                 if (cts.IsCancellationRequested)
+                {
                     throw new TimeoutException("Timeout while waiting for meadow");
+                }
             }
             catch (TaskCanceledException e)
             {
@@ -371,6 +374,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 Logger.LogTrace("Removing handlers");
                 DataProcessor.OnReceiveData -= ResponseHandler;
+
                 if (command.ResponseHandler != null)
                 {
                     DataProcessor.OnReceiveData -= command.ResponseHandler;

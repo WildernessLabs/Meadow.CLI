@@ -306,6 +306,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             string result = string.Empty;
             var start = source.IndexOf(key, StringComparison.Ordinal) + key.Length;
+
             if (start >= 0)
             {
                 var end = source.IndexOf(',', start);
@@ -315,7 +316,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 }
                 result = source.Substring(start, end - start);
             }
-            return (result);
+            return result;
         }
     }
 }

@@ -80,8 +80,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 return null;
             }
             catch (Exception ex)
-            {
-                // TODO: Remove exception catch here and let the caller handle it or wrap it up in our own exception type.
+            {   // TODO: Remove exception catch here and let the caller handle it or wrap it up in our own exception type.
                 logger.LogError(ex, "Failed to connect to Meadow on {serialPort}", serialPort);
                 throw;
             }
@@ -90,8 +89,7 @@ namespace Meadow.CLI.Core.DeviceManagement
         private static void LogUserError(bool verbose, ILogger logger)
         {
             if (verbose)
-            {
-                // TODO: Move message to ResourceManager or other tool for localization
+            {   // TODO: Move message to ResourceManager or other tool for localization
                 logger.LogError(
                     "Failed to open Serial Port. Please ensure you have exclusive access to the serial port and the specified port exists.");
             }

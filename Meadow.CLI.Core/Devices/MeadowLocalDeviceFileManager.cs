@@ -14,15 +14,13 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
-        public async Task<IList<string>> GetFilesAndFolders(
-            TimeSpan timeout,
-            CancellationToken cancellationToken = default)
+        public async Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             var started = false;
 
             var items = new List<string>();
 
-            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            void handler(object s, MeadowMessageEventArgs e)
             {
                 if (e.MessageType == MeadowMessageType.Accepted)
                 {
@@ -37,7 +35,7 @@ namespace Meadow.CLI.Core.Devices
                 {
                     items.Add(e.Message);
                 }
-            };
+            }
 
             var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
                     .WithResponseHandler(handler)
@@ -55,7 +53,7 @@ namespace Meadow.CLI.Core.Devices
         {
             var started = false;
 
-            EventHandler<MeadowMessageEventArgs> handler = (s, e) =>
+            void handler(object s, MeadowMessageEventArgs e)
             {
                 if (e.MessageType == MeadowMessageType.FileListTitle)
                 {
@@ -63,8 +61,7 @@ namespace Meadow.CLI.Core.Devices
                     started = true;
                 }
                 else if (started == false)
-                {
-                    //ignore everything until we've started a new file list request
+                {   //ignore everything until we've started a new file list request
                     return;
                 }
 
@@ -72,7 +69,7 @@ namespace Meadow.CLI.Core.Devices
                 {
                     SetFileAndCrcsFromMessage(e.Message);
                 }
-            };
+            }
 
             var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_LIST_PART_FILES_AND_CRC)
                     .WithResponseHandler(handler)
@@ -93,10 +90,9 @@ namespace Meadow.CLI.Core.Devices
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns></returns>
         public async Task<FileTransferResult> WriteFile(string sourceFileName,
-                                                             string destinationFileName,
-                                                             TimeSpan timeout,
-                                                             CancellationToken cancellationToken =
-                                                                 default)
+                                                        string destinationFileName,
+                                                        TimeSpan timeout,
+                                                        CancellationToken cancellationToken = default)
         {
             if (IsDeviceInitialized() == false)
             {
@@ -153,8 +149,8 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task DeleteFile(string fileName,
-                                          uint partition = 0,
-                                          CancellationToken cancellationToken = default)
+                                     uint partition = 0,
+                                     CancellationToken cancellationToken = default)
         {
             var command =
                  new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME)
@@ -189,8 +185,7 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
-        public Task FormatFileSystem(uint partition = 0,
-                                          CancellationToken cancellationToken = default)
+        public Task FormatFileSystem(uint partition = 0, CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS)
@@ -205,8 +200,7 @@ namespace Meadow.CLI.Core.Devices
         public Task RenewFileSystem(CancellationToken cancellationToken = default)
         {
             var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_PART_RENEW_FILE_SYS)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect)
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
@@ -215,8 +209,8 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task UpdateMonoRuntime(string? fileName,
-                                                 uint partition = 0,
-                                                 CancellationToken cancellationToken = default)
+                                      uint partition = 0,
+                                      CancellationToken cancellationToken = default)
         {
             return UpdateMonoRuntime(fileName, null, partition, cancellationToken);
         }
@@ -290,7 +284,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 // Convert mcuDestAddress from a string to a 32-bit unsigned int, but first
                 // insure it starts with 0x
-                uint mcuAddress = 0;
+                uint mcuAddress;
                 if (mcuDestAddress.StartsWith("0x") || mcuDestAddress.StartsWith("0X"))
                 {
                     mcuAddress = uint.Parse(
@@ -324,8 +318,7 @@ namespace Meadow.CLI.Core.Devices
                 string[] fileElement = fileName.Split(',');
                 if (fileElement.Length % 2 != 0)
                 {
-                    Console.WriteLine(
-                        "Please provide a CSV input with \"address, fileName, address, fileName\"");
+                    Console.WriteLine("Please provide a CSV input with \"address, fileName, address, fileName\"");
 
                     return;
                 }
@@ -334,16 +327,12 @@ namespace Meadow.CLI.Core.Devices
                 for (int i = 0; i < fileElement.Length; i += 2)
                 {
                     // Trim any white space from this mcu addr and file name
-                    fileElement[i] = fileElement[i]
-                        .Trim();
+                    fileElement[i] = fileElement[i].Trim();
 
-                    fileElement[i + 1] = fileElement[i + 1]
-                        .Trim();
+                    fileElement[i + 1] = fileElement[i + 1].Trim();
 
-                    if (fileElement[i]
-                            .StartsWith("0x")
-                     || fileElement[i]
-                            .StartsWith("0X"))
+                    if (fileElement[i].StartsWith("0x") || 
+                        fileElement[i].StartsWith("0X"))
                     {
                         // Fill in the Mcu Address
                         mcuAddress = uint.Parse(
@@ -417,15 +406,13 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task<string?> GetInitialBytesFromFile(string fileName,
                                                            uint partition = 0,
-                                                           CancellationToken cancellationToken =
-                                                               default)
+                                                           CancellationToken cancellationToken = default)
         {
             Logger.LogDebug("Getting initial bytes from {fileName}", fileName);
             var encodedFileName = System.Text.Encoding.UTF8.GetBytes(fileName);
 
             var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_INITIAL_FILE_BYTES)
                     .WithResponseType(MeadowMessageType.InitialFileData)
                     .WithData(encodedFileName)
                     .Build();
@@ -442,8 +429,7 @@ namespace Meadow.CLI.Core.Devices
 
         public Task ForwardVisualStudioDataToMono(byte[] debuggerData,
                                                        uint userData,
-                                                       CancellationToken cancellationToken =
-                                                           default)
+                                                       CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA)
@@ -519,8 +505,6 @@ namespace Meadow.CLI.Core.Devices
         {
             try
             {
-
-
                 if (!File.Exists(applicationFilePath))
                 {
                     Console.WriteLine($"{applicationFilePath} not found.");
@@ -531,9 +515,7 @@ namespace Meadow.CLI.Core.Devices
 
                 var fi = new FileInfo(applicationFilePath);
 
-                var deviceFiles = await GetFilesAndCrcs(
-                                          DefaultTimeout,
-                                          cancellationToken: cancellationToken);
+                var deviceFiles = await GetFilesAndCrcs( DefaultTimeout, cancellationToken: cancellationToken);
 
                 //rename App.dll to App.exe
                 var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
@@ -557,7 +539,6 @@ namespace Meadow.CLI.Core.Devices
                 var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
                                        .Where(s => new FileInfo(s).Extension != ".dll")
                                        .Where(s => new FileInfo(s).Extension != ".pdb");
-                //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
                 var files = new Dictionary<string, uint>();
 
@@ -579,11 +560,11 @@ namespace Meadow.CLI.Core.Devices
 
                     await fs.ReadAsync(bytes, 0, len, cancellationToken);
 
-                    //0x
-                    var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
+                    var crc = CrcTools.Crc32part(bytes, len, 0);
 
                     Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
                     files.Add(file, crc);
+
                     if (includePdbs)
                     {
                         var pdbFile = Path.ChangeExtension(file, "pdb");

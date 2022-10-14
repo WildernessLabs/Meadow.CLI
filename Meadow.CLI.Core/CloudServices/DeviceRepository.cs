@@ -25,7 +25,7 @@ namespace Meadow.CLI.Core.CloudServices
 
             dynamic payload = new 
             {
-                serialNumber = serialNumber
+                serialNumber
             };
 
             var json = JsonSerializer.Serialize<dynamic>(payload);
@@ -41,7 +41,6 @@ namespace Meadow.CLI.Core.CloudServices
                 var message = await response.Content.ReadAsStringAsync();
                 return (false, message);
             }
-            
         }
     }
 }

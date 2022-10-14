@@ -6,14 +6,7 @@ namespace Meadow.CLI.Core
     {
         public static Version ToVersion(this string s)
         {
-            if (Version.TryParse(s, out var result))
-            {
-                return result;
-            }
-            else
-            {
-                return new Version();
-            }
+            return Version.TryParse(s, out var result) ? result : new Version();
         }
     }
 }

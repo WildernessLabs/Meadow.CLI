@@ -101,7 +101,7 @@ namespace Meadow.CLI.Core
                     // this is a fallback
                     lastState = false;
                 }
-                catch (Exception ex)
+                catch
                 {
                     lastState = false;
                 }
@@ -109,6 +109,5 @@ namespace Meadow.CLI.Core
                 await Task.Delay(1000);
             }
         }
-
     }
 }
