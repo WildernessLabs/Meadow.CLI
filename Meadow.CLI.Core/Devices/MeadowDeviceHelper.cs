@@ -269,15 +269,22 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task DeployApp(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default)
         {
-            await MonoDisable(cancellationToken: cancellationToken);
+            try
+            {
+                await MonoDisable(cancellationToken: cancellationToken);
 
-            string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
+                string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
-            await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, cancellationToken);
+                await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, cancellationToken);
 
-            await MonoEnable(true, cancellationToken: cancellationToken);
+                await MonoEnable(true, cancellationToken: cancellationToken);
 
-            await Task.Delay(2000, cancellationToken);
+                await Task.Delay(2000, cancellationToken);
+            }
+            catch (Exception ex) {
+                await MonoDisable(true, cancellationToken);
+                throw ex;
+            }
         }
 
         public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default)
