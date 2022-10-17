@@ -21,7 +21,7 @@ namespace Meadow.CLI.Core
         {
             var manager = new DownloadManager(logger);
 
-            await manager.DownloadLatestAsync(versionNumber, true);
+            await manager.DownloadOsBinaries(versionNumber, true);
         }
 
         public static string GetLatestFirmwareVersion()
@@ -119,14 +119,14 @@ namespace Meadow.CLI.Core
 
                 connection.AutoReconnect = false;
 
-                await connection.Device.EnterDfuModeAsync();
+                await connection.Device.EnterDfuMode();
 
                 // device resets here into DFU mode
 
                 // TODO: we need a "wait for DFU device is available"
                 await Task.Delay(10000);
 
-                var success = await DfuUtils.DfuFlashAsync(
+                var success = await DfuUtils.DfuFlash(
                     string.Empty,
                     version,
                     null,
@@ -136,7 +136,7 @@ namespace Meadow.CLI.Core
                 await Task.Delay(10000);
                 connection.Connect();
 
-                await connection.Device.MonoDisableAsync();
+                await connection.Device.MonoDisable();
 
                 await Task.Delay(2000);
                 connection.Disconnect();
@@ -149,7 +149,7 @@ namespace Meadow.CLI.Core
                     await Task.Delay(1000);
                 }
 
-                await connection.Device.UpdateMonoRuntimeAsync(null, version);
+                await connection.Device.UpdateMonoRuntime(null, version);
 
                 await Task.Delay(2000);
                 connection.Disconnect();
@@ -162,7 +162,7 @@ namespace Meadow.CLI.Core
                     await Task.Delay(1000);
                 }
 
-                await connection.Device.MonoDisableAsync();
+                await connection.Device.MonoDisable();
 
                 await Task.Delay(2000);
 
@@ -172,10 +172,10 @@ namespace Meadow.CLI.Core
                     await Task.Delay(1000);
                 }
 
-                await connection.Device.FlashEspAsync(DownloadManager.FirmwareDownloadsFilePath, version);
+                await connection.Device.FlashEsp(DownloadManager.FirmwareDownloadsFilePath, version);
 
                 // Reset the meadow again to ensure flash worked.
-                await connection.Device.ResetMeadowAsync();
+                await connection.Device.ResetMeadow();
 
                 await Task.Delay(2000);
                 connection.Disconnect();

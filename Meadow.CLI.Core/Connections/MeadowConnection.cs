@@ -72,7 +72,7 @@ namespace Meadow.CLI.Core
             try
             {
                 _port.Open();
-                Device = new MeadowSerialDevice_Old(Name, _port, Logger);
+                Device = new MeadowSerialDevice(Name, _port, Logger);
             }
             catch (FileNotFoundException fnf)
             {
@@ -113,7 +113,7 @@ namespace Meadow.CLI.Core
                         {
                             // wait a bit - the serial port can connect before the Meadow is ready
                             await Task.Delay(1000);
-                            _ = await Device.GetDeviceInfoAsync(TimeSpan.FromSeconds(2));
+                            _ = await Device.GetDeviceInfo(TimeSpan.FromSeconds(2));
                         }
 
                         ConnectionStateChanged.Invoke(this, nowState);

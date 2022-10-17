@@ -75,12 +75,11 @@ namespace Meadow.CLI.Commands.Files
                     _logger.LogInformation(
                         $"Writing {Files[i]} as {targetFileName} to partition {Partition}");
 
-                    var result = await Meadow.WriteFileAsync(
+                    var result = await Meadow.WriteFile(
                                                  Files[i],
                                                  targetFileName,
                                                  TimeSpan.FromSeconds(60),
-                                                 cancellationToken)
-                                             .ConfigureAwait(false);
+                                                 cancellationToken);
 
                     _logger.LogDebug($"File written successfully? {result}");
                 }

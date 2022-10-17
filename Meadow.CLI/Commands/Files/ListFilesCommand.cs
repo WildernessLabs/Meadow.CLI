@@ -36,11 +36,10 @@ namespace Meadow.CLI.Commands.Files
 
             _logger.LogInformation($"Getting files on partition {Partition}");
 
-            var files = await Meadow.GetFilesAndCrcsAsync(
+            var files = await Meadow.GetFilesAndCrcs(
                                         TimeSpan.FromSeconds(60),
                                         Partition,
-                                        cancellationToken)
-                                    .ConfigureAwait(false);
+                                        cancellationToken);
 
             if (files.Any())
             {
