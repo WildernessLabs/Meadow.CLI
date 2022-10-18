@@ -96,6 +96,52 @@ namespace Meadow.CLI.Core
             return list.ToArray();
         }
 
+        public static async Task PushApplicationToDevice(IMeadowConnection connection, DirectoryInfo appFolder, ILogger? logger = null)
+        {
+            try
+            {
+                if (connection == null) throw new ArgumentNullException("connection");
+                if (connection.Device == null) throw new ArgumentNullException("connection.Device");
+                if (!connection.IsConnected)
+                {
+                    if (!await connection.WaitForConnection(TimeSpan.FromSeconds(5)))
+                    {
+                        throw new Exception("No device connected");
+                    }
+                }
+
+                connection.AutoReconnect = false;
+
+                if (connection.Device.DeviceInfo == null)
+                {
+                    await connection.Device.GetDeviceInfo(TimeSpan.FromSeconds(5));
+                }
+
+                var osVersion = connection.Device.DeviceInfo.MeadowOsVersion;
+
+                await connection.Device.MonoDisable();
+                // the device will disconnect and reconnect here
+
+                // can't check "is connected" immediately, as it take a few hundred ms to disable mono and restart
+                await Task.Delay(1000);
+
+                // wait for reconnect
+                await connection.WaitForConnection(TimeSpan.FromSeconds(15));
+
+                await connection.Device.DeployApp(Path.Combine(appFolder.FullName, "App.dll"), osVersion);
+
+                await connection.Device.MonoEnable();
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Error flashing OS to Meadow");
+            }
+            finally
+            {
+                connection.AutoReconnect = true;
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -184,6 +230,10 @@ namespace Meadow.CLI.Core
             catch (Exception ex)
             {
                 logger?.LogError(ex, "Error flashing OS to Meadow");
+            }
+            finally
+            {
+                connection.AutoReconnect = true;
             }
         }
     }

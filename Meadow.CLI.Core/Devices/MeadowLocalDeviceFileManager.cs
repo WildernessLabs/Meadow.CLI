@@ -458,11 +458,11 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
-        //ToDo this is super fragile
+        //ToDo this is super fragile (extra-super fragile!)
         //Need updated API to read files after B5.1
         async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
-            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 10), cancellationToken);
+            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), cancellationToken);
 
             bool isRoot = false;
             bool isFolder = false;
