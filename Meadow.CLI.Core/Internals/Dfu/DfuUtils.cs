@@ -146,7 +146,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    RedirectStandardInput = false
+                    RedirectStandardInput = false,
+                    CreateNoWindow = true
                 };
                 using var process = Process.Start(startInfo);
                 if (process == null)

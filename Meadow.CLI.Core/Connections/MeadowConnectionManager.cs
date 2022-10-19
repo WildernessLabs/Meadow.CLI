@@ -34,7 +34,7 @@ namespace Meadow.CLI.Core
                 return _connections[serialPort];
             }
 
-            var connection = new MeadowConnection(serialPort, Logger);
+            var connection = new MeadowSerialConnection(serialPort, Logger);
             _connections.Add(serialPort, connection);
             return connection;
         }

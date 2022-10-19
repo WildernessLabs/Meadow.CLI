@@ -149,28 +149,34 @@ namespace Meadow.CLI.Core
         /// <param name="version">Either a specific version or null to push the latest</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static async Task PushFirmwareToDevice(IMeadowConnection connection, string? version = null, ILogger? logger = null)
+        public static async Task PushFirmwareToDevice(MeadowConnectionManager connectionManager, IMeadowConnection? connection, string? version = null, ILogger? logger = null)
         {
             try
             {
-                if (connection == null) throw new ArgumentNullException("connection");
-                if (connection.Device == null) throw new ArgumentNullException("connection.Device");
-                if (!connection.IsConnected)
+                var dfuMode = connection == null;
+
+                if (dfuMode)
                 {
-                    if (!await connection.WaitForConnection(TimeSpan.FromSeconds(5)))
-                    {
-                        throw new Exception("No device connected");
-                    }
+                    logger.LogInformation("Trying DFU Mode Firmware Update...");
                 }
+                else
+                {
+                    if (connection.Device == null) throw new ArgumentNullException("connection.Device");
+                    if (!connection.IsConnected)
+                    {
+                        if (!await connection.WaitForConnection(TimeSpan.FromSeconds(5)))
+                        {
+                            throw new Exception("No device connected");
+                        }
+                    }
+                    connection.AutoReconnect = false;
 
-                connection.AutoReconnect = false;
-
-                await connection.Device.EnterDfuMode();
-
-                // device resets here into DFU mode
-
-                // TODO: we need a "wait for DFU device is available"
-                await Task.Delay(10000);
+                    await connection.Device.EnterDfuMode();
+                    // device resets here into DFU mode
+                    // TODO: we need a "wait for DFU device is available"
+                    // DfuUtils.CheckForValidDevice();
+                    await Task.Delay(10000);
+                }
 
                 var success = await DfuUtils.DfuFlash(
                     string.Empty,
@@ -180,7 +186,17 @@ namespace Meadow.CLI.Core
 
                 // device will reset here - need to reconnect
                 await Task.Delay(10000);
+
+                // if we started in DFU mode, we need to search for a serial connection - we have to assume that the first one we find is the Meadow
+                while (connection == null)
+                {
+                    await Task.Delay(1000);
+                    connection = connectionManager.FirstOrDefault();
+                }
+
                 connection.Connect();
+
+                await Task.Delay(1000);
 
                 await connection.Device.MonoDisable();
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core
 {
-    public class MeadowConnection : IMeadowConnection
+    public class MeadowSerialConnection : IMeadowConnection
     {
         public event ConnectionStateHandler ConnectionStateChanged = delegate { };
 
@@ -24,7 +24,7 @@ namespace Meadow.CLI.Core
         public bool IsConnected => _port?.IsOpen ?? false;
         public bool AutoReconnect { get; set; } = false;
 
-        internal MeadowConnection(string portName, ILogger? logger)
+        internal MeadowSerialConnection(string portName, ILogger? logger)
         {
             Logger = logger;
             Name = portName;
