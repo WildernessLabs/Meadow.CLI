@@ -180,13 +180,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
             }
 
+            private const int RECIEVE_BUFFER_SIZE = 490;
+
             private async Task SendToMeadowAsync()
             {
                 try
                 {
                     using var md5 = MD5.Create();
                     // Receive from Visual Studio and send to Meadow
-                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(490);
+                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECIEVE_BUFFER_SIZE);
                     var meadowBuffer = Array.Empty<byte>();
                     while (!_cts.IsCancellationRequested)
                     {
@@ -203,18 +205,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                 Array.Resize(ref meadowBuffer, destIndex + bytesRead);
                                 Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
 
+                                // Forward the RECIEVE_BUFFER_SIZE chunk to Meadow immediately
+                                _logger.LogInformation("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
+                                                    meadowBuffer.Length,
+                                                    BitConverter.ToString(md5.ComputeHash(meadowBuffer))
+                                                                .Replace ("-", string.Empty)
+                                                                .ToLowerInvariant());
+                                await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
+                                meadowBuffer = Array.Empty<byte>();
+
                                 // Ensure we read all the data in this message before passing it along
                                 // I'm not sure this is actually needed, the whole message should get read at once.
                             } while (_networkStream.DataAvailable);
-
-                            // Forward to Meadow
-                            _logger.LogInformation("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
-                                                meadowBuffer.Length,
-                                                BitConverter.ToString(md5.ComputeHash(meadowBuffer))
-                                                            .Replace("-", string.Empty)
-                                                            .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
-                            meadowBuffer = Array.Empty<byte>();
                         }
                         else
                         {
