@@ -1,6 +1,7 @@
-﻿using System;
-using Meadow.CLI.Core.DeviceManagement;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.Hcom;
 using MeadowCLI;
+using System;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {

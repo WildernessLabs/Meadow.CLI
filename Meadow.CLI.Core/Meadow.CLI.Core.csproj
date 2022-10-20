@@ -57,6 +57,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Management" />
   </ItemGroup>
   

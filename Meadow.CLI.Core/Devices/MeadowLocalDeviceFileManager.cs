@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

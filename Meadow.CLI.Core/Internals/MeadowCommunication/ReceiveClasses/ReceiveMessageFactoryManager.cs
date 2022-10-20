@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Meadow.Hcom;
+using System;
 using System.Collections.Generic;
-
-using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
