@@ -208,7 +208,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             } while (_networkStream.DataAvailable);
 
                             // Forward to Meadow
-                            _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
+                            _logger.LogInformation("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
                                                 meadowBuffer.Length,
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
@@ -254,7 +254,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                             while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
                             {
                                 var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
-                                _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
+                                _logger.LogInformation("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
                                 if (!_tcpClient.Connected)
                                 {
                                     _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
@@ -262,7 +262,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                 }
 
                                 await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
-                                _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                                _logger.LogInformation("Forwarded {count} bytes to VS", byteData.Length);
                             }
                         }
                         else
