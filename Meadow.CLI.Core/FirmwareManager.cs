@@ -1,6 +1,8 @@
-﻿using Meadow.CLI.Core.Internals.Dfu;
+﻿using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.Dfu;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -158,6 +160,7 @@ namespace Meadow.CLI.Core
                 if (dfuMode)
                 {
                     logger.LogInformation("Trying DFU Mode Firmware Update...");
+                    DfuUtils.GetDevice();
                 }
                 else
                 {
@@ -178,14 +181,20 @@ namespace Meadow.CLI.Core
                     await Task.Delay(10000);
                 }
 
+                Debug.WriteLine("Starting DFU...");
+
                 var success = await DfuUtils.DfuFlash(
                     string.Empty,
                     version,
                     null,
                     logger);
 
+                Debug.WriteLine("DFU complete...");
+
                 // device will reset here - need to reconnect
                 await Task.Delay(10000);
+
+                Debug.WriteLine("Looking for connection...");
 
                 // if we started in DFU mode, we need to search for a serial connection - we have to assume that the first one we find is the Meadow
                 while (connection == null)
@@ -194,16 +203,21 @@ namespace Meadow.CLI.Core
                     connection = connectionManager.FirstOrDefault();
                 }
 
+                Debug.WriteLine("Connecting...");
+
                 connection.Connect();
 
                 await Task.Delay(1000);
 
+                Debug.WriteLine("Disabling Mono...");
                 await connection.Device.MonoDisable();
 
                 await Task.Delay(2000);
+                Debug.WriteLine("Disconnecting...");
                 connection.Disconnect();
                 await Task.Delay(5000);
 
+                Debug.WriteLine("Connecting...");
                 connection.Connect();
                 while (!connection.IsConnected)
                 {
@@ -211,6 +225,7 @@ namespace Meadow.CLI.Core
                     await Task.Delay(1000);
                 }
 
+                Debug.WriteLine("Updating runtime...");
                 await connection.Device.UpdateMonoRuntime(null, version);
 
                 await Task.Delay(2000);
@@ -243,13 +258,20 @@ namespace Meadow.CLI.Core
                 connection.Disconnect();
                 await Task.Delay(5000);
             }
+            catch (DeviceNotFoundException d)
+            {
+                throw d;
+            }
             catch (Exception ex)
             {
                 logger?.LogError(ex, "Error flashing OS to Meadow");
             }
             finally
             {
-                connection.AutoReconnect = true;
+                if (connection != null)
+                {
+                    connection.AutoReconnect = true;
+                }
             }
         }
     }
