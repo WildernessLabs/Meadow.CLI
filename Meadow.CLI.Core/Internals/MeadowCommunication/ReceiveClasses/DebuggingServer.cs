@@ -180,7 +180,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
             }
 
-            private const int RECIEVE_BUFFER_SIZE = 490;
+            private const int RECIEVE_BUFFER_SIZE = 256;
 
             private async Task SendToMeadowAsync()
             {
