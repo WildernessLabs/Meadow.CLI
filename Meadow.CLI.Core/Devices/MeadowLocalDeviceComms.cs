@@ -23,7 +23,6 @@ namespace Meadow.CLI.Core.Devices
             _packetCrc32 = 0;
             _lastProgress = 0;
 
-            Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
                 var response = await SendCommand(command, cancellationToken);
@@ -146,9 +145,9 @@ namespace Meadow.CLI.Core.Devices
                     "Transfer Complete, wrote {count} bytes to Meadow",
                     fileBufOffset);
             }
-            catch (Exception except)
+            catch (Exception ex)
             {
-                Logger.LogError(except, "Exception sending command to Meadow");
+                Logger.LogError($"Exception sending command to Meadow.{Environment.NewLine}Error:{ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
                 throw;
             }
         }
