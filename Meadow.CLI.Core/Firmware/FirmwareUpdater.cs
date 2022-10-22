@@ -50,7 +50,7 @@ namespace Meadow.CLI.Core
                 if (value == _state) return;
                 PreviousState = CurrentState;
                 _state = value;
-                _logger.LogInformation($"{PreviousState}->{CurrentState}");
+                _logger.LogDebug($"Firmware Updater: {PreviousState}->{CurrentState}");
             }
         }
 
@@ -83,6 +83,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -100,7 +101,7 @@ namespace Meadow.CLI.Core
                             ++tries;
                             if (tries > 5)
                             {
-                                _logger.LogError("Failed to enter DFU mode");
+                                _logger.LogError($"Failed to enter DFU mode: {ex.Message}");
                                 CurrentState = UpdateState.Error;
 
                                 // exit state machine
@@ -126,6 +127,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -152,6 +154,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -168,6 +171,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -194,6 +198,7 @@ namespace Meadow.CLI.Core
                             }
                             catch (Exception ex)
                             {
+                                _logger?.LogError(ex.Message);
                                 CurrentState = UpdateState.Error;
                                 return;
                             }
@@ -214,6 +219,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -240,6 +246,7 @@ namespace Meadow.CLI.Core
                             }
                             catch (Exception ex)
                             {
+                                _logger?.LogError(ex.Message);
                                 CurrentState = UpdateState.Error;
                                 return;
                             }
@@ -253,6 +260,7 @@ namespace Meadow.CLI.Core
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -267,18 +275,22 @@ namespace Meadow.CLI.Core
                             if (info.MeadowOsVersion != RequestedVersion)
                             {
                                 // this is a failure
+                                _logger?.LogWarning($"OS version {info.MeadowOsVersion} does not match requested version {RequestedVersion}");
                             }
                             if (info.MonoVersion != RequestedVersion)
                             {
                                 // this is a failure
+                                _logger?.LogWarning($"Runtime version {info.MonoVersion} does not match requested version {RequestedVersion}");
                             }
                             if (info.CoProcessorOsVersion != RequestedVersion)
                             {
                                 // not necessarily an error
+                                _logger?.LogWarning($"Coprocessor version {info.CoProcessorOsVersion} does not match requested version {RequestedVersion}");
                             }
                         }
                         catch (Exception ex)
                         {
+                            _logger?.LogError(ex.Message);
                             CurrentState = UpdateState.Error;
                             return;
                         }
@@ -287,6 +299,7 @@ namespace Meadow.CLI.Core
                     case UpdateState.UpdateSuccess:
                         _connection.AutoReconnect = true;
                         _connection.MonitorState = true;
+                        _logger?.LogInformation("Update complete");
                         return;
                     default:
                         break;
@@ -334,8 +347,6 @@ namespace Meadow.CLI.Core
             }
 
             RequestedVersion = updateVersion;
-
-            // TODO: check to see what pieces actually need updating
 
             if (connection == null)
             {

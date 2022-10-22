@@ -23,10 +23,6 @@ namespace Meadow.CLI.Core.Devices
             _packetCrc32 = 0;
             _lastProgress = 0;
 
-<<<<<<< HEAD
-            Logger?.LogDebug("Sending {filename} to device", command.DestinationFileName);
-=======
->>>>>>> develop
             try
             {
                 var response = await SendCommand(command, cancellationToken);
