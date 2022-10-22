@@ -23,6 +23,7 @@ namespace Meadow.CLI.Core
 
         public bool IsConnected => _port?.IsOpen ?? false;
         public bool AutoReconnect { get; set; } = false;
+        public bool MonitorState { get; set; } = true;
 
         internal MeadowSerialConnection(string portName, ILogger? logger)
         {
@@ -50,6 +51,13 @@ namespace Meadow.CLI.Core
             {
                 while (keepTrying)
                 {
+                    try
+                    {
+                        Connect();
+                    }
+                    catch
+                    {
+                    }
                     if (IsConnected) return;
                     await Task.Delay(500);
                 }
@@ -77,10 +85,12 @@ namespace Meadow.CLI.Core
             catch (FileNotFoundException fnf)
             {
                 Logger?.LogTrace($"Unable to open serial port: {fnf.Message}");
+                throw;
             }
             catch (Exception ex)
             {
                 Logger?.LogTrace($"Unable to open serial port: {ex.Message}");
+                throw;
             }
         }
 
@@ -112,8 +122,11 @@ namespace Meadow.CLI.Core
                         if (nowState && Device != null)
                         {
                             // wait a bit - the serial port can connect before the Meadow is ready
-                            await Task.Delay(1000);
-                            _ = await Device.GetDeviceInfo(TimeSpan.FromSeconds(2));
+                            if (MonitorState)
+                            {
+                                await Task.Delay(1000);
+                                _ = await Device.GetDeviceInfo(TimeSpan.FromSeconds(2));
+                            }
                         }
 
                         ConnectionStateChanged.Invoke(this, nowState);

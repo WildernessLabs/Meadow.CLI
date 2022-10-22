@@ -98,6 +98,13 @@ namespace Meadow.CLI.Core
             return list.ToArray();
         }
 
+        public static FirmwareUpdater GetFirmwareUpdater(MeadowConnectionManager connectionManager)
+        {
+            return new FirmwareUpdater(connectionManager);
+        }
+
+
+
         public static async Task PushApplicationToDevice(IMeadowConnection connection, DirectoryInfo appFolder, ILogger? logger = null)
         {
             try

@@ -142,7 +142,23 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <summary>
         /// OS version and build date.
         /// </summary>
-        public string MeadowOsVersion { get { return (_elements[KN_OS_VERSION]); } }
+        public string MeadowOsVersion
+        {
+            get
+            {
+                var idx = _elements[KN_OS_VERSION].IndexOf('(');
+                return _elements[KN_OS_VERSION].Substring(0, idx - 1);
+            }
+        }
+
+        public string MeadowOsBuildDate
+        {
+            get
+            {
+                var idx = _elements[KN_OS_VERSION].IndexOf('(');
+                return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+            }
+        }
 
         /// <summary>
         /// Type of processor on the board.

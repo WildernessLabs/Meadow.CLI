@@ -13,7 +13,7 @@ namespace Meadow.CLI.Core.Devices
     {
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-        public ILogger Logger { get; }
+        public ILogger? Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
