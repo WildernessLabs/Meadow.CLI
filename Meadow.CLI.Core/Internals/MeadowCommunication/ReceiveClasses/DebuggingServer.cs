@@ -82,7 +82,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _cancellationTokenSource?.Cancel(false);
 
             if (_listenerTask != null)
+            {
                 await _listenerTask;
+            }
         }
 
         private async Task StartListener()
@@ -98,7 +100,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
                 OnConnect(tcpClient);
             }
-            catch (SocketException soex) {
+            catch (SocketException soex) 
+            {
                 _logger.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
                 _logger.LogError($"Error:\n{soex.Message} \nStack Trace:\n{soex.StackTrace}");
             }
@@ -180,7 +183,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
             }
 
-            private const int RECIEVE_BUFFER_SIZE = 256;
+            private const int RECEIVE_BUFFER_SIZE = 256;
 
             private async Task SendToMeadowAsync()
             {
@@ -188,7 +191,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {
                     using var md5 = MD5.Create();
                     // Receive from Visual Studio and send to Meadow
-                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECIEVE_BUFFER_SIZE);
+                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
                     var meadowBuffer = Array.Empty<byte>();
                     while (!_cts.IsCancellationRequested)
                     {
@@ -280,7 +283,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     // User probably hit stop; Removed logging as User doesn't need to see this
                     // Keeping it as a TODO in case we find a side effect that needs logging.
                     // TODO _logger.LogInformation("Operation Cancelled");
-                    // TODP _logger.LogTrace(oce, "Operation Cancelled");
+                    // TODO _logger.LogTrace(oce, "Operation Cancelled");
                 }
                 catch (Exception ex)
                 {
