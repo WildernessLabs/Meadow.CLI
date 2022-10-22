@@ -147,9 +147,11 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             var sw = Stopwatch.StartNew();
+
             await SendTheEntireFile(command, true, cancellationToken);
 
             sw.Stop();
+
             return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
         }
 
@@ -521,8 +523,6 @@ namespace Meadow.CLI.Core.Devices
         {
             try
             {
-
-
                 if (!File.Exists(applicationFilePath))
                 {
                     Console.WriteLine($"{applicationFilePath} not found.");
@@ -669,8 +669,9 @@ namespace Meadow.CLI.Core.Devices
             }
             catch (Exception ex)
             {
-                Logger.LogError($"An unhandled exception occurred in DeployApp().");
+                Logger.LogError($"An error occurred during the App deployment process.");
                 Logger.LogError($"Error:\n{ex.Message} \nStack Trace :\n{ex.StackTrace}");
+                throw ex;
             }
         }
 
