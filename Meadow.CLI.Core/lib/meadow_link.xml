@@ -6,6 +6,6 @@
     <assembly fullname="Meadow.Contracts" />
     <assembly fullname="Meadow.Units" />
     <assembly fullname="Meadow.Logging" />
-	<assembly fullname="SQLite-net" />
-	<assembly fullname="MQTTnet" />
+    <assembly fullname="SQLite-net" />
+    <assembly fullname="MQTTnet" />
 </linker>
