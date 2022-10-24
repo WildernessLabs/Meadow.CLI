@@ -95,7 +95,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             try
             {
-                previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(' ')[0]);
+                previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(',')[0]);
             }
             catch
             {
