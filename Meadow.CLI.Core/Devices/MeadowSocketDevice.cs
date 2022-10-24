@@ -30,14 +30,14 @@ namespace Meadow.CLI.Core.Devices
                 Socket?.Dispose();
         }
 
-        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken)
+        public override async Task Write(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken)
         {
             await Task.Yield();
             Socket.Send(encodedBytes, encodedToSend,
                         SocketFlags.None);
         }
 
-        public override Task<bool> InitializeAsync(CancellationToken cancellationToken = default)
+        public override Task<bool> Initialize(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
             //Socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

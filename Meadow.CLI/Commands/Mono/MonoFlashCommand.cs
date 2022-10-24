@@ -24,8 +24,7 @@ namespace Meadow.CLI.Commands.Mono
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.MonoFlashAsync(cancellationToken)
-                        .ConfigureAwait(false);
+            await Meadow.MonoFlash(cancellationToken);
 
             _logger.LogInformation($"Mono Flashed Successfully");
         }

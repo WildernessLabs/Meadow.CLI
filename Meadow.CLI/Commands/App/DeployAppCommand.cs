@@ -30,14 +30,12 @@ namespace Meadow.CLI.Commands.App
         {
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
-          
-            var osVersion = await Meadow.GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken)
-                .ConfigureAwait(false);
+
+            var osVersion = await Meadow.GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
             try
             {
-                await new DownloadManager(LoggerFactory).DownloadLatestAsync(osVersion)
-                .ConfigureAwait(false);
+                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion);
             }
             catch
             {   //OS binaries failed to download
@@ -45,8 +43,7 @@ namespace Meadow.CLI.Commands.App
                 console.Output.WriteLine("Meadow assemblies download failed, using local copy");
             }
 
-            await Meadow.DeployAppAsync(File, IncludePdbs, cancellationToken)
-                .ConfigureAwait(false);
+            await Meadow.DeployApp(File, IncludePdbs, cancellationToken);
         }
     }
 }

@@ -27,8 +27,7 @@ namespace Meadow.CLI.Commands.Trace
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            await Meadow.SetTraceLevelAsync(TraceLevel, cancellationToken)
-                        .ConfigureAwait(false);
+            await Meadow.SetTraceLevel(TraceLevel, cancellationToken);
         }
     }
 }

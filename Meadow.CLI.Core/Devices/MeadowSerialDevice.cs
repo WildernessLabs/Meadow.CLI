@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
+using System;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.Devices
         {
         }
 
-        private MeadowSerialDevice(string serialPortName,
+        internal MeadowSerialDevice(string serialPortName,
                                    SerialPort serialPort,
                                    ILogger? logger = null)
             : base(new MeadowSerialDataProcessor(serialPort, logger), logger)
@@ -40,7 +40,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public override async Task WriteAsync(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
+        public override async Task Write(byte[] encodedBytes, int encodedToSend, CancellationToken cancellationToken = default)
         {
             if (SerialPort == null || SerialPort.IsOpen == false)
             {
@@ -48,10 +48,10 @@ namespace Meadow.CLI.Core.Devices
                 throw new DeviceDisconnectedException();
             }
 
-            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken).ConfigureAwait(false);
+            await SerialPort.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken);
         }
 
-        public override async Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public override async Task<bool> Initialize(CancellationToken cancellationToken)
         {
             var initTimeout = TimeSpan.FromSeconds(60);
             var now = DateTime.UtcNow;
@@ -65,10 +65,9 @@ namespace Meadow.CLI.Core.Devices
                         Logger.LogDebug("Initializing Meadow for the first time");
 
                         // TODO: Find a way to flush all the garbage startup messages
-                        await Task.Delay(1000, cancellationToken)
-                                  .ConfigureAwait(false);
+                        await Task.Delay(1000, cancellationToken);
 
-                        DeviceInfo = await GetDeviceInfoAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                        DeviceInfo = await GetDeviceInfo(TimeSpan.FromSeconds(5), cancellationToken);
 
                         return true;
                     }
@@ -90,8 +89,7 @@ namespace Meadow.CLI.Core.Devices
                     Logger.LogTrace(ex, "Caught exception while waiting for device to be ready. Retrying.");
                 }
                 //ToDo: Adrian - review - increased delay from 100ms to 500ms
-                await Task.Delay(500, cancellationToken)
-                          .ConfigureAwait(false);
+                await Task.Delay(500, cancellationToken);
             }
 
             throw new Exception($"Device not ready after {initTimeout}s");
@@ -99,26 +97,26 @@ namespace Meadow.CLI.Core.Devices
 
         private static SerialPort OpenSerialPort(string portName)
         {
-            if(string.IsNullOrEmpty(portName))
+            if (string.IsNullOrEmpty(portName))
             {
                 throw new ArgumentException("Serial Port name cannot be empty");
             }
 
             // Create a new SerialPort object with default settings
             var port = new SerialPort
-                       {
-                           PortName = portName,
-                           BaudRate = 115200, // This value is ignored when using ACM
-                           Parity = Parity.None,
-                           DataBits = 8,
-                           StopBits = StopBits.One,
-                           Handshake = Handshake.None,
+            {
+                PortName = portName,
+                BaudRate = 115200, // This value is ignored when using ACM
+                Parity = Parity.None,
+                DataBits = 8,
+                StopBits = StopBits.One,
+                Handshake = Handshake.None,
 
-                           // Set the read/write timeouts
-                           ReadTimeout = 5000,
-                           WriteTimeout = 5000
-                       };
-            
+                // Set the read/write timeouts
+                ReadTimeout = 5000,
+                WriteTimeout = 5000
+            };
+
             if (port.IsOpen)
                 port.Close();
 
