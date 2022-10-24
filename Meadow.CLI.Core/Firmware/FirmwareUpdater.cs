@@ -107,6 +107,7 @@ namespace Meadow.CLI.Core
                                 // exit state machine
                                 return;
                             }
+                            await Task.Delay(1000);
                         }
                         break;
                     case UpdateState.InDFUMode:
@@ -333,7 +334,7 @@ namespace Meadow.CLI.Core
             if (version == null)
             {
                 // use "latest"
-                updateVersion = FirmwareManager.GetLatestFirmwareVersion();
+                updateVersion = FirmwareManager.GetLocalLatestFirmwareVersion();
             }
             else
             {
