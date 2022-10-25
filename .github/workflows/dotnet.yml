@@ -248,7 +248,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: WildernessLabs.Meadow.CLI
-        path: 'main/Meadow.CLI/bin/Any CPU/Release/*.nupkg'
+        path: 'main/Meadow.CLI/bin/Release/*.nupkg'
 
     # - name: Build Meadow.CLI
     #   run: dotnet msbuild main/Meadow.CLI.Core/Meadow.CLI.Core.csproj /t:Rebuild /p:Configuration=Release
@@ -257,7 +257,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI
-        path: 'main/Meadow.CLI.Core/bin/Any CPU/Release/*.nupkg'
+        path: 'main/Meadow.CLI.Core/bin/Release/*.nupkg'
 
     - if: startsWith(github.ref, 'refs/heads/main')
       name: Publish Nugets
