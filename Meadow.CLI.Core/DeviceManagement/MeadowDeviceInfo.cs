@@ -146,18 +146,25 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             get
             {
-                var idx = _elements[KN_OS_VERSION].IndexOf('(');
-
-                if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                try
                 {
-                    // version 0.9.x+
-                    // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
-                    idx = _elements[KN_OS_VERSION].IndexOf("built");
+                    var idx = _elements[KN_OS_VERSION].IndexOf('(');
+
+                    if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                    {
+                        // version 0.9.x+
+                        // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                        idx = _elements[KN_OS_VERSION].IndexOf("built");
+                        return _elements[KN_OS_VERSION].Substring(0, idx - 1);
+                    }
+
+                    // version 0.6.x
                     return _elements[KN_OS_VERSION].Substring(0, idx - 1);
                 }
-
-                // version 0.6.x
-                return _elements[KN_OS_VERSION].Substring(0, idx - 1);
+                catch
+                {
+                    return "Unknown";
+                }
             }
         }
 
@@ -165,18 +172,25 @@ namespace Meadow.CLI.Core.DeviceManagement
         {
             get
             {
-                var idx = _elements[KN_OS_VERSION].IndexOf('(');
-
-                if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                try
                 {
-                    // version 0.9.x+
-                    // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
-                    var idx2 = _elements[KN_OS_VERSION].IndexOf("built");
-                    return _elements[KN_OS_VERSION].Substring(idx + 6, idx - idx2);
-                }
+                    var idx = _elements[KN_OS_VERSION].IndexOf('(');
 
-                // version 0.6.x
-                return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+                    if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                    {
+                        // version 0.9.x+
+                        // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                        var idx2 = _elements[KN_OS_VERSION].IndexOf("built");
+                        return _elements[KN_OS_VERSION].Substring(idx + 6, idx - idx2);
+                    }
+
+                    // version 0.6.x
+                    return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+                }
+                catch
+                {
+                    return "Unknown";
+                }
             }
         }
 
@@ -198,7 +212,31 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <summary>
         /// Version of Mono deployed on the board.
         /// </summary>
-        public string MonoVersion { get { return ValueOrDefault(KN_MONO_VERSION, "Not available"); } }
+        public string MonoVersion
+        {
+            get
+            {
+                try
+                {
+                    var idx = _elements[KN_MONO_VERSION].IndexOf('(');
+
+                    if (_elements[KN_MONO_VERSION].Substring(idx + 1).StartsWith("0x"))
+                    {
+                        // version 0.9.x+
+                        // "0.9.0.2, built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                        idx = _elements[KN_MONO_VERSION].IndexOf("built");
+                        return _elements[KN_MONO_VERSION].Substring(0, idx - 2);
+                    }
+
+                    // version 0.6.x
+                    return _elements[KN_MONO_VERSION].Substring(0, idx - 1);
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
+        }
 
         /// <summary>
         /// ID of the STM32 processor.
