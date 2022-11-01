@@ -173,7 +173,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                 {
                                     var msg = buffer.Slice(0, messageEnd);
                                     buffer = buffer.Slice(messageEnd + 1);
-                                    DecodeAndProcessPacket(msg, _cts.Token);
+                                    try
+                                    {
+                                        DecodeAndProcessPacket(msg, _cts.Token);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.WriteLine($"{e.Message}");
+                                    }
                                 }
                                 // We had some part of the message from a previous iteration
                                 else
@@ -181,7 +188,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                     message.AddSegment(buffer.Slice(0, messageEnd));
                                     buffer = buffer.Slice(messageEnd + 1);
                                     var msg = message.ToArray();
-                                    DecodeAndProcessPacket(msg, _cts.Token);
+                                    try
+                                    {
+                                        DecodeAndProcessPacket(msg, _cts.Token);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.WriteLine($"{e.Message}");
+                                    }
 
                                     message = null;
                                 }
@@ -257,7 +271,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 {
                     var requestType = (HcomHostRequestType)processor.RequestType;
                     var responseString = processor.ToString();
-                    _logger.LogTrace("Received message {messageType}, Content: {messageContent}", requestType, responseString);
+                    _logger.LogTrace($"Received message {requestType}, Content: {responseString}, {receivedMsg.Length} bytes");
                     switch (requestType)
                     {
                         case HcomHostRequestType.HCOM_HOST_REQUEST_UNDEFINED_REQUEST:

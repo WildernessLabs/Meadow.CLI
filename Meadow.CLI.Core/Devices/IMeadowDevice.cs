@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -26,7 +26,7 @@ namespace Meadow.CLI.Core.Devices
         public Task WriteFileToEspFlash(string? fileName, uint partition = 0, string? mcuDestAddress = null, CancellationToken cancellationToken = default);
 
         public Task FlashEsp(string? sourcePath, string? osVersion = null, CancellationToken cancellationToken = default);
-        
+
         public Task<MeadowDeviceInfo> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<string?> GetDeviceName(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<bool> GetMonoRunState(CancellationToken cancellationToken = default);
@@ -58,5 +58,8 @@ namespace Meadow.CLI.Core.Devices
         public Task<bool> Initialize(CancellationToken cancellationToken);
         public bool IsDeviceInitialized();
         public Task<bool> IsFileOnDevice(string filename, CancellationToken cancellationToken = default);
+
+        public Task<DateTimeOffset> GetRtcTime(CancellationToken cancellationToken = default);
+        public Task SetRtcTime(DateTimeOffset dateTime, CancellationToken cancellationToken = default);
     }
 }
