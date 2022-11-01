@@ -28,7 +28,7 @@ Appending `-v` or `-vv` to any command will increase the logging verbosity to `D
 ### Available Commands
 
 ```console
-meadow v0.90.0
+meadow v0.90.1
 
 USAGE
   meadow [options]
@@ -84,7 +84,7 @@ COMMANDS
 Specifying `--help` with no command will output the list of available commands. Specifying `--help` after a command (e.g., `meadow file delete --help`) will output command specific help.
 
 ```console
-meadow v0.90.0
+meadow v0.90.1
 
 USAGE
   meadow file delete --files <values...> [options]
