@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement.Tools;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,15 +9,12 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.DeviceManagement.Tools;
-using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
-        public async Task<IList<string>> GetFilesAndFoldersAsync(
+        public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
         {
@@ -43,13 +43,12 @@ namespace Meadow.CLI.Core.Devices
                     .WithResponseHandler(handler)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
 
             return items;
         }
 
-        public async Task<IDictionary<string, uint>> GetFilesAndCrcsAsync(
+        public async Task<IDictionary<string, uint>> GetFilesAndCrcs(
             TimeSpan timeout,
             int partition = 0,
             CancellationToken cancellationToken = default)
@@ -80,8 +79,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithUserData((uint)partition)
                     .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
 
             return FilesOnDevice;
         }
@@ -94,7 +92,7 @@ namespace Meadow.CLI.Core.Devices
         /// <param name="timeout">The amount of time to wait to write the file</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to cancel the operation</param>
         /// <returns></returns>
-        public async Task<FileTransferResult> WriteFileAsync(string sourceFileName,
+        public async Task<FileTransferResult> WriteFile(string sourceFileName,
                                                              string destinationFileName,
                                                              TimeSpan timeout,
                                                              CancellationToken cancellationToken =
@@ -113,7 +111,25 @@ namespace Meadow.CLI.Core.Devices
 
             // If ESP32 file we must also send the MD5 has of the file
             using var md5 = MD5.Create();
-            var fileBytes = File.ReadAllBytes(sourceFileName);
+
+            byte[] fileBytes;
+            using (var stream = File.Open(sourceFileName, FileMode.Open))
+            {
+                var streamLength = (int)stream.Length;
+                fileBytes = new byte[streamLength];
+                var bytesRead = 0;
+
+                while (stream.Position < streamLength)
+                {
+                    bytesRead += await stream.ReadAsync(fileBytes, bytesRead, streamLength, cancellationToken);
+                }
+
+                if (bytesRead != streamLength)
+                {
+                    throw new InvalidDataException($"Read bytes: {bytesRead} from {sourceFileName} does not match stream Length: {streamLength}!");
+                }
+            }
+
             var hash = md5.ComputeHash(fileBytes);
             string md5Hash = BitConverter.ToString(hash)
                                          .Replace("-", "")
@@ -122,40 +138,38 @@ namespace Meadow.CLI.Core.Devices
             var fileCrc32 = CrcTools.Crc32part(fileBytes, fileBytes.Length, 0);
 
             var command =
-                await new FileCommandBuilder(
-                          HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
-                      .WithSourceFileName(sourceFileName)
-                      .WithDestinationFileName(destinationFileName)
-                      .WithTimeout(timeout)
-                      .WithPartition(0)
-                      .BuildAsync();
+                new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
+                    .WithSourceFileName(sourceFileName)
+                    .WithDestinationFileName(destinationFileName)
+                    .WithTimeout(timeout)
+                    .WithPartition(0)
+                    .Build();
 
             var sw = Stopwatch.StartNew();
-            await SendTheEntireFile(command, true, cancellationToken)
-                .ConfigureAwait(false);
+
+            await SendTheEntireFile(command, true, cancellationToken);
 
             sw.Stop();
+
             return new FileTransferResult(sw.ElapsedMilliseconds, fileBytes.Length, fileCrc32);
         }
 
-        public async Task DeleteFileAsync(string fileName,
+        public async Task DeleteFile(string fileName,
                                           uint partition = 0,
                                           CancellationToken cancellationToken = default)
         {
             var command =
-                await new FileCommandBuilder(
-                          HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME)
-                      .WithDestinationFileName(fileName)
-                      .WithPartition(partition)
-                      .WithResponseType(MeadowMessageType.Concluded)
-                      .WithCompletionResponseType(MeadowMessageType.Concluded)
-                      .BuildAsync();
+                 new FileCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME)
+                    .WithDestinationFileName(fileName)
+                    .WithPartition(partition)
+                    .WithResponseType(MeadowMessageType.Concluded)
+                    .WithCompletionResponseType(MeadowMessageType.Concluded)
+                    .Build();
 
-            await SendCommandAsync(command, cancellationToken)
-                .ConfigureAwait(false);
+            await SendCommand(command, cancellationToken);
         }
 
-        public Task EraseFlashAsync(CancellationToken cancellationToken = default)
+        public Task EraseFlash(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE)
@@ -163,36 +177,34 @@ namespace Meadow.CLI.Core.Devices
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task VerifyErasedFlashAsync(CancellationToken cancellationToken = default)
+        public Task VerifyErasedFlash(CancellationToken cancellationToken = default)
         {
             var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_VERIFY_ERASED_FLASH)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect)
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task FormatFileSystemAsync(uint partition = 0,
+        public Task FormatFileSystem(uint partition = 0,
                                           CancellationToken cancellationToken = default)
         {
             var command =
-                new SimpleCommandBuilder(
-                        HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_FORMAT_FLASH_FILE_SYS)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect)
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .WithUserData(partition)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task RenewFileSystemAsync(CancellationToken cancellationToken = default)
+        public Task RenewFileSystem(CancellationToken cancellationToken = default)
         {
             var command =
                 new SimpleCommandBuilder(
@@ -201,29 +213,29 @@ namespace Meadow.CLI.Core.Devices
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
-        public Task UpdateMonoRuntimeAsync(string? fileName,
+        public Task UpdateMonoRuntime(string? fileName,
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
-            return UpdateMonoRuntimeAsync(fileName, null, partition, cancellationToken);
+            return UpdateMonoRuntime(fileName, null, partition, cancellationToken);
         }
 
-        public async Task UpdateMonoRuntimeAsync(string? fileName,
-                                                 string? osVersion,      
+        public async Task UpdateMonoRuntime(string? fileName,
+                                                 string? osVersion,
                                                  uint partition = 0,
                                                  CancellationToken cancellationToken = default)
         {
             var sourceFilename = fileName;
-            
+
             if (string.IsNullOrWhiteSpace(sourceFilename))
             {
                 if (string.IsNullOrWhiteSpace(osVersion) == false)
                 {
                     sourceFilename = Path.Combine(
-                                        DownloadManager.FirmwarePathForVersion(osVersion), 
+                                        DownloadManager.FirmwarePathForVersion(osVersion),
                                         DownloadManager.RuntimeFilename);
                 }
                 else
@@ -258,19 +270,17 @@ namespace Meadow.CLI.Core.Devices
 
             Logger.LogDebug("Sending Mono Update Runtime Request");
             var command =
-                await new FileCommandBuilder(
+                new FileCommandBuilder(
                           HcomMeadowRequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME)
-                      .WithPartition(partition)
-                      .WithDestinationFileName(targetFileName)
-                      .WithSourceFileName(sourceFilename)
-                      .BuildAsync()
-                      .ConfigureAwait(false);
+                          .WithPartition(partition)
+                          .WithDestinationFileName(targetFileName)
+                          .WithSourceFileName(sourceFilename)
+                          .Build();
 
-            await SendTheEntireFile(command, true, cancellationToken)
-                .ConfigureAwait(false);
+            await SendTheEntireFile(command, true, cancellationToken);
         }
 
-        public async Task WriteFileToEspFlashAsync(string fileName,
+        public async Task WriteFileToEspFlash(string fileName,
                                                    uint partition = 0,
                                                    string? mcuDestAddress = null,
                                                    CancellationToken cancellationToken = default)
@@ -299,17 +309,15 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 var command =
-                    await new FileCommandBuilder(
+                    new FileCommandBuilder(
                               HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
-                          .WithPartition(partition)
-                          .WithDestinationFileName(targetFileName)
-                          .WithMcuAddress(mcuAddress)
-                          .WithSourceFileName(fileName)
-                          .BuildAsync()
-                          .ConfigureAwait(false);
+                              .WithPartition(partition)
+                              .WithDestinationFileName(targetFileName)
+                              .WithMcuAddress(mcuAddress)
+                              .WithSourceFileName(fileName)
+                              .Build();
 
-                await SendTheEntireFile(command, true, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendTheEntireFile(command, true, cancellationToken);
             }
             else
             {
@@ -359,61 +367,55 @@ namespace Meadow.CLI.Core.Devices
 
                     // this may need need to be awaited?
                     var command =
-                        await new FileCommandBuilder(
+                        new FileCommandBuilder(
                                   HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER)
-                              .WithPartition(partition)
-                              .WithDestinationFileName(targetFileName)
-                              .WithMcuAddress(mcuAddress)
-                              .WithSourceFileName(fileElement[i + 1])
-                              .BuildAsync()
-                              .ConfigureAwait(false);
+                                  .WithPartition(partition)
+                                  .WithDestinationFileName(targetFileName)
+                                  .WithMcuAddress(mcuAddress)
+                                  .WithSourceFileName(fileElement[i + 1])
+                                  .Build();
 
-                    await SendTheEntireFile(command, lastFile, cancellationToken)
-                        .ConfigureAwait(false);
+                    await SendTheEntireFile(command, lastFile, cancellationToken);
                 }
             }
         }
 
-        public async Task FlashEspAsync(string? sourcePath,
+        public async Task FlashEsp(string? sourcePath,
                                         string? osVersion = null,
                                         CancellationToken cancellationToken = default)
         {
-            if (osVersion == null) {
+            if (osVersion == null)
+            {
                 sourcePath ??= DownloadManager.FirmwareDownloadsFilePath;
             }
-            else {
+            else
+            {
                 sourcePath = DownloadManager.FirmwarePathForVersion(osVersion);
             }
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
-            await WriteFileToEspFlashAsync(
+            await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddress: "0x10000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                    cancellationToken: cancellationToken);
 
-            await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+            await Task.Delay(1000, cancellationToken);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
-            await WriteFileToEspFlashAsync(
+            await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddress: "0x1000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                    cancellationToken: cancellationToken);
 
-            await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+            await Task.Delay(1000, cancellationToken);
 
             Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
-            await WriteFileToEspFlashAsync(
+            await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddress: "0x8000",
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                    cancellationToken: cancellationToken);
 
-            await Task.Delay(1000, cancellationToken)
-                      .ConfigureAwait(false);
+            await Task.Delay(1000, cancellationToken);
         }
 
         public async Task<string?> GetInitialBytesFromFile(string fileName,
@@ -431,7 +433,7 @@ namespace Meadow.CLI.Core.Devices
                     .WithData(encodedFileName)
                     .Build();
 
-            var commandResponse = await SendCommandAsync(command, cancellationToken);
+            var commandResponse = await SendCommand(command, cancellationToken);
 
             if (!commandResponse.IsSuccess)
             {
@@ -441,7 +443,7 @@ namespace Meadow.CLI.Core.Devices
             return commandResponse.Message;
         }
 
-        public Task ForwardVisualStudioDataToMonoAsync(byte[] debuggerData,
+        public Task ForwardVisualStudioDataToMono(byte[] debuggerData,
                                                        uint userData,
                                                        CancellationToken cancellationToken =
                                                            default)
@@ -455,14 +457,14 @@ namespace Meadow.CLI.Core.Devices
                     .WithAcknowledgement(false)
                     .Build();
 
-            return SendCommandAsync(command, cancellationToken);
+            return SendCommand(command, cancellationToken);
         }
 
         //ToDo this is super fragile
         //Need updated API to read files after B5.1
         async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
-            var items = await GetFilesAndFoldersAsync(new TimeSpan(0, 0, 10), cancellationToken);
+            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 10), cancellationToken);
 
             bool isRoot = false;
             bool isFolder = false;
@@ -509,143 +511,166 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 Console.WriteLine($"Deleting {item}");
-                await DeleteFileAsync(item, 0, cancellationToken);
+                await DeleteFile(item, 0, cancellationToken);
             }
         }
 
-        public async Task DeployAppAsync(string applicationFilePath,
+        public async Task DeployApp(string applicationFilePath,
                                         string osVersion,
                                          bool includePdbs = false,
                                          CancellationToken cancellationToken = default)
         {
-            try {
-
-
-                if (!File.Exists (applicationFilePath)) {
-                    Console.WriteLine ($"{applicationFilePath} not found.");
+            try
+            {
+                if (!File.Exists(applicationFilePath))
+                {
+                    Console.WriteLine($"{applicationFilePath} not found.");
                     return;
                 }
 
-                await DeleteTemporaryFiles (cancellationToken);
+                await DeleteTemporaryFiles(cancellationToken);
 
-                var fi = new FileInfo (applicationFilePath);
+                var fi = new FileInfo(applicationFilePath);
 
-                var deviceFiles = await GetFilesAndCrcsAsync (
+                var deviceFiles = await GetFilesAndCrcs(
                                           DefaultTimeout,
-                                          cancellationToken: cancellationToken)
-                                      .ConfigureAwait (false);
+                                          cancellationToken: cancellationToken);
 
                 //rename App.dll to App.exe
-                var fileNameDll = Path.Combine (fi.DirectoryName, "App.dll");
-                var fileNameExe = Path.Combine (fi.DirectoryName, "App.exe");
-                var fileNamePdb = Path.Combine (fi.DirectoryName, "App.pdb");
+                var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
+                var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
+                var fileNamePdb = Path.Combine(fi.DirectoryName, "App.pdb");
 
-                if (File.Exists (fileNameDll)) {
-                    if (File.Exists (fileNameExe)) {
-                        File.Delete (fileNameExe);
+                if (File.Exists(fileNameDll))
+                {
+                    if (File.Exists(fileNameExe))
+                    {
+                        File.Delete(fileNameExe);
                     }
-                    File.Copy (fileNameDll, fileNameExe);
+                    File.Copy(fileNameDll, fileNameExe);
                 }
 
-                foreach (var f in deviceFiles) {
-                    Logger.LogInformation ("Found {file} (CRC: {crc})", f.Key, f.Value);
+                foreach (var f in deviceFiles)
+                {
+                    Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
                 }
 
-                var binaries = Directory.EnumerateFiles (fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
-                                       .Where (s => new FileInfo (s).Extension != ".dll")
-                                       .Where (s => new FileInfo (s).Extension != ".pdb");
+                var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+                                       .Where(s => new FileInfo(s).Extension != ".dll")
+                                       .Where(s => new FileInfo(s).Extension != ".pdb");
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
-                var files = new Dictionary<string, uint> ();
+                var files = new Dictionary<string, uint>();
 
-                if (includePdbs) {
-                    await AddFile (fileNamePdb, false);
+                if (includePdbs)
+                {
+                    await AddFile(fileNamePdb, false);
                 }
 
-                async Task AddFile (string file, bool includePdbs)
+                async Task AddFile(string file, bool includePdbs)
                 {
-                    if (files.ContainsKey (Path.GetFileName (file))) {
+                    if (files.ContainsKey(Path.GetFileName(file)))
+                    {
                         return;
                     }
 
-                    using FileStream fs = File.Open (file, FileMode.Open);
+                    using FileStream fs = File.Open(file, FileMode.Open);
                     var len = (int)fs.Length;
                     var bytes = new byte[len];
 
-                    await fs.ReadAsync (bytes, 0, len, cancellationToken);
+                    await fs.ReadAsync(bytes, 0, len, cancellationToken);
 
                     //0x
-                    var crc = CrcTools.Crc32part (bytes, len, 0); // 0x04C11DB7);
+                    var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
-                    Logger.LogDebug ("{file} crc is {crc:X8}", file, crc);
-                    files.Add (file, crc);
-                    if (includePdbs) {
-                        var pdbFile = Path.ChangeExtension (file, "pdb");
-                        if (File.Exists (pdbFile))
-                            await AddFile (pdbFile, false)
-                                .ConfigureAwait (false);
+                    Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
+                    files.Add(file, crc);
+                    if (includePdbs)
+                    {
+                        var pdbFile = Path.ChangeExtension(file, "pdb");
+                        if (File.Exists(pdbFile))
+                            await AddFile(pdbFile, false);
                     }
                 }
 
-                var dependencies = AssemblyManager.GetDependencies (fi.Name, fi.DirectoryName, osVersion)
-                    .Where (x => x.Contains ("App.") == false).ToList ();
+                var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
+                    .Where(x => x.Contains("App.") == false).ToList();
 
-                var linked_dependencies = await AssemblyManager.LinkDependencies (fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+                var trimmed_dependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
 
                 //add local files (this includes App.exe)
-                foreach (var file in binaries) {
-                    await AddFile (file, false);
+                foreach (var file in binaries)
+                {
+                    await AddFile(file, false);
                 }
 
-                //crawl dependencies
-                foreach (var file in linked_dependencies) {
-                    await AddFile (file, false);
+                if (trimmed_dependencies != null)
+                {
+                    //crawl trimmed dependencies
+                    foreach (var file in trimmed_dependencies)
+                    {
+                        await AddFile(file, false);
+                    }
+                }
+                else
+                {
+                    //crawl dependencies
+                    foreach (var file in dependencies)
+                    {
+                        await AddFile(file, false);
+                    }
                 }
 
                 // delete unused files
-                foreach (var devicefile in deviceFiles.Keys) {
+                foreach (var devicefile in deviceFiles.Keys)
+                {
                     bool found = false;
-                    foreach (var localfile in files.Keys) {
-                        if (Path.GetFileName (localfile).Equals (devicefile))
+                    foreach (var localfile in files.Keys)
+                    {
+                        if (Path.GetFileName(localfile).Equals(devicefile))
                             found = true;
                     }
-                    if (!found) {
-                        await DeleteFileAsync (devicefile, cancellationToken: cancellationToken)
-                            .ConfigureAwait (false);
+                    if (!found)
+                    {
+                        await DeleteFile(devicefile, cancellationToken: cancellationToken);
 
-                        Logger.LogInformation ("Removing file: {file}", devicefile);
+                        Logger.LogInformation("Removing file: {file}", devicefile);
                     }
                 }
 
                 // write new files
-                foreach (var file in files) {
-                    var filename = Path.GetFileName (file.Key);
-                    if (deviceFiles.ContainsKey (filename) && deviceFiles[filename] == file.Value) {
-                        Logger.LogInformation ("Skipping file (hash match): {file}", filename);
+                foreach (var file in files)
+                {
+                    var filename = Path.GetFileName(file.Key);
+                    if (deviceFiles.ContainsKey(filename) && deviceFiles[filename] == file.Value)
+                    {
+                        Logger.LogInformation("Skipping file (hash match): {file}", filename);
                         continue;
                     }
 
-                    if (!File.Exists (file.Key)) {
-                        Logger.LogInformation ("{file} not found", filename);
+                    if (!File.Exists(file.Key))
+                    {
+                        Logger.LogInformation("{file} not found", filename);
                         continue;
                     }
 
-                    Logger.LogInformation ("Writing file: {file}", filename);
-                    await WriteFileAsync (
+                    Logger.LogInformation("Writing file: {file}", filename);
+                    await WriteFile(
                             file.Key,
                             filename,
                             DefaultTimeout,
-                            cancellationToken)
-                        .ConfigureAwait (false);
+                            cancellationToken);
 
-                    Logger.LogInformation ("Wrote file: {file}", file.Key);
+                    Logger.LogInformation("Wrote file: {file}", file.Key);
                 }
 
-                Logger.LogInformation ("{file} deploy complete", fi.Name);
+                Logger.LogInformation("{file} deploy complete", fi.Name);
             }
-            catch (Exception ex) {
-                Logger.LogError ($"Unhandled Exception: {ex.Message} \nStack Trace :\n{ex.StackTrace}");
-                Console.WriteLine ($"Unhandled Exception in DeployAppAsync():\n {ex.Message}\nStack Trace :\n{ex.StackTrace}");
+            catch (Exception ex)
+            {
+                Logger.LogError($"An error occurred during the App deployment process.");
+                Logger.LogError($"Error:\n{ex.Message} \nStack Trace :\n{ex.StackTrace}");
+                throw ex;
             }
         }
 
@@ -653,8 +678,7 @@ namespace Meadow.CLI.Core.Devices
         {
             if (FilesOnDevice.Any() == false)
             {
-                await GetFilesAndCrcsAsync(DefaultTimeout, 0, cancellationToken)
-                    .ConfigureAwait(false);
+                await GetFilesAndCrcs(DefaultTimeout, 0, cancellationToken);
             }
             return FilesOnDevice.ContainsKey(filename);
         }

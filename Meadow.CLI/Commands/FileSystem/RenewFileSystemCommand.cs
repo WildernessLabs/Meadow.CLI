@@ -23,7 +23,7 @@ namespace Meadow.CLI.Commands.FileSystem
 
             await console.Output.WriteLineAsync("Renewing file system on the Meadow.");
 
-            await Meadow.RenewFileSystemAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await Meadow.RenewFileSystem(cancellationToken: cancellationToken);
         }
     }
 }

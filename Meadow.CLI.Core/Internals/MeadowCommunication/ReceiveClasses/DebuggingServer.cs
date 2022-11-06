@@ -31,7 +31,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         private Task? _listenerTask;
         private bool _isReady;
         public bool Disposed;
-        private bool _debuggerConnected;
 
         // Constructor
         /// <summary>
@@ -45,6 +44,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             LocalEndpoint = localEndpoint;
             _meadow = meadow;
             _logger = logger;
+            _listener = new TcpListener(LocalEndpoint);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> that is linked internally to the running task</param>
         /// <returns>A <see cref="Task"/> representing the startup operation</returns>
-        public async Task StartListeningAsync(CancellationToken cancellationToken)
+        public async Task StartListening(CancellationToken cancellationToken)
         {
             _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _listenerTask = Task.Factory.StartNew(StartListener, TaskCreationOptions.LongRunning);
@@ -64,7 +64,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     return;
                 }
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(100, cancellationToken);
             }
 
             throw new Exception("DebuggingServer did not start listening within the 60 second timeout.");
@@ -74,40 +74,41 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         /// Stop the <see cref="DebuggingServer"/>
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the shutdown operation</returns>
-        public async Task StopListeningAsync()
+        public async Task StopListening()
         {
             _listener?.Stop();
-            _debuggerConnected = false;
+
             if (_cancellationTokenSource != null)
                 _cancellationTokenSource?.Cancel(false);
 
             if (_listenerTask != null)
-                await _listenerTask.ConfigureAwait(false);
+            {
+                await _listenerTask;
+            }
         }
 
         private async Task StartListener()
         {
             try
             {
-                _listener = new TcpListener(LocalEndpoint);
                 _listener.Start();
                 LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
                 _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
                 _isReady = true;
 
-                // We only one to listen until the debugger is connected (presumably) then we can stop spinning.
-                while (!_debuggerConnected)
-                {
-                    // Wait for client to connect
-                    TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
-                    OnConnect(tcpClient);
-                    if (_debuggerConnected)
-                        break;
-                }
+                // This call will wait for the client to connect, before continuing. We shouldn't need a loop.
+                TcpClient tcpClient = await _listener.AcceptTcpClientAsync();
+                OnConnect(tcpClient);
+            }
+            catch (SocketException soex) 
+            {
+                _logger.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
+                _logger.LogError($"Error:\n{soex.Message} \nStack Trace:\n{soex.StackTrace}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while listening for debugging connections");
+                _logger.LogError("An unhandled exception occurred while listening for debugging connections.");
+                _logger.LogError($"Error:\n{ex.Message} \nStack Trace:\n{ex.StackTrace}");
             }
         }
 
@@ -115,10 +116,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         {
             try
             {
-                _logger.LogInformation("Visual Studio has Connected");
-                lock (this)
+                lock (_lck)
                 {
-                    _debuggerConnected = true;
+                    _logger.LogInformation ("Visual Studio has Connected");
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                     {
                         _logger.LogDebug("Closing active client");
@@ -183,13 +183,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
             }
 
+            private const int RECEIVE_BUFFER_SIZE = 256;
+
             private async Task SendToMeadowAsync()
             {
                 try
                 {
                     using var md5 = MD5.Create();
                     // Receive from Visual Studio and send to Meadow
-                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(490);
+                    var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
                     var meadowBuffer = Array.Empty<byte>();
                     while (!_cts.IsCancellationRequested)
                     {
@@ -206,18 +208,18 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                 Array.Resize(ref meadowBuffer, destIndex + bytesRead);
                                 Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
 
+                                // Forward the RECIEVE_BUFFER_SIZE chunk to Meadow immediately
+                                _logger.LogInformation("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
+                                                    meadowBuffer.Length,
+                                                    BitConverter.ToString(md5.ComputeHash(meadowBuffer))
+                                                                .Replace ("-", string.Empty)
+                                                                .ToLowerInvariant());
+                                await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
+                                meadowBuffer = Array.Empty<byte>();
+
                                 // Ensure we read all the data in this message before passing it along
                                 // I'm not sure this is actually needed, the whole message should get read at once.
                             } while (_networkStream.DataAvailable);
-
-                            // Forward to Meadow
-                            _logger.LogTrace("Received {count} bytes from VS will forward to HCOM. {hash}",
-                                                meadowBuffer.Length,
-                                                BitConverter.ToString(md5.ComputeHash(meadowBuffer))
-                                                            .Replace("-", string.Empty)
-                                                            .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMonoAsync(meadowBuffer, 0).ConfigureAwait(false);
-                            meadowBuffer = Array.Empty<byte>();
                         }
                         else
                         {
@@ -239,9 +241,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     _logger.LogInformation("Visual Studio has stopped debugging");
                     _logger.LogTrace(ode, "Visual Studio has stopped debugging");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error receiving data from Visual Studio");
+                    _logger.LogError($"Error receiving data from Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
                     throw;
                 }
             }
@@ -254,16 +256,19 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     {
                         if (_networkStream != null && _networkStream.CanWrite)
                         {
-                            var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
-                            _logger.LogTrace("Forwarding {count} bytes to VS", byteData.Length);
-                            if (!_tcpClient.Connected)
+                            while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
                             {
-                                _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
-                                return;
-                            }
+                                var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
+                                _logger.LogInformation("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
+                                if (!_tcpClient.Connected)
+                                {
+                                    _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
+                                    return;
+                                }
 
-                            await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
-                            _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                                await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
+                                _logger.LogInformation("Forwarded {count} bytes to VS", byteData.Length);
+                            }
                         }
                         else
                         {
@@ -278,11 +283,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                     // User probably hit stop; Removed logging as User doesn't need to see this
                     // Keeping it as a TODO in case we find a side effect that needs logging.
                     // TODO _logger.LogInformation("Operation Cancelled");
-                    // TODP _logger.LogTrace(oce, "Operation Cancelled");
+                    // TODO _logger.LogTrace(oce, "Operation Cancelled");
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    _logger.LogError(e, "Error sending data to Visual Studio");
+                    _logger.LogError ($"Error sending data to Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+
                     if (_cts.IsCancellationRequested)
                         throw;
                 }

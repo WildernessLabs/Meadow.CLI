@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
@@ -24,7 +23,7 @@ namespace Meadow.CLI.Commands.Utility
         {
             await base.ExecuteAsync(console);
 
-            await DownloadManager.DownloadLatestAsync(OsVersion, Force).ConfigureAwait(false);
+            await DownloadManager.DownloadOsBinaries(OsVersion, Force);
         }
     }
 }

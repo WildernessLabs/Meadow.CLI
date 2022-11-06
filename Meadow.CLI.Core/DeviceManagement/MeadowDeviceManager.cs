@@ -28,7 +28,8 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         public const string NoDevicesFound = "No Devices Found";
 
-        private static object lockObject = new object();
+        static object lockObject = new object();
+        static IMeadowDevice? meadow = null;
 
         // Avoid changing signature
         public static async Task<IMeadowDevice?> GetMeadowForSerialPort(string serialPort, bool verbose = true, ILogger? logger = null)
@@ -37,11 +38,16 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
+                if (meadow != null)
+                {
+                    meadow.Dispose();
+                    meadow = null;
+                }
+
                 logger.LogInformation($"Connecting to Meadow on {serialPort}");
-                IMeadowDevice? meadow = null;
+                
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
-                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000))
-                          .ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(createTask, Task.Delay(1000));
 
                 if (completedTask != createTask || meadow == null)
                 {
@@ -58,7 +64,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     return null;
                 }
 
-                await meadow.InitializeAsync(CancellationToken.None);
+                await meadow.Initialize(CancellationToken.None);
 
                 return meadow;
             }
@@ -143,13 +149,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                 {
                     try
                     {
-                        var device = await GetMeadowForSerialPort(port, false, logger)
-                                         .ConfigureAwait(false);
+                        var device = await GetMeadowForSerialPort(port, false, logger);
 
                         if (device == null)
                             continue;
 
-                        var deviceInfo = await device.GetDeviceInfoAsync(
+                        var deviceInfo = await device.GetDeviceInfo(
                                              TimeSpan.FromSeconds(60),
                                              cancellationToken);
 
@@ -194,8 +199,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     }
                 }
 
-                await Task.Delay(1000, cancellationToken)
-                          .ConfigureAwait(false);
+                await Task.Delay(1000, cancellationToken);
 
                 attempts++;
             }
@@ -347,7 +351,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 return results.ToArray ();
             }
-            catch (ApplicationException aex) {
+            catch (Exception aex) {
                 // eat it for now
                 logger.LogDebug (aex, "This error can be safely ignored.");
 

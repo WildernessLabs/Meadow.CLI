@@ -23,17 +23,17 @@ namespace Meadow.CLI.Core.Devices
             _packetCrc32 = 0;
             _lastProgress = 0;
 
-            Logger.LogDebug("Sending {filename} to device", command.DestinationFileName);
             try
             {
-                var response = await SendCommandAsync(command, cancellationToken)
-                                   .ConfigureAwait(false);
+                var response = await SendCommand(command, cancellationToken);
 
+                string responseMessage = string.Empty;
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
+                    if (response.Message != null)
+                        responseMessage = response.Message;
                     throw new MeadowCommandException(command,
-                        "Meadow rejected download request with ",
-                        response);
+                        "Meadow rejected download request with " + responseMessage, response);
                 }
 
                 switch (command.RequestType)
@@ -94,8 +94,7 @@ namespace Meadow.CLI.Core.Devices
                             fileBufOffset,
                             numBytesToSend,
                             sequenceNumber,
-                            cancellationToken)
-                        .ConfigureAwait(false);
+                            cancellationToken);
 
                     var progress = (decimal)fileBufOffset / command.FileSize;
                     WriteProgress(progress);
@@ -131,8 +130,7 @@ namespace Meadow.CLI.Core.Devices
                              "Cannot build trailer for unknown command")
                 };
 
-                await SendCommandAsync(trailerCommand, cancellationToken)
-                    .ConfigureAwait(false);
+                await SendCommand(trailerCommand, cancellationToken);
 
 
                 // bufferOffset should point to the byte after the last byte
@@ -147,9 +145,9 @@ namespace Meadow.CLI.Core.Devices
                     "Transfer Complete, wrote {count} bytes to Meadow",
                     fileBufOffset);
             }
-            catch (Exception except)
+            catch (Exception ex)
             {
-                Logger.LogError(except, "Exception sending command to Meadow");
+                Logger.LogError($"Exception sending command to Meadow.{Environment.NewLine}Error:{ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
                 throw;
             }
         }
@@ -181,8 +179,7 @@ namespace Meadow.CLI.Core.Devices
                 Array.Copy(seqBytes, fullMsg, sizeof(ushort));
                 Array.Copy(messageBytes, messageOffset, fullMsg, sizeof(ushort), messageSize);
 
-                await EncodeAndSendPacket(fullMsg, 0, transmitSize, cancellationToken)
-                    .ConfigureAwait(false);
+                await EncodeAndSendPacket(fullMsg, 0, transmitSize, cancellationToken);
             }
             catch (Exception except)
             {
@@ -191,13 +188,12 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        private protected async Task<CommandResponse> SendCommandAsync(
+        private protected async Task<CommandResponse> SendCommand(
             Command command,
             CancellationToken cancellationToken = default,
             [CallerMemberName] string? caller = null)
         {
-            await _comPortSemaphore.WaitAsync(cancellationToken)
-                                .ConfigureAwait(false);
+            await _comPortSemaphore.WaitAsync(cancellationToken);
 
             try
             {
@@ -206,14 +202,12 @@ namespace Meadow.CLI.Core.Devices
                 CommandResponse resp;
                 if (command.IsAcknowledged)
                 {
-                    resp = await WaitForResponseMessageAsync(command, cancellationToken)
-                               .ConfigureAwait(false);
+                    resp = await WaitForResponseMessageAsync(command, cancellationToken);
                 }
                 else
                 {
                     var messageBytes = command.ToMessageBytes();
-                    await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
-                        .ConfigureAwait(false);
+                    await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken);
                     resp = CommandResponse.Empty;
                 }
 
@@ -276,8 +270,7 @@ namespace Meadow.CLI.Core.Devices
                     using var cts = new CancellationTokenSource(DefaultTimeout);
                     cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
                     var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
-                    await WriteAsync(encodedBytes, encodedToSend, combinedCts.Token)
-                        .ConfigureAwait(false);
+                    await Write(encodedBytes, encodedToSend, combinedCts.Token);
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
@@ -360,8 +353,7 @@ namespace Meadow.CLI.Core.Devices
             try
             {
                 var messageBytes = command.ToMessageBytes();
-                await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken)
-                    .ConfigureAwait(false);
+                await EncodeAndSendPacket(messageBytes, 0, messageBytes.Length, cancellationToken);
 
                 using var timeoutCancellationTokenSource =
                     new CancellationTokenSource(command.Timeout);
@@ -369,7 +361,7 @@ namespace Meadow.CLI.Core.Devices
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
                 timeoutCancellationTokenSource.Token.Register(() => tcs.TrySetCanceled());
-                await tcs.Task.ConfigureAwait(false);
+                await tcs.Task;
                 if (cts.IsCancellationRequested)
                     throw new TimeoutException("Timeout while waiting for meadow");
             }

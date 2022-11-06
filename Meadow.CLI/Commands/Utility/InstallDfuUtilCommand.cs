@@ -27,7 +27,7 @@ namespace Meadow.CLI.Commands.Utility
             {
                 if(IsAdministrator())
                 {
-                    await DownloadManager.InstallDfuUtilAsync(Environment.Is64BitOperatingSystem, cancellationToken);
+                    await DownloadManager.InstallDfuUtil(Environment.Is64BitOperatingSystem, cancellationToken);
                 }
                 else
                 {
