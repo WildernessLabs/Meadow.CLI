@@ -12,8 +12,6 @@ namespace Meadow.CLI.Commands.DeviceManagement
     [Command("flash os", Description = "Update the OS on the Meadow Board")]
     public class FlashOsCommand : MeadowSerialCommand
     {
-        private MeadowDeviceInfo deviceInfo;
-
         private const string MINIMUM_OS_VERSION = "0.6.1.0";
 
         public FlashOsCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)

@@ -281,6 +281,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                      ? Task.Factory.StartNew(
                                          () =>
                                          {
+                                             var lastProgress = string.Empty;
+
                                              while (process.HasExited == false)
                                              {
                                                  var logLine = process.StandardOutput.ReadLine();
@@ -294,9 +296,10 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                                          logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
                                                      var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
                                                      var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
-                                                     if (progress != "100%")
+                                                     if (progress != "100%" && progress != lastProgress)
                                                      {
                                                          logger.LogInformation(progress);
+                                                         lastProgress = progress;
                                                      }
                                                  }
                                                  else

@@ -30,11 +30,11 @@ namespace Meadow.CLI.Core.Devices
                 string responseMessage = string.Empty;
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
-                    if (response.Message != null)
+                    if (!string.IsNullOrEmpty(response.Message))
                     {
                         throw new MeadowCommandException(command, $"Meadow rejected download request with the message: {responseMessage}", response);
                     }
-                    throw new MeadowCommandException(command, $"Meadow rejected download request no (empty) response message", response);
+                    throw new MeadowCommandException(command, $"Meadow rejected download request with an empty response message (DownloadStartFail)", response);
                 }
 
                 switch (command.RequestType)
@@ -148,7 +148,7 @@ namespace Meadow.CLI.Core.Devices
             }
             catch (Exception ex)
             {
-                Logger?.LogError($"Exception sending command to Meadow.{Environment.NewLine}Error:{ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+                Logger?.LogError($"{ex.Message}");
                 throw;
             }
         }
