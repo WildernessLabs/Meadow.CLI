@@ -1,11 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.DeviceManagement
 {
@@ -92,21 +92,24 @@ namespace Meadow.CLI.Commands.DeviceManagement
             // We just flashed the OS so it will show the current version 
             // But the runtime hasn't been updated yet so should match the previous OS version
             Version previousOsVersion;
+            var checkName = string.Empty;
 
             try
             {
-                previousOsVersion = new Version(Meadow.DeviceInfo?.MonoVersion.Split(',')[0]);
+                previousOsVersion = new Version(Meadow.DeviceInfo?.RuntimeVersion.Split(',')[0]);
+                checkName = "runtime";
             }
             catch
             {
                 previousOsVersion = new Version(MINIMUM_OS_VERSION);
+                checkName = "OS";
             }
 
             // If less that B6.1 flash
             if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0)
             {
                 // Ask User 1st before wiping
-                Logger.LogInformation($"Your OS or runtime version is older than {MINIMUM_OS_VERSION}. A flash erase is highly recommended.");
+                Logger.LogInformation($"Your {checkName} version is older than {MINIMUM_OS_VERSION} (or unreadable). A flash erase is highly recommended.");
                 var yesOrNo = "y";
 
                 if (!DontPrompt)

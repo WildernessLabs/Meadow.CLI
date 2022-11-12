@@ -31,9 +31,10 @@ namespace Meadow.CLI.Core.Devices
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
                     if (response.Message != null)
-                        responseMessage = response.Message;
-                    throw new MeadowCommandException(command,
-                        "Meadow rejected download request with " + responseMessage, response);
+                    {
+                        throw new MeadowCommandException(command, $"Meadow rejected download request with the message: {responseMessage}", response);
+                    }
+                    throw new MeadowCommandException(command, $"Meadow rejected download request no (empty) response message", response);
                 }
 
                 switch (command.RequestType)
