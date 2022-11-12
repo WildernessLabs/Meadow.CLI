@@ -36,9 +36,9 @@ namespace Meadow.CLI.Core.DeviceManagement
         private const string KN_COPROCESSOR_VERSION = "coprocessorversion";
 
         /// <summary>
-        /// Name of the mono version key.
+        /// Name of the runtime version key.
         /// </summary>
-        private const string KN_MONO_VERSION = "monoversion";
+        private const string KN_RT_VERSION = "monoversion";
 
         /// <summary>
         /// Name of the processor ID key.
@@ -120,7 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 _elements.Add(KN_COPROCESSOR_VERSION, ParseValue("CoProcessor OS Version: ", deviceInfoString));
                 _elements.Add(KN_HARDWARE_VERSION, ParseValue("H/W Version: ", deviceInfoString));
                 _elements.Add(KN_DEVICE_NAME, ParseValue("Device Name: ", deviceInfoString));
-                _elements.Add(KN_MONO_VERSION, ParseValue("Mono Version: ", deviceInfoString));
+                _elements.Add(KN_RT_VERSION, ParseValue("Runtime Version: ", deviceInfoString));
             }
         }
 
@@ -230,28 +230,28 @@ namespace Meadow.CLI.Core.DeviceManagement
         public string CoProcessorOsVersion { get { return ValueOrDefault(KN_COPROCESSOR_VERSION, "Not available"); } }
 
         /// <summary>
-        /// Version of Mono deployed on the board.
+        /// Version of runtime deployed on the board.
         /// </summary>
-        public string MonoVersion
+        public string RuntimeVersion
         {
             get
             {
                 try
                 {
-                    if (_elements.ContainsKey(KN_MONO_VERSION))
+                    if (_elements.ContainsKey(KN_RT_VERSION))
                     {
-                        var idx = _elements[KN_MONO_VERSION].IndexOf('(');
+                        var idx = _elements[KN_RT_VERSION].IndexOf('(');
 
-                        if (_elements[KN_MONO_VERSION].Substring(idx + 1).StartsWith("0x"))
+                        if (_elements[KN_RT_VERSION].Substring(idx + 1).StartsWith("0x"))
                         {
                             // version 0.9.x+
                             // "0.9.0.2, built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
-                            idx = _elements[KN_MONO_VERSION].IndexOf("built");
-                            return _elements[KN_MONO_VERSION].Substring(0, idx - 2);
+                            idx = _elements[KN_RT_VERSION].IndexOf("built");
+                            return _elements[KN_RT_VERSION].Substring(0, idx - 2);
                         }
 
                         // version 0.6.x
-                        return _elements[KN_MONO_VERSION].Substring(0, idx - 1);
+                        return _elements[KN_RT_VERSION].Substring(0, idx - 1);
                     }
                     else
                     {
@@ -367,7 +367,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             deviceInfo += AddOptionalValue(", ID:", ProcessorId);
             deviceInfo += AddOptionalValue(", Serial number:", SerialNumber);
             deviceInfo += $", Coprocessor type: {CoProcessorType}\n";
-            deviceInfo += $"Firmware Versions - OS: {MeadowOsVersion} Mono: {MonoVersion}, Coprocessor: {CoProcessorOsVersion}";
+            deviceInfo += $"Firmware Versions - OS: {MeadowOsVersion} Runtime: {RuntimeVersion}, Coprocessor: {CoProcessorOsVersion}";
 
             string macAddresses = string.Empty;
             int macCount = 0;

@@ -434,7 +434,7 @@ namespace Meadow.CLI.Core.Devices
                                        .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
                 Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
-                                    $"Mono: {deviceInfo.MonoVersion}, " +
+                                    $"Mono: {deviceInfo.RuntimeVersion}, " +
                                     $"Coprocessor: {deviceInfo.CoProcessorOsVersion}");
             }
             catch (Exception ex)

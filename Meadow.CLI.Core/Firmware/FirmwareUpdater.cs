@@ -2,6 +2,7 @@
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -179,7 +180,7 @@ namespace Meadow.CLI.Core
                         CurrentState = UpdateState.UpdatingRuntime;
                         break;
                     case UpdateState.UpdatingRuntime:
-                        if (info.MonoVersion == RequestedVersion)
+                        if (info.RuntimeVersion == RequestedVersion)
                         {
                             // no need to update, it's already there
                         }
@@ -235,14 +236,18 @@ namespace Meadow.CLI.Core
                         {
                             try
                             {
+                                Debug.WriteLine(">> waiting for connection");
                                 await _connection.WaitForConnection(TimeSpan.FromSeconds(30));
+                                Debug.WriteLine(">> delay");
                                 await Task.Delay(3000); // wait to allow full boot - no idea why this takes longer
 
                                 if (info == null)
                                 {
+                                    Debug.WriteLine(">> query device info");
                                     info = _connection.Device.DeviceInfo;
                                 }
 
+                                Debug.WriteLine(">> flashing ESP");
                                 await _connection.Device.FlashEsp(DownloadManager.FirmwareDownloadsFilePath, RequestedVersion);
                             }
                             catch (Exception ex)
@@ -278,10 +283,10 @@ namespace Meadow.CLI.Core
                                 // this is a failure
                                 _logger?.LogWarning($"OS version {info.MeadowOsVersion} does not match requested version {RequestedVersion}");
                             }
-                            if (info.MonoVersion != RequestedVersion)
+                            if (info.RuntimeVersion != RequestedVersion)
                             {
                                 // this is a failure
-                                _logger?.LogWarning($"Runtime version {info.MonoVersion} does not match requested version {RequestedVersion}");
+                                _logger?.LogWarning($"Runtime version {info.RuntimeVersion} does not match requested version {RequestedVersion}");
                             }
                             if (info.CoProcessorOsVersion != RequestedVersion)
                             {
