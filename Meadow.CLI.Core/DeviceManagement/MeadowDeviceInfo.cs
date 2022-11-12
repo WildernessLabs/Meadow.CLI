@@ -187,25 +187,26 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 try
                 {
-                    var idx = _elements[KN_OS_VERSION].IndexOf('(');
-
                     if (_elements.ContainsKey(KN_OS_VERSION))
                     {
-                        if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
-                        {
-                            // version 0.9.x+
-                            // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
-                            var idx2 = _elements[KN_OS_VERSION].IndexOf("built");
-                            return _elements[KN_OS_VERSION].Substring(idx + 6, idx - idx2);
-                        }
+                        var idx = _elements[KN_OS_VERSION].IndexOf('(');
 
-                        // version 0.6.x
-                        return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+                        if (idx >= 0)
+                        {
+                            if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                            {
+                                // version 0.9.x+
+                                // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                                var idx2 = _elements[KN_OS_VERSION].IndexOf("built");
+                                return _elements[KN_OS_VERSION].Substring(idx + 6, idx - idx2);
+                            }
+
+                            // version 0.6.x
+                            return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+                        }
                     }
-                    else
-                    {
-                        return "Unknown";
-                    }
+
+                    return "Unknown";
                 }
                 catch
                 {
@@ -241,6 +242,12 @@ namespace Meadow.CLI.Core.DeviceManagement
                     if (_elements.ContainsKey(KN_RT_VERSION))
                     {
                         var idx = _elements[KN_RT_VERSION].IndexOf('(');
+
+                        if (idx == -1)
+                        {
+                            // starting with 0.9.1 (??) there is no date info
+                            return _elements[KN_RT_VERSION];
+                        }
 
                         if (_elements[KN_RT_VERSION].Substring(idx + 1).StartsWith("0x"))
                         {
