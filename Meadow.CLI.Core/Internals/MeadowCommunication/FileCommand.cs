@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.Hcom;
+using System;
 using System.Diagnostics;
 using System.Text;
-using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
@@ -24,7 +25,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         {
             SourceFileName = sourceFileName;
             DestinationFileName = destinationFileName;
-            Md5Hash = md5Hash??string.Empty;
+            Md5Hash = md5Hash ?? string.Empty;
             Crc32 = crc32;
             FileSize = fileSize;
             Partition = partition;
@@ -80,7 +81,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             offset += targetFileName.Length;
 
             Debug.Assert(offset == optionalDataLength + HcomProtocolCommandRequiredHeaderLength);
-            
+
             return messageBytes;
         }
     }

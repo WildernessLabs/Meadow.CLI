@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -302,7 +303,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Console.WriteLine(
+                    Logger.LogError(
                         $"The '--McuDestAddress' argument must be followed with an address in the form '0x1800'");
 
                     return;
@@ -327,7 +328,7 @@ namespace Meadow.CLI.Core.Devices
                 string[] fileElement = fileName.Split(',');
                 if (fileElement.Length % 2 != 0)
                 {
-                    Console.WriteLine(
+                    Logger.LogError(
                         "Please provide a CSV input with \"address, fileName, address, fileName\"");
 
                     return;
@@ -355,7 +356,7 @@ namespace Meadow.CLI.Core.Devices
                     }
                     else
                     {
-                        Console.WriteLine("Please provide a CSV input with addresses like 0x1234");
+                        Logger.LogError("Please provide a CSV input with addresses like 0x1234");
                         return;
                     }
 
@@ -460,11 +461,11 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
-        //ToDo this is super fragile
+        //ToDo this is super fragile (extra-super fragile!)
         //Need updated API to read files after B5.1
         async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
-            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 10), cancellationToken);
+            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), cancellationToken);
 
             bool isRoot = false;
             bool isFolder = false;
@@ -510,7 +511,7 @@ namespace Meadow.CLI.Core.Devices
                     continue;
                 }
 
-                Console.WriteLine($"Deleting {item}");
+                Logger.LogInformation($"Deleting {item}");
                 await DeleteFile(item, 0, cancellationToken);
             }
         }
@@ -524,7 +525,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 if (!File.Exists(applicationFilePath))
                 {
-                    Console.WriteLine($"{applicationFilePath} not found.");
+                    Logger.LogError($"{applicationFilePath} not found.");
                     return;
                 }
 
