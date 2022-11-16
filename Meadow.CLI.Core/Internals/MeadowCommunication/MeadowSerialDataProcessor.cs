@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,6 +45,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         private readonly ReceiveMessageFactoryManager _receiveMessageFactoryManager;
         private readonly CancellationTokenSource _cts;
+
+        // TODO: make these user settable via CLI
+        public string StdInfoPrefix { get; set; } = "Meadow StdInfo";
+        public string StdOutPrefix { get; set; } = "Meadow StdOut";
+        public string StdErrPrefix { get; set; } = "Meadow StdErr";
 
         // It seems that the .Net SerialPort class is not all it could be.
         // To acheive reliable operation some SerialPort class methods must
@@ -259,6 +265,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             return true;
         }
 
+        private IEnumerable<string> FormatForOutput(string prefix, string message)
+        {
+            return message
+                .Trim()
+                .Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(m => string.IsNullOrEmpty(prefix) ? m.Trim() : $"{prefix}: {m.Trim()}");
+        }
+
         // TODO: Convert to Memory<byte> from byte[]
         private void ParseAndProcessReceivedPacket(byte[] receivedMsg, CancellationToken cancellationToken)
         {
@@ -290,7 +304,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            _logger.LogInformation("Meadow StdInfo: {message}", responseString);
+                            foreach (var m in FormatForOutput(StdInfoPrefix, responseString))
+                            {
+                                _logger.LogInformation(m);
+                            }
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
@@ -303,11 +320,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.FileListCrcMember, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
-                            _logger.LogInformation("Meadow StdOut: {message}", responseString);
+                            foreach (var m in FormatForOutput(StdOutPrefix, responseString))
+                            {
+                                _logger.LogInformation(m);
+                            }
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.AppOutput, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
-                            _logger.LogWarning("Meadow StdErr: {message}", responseString);
+                            foreach (var m in FormatForOutput(StdErrPrefix, responseString))
+                            {
+                                _logger.LogWarning(m);
+                            }
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.ErrOutput, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
