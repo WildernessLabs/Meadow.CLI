@@ -58,6 +58,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
+    <None Include="images\icon.png" PackagePath="icon.png" Pack="true" />
   </ItemGroup>
 
   <ItemGroup>
