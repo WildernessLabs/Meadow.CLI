@@ -257,6 +257,12 @@ jobs:
       with:
         name: Meadow.CLI
         path: 'main/Meadow.CLI.Core/bin/x64/Release/*.nupkg'
+    
+    - name: Upload WildernessLabs.Meadow.CLI Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: WildernessLabs.Meadow.CLI
+        path: 'main/Meadow.CLI/bin/x64/Release/*.nupkg'
 
     - if: startsWith(github.ref, 'refs/heads/main')
       name: Publish Nugets
