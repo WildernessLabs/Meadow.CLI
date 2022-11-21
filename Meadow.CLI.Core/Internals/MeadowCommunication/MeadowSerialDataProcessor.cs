@@ -304,9 +304,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                            foreach (var m in FormatForOutput(StdInfoPrefix, responseString))
+                            if (!SuppressOutput)
                             {
-                                _logger.LogInformation(m);
+                                foreach (var m in FormatForOutput(StdInfoPrefix, responseString))
+                                {
+                                    _logger.LogInformation(m);
+                                }
                             }
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
                             break;

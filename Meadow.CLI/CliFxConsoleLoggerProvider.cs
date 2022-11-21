@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using CliFx.Infrastructure;
+﻿using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Concurrent;
 
 namespace Meadow.CLI
 {
@@ -10,7 +10,7 @@ namespace Meadow.CLI
         private readonly CliFxConsoleLoggerProviderConfig _config;
         private readonly string _name;
         private readonly IConsole _console;
-        
+
         public CliFxConsoleLogger(
             IConsole console,
             string name,
@@ -26,7 +26,18 @@ namespace Meadow.CLI
         {
             if (!IsEnabled(logLevel))
                 return;
-            _console.Output.WriteLine(formatter(state, exception));
+
+            var output = formatter(state, exception);
+            if (output.EndsWith('\b'))
+            {
+                // if the line terminates with '\b', don't newline
+                _console.Output.Write(output.TrimEnd());
+                _console.Output.Console.CursorLeft = 0;
+            }
+            else
+            {
+                _console.Output.WriteLine(output);
+            }
         }
 
         public bool IsEnabled(LogLevel logLevel) =>
@@ -53,6 +64,6 @@ namespace Meadow.CLI
 
     public class CliFxConsoleLoggerProviderConfig
     {
-        public LogLevel LogLevel {get; init; }
+        public LogLevel LogLevel { get; init; }
     }
 }

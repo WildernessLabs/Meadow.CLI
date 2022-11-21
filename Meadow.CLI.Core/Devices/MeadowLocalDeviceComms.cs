@@ -21,7 +21,6 @@ namespace Meadow.CLI.Core.Devices
                                             CancellationToken cancellationToken)
         {
             _packetCrc32 = 0;
-            _lastProgress = 0;
 
             try
             {
@@ -71,38 +70,46 @@ namespace Meadow.CLI.Core.Devices
                 ushort sequenceNumber = 1;
 
                 Logger?.LogInformation("Starting File Transfer...");
-                while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
+                DataProcessor.SuppressOutput = true;
+                try
                 {
-                    int numBytesToSend;
-                    if (fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength
-                      > command.FileSize - 1)
+                    while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                     {
-                        numBytesToSend =
-                            command.FileSize - fileBufOffset; // almost done, last packet
+                        int numBytesToSend;
+                        if (fileBufOffset + MeadowDeviceManager.MaxAllowableMsgPacketLength
+                          > command.FileSize - 1)
+                        {
+                            numBytesToSend =
+                                command.FileSize - fileBufOffset; // almost done, last packet
+                        }
+                        else
+                        {
+                            numBytesToSend = MeadowDeviceManager.MaxAllowableMsgPacketLength;
+                        }
+
+                        if (command.FileBytes == null)
+                        {
+                            throw new MeadowCommandException(command, "File bytes are missing for file command");
+                        }
+
+                        await BuildAndSendDataPacketRequest(
+                                command.FileBytes,
+                                fileBufOffset,
+                                numBytesToSend,
+                                sequenceNumber,
+                                cancellationToken);
+
+                        var progress = (decimal)fileBufOffset / command.FileSize;
+                        WriteProgress(progress, command.DestinationFileName);
+
+                        fileBufOffset += numBytesToSend;
+
+                        sequenceNumber++;
                     }
-                    else
-                    {
-                        numBytesToSend = MeadowDeviceManager.MaxAllowableMsgPacketLength;
-                    }
-
-                    if (command.FileBytes == null)
-                    {
-                        throw new MeadowCommandException(command, "File bytes are missing for file command");
-                    }
-
-                    await BuildAndSendDataPacketRequest(
-                            command.FileBytes,
-                            fileBufOffset,
-                            numBytesToSend,
-                            sequenceNumber,
-                            cancellationToken);
-
-                    var progress = (decimal)fileBufOffset / command.FileSize;
-                    WriteProgress(progress);
-
-                    fileBufOffset += numBytesToSend;
-
-                    sequenceNumber++;
+                }
+                finally
+                {
+                    DataProcessor.SuppressOutput = false;
                 }
 
                 // echo the device responses
@@ -153,15 +160,31 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        private int _lastProgress = 0;
+        private bool _finalProgressWritten = false;
 
-        private void WriteProgress(decimal i)
+        private void WriteProgress(decimal i, string fileName)
         {
-            //var intProgress = Convert.ToInt32(i * 100);
-            //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
-
-            //Logger?.LogInformation("Operation Progress: {progress:P0}", i);
-            //_lastProgress = intProgress;
+            var intProgress = Convert.ToInt32(i * 100);
+            // 50 characters - 2% each
+            if (intProgress < 0)
+            {
+                Console.Write($"[                                                  ] {fileName}\b");
+            }
+            else if (intProgress >= 100)
+            {
+                if (!_finalProgressWritten)
+                {
+                    Console.WriteLine($"\r[==================================================] {fileName}\b");
+                    _finalProgressWritten = true;
+                }
+            }
+            else
+            {
+                _finalProgressWritten = false;
+                var p = intProgress / 2;
+                //                Console.WriteLine($"{i} | {p}");
+                Console.Write($"\r[{new string('=', p)}{new string(' ', 50 - p)}] {fileName}\b");
+            }
         }
 
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
