@@ -13,21 +13,21 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
         ref: develop
 
     - name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 5.0.x
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           5.0.x
@@ -53,21 +53,21 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
         ref: develop
 
     - name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 6.0.x
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           5.0.x
@@ -95,13 +95,13 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: Meadow.CLI
         ref: develop
 
     - name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
@@ -113,8 +113,8 @@ jobs:
         echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
         sudo xcode-select -s $XCODE_ROOT
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 6.0
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           5.0.x
@@ -140,20 +140,20 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: Meadow.CLI
         ref: develop
 
     - name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 6.0.x
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           5.0.x
@@ -174,21 +174,21 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: Meadow.CLI
         ref: develop
 
     - name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
         ref: develop
         submodules: true
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 6.0.x
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
           5.0.x
@@ -222,36 +222,42 @@ jobs:
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   publish-nuget:
-    if: startsWith(github.ref, 'refs/heads/main')
+    # if: startsWith(github.ref, 'refs/heads/main')
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
-    name: Publish Meadow.CLI nuget
+    name: Build and Optionally Publish Meadow.CLI nuget
       
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: main
         ref: develop
 
-    - name: Setup .NET Core SDK 5.0.x & 6.0.x
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET Core SDK 6.0.x
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          5.0.x
-          6.0.x
+          6.0.101
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore main/MeadowCLI.sln
+    - name: Restore WildernessLabs.Meadow.CLI dependencies
+      run: dotnet build main/MeadowCLI.sln /t:Restore /p:Configuration=Release "/p:Platform=x64"
 
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+    - name: Build WildernessLabs.Meadow.CLI
+      run: dotnet build main/MeadowCLI.sln /t:Build /p:Configuration=Release "/p:Platform=x64"
 
-    - name: Build
-      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
+    # - name: Build Meadow.CLI
+    #   run: dotnet msbuild main/Meadow.CLI.Core/Meadow.CLI.Core.csproj /t:Rebuild /p:Configuration=Release
 
-    - name: Publish
+    - name: Upload Meadow.CLI Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Meadow.CLI
+        path: 'main/Meadow.CLI.Core/bin/x64/Release/*.nupkg'
+
+    - if: startsWith(github.ref, 'refs/heads/main')
+      name: Publish Nugets
       run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
