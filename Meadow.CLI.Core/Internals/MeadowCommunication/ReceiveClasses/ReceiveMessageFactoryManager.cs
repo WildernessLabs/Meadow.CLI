@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Meadow.Hcom;
+using System;
 using System.Collections.Generic;
-
-using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
@@ -41,8 +40,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             try
             {
                 requestType = FindRequestTypeValue(receivedMessage);
-                ReceiveMessageFactory factory = _factories[requestType];
-                return factory.Create(receivedMessage);
+                if (_factories.ContainsKey(requestType))
+                {
+                    ReceiveMessageFactory factory = _factories[requestType];
+                    return factory.Create(receivedMessage);
+                }
+                _logger.LogWarning($"An unknown request value of '0x{requestType:x}' was received.");
+                return null;
             }
             catch (KeyNotFoundException)
             {

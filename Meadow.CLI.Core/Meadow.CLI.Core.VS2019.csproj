@@ -63,5 +63,8 @@
   </ItemGroup>
 
   <Import Project="..\MeadowLogger\MeadowLogger.projitems" Label="Shared" />
-  
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
+  </ItemGroup>
 </Project>  

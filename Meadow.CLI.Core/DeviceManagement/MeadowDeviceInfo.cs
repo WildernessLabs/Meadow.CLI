@@ -36,9 +36,9 @@ namespace Meadow.CLI.Core.DeviceManagement
         private const string KN_COPROCESSOR_VERSION = "coprocessorversion";
 
         /// <summary>
-        /// Name of the mono version key.
+        /// Name of the runtime version key.
         /// </summary>
-        private const string KN_MONO_VERSION = "monoversion";
+        private const string KN_RT_VERSION = "monoversion";
 
         /// <summary>
         /// Name of the processor ID key.
@@ -120,7 +120,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 _elements.Add(KN_COPROCESSOR_VERSION, ParseValue("CoProcessor OS Version: ", deviceInfoString));
                 _elements.Add(KN_HARDWARE_VERSION, ParseValue("H/W Version: ", deviceInfoString));
                 _elements.Add(KN_DEVICE_NAME, ParseValue("Device Name: ", deviceInfoString));
-                _elements.Add(KN_MONO_VERSION, ParseValue("Mono Version: ", deviceInfoString));
+                _elements.Add(KN_RT_VERSION, ParseValue("Runtime Version: ", deviceInfoString));
             }
         }
 
@@ -142,7 +142,78 @@ namespace Meadow.CLI.Core.DeviceManagement
         /// <summary>
         /// OS version and build date.
         /// </summary>
-        public string MeadowOsVersion { get { return (_elements[KN_OS_VERSION]); } }
+        public string MeadowOsVersion
+        {
+            get
+            {
+                try
+                {
+                    if (_elements.ContainsKey(KN_OS_VERSION))
+                    {
+                        var idx = _elements[KN_OS_VERSION].IndexOf('(');
+
+                        if (idx == -1)
+                        {
+                            // starting with 0.9.1 (??) there is no date info
+                            return _elements[KN_OS_VERSION];
+                        }
+
+                        if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                        {
+                            // version 0.9.x+
+                            // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                            idx = _elements[KN_OS_VERSION].IndexOf("built");
+                            return _elements[KN_OS_VERSION].Substring(0, idx - 1);
+                        }
+
+                        // version 0.6.x
+                        return _elements[KN_OS_VERSION].Substring(0, idx - 1);
+                    }
+                    else
+                    {
+                        return "Unknown";
+                    }
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
+        }
+
+        public string MeadowOsBuildDate
+        {
+            get
+            {
+                try
+                {
+                    if (_elements.ContainsKey(KN_OS_VERSION))
+                    {
+                        var idx = _elements[KN_OS_VERSION].IndexOf('(');
+
+                        if (idx >= 0)
+                        {
+                            if (_elements[KN_OS_VERSION].Substring(idx + 1).StartsWith("0x"))
+                            {
+                                // version 0.9.x+
+                                // "0.9.0.2 built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                                var idx2 = _elements[KN_OS_VERSION].IndexOf("built");
+                                return _elements[KN_OS_VERSION].Substring(idx + 6, idx - idx2);
+                            }
+
+                            // version 0.6.x
+                            return _elements[KN_OS_VERSION].Substring(idx + 1, _elements[KN_OS_VERSION].Length - idx - 2);
+                        }
+                    }
+
+                    return "Unknown";
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
+        }
 
         /// <summary>
         /// Type of processor on the board.
@@ -160,9 +231,46 @@ namespace Meadow.CLI.Core.DeviceManagement
         public string CoProcessorOsVersion { get { return ValueOrDefault(KN_COPROCESSOR_VERSION, "Not available"); } }
 
         /// <summary>
-        /// Version of Mono deployed on the board.
+        /// Version of runtime deployed on the board.
         /// </summary>
-        public string MonoVersion { get { return ValueOrDefault(KN_MONO_VERSION, "Not available"); } }
+        public string RuntimeVersion
+        {
+            get
+            {
+                try
+                {
+                    if (_elements.ContainsKey(KN_RT_VERSION))
+                    {
+                        var idx = _elements[KN_RT_VERSION].IndexOf('(');
+
+                        if (idx == -1)
+                        {
+                            // starting with 0.9.1 (??) there is no date info
+                            return _elements[KN_RT_VERSION];
+                        }
+
+                        if (_elements[KN_RT_VERSION].Substring(idx + 1).StartsWith("0x"))
+                        {
+                            // version 0.9.x+
+                            // "0.9.0.2, built 22 Oct 2022 07:49:53 UTC (0xaef26433/)"
+                            idx = _elements[KN_RT_VERSION].IndexOf("built");
+                            return _elements[KN_RT_VERSION].Substring(0, idx - 2);
+                        }
+
+                        // version 0.6.x
+                        return _elements[KN_RT_VERSION].Substring(0, idx - 1);
+                    }
+                    else
+                    {
+                        return "Unknown";
+                    }
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
+        }
 
         /// <summary>
         /// ID of the STM32 processor.
@@ -258,6 +366,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             {
                 deviceInfo = $"{Product} by Wilderness Labs\n";
             }
+            
             deviceInfo += $"Board Information - {Environment.NewLine}";
             deviceInfo += $"    Model: {Model}{Environment.NewLine}";
             deviceInfo += AddOptionalValue("    Hardware version:", HardwareVersion) + Environment.NewLine;

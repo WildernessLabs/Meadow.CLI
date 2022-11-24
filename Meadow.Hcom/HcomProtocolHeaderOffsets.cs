@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Meadow.CLI.Core.DeviceManagement
+﻿namespace Meadow.Hcom
 {
     public enum HcomProtocolHeaderOffsets
     {

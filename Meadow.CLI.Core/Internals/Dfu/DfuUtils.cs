@@ -1,15 +1,13 @@
-﻿using System;
+﻿using LibUsbDotNet;
+using LibUsbDotNet.Main;
+using Meadow.CLI.Core.Exceptions;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
-using LibUsbDotNet;
-using LibUsbDotNet.Main;
-
-using Meadow.CLI.Core.Exceptions;
 
 namespace Meadow.CLI.Core.Internals.Dfu
 {
@@ -63,6 +61,130 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
+        public static async Task<bool> DfuFlash(string version, ILogger? logger = null)
+        {
+            var device = GetDevice();
+
+            var filename = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
+
+            if (!File.Exists(filename))
+            {
+                logger?.LogError($"Unable to flash {filename} - file or folder does not exist");
+                return false;
+            }
+
+            logger?.LogInformation($"Flashing OS with {filename}");
+
+            var serial = GetDeviceSerial(device);
+
+            var dfuUtilVersion = GetDfuUtilVersion();
+            logger?.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
+
+            if (string.IsNullOrEmpty(dfuUtilVersion))
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    logger?.LogError("dfu-util not found - to install, run: `meadow install dfu-util` (may require administrator mode)");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    logger?.LogError("dfu-util not found - to install run: `brew install dfu-util`");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    logger?.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
+                }
+                return false;
+            }
+            else if (dfuUtilVersion != "0.10")
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    logger?.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    logger?.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    if (dfuUtilVersion != "0.9")
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            try
+            {
+                var startInfo = new ProcessStartInfo(
+                "dfu-util",
+                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = false,
+                    CreateNoWindow = true
+                };
+                using var process = Process.Start(startInfo);
+                if (process == null)
+                    throw new Exception("Failed to start dfu-util");
+
+                var informationLogger = logger != null
+                                     ? Task.Factory.StartNew(
+                                         () =>
+                                         {
+                                             while (process.HasExited == false)
+                                             {
+                                                 var logLine = process.StandardOutput.ReadLine();
+                                                 // Ignore empty output
+                                                 if (logLine == null)
+                                                     continue;
+
+                                                 if (logLine.Contains("%"))
+                                                 {
+                                                     var operation = logLine.Substring(0,
+                                                         logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
+                                                     var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
+                                                     var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
+                                                     if (progress != "100%")
+                                                     {
+                                                         logger?.LogInformation(progress);
+                                                     }
+                                                 }
+                                                 else
+                                                 {
+                                                     logger?.LogInformation(logLine);
+                                                 }
+                                             }
+                                         }) : Task.CompletedTask;
+
+                var errorLogger = logger != null
+                                            ? Task.Factory.StartNew(
+                                                () =>
+                                                {
+                                                    while (process.HasExited == false)
+                                                    {
+                                                        var logLine = process.StandardError.ReadLine();
+                                                        logger?.LogError(logLine);
+                                                    }
+                                                }) : Task.CompletedTask;
+                await informationLogger;
+                await errorLogger;
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError($"There was a problem executing dfu-util: {ex.Message}");
+                return false;
+            }
+
+            return true;
+        }
+
         public static async Task<bool> DfuFlash(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
         {
             logger ??= NullLogger.Instance;
@@ -71,7 +193,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             // if filename isn't specified fallback to download path
             if (string.IsNullOrWhiteSpace(filename))
             {
-                if(string.IsNullOrWhiteSpace(osVersion) == false)
+                if (string.IsNullOrWhiteSpace(osVersion) == false)
                 {
                     filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
                 }
@@ -127,7 +249,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
-                } 
+                }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     if (dfuUtilVersion != "0.9")
@@ -148,7 +270,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    RedirectStandardInput = false
+                    RedirectStandardInput = false,
+                    CreateNoWindow = true
                 };
                 using var process = Process.Start(startInfo);
                 if (process == null)
@@ -158,22 +281,26 @@ namespace Meadow.CLI.Core.Internals.Dfu
                                      ? Task.Factory.StartNew(
                                          () =>
                                          {
+                                             var lastProgress = string.Empty;
+
                                              while (process.HasExited == false)
                                              {
                                                  var logLine = process.StandardOutput.ReadLine();
                                                  // Ignore empty output
                                                  if (logLine == null)
                                                      continue;
-                                                 
+
                                                  if (logLine.Contains("%"))
                                                  {
                                                      var operation = logLine.Substring(0,
                                                          logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
                                                      var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
                                                      var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
-                                                     Console.SetCursorPosition(0, Console.CursorTop);
-                                                     if (progress != "100%")
-                                                         Console.Write($"{operation} {progress}");
+                                                     if (progress != "100%" && progress != lastProgress)
+                                                     {
+                                                         logger.LogInformation(progress);
+                                                         lastProgress = progress;
+                                                     }
                                                  }
                                                  else
                                                  {
@@ -244,7 +371,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     case 0x0033: // ERROR_REM_NOT_LIST
                     case 0x013D: // ERROR_MR_MID_NOT_FOUND
                         return string.Empty;
-                    
+
                     default:
                         throw;
                 }

@@ -1,4 +1,4 @@
-﻿namespace Meadow.CLI.Core.DeviceManagement
+﻿namespace Meadow.Hcom
 {
     /// <summary>
     /// Messages to be sent to Meadow board from host
@@ -53,6 +53,13 @@
         HCOM_MDOW_REQUEST_START_FILE_TRANSFER = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
         HCOM_MDOW_REQUEST_DELETE_FILE_BY_NAME = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
         HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_FILE_START,
+
+        // These message are a header followed by text, one contains the texts length too
+        HCOM_MDOW_REQUEST_UPLOAD_FILE_INIT = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+        HCOM_MDOW_REQUEST_EXEC_DIAG_APP_CMD = 0x02 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+        HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD = 0x03 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+        HCOM_MDOW_REQUEST_RTC_READ_TIME_CMD = 0x04 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+        HCOM_MDOW_REQUEST_RTC_WAKEUP_TIME_CMD = 0x05 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
 
         // Simple debugger message to Meadow
         HCOM_MDOW_REQUEST_DEBUGGING_DEBUGGER_DATA = 0x01 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_BINARY,

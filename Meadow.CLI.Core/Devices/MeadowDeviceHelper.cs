@@ -1,17 +1,15 @@
-﻿using System;
+﻿using LibUsbDotNet.Main;
+using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
-using LibUsbDotNet.Main;
-
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -281,7 +279,8 @@ namespace Meadow.CLI.Core.Devices
 
                 await Task.Delay(2000, cancellationToken);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 await MonoDisable(true, cancellationToken);
                 throw ex;
             }
@@ -349,7 +348,7 @@ namespace Meadow.CLI.Core.Devices
             string? serialPort = null;
             IMeadowDevice? meadow = null;
 
-            if(_meadowDevice is MeadowSerialDevice device)
+            if (_meadowDevice is MeadowSerialDevice device)
             {
                 serialPort = device.SerialPort?.PortName;
             }
@@ -386,7 +385,7 @@ namespace Meadow.CLI.Core.Devices
                     await Task.Delay(2000);
 
                     await _meadowDevice.UpdateMonoRuntime(
-                        runtimePath, 
+                        runtimePath,
                         osVersion,
                         cancellationToken: cancellationToken);
 
@@ -435,7 +434,7 @@ namespace Meadow.CLI.Core.Devices
                                        .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
                 Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
-                                    $"Mono: {deviceInfo.MonoVersion}, " +
+                                    $"Mono: {deviceInfo.RuntimeVersion}, " +
                                     $"Coprocessor: {deviceInfo.CoProcessorOsVersion}");
             }
             catch (Exception ex)
@@ -444,10 +443,10 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        public static async Task<string> DfuFlash(string serialPortName, 
+        public static async Task<string> DfuFlash(string serialPortName,
             string osPath,
             string? osVersion,
-            ILogger logger, 
+            ILogger logger,
             CancellationToken cancellationToken = default)
         {
             var dfuAttempts = 0;
@@ -549,7 +548,7 @@ namespace Meadow.CLI.Core.Devices
             Dispose(false);
         }
 
-        private Dictionary<string, string> deviceVersionTable = new ()
+        private Dictionary<string, string> deviceVersionTable = new()
         {
             { "F7v1", "F7FeatherV1" },
             { "F7v2", "F7FeatherV2" },
@@ -559,7 +558,7 @@ namespace Meadow.CLI.Core.Devices
         {
             var deviceVersion = DeviceInfo.HardwareVersion;
             var assembly = Assembly.LoadFrom(executablePath);
-            try 
+            try
             {
                 var baseType = assembly.GetTypes()[0].BaseType.ToString();
                 string appVersion = string.Empty;
@@ -580,7 +579,7 @@ namespace Meadow.CLI.Core.Devices
                     return false;
                 }
             }
-            finally 
+            finally
             {
                 assembly = null;
             }
