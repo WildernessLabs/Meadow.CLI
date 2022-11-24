@@ -394,7 +394,7 @@ namespace Meadow.CLI.Core.Devices
                 sourcePath = DownloadManager.FirmwarePathForVersion(osVersion);
             }
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddress: "0x10000",
@@ -402,7 +402,7 @@ namespace Meadow.CLI.Core.Devices
 
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddress: "0x1000",
@@ -410,7 +410,7 @@ namespace Meadow.CLI.Core.Devices
 
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddress: "0x8000",
