@@ -360,19 +360,19 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             if (Product.Contains(" by Wilderness Labs"))
             {
-                deviceInfo = $"{Product}\n";
+                deviceInfo = $"{Product}{Environment.NewLine}";
             }
             else
             {
-                deviceInfo = $"{Product} by Wilderness Labs\n";
+                deviceInfo = $"{Product} by Wilderness Labs{Environment.NewLine}";
             }
             
-            deviceInfo += $"Board Information - {Environment.NewLine}";
+            deviceInfo += $"Board Information {Environment.NewLine}";
             deviceInfo += $"    Model: {Model}{Environment.NewLine}";
             deviceInfo += AddOptionalValue("    Hardware version:", HardwareVersion) + Environment.NewLine;
             deviceInfo += AddOptionalValue("    Device name:", DeviceName) + Environment.NewLine;
             deviceInfo += Environment.NewLine;
-            deviceInfo += $"Hardware Information - {Environment.NewLine}";
+            deviceInfo += $"Hardware Information {Environment.NewLine}";
             deviceInfo += $"    Processor type: {ProcessorType}{Environment.NewLine}";
             deviceInfo += AddOptionalValue("    ID:", ProcessorId) + Environment.NewLine;
             deviceInfo += AddOptionalValue("    Serial number:", SerialNumber) + Environment.NewLine;
@@ -398,7 +398,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 deviceInfo += $"{macAddresses}" + Environment.NewLine;
             }
 
-            deviceInfo += $"Firmware Versions - {Environment.NewLine}";
+            deviceInfo += $"Firmware Versions {Environment.NewLine}";
             deviceInfo += $"    OS: {MeadowOsVersion}{Environment.NewLine}";
             deviceInfo += $"    Mono: {MonoVersion}{Environment.NewLine}";
             deviceInfo += $"    Coprocessor: {CoProcessorOsVersion}{Environment.NewLine}";
