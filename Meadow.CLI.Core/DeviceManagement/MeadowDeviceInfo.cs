@@ -400,7 +400,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             deviceInfo += $"Firmware Versions {Environment.NewLine}";
             deviceInfo += $"    OS: {MeadowOsVersion}{Environment.NewLine}";
-            deviceInfo += $"    Mono: {MonoVersion}{Environment.NewLine}";
+            deviceInfo += $"    Mono: {RuntimeVersion}{Environment.NewLine}";
             deviceInfo += $"    Coprocessor: {CoProcessorOsVersion}{Environment.NewLine}";
             
             return (deviceInfo);
