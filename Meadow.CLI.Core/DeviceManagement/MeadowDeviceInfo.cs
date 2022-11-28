@@ -360,47 +360,49 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             if (Product.Contains(" by Wilderness Labs"))
             {
-                deviceInfo = $"{Product}\n";
+                deviceInfo = $"{Product}{Environment.NewLine}";
             }
             else
             {
-                deviceInfo = $"{Product} by Wilderness Labs\n";
+                deviceInfo = $"{Product} by Wilderness Labs{Environment.NewLine}";
             }
-            deviceInfo += $"Board Information - Model: {Model}";
-            deviceInfo += AddOptionalValue(", Hardware version:", HardwareVersion);
-            deviceInfo += AddOptionalValue(", Device name:", DeviceName);
-            deviceInfo += "\n";
-            deviceInfo += $"Hardware Information - Processor type: {ProcessorType}";
-            deviceInfo += AddOptionalValue(", ID:", ProcessorId);
-            deviceInfo += AddOptionalValue(", Serial number:", SerialNumber);
-            deviceInfo += $", Coprocessor type: {CoProcessorType}\n";
-            deviceInfo += $"Firmware Versions - OS: {MeadowOsVersion} Runtime: {RuntimeVersion}, Coprocessor: {CoProcessorOsVersion}";
+            
+            deviceInfo += $"Board Information {Environment.NewLine}";
+            deviceInfo += $"    Model: {Model}{Environment.NewLine}";
+            deviceInfo += AddOptionalValue("    Hardware version:", HardwareVersion) + Environment.NewLine;
+            deviceInfo += AddOptionalValue("    Device name:", DeviceName) + Environment.NewLine;
+            deviceInfo += Environment.NewLine;
+            deviceInfo += $"Hardware Information {Environment.NewLine}";
+            deviceInfo += $"    Processor type: {ProcessorType}{Environment.NewLine}";
+            deviceInfo += AddOptionalValue("    ID:", ProcessorId) + Environment.NewLine;
+            deviceInfo += AddOptionalValue("    Serial number:", SerialNumber) + Environment.NewLine;
+            deviceInfo += $"    Coprocessor type: {CoProcessorType}{Environment.NewLine}";
 
             string macAddresses = string.Empty;
             int macCount = 0;
-            if (!string.IsNullOrEmpty(WiFiMacAddress) && WiFiMacAddress != UNKNOWN_MAC_ADDRESS)
-            {
+            if (!string.IsNullOrEmpty (WiFiMacAddress) && WiFiMacAddress != UNKNOWN_MAC_ADDRESS) {
                 macCount++;
-                macAddresses += $"WiFi: {WiFiMacAddress} ";
+                macAddresses += $"        WiFi: {WiFiMacAddress}{Environment.NewLine}";
             }
-            if (!string.IsNullOrEmpty(SoftApMacAddress) && SoftApMacAddress != UNKNOWN_MAC_ADDRESS)
-            {
+            if (!string.IsNullOrEmpty (SoftApMacAddress) && SoftApMacAddress != UNKNOWN_MAC_ADDRESS) {
                 macCount++;
-                macAddresses += $"AP: {SoftApMacAddress} ";
+                macAddresses += $"        AP: {SoftApMacAddress}{Environment.NewLine}";
             }
-            if (macCount > 0)
-            {
-                deviceInfo += "\n";
-                if (macCount > 1)
-                {
-                    deviceInfo += "MAC Addresses: ";
+            if (macCount > 0) {
+                if (macCount > 1) {
+                    deviceInfo += "    MAC Addresses - " + Environment.NewLine;
                 }
-                else
-                {
-                    deviceInfo += "MAC Address: ";
+                else {
+                    deviceInfo += "    MAC Address - " + Environment.NewLine;
                 }
-                deviceInfo += $"{macAddresses}";
+                deviceInfo += $"{macAddresses}" + Environment.NewLine;
             }
+
+            deviceInfo += $"Firmware Versions {Environment.NewLine}";
+            deviceInfo += $"    OS: {MeadowOsVersion}{Environment.NewLine}";
+            deviceInfo += $"    Mono: {MonoVersion}{Environment.NewLine}";
+            deviceInfo += $"    Coprocessor: {CoProcessorOsVersion}{Environment.NewLine}";
+            
             return (deviceInfo);
         }
 
