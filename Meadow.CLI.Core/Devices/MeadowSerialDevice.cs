@@ -12,6 +12,8 @@ namespace Meadow.CLI.Core.Devices
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
+        const int SERIAL_PORT_TIMEOUT = 5;
+
         public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
@@ -35,8 +37,17 @@ namespace Meadow.CLI.Core.Devices
         {
             if (disposing)
             {
-                Logger.LogTrace("Disposing SerialPort");
-                SerialPort?.Dispose();
+                Logger?.LogTrace("Disposing SerialPort");
+
+                if (SerialPort != null)
+                {
+                    if (SerialPort.IsOpen)
+                    {
+                        SerialPort.Close();
+                    }
+					SerialPort.Dispose();
+                    SerialPort = null;
+				}
             }
         }
 
@@ -117,24 +128,33 @@ namespace Meadow.CLI.Core.Devices
                 WriteTimeout = 5000
             };
 
-            if (port.IsOpen)
-                port.Close();
-
-            int retries = 15;
-
-            for (int i = 0; i < retries; i++)
-            {
-                try
-                {   //on Windows the port can be slow to release after disposing 
-                    port.Open();
-                    port.BaseStream.ReadTimeout = 0;
-                    break;
-                }
-                catch
+			var closeTask = Task.Run(() => {
+                while (port.IsOpen)
                 {
-                    Thread.Sleep(500);
-                }
-            }
+					port.Close();
+				}
+            });
+
+			if (!closeTask.Wait(TimeSpan.FromSeconds(SERIAL_PORT_TIMEOUT)))
+				throw new Exception($"Failed to close the serial port within {SERIAL_PORT_TIMEOUT} seconds.");
+
+			var openTask = Task.Run(async() => {
+				while (!port.IsOpen)
+				{
+					try
+					{   //on Windows the port can be slow to release after disposing 
+						port.Open();
+						port.BaseStream.ReadTimeout = 0;
+					}
+					catch
+					{
+						await Task.Delay(500);
+					}
+				}
+			});
+
+			if (!openTask.Wait(TimeSpan.FromSeconds(SERIAL_PORT_TIMEOUT)))
+				throw new Exception($"Failed to open the serial port within {SERIAL_PORT_TIMEOUT} seconds.");
 
             return port;
         }
