@@ -128,33 +128,24 @@ namespace Meadow.CLI.Core.Devices
                 WriteTimeout = 5000
             };
 
-			var closeTask = Task.Run(() => {
-                while (port.IsOpen)
+            if (port.IsOpen)
+                port.Close();
+
+            int retries = 15;
+
+            for (int i = 0; i < retries; i++)
+            {
+                try
+                {   //on Windows the port can be slow to release after disposing 
+                    port.Open();
+                    port.BaseStream.ReadTimeout = 0;
+                    break;
+                }
+                catch
                 {
-					port.Close();
-				}
-            });
-
-			if (!closeTask.Wait(TimeSpan.FromSeconds(SERIAL_PORT_TIMEOUT)))
-				throw new Exception($"Failed to close the serial port within {SERIAL_PORT_TIMEOUT} seconds.");
-
-			var openTask = Task.Run(async() => {
-				while (!port.IsOpen)
-				{
-					try
-					{   //on Windows the port can be slow to release after disposing 
-						port.Open();
-						port.BaseStream.ReadTimeout = 0;
-					}
-					catch
-					{
-						await Task.Delay(500);
-					}
-				}
-			});
-
-			if (!openTask.Wait(TimeSpan.FromSeconds(SERIAL_PORT_TIMEOUT)))
-				throw new Exception($"Failed to open the serial port within {SERIAL_PORT_TIMEOUT} seconds.");
+                    Thread.Sleep(500);
+                }
+            }
 
             return port;
         }
