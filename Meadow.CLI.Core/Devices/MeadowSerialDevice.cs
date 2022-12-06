@@ -12,6 +12,8 @@ namespace Meadow.CLI.Core.Devices
         private readonly string _serialPortName;
         public SerialPort? SerialPort { get; private set; }
 
+        const int SERIAL_PORT_TIMEOUT = 5;
+
         public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
@@ -35,8 +37,17 @@ namespace Meadow.CLI.Core.Devices
         {
             if (disposing)
             {
-                Logger.LogTrace("Disposing SerialPort");
-                SerialPort?.Dispose();
+                Logger?.LogTrace("Disposing SerialPort");
+
+                if (SerialPort != null)
+                {
+                    if (SerialPort.IsOpen)
+                    {
+                        SerialPort.Close();
+                    }
+					SerialPort.Dispose();
+                    SerialPort = null;
+				}
             }
         }
 
