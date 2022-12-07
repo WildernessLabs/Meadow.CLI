@@ -15,6 +15,9 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
+        string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
+        string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
+
         public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
@@ -595,9 +598,15 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
-                    .Where(x => x.Contains("App.") == false).ToList();
+                    .Where(x => x.Contains("App.") == false)
+                   // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .ToList();
 
-                var trimmed_dependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+                var trimmedDependencies = (await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs))
+                    .Where(x => x.Contains("App.") == false)
+                    .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .ToList();
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)
@@ -605,12 +614,20 @@ namespace Meadow.CLI.Core.Devices
                     await AddFile(file, false);
                 }
 
-                if (trimmed_dependencies != null)
+                if (trimmedDependencies != null)
                 {
                     //crawl trimmed dependencies
-                    foreach (var file in trimmed_dependencies)
+                    foreach (var file in trimmedDependencies)
                     {
                         await AddFile(file, false);
+                    }
+
+                    for(int i = 0; i < dllLinkIngoreList.Length; i++)
+                    {   //add the files from the dll link ignore list
+                        if(dependencies.Exists(f => f.Contains(dllLinkIngoreList[i])))
+                        {   
+                            await AddFile(dependencies.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i])), includePdbs);
+                        }
                     }
                 }
                 else

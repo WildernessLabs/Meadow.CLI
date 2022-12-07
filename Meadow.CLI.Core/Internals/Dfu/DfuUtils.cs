@@ -16,6 +16,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
         static int _osAddress = 0x08000000;
         static string _usbStmName = "STM32  BOOTLOADER";
 
+        public static string LastSerialNumber { get; private set; } = "";
+
         public static bool CheckForValidDevice()
         {
             try
@@ -35,7 +37,6 @@ namespace Meadow.CLI.Core.Internals.Dfu
             if (allDevices.Count(x => x.Name == _usbStmName) > 1)
             {
                 throw new MultipleDfuDevicesException("More than one DFU device found, please connect only one and try again.");
-
             }
 
             var device = UsbDevice.AllDevices.SingleOrDefault(x => x.Name == _usbStmName);
@@ -61,165 +62,89 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static async Task<bool> DfuFlash(string version, ILogger? logger = null)
+        public enum DfuFlashFormat
         {
-            var device = GetDevice();
+            /// <summary>
+            /// Percentage only
+            /// </summary>
+            Percent,
+            /// <summary>
+            /// Full console output, no formatting
+            /// </summary>
+            Full,
+            /// <summary>
+            /// Console.WriteLine for CLI - ToDo - remove
+            /// </summary>
+            ConsoleOut,
+        }
 
-            var filename = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
-
-            if (!File.Exists(filename))
+        static void FormatDfuOutput(string logLine, ILogger? logger, DfuFlashFormat format = DfuFlashFormat.Percent)
+        {
+            if(format == DfuFlashFormat.Full)
             {
-                logger?.LogError($"Unable to flash {filename} - file or folder does not exist");
-                return false;
+                logger?.LogInformation(logLine);
             }
-
-            logger?.LogInformation($"Flashing OS with {filename}");
-
-            var serial = GetDeviceSerial(device);
-
-            var dfuUtilVersion = GetDfuUtilVersion();
-            logger?.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
-
-            if (string.IsNullOrEmpty(dfuUtilVersion))
+            else if(format == DfuFlashFormat.Percent)
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (logLine.Contains("%"))
                 {
-                    logger?.LogError("dfu-util not found - to install, run: `meadow install dfu-util` (may require administrator mode)");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    logger?.LogError("dfu-util not found - to install run: `brew install dfu-util`");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    logger?.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
-                }
-                return false;
-            }
-            else if (dfuUtilVersion != "0.10")
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    logger?.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    logger?.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    if (dfuUtilVersion != "0.9")
-                        return false;
+                    var operation = logLine.Substring(0,
+                        logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
+                    var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
+                    var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
+                    if (progress != "100%")
+                    {
+                        logger?.LogInformation(progress);
+                    }
                 }
                 else
                 {
-                    return false;
+                    logger?.LogInformation(logLine);
                 }
             }
-
-            try
+            else //Console out
             {
-                var startInfo = new ProcessStartInfo(
-                "dfu-util",
-                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = false,
-                    CreateNoWindow = true
-                };
-                using var process = Process.Start(startInfo);
-                if (process == null)
-                    throw new Exception("Failed to start dfu-util");
+                Console.Write(logLine);
 
-                var informationLogger = logger != null
-                                     ? Task.Factory.StartNew(
-                                         () =>
-                                         {
-                                             while (process.HasExited == false)
-                                             {
-                                                 var logLine = process.StandardOutput.ReadLine();
-                                                 // Ignore empty output
-                                                 if (logLine == null)
-                                                     continue;
-
-                                                 if (logLine.Contains("%"))
-                                                 {
-                                                     var operation = logLine.Substring(0,
-                                                         logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
-                                                     var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
-                                                     var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
-                                                     if (progress != "100%")
-                                                     {
-                                                         logger?.LogInformation(progress);
-                                                     }
-                                                 }
-                                                 else
-                                                 {
-                                                     logger?.LogInformation(logLine);
-                                                 }
-                                             }
-                                         }) : Task.CompletedTask;
-
-                var errorLogger = logger != null
-                                            ? Task.Factory.StartNew(
-                                                () =>
-                                                {
-                                                    while (process.HasExited == false)
-                                                    {
-                                                        var logLine = process.StandardError.ReadLine();
-                                                        logger?.LogError(logLine);
-                                                    }
-                                                }) : Task.CompletedTask;
-                await informationLogger;
-                await errorLogger;
-                process.WaitForExit();
+                Console.Write(logLine.Contains("%")?"\r":"\r\n");
             }
-            catch (Exception ex)
-            {
-                logger?.LogError($"There was a problem executing dfu-util: {ex.Message}");
-                return false;
-            }
-
-            return true;
         }
 
-        public static async Task<bool> DfuFlash(string filename = "", string osVersion = "", UsbRegistry? device = null, ILogger? logger = null)
+        public static Task<bool> DfuFlash(string version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        {
+            var fileName = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
+
+            return DfuFlashFile(fileName: fileName, logger: logger, format: format);
+        }
+
+        public static async Task<bool> DfuFlashFile(string fileName, UsbRegistry? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
 
             // if filename isn't specified fallback to download path
-            if (string.IsNullOrWhiteSpace(filename))
+            if (string.IsNullOrWhiteSpace(fileName))
             {
-                if (string.IsNullOrWhiteSpace(osVersion) == false)
-                {
-                    filename = Path.Combine(DownloadManager.FirmwarePathForVersion(osVersion), DownloadManager.OsFilename);
-                }
-                else
-                {
-                    filename = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
-                }
+                fileName = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
 
-                if (!File.Exists(filename))
+                if (!File.Exists(fileName))
                 {
-                    logger.LogError($"Unable to flash {filename} - file or folder does not exist");
+                    logger.LogError($"Unable to flash {fileName} - file or folder does not exist");
                     return false;
                 }
             }
 
-            if (!File.Exists(filename))
+            if (!File.Exists(fileName))
             {
                 logger.LogError($"Unable to find file '{DownloadManager.OsFilename}'. Please specify valid --File or download the latest with: meadow download os");
                 return false;
             }
             else
             {
-                logger.LogInformation($"Flashing OS with {filename}");
+                logger.LogInformation($"Flashing OS with {fileName}");
             }
 
-            var serial = GetDeviceSerial(device);
+            LastSerialNumber = GetDeviceSerial(device);
 
             var dfuUtilVersion = GetDfuUtilVersion();
             logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
@@ -263,65 +188,9 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             try
             {
-                var startInfo = new ProcessStartInfo(
-                                    "dfu-util",
-                                    $"-a 0 -S {serial} -D \"{filename}\" -s {_osAddress}:leave")
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = false,
-                    CreateNoWindow = true
-                };
-                using var process = Process.Start(startInfo);
-                if (process == null)
-                    throw new Exception("Failed to start dfu-util");
+                var args = $"-a 0 -S {LastSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
 
-                var informationLogger = logger != null
-                                     ? Task.Factory.StartNew(
-                                         () =>
-                                         {
-                                             var lastProgress = string.Empty;
-
-                                             while (process.HasExited == false)
-                                             {
-                                                 var logLine = process.StandardOutput.ReadLine();
-                                                 // Ignore empty output
-                                                 if (logLine == null)
-                                                     continue;
-
-                                                 if (logLine.Contains("%"))
-                                                 {
-                                                     var operation = logLine.Substring(0,
-                                                         logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
-                                                     var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
-                                                     var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
-                                                     if (progress != "100%" && progress != lastProgress)
-                                                     {
-                                                         logger.LogInformation(progress);
-                                                         lastProgress = progress;
-                                                     }
-                                                 }
-                                                 else
-                                                 {
-                                                     logger.LogInformation(logLine);
-                                                 }
-                                             }
-                                         }) : Task.CompletedTask;
-
-                var errorLogger = logger != null
-                                            ? Task.Factory.StartNew(
-                                                () =>
-                                                {
-                                                    while (process.HasExited == false)
-                                                    {
-                                                        var logLine = process.StandardError.ReadLine();
-                                                        logger.LogError(logLine);
-                                                    }
-                                                }) : Task.CompletedTask;
-                await informationLogger;
-                await errorLogger;
-                process.WaitForExit();
+                await RunDfuUtil(args, logger, format);
             }
             catch (Exception ex)
             {
@@ -330,6 +199,55 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
 
             return true;
+        }
+
+        static async Task RunDfuUtil(string args, ILogger? logger, DfuFlashFormat format = DfuFlashFormat.Percent)
+        {
+            var startInfo = new ProcessStartInfo("dfu-util", args)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = false,
+                CreateNoWindow = true
+            };
+            using var process = Process.Start(startInfo);
+
+            if (process == null)
+            {
+                throw new Exception("Failed to start dfu-util");
+            }
+
+            var informationLogger = logger != null
+                                 ? Task.Factory.StartNew(
+                                     () =>
+                                     {
+                                         var lastProgress = string.Empty;
+
+                                         while (process.HasExited == false)
+                                         {
+                                             var logLine = process.StandardOutput.ReadLine();
+                                             // Ignore empty output
+                                             if (logLine == null)
+                                                 continue;
+
+                                             FormatDfuOutput(logLine, logger, format);
+                                         }
+                                     }) : Task.CompletedTask;
+
+            var errorLogger = logger != null
+                                        ? Task.Factory.StartNew(
+                                            () =>
+                                            {
+                                                while (process.HasExited == false)
+                                                {
+                                                    var logLine = process.StandardError.ReadLine();
+                                                    logger.LogError(logLine);
+                                                }
+                                            }) : Task.CompletedTask;
+            await informationLogger;
+            await errorLogger;
+            process.WaitForExit();
         }
 
         private static string GetDfuUtilVersion()
