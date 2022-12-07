@@ -69,7 +69,7 @@ namespace Meadow.CLI.Commands.Esp32
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Write failed.");
+                _logger.LogInformation($"Write failed {ex.Message}");
             }
         }
 
