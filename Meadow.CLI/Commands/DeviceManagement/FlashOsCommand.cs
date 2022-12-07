@@ -3,6 +3,7 @@ using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
+using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
@@ -52,7 +53,15 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    serialNumber = await MeadowDeviceHelper.DfuFlash(SerialPortName, OsFile, OSVersion, Logger, cancellationToken);
+                    if(!string.IsNullOrEmpty(OsFile))
+                    {
+                        await DfuUtils.DfuFlashFile(fileName: OsFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                    }
+                    else
+                    {
+                        await DfuUtils.DfuFlash(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
+                    }
+                    serialNumber = DfuUtils.LastSerialNumber;
                 }
                 catch
                 {
