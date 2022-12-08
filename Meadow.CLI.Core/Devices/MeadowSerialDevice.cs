@@ -14,6 +14,8 @@ namespace Meadow.CLI.Core.Devices
 
         const int SERIAL_PORT_TIMEOUT = 5;
 
+        private readonly object lockObject = new object();
+
         public MeadowSerialDevice(string serialPortName, ILogger? logger = null)
             : this(serialPortName, OpenSerialPort(serialPortName), logger)
         {
@@ -41,12 +43,15 @@ namespace Meadow.CLI.Core.Devices
 
                 if (SerialPort != null)
                 {
-                    if (SerialPort.IsOpen)
+                    lock(lockObject)
                     {
-                        SerialPort.Close();
+                        if (SerialPort.IsOpen)
+                        {
+                            SerialPort.Close();
+                        }
+                        SerialPort.Dispose();
+                        SerialPort = null;
                     }
-					SerialPort.Dispose();
-                    SerialPort = null;
 				}
             }
         }
