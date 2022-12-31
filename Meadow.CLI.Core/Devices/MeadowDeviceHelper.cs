@@ -1,17 +1,15 @@
-﻿using System;
+﻿using LibUsbDotNet.Main;
+using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
-using LibUsbDotNet.Main;
-
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -192,11 +190,6 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.MonoFlash(cancellationToken);
         }
 
-        public Task EnterDfuMode(CancellationToken cancellationToken = default)
-        {
-            return _meadowDevice.EnterDfuMode(cancellationToken);
-        }
-
         public Task NshEnable(CancellationToken cancellationToken = default)
         {
             return _meadowDevice.NshEnable(cancellationToken);
@@ -281,7 +274,8 @@ namespace Meadow.CLI.Core.Devices
 
                 await Task.Delay(2000, cancellationToken);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 await MonoDisable(true, cancellationToken);
                 throw ex;
             }
@@ -349,7 +343,7 @@ namespace Meadow.CLI.Core.Devices
             string? serialPort = null;
             IMeadowDevice? meadow = null;
 
-            if(_meadowDevice is MeadowSerialDevice device)
+            if (_meadowDevice is MeadowSerialDevice device)
             {
                 serialPort = device.SerialPort?.PortName;
             }
@@ -386,7 +380,7 @@ namespace Meadow.CLI.Core.Devices
                     await Task.Delay(2000);
 
                     await _meadowDevice.UpdateMonoRuntime(
-                        runtimePath, 
+                        runtimePath,
                         osVersion,
                         cancellationToken: cancellationToken);
 
@@ -435,95 +429,12 @@ namespace Meadow.CLI.Core.Devices
                                        .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
                 Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
-                                    $"Mono: {deviceInfo.MonoVersion}, " +
+                                    $"Mono: {deviceInfo.RuntimeVersion}, " +
                                     $"Coprocessor: {deviceInfo.CoProcessorOsVersion}");
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error flashing OS to Meadow");
-            }
-        }
-
-        public static async Task<string> DfuFlash(string serialPortName, 
-            string osPath,
-            string? osVersion,
-            ILogger logger, 
-            CancellationToken cancellationToken = default)
-        {
-            var dfuAttempts = 0;
-
-            UsbRegistry dfuDevice;
-            while (true)
-            {
-                try
-                {
-                    try
-                    {
-                        dfuDevice = DfuUtils.GetDevice();
-                        break;
-                    }
-                    catch (MultipleDfuDevicesException)
-                    {   // This is bad, we can't just blindly flash with multiple devices, let the user know
-                        throw;
-                    }
-                    catch (DeviceNotFoundException)
-                    {   // eat it.
-                    }
-
-                    // No DFU device found, lets try to set the meadow to DFU mode.
-                    using var device = await MeadowDeviceManager.GetMeadowForSerialPort(serialPortName, false);
-
-                    if (device != null)
-                    {
-                        logger.LogInformation("Entering DFU Mode");
-                        await device.EnterDfuMode(cancellationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogDebug(
-                        "An exception occurred while switching device to DFU Mode. Exception: {0}",
-                        ex);
-                }
-
-                switch (dfuAttempts)
-                {
-                    case 5:
-                        logger.LogInformation(
-                            "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
-
-                        Console.ReadKey();
-                        break;
-                    case 10:
-                        logger.LogInformation(
-                            "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
-
-                        Console.ReadKey();
-                        break;
-                    case > 15:
-                        throw new Exception(
-                            "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
-                }
-
-                // Lets give the device a little time to settle in and get picked up
-                await Task.Delay(1000, cancellationToken);
-
-                dfuAttempts++;
-            }
-
-            // Get the serial number so that later we can pick the right device if the system has multiple meadow plugged in
-            string serialNumber = DfuUtils.GetDeviceSerial(dfuDevice);
-
-            logger.LogInformation("Device in DFU Mode, flashing OS");
-            var res = await DfuUtils.DfuFlash(osPath, osVersion ?? "", dfuDevice, logger);
-            if (res)
-            {
-                logger.LogInformation("Device Flashed.");
-                return serialNumber;
-            }
-            else
-            {
-                throw new MeadowDeviceException("Failed to flash meadow");
             }
         }
 
@@ -549,7 +460,7 @@ namespace Meadow.CLI.Core.Devices
             Dispose(false);
         }
 
-        private Dictionary<string, string> deviceVersionTable = new ()
+        private Dictionary<string, string> deviceVersionTable = new()
         {
             { "F7v1", "F7FeatherV1" },
             { "F7v2", "F7FeatherV2" },
@@ -559,7 +470,7 @@ namespace Meadow.CLI.Core.Devices
         {
             var deviceVersion = DeviceInfo.HardwareVersion;
             var assembly = Assembly.LoadFrom(executablePath);
-            try 
+            try
             {
                 var baseType = assembly.GetTypes()[0].BaseType.ToString();
                 string appVersion = string.Empty;
@@ -580,7 +491,7 @@ namespace Meadow.CLI.Core.Devices
                     return false;
                 }
             }
-            finally 
+            finally
             {
                 assembly = null;
             }

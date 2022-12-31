@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Meadow.CLI.Core.DeviceManagement
+﻿namespace Meadow.Hcom
 {
-    public enum HcomProtocolHeaderTypes : UInt16
+    public enum HcomProtocolHeaderTypes : ushort
     {
         HCOM_PROTOCOL_HEADER_TYPE_UNDEFINED = 0x0000,
         // Simple request types, include 4-byte user data

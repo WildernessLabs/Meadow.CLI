@@ -1,11 +1,11 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.Esp32
 {
@@ -38,32 +38,38 @@ namespace Meadow.CLI.Commands.Esp32
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
-            await base.ExecuteAsync(console);
-
-            var cancellationToken = console.RegisterCancellationHandler();
-
-            var targetFileName = string.IsNullOrWhiteSpace(TargetFilename)
-                                     ? GetTargetFileName()
-                                     : TargetFilename;
-
-            _logger.LogInformation(
-                $"Writing {Filename} as {targetFileName} to ESP32");
-
-            _logger.LogDebug("Translated {filename} to {targetFileName}", Filename, targetFileName);
-
-            System.Diagnostics.Trace.Assert(
-                string.IsNullOrWhiteSpace(targetFileName) == false,
-                "string.IsNullOrWhiteSpace(targetFileName)");
-
-            if (!File.Exists(Filename))
+            try
             {
-                _logger.LogInformation("Cannot find {filename}", Filename);
+                await base.ExecuteAsync(console);
+
+                var cancellationToken = console.RegisterCancellationHandler();
+
+                var targetFileName = string.IsNullOrWhiteSpace(TargetFilename)
+                                         ? GetTargetFileName()
+                                         : TargetFilename;
+
+                _logger.LogInformation($"Writing {Filename} as {targetFileName} to ESP32");
+
+                _logger.LogDebug("Translated {filename} to {targetFileName}", Filename, targetFileName);
+
+                System.Diagnostics.Trace.Assert(
+                    string.IsNullOrWhiteSpace(targetFileName) == false,
+                    "string.IsNullOrWhiteSpace(targetFileName)");
+
+                if (!File.Exists(Filename))
+                {
+                    _logger.LogInformation("Cannot find {filename}", Filename);
+                }
+                else
+                {
+                    await Meadow.WriteFileToEspFlash(Filename, 0, McuDestAddress, cancellationToken);
+
+                    _logger.LogDebug("File written successfully");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await Meadow.WriteFileToEspFlash(Filename, 0, McuDestAddress, cancellationToken);
-
-                _logger.LogDebug("File written successfully");
+                _logger.LogInformation($"Write failed {ex.Message}");
             }
         }
 

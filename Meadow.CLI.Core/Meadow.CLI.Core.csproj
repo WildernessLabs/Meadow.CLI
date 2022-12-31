@@ -11,7 +11,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>0.90.0</Version>
+    <Version>0.90.2</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -54,6 +54,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
+    <None Include="images\icon.png" PackagePath="icon.png" Pack="true" />
   </ItemGroup>
 
   <ItemGroup>

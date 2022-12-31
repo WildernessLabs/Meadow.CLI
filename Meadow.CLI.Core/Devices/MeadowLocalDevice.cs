@@ -1,8 +1,10 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
+using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,7 +14,7 @@ namespace Meadow.CLI.Core.Devices
     {
         private protected TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-        public ILogger Logger { get; }
+        public ILogger? Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
@@ -332,6 +334,34 @@ namespace Meadow.CLI.Core.Devices
                 await SendCommand(command, cancellationToken);
 
             return commandResponse.Message;
+        }
+
+        public async Task<DateTimeOffset> GetRtcTime(CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(
+                    HcomMeadowRequestType.HCOM_MDOW_REQUEST_RTC_READ_TIME_CMD)
+                .WithResponseType(MeadowMessageType.Data)
+                .Build();
+
+            var commandResponse =
+                await SendCommand(command, cancellationToken);
+
+            // return will be in the format "UTC time:2022-10-22T10:40:19+0:00"
+            return DateTimeOffset.Parse(commandResponse.Message.Substring(9));
+        }
+
+        public async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken cancellationToken)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD
+                )
+                    .WithCompletionResponseType(MeadowMessageType.Accepted)
+                    .WithResponseType(MeadowMessageType.Accepted)
+                    .WithData(Encoding.ASCII.GetBytes(dateTime.ToString("o")))
+                    .Build();
+
+            await SendCommand(command, cancellationToken);
         }
 
         public abstract Task<bool> Initialize(CancellationToken cancellationToken);

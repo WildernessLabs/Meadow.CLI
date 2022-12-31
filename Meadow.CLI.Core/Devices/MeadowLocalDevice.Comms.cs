@@ -1,13 +1,13 @@
-﻿using System;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.DeviceManagement.Tools;
+using Meadow.CLI.Core.Exceptions;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.Hcom;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Meadow.CLI.Core.DeviceManagement;
-using Meadow.CLI.Core.DeviceManagement.Tools;
-using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.Devices
 {
@@ -30,10 +30,11 @@ namespace Meadow.CLI.Core.Devices
                 string responseMessage = string.Empty;
                 if (response.MessageType == MeadowMessageType.DownloadStartFail)
                 {
-                    if (response.Message != null)
-                        responseMessage = response.Message;
-                    throw new MeadowCommandException(command,
-                        "Meadow rejected download request with " + responseMessage, response);
+                    if (!string.IsNullOrEmpty(response.Message))
+                    {
+                        throw new MeadowCommandException(command, $"Meadow rejected download request with the message: {responseMessage}", response);
+                    }
+                    throw new MeadowCommandException(command, $"Meadow rejected download request with an empty response message (DownloadStartFail)", response);
                 }
 
                 switch (command.RequestType)
@@ -41,12 +42,12 @@ namespace Meadow.CLI.Core.Devices
                     // if it's an ESP start file transfer and the download started ok.
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
                         when response.MessageType == MeadowMessageType.DownloadStartOkay:
-                        Logger.LogDebug("ESP32 download request accepted");
+                        Logger?.LogDebug("ESP32 download request accepted");
                         break;
                     // if it's an ESP file transfer start and it failed to start
                     case HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER
                         when response.MessageType == MeadowMessageType.DownloadStartFail:
-                        Logger.LogDebug("ESP32 download request rejected");
+                        Logger?.LogDebug("ESP32 download request rejected");
                         throw new MeadowCommandException(command,
                                                          "Halting download due to an error while preparing Meadow for download",
                                                          response);
@@ -69,7 +70,7 @@ namespace Meadow.CLI.Core.Devices
                 var fileBufOffset = 0;
                 ushort sequenceNumber = 1;
 
-                Logger.LogInformation("Starting File Transfer...");
+                Logger?.LogInformation("Starting File Transfer...");
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                 {
                     int numBytesToSend;
@@ -135,19 +136,19 @@ namespace Meadow.CLI.Core.Devices
 
                 // bufferOffset should point to the byte after the last byte
                 Debug.Assert(fileBufOffset == command.FileSize);
-                Logger.LogTrace(
+                Logger?.LogTrace(
                     "Total bytes sent {count} in {packetCount} packets. PacketCRC:{_crc}",
                     fileBufOffset,
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                Logger.LogInformation(
+                Logger?.LogInformation(
                     "Transfer Complete, wrote {count} bytes to Meadow",
                     fileBufOffset);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Exception sending command to Meadow.{Environment.NewLine}Error:{ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+                Logger?.LogError($"{ex.Message}");
                 throw;
             }
         }
@@ -159,7 +160,7 @@ namespace Meadow.CLI.Core.Devices
             //var intProgress = Convert.ToInt32(i * 100);
             //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
 
-            //Logger.LogInformation("Operation Progress: {progress:P0}", i);
+            //Logger?.LogInformation("Operation Progress: {progress:P0}", i);
             //_lastProgress = intProgress;
         }
 
@@ -197,7 +198,7 @@ namespace Meadow.CLI.Core.Devices
 
             try
             {
-                Logger.LogTrace($"{caller} is sending {command.RequestType}");
+                Logger?.LogTrace($"{caller} is sending {command.RequestType}");
 
                 CommandResponse resp;
                 if (command.IsAcknowledged)
@@ -211,7 +212,7 @@ namespace Meadow.CLI.Core.Devices
                     resp = CommandResponse.Empty;
                 }
 
-                Logger.LogTrace(
+                Logger?.LogTrace(
                     "Returning to {caller} with {success} {message}",
                     caller,
                     resp.IsSuccess,
@@ -225,7 +226,7 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        
+
         private async Task EncodeAndSendPacket(byte[] messageBytes,
                                                int messageOffset,
                                                int messageSize,
@@ -274,28 +275,28 @@ namespace Meadow.CLI.Core.Devices
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
-                    Logger.LogError(ioe, "Write but port not opened");
+                    Logger?.LogError(ioe, "Write but port not opened");
                     throw;
                 }
                 catch (ArgumentOutOfRangeException aore) // offset or count don't match buffer
                 {
-                    Logger.LogError(aore, "Write buffer, offset and count don't line up");
+                    Logger?.LogError(aore, "Write buffer, offset and count don't line up");
                     throw;
                 }
                 catch (ArgumentException ae) // offset plus count > buffer length
                 {
-                    Logger.LogError(ae, "Write offset plus count > buffer length");
+                    Logger?.LogError(ae, "Write offset plus count > buffer length");
                     throw;
                 }
                 catch (TimeoutException te) // Took too long to send
                 {
-                    Logger.LogError(te, "Write took too long to send");
+                    Logger?.LogError(te, "Write took too long to send");
                     throw;
                 }
             }
             catch (Exception except)
             {
-                Logger.LogTrace(except, "EncodeAndSendPacket threw");
+                Logger?.LogTrace(except, "EncodeAndSendPacket threw");
                 throw;
             }
         }
@@ -304,7 +305,7 @@ namespace Meadow.CLI.Core.Devices
                                         CancellationToken cancellationToken = default,
                                         [CallerMemberName] string? caller = null)
         {
-            Logger.LogTrace(
+            Logger?.LogTrace(
                 "{caller} is waiting {seconds} for response to {requestType}.",
                 caller,
                 command.Timeout.TotalSeconds,
@@ -317,14 +318,14 @@ namespace Meadow.CLI.Core.Devices
 
             void ResponseHandler(object s, MeadowMessageEventArgs e)
             {
-                Logger.LogTrace(
+                Logger?.LogTrace(
                     "Received MessageType: {messageType} Message: {message}",
                     e.MessageType,
                     string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
 
                 if (command.ResponsePredicate(e))
                 {
-                    Logger.LogTrace("Message matched response filter");
+                    Logger?.LogTrace("Message matched response filter");
                     message = e.Message;
                     messageType = e.MessageType;
                     result = true;
@@ -332,7 +333,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (command.CompletionPredicate(e))
                 {
-                    Logger.LogTrace("Setting result complete");
+                    Logger?.LogTrace("Setting result complete");
                     //message = e.Message;
                     //messageType = e.MessageType;
                     result = true; //TODO: Adrian - Pete - should this be here?? I added it
@@ -340,7 +341,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             }
 
-            Logger.LogTrace("Attaching response handler(s)");
+            Logger?.LogTrace("Attaching response handler(s)");
             Debug.Assert(DataProcessor != null);
             if (command.ResponseHandler != null)
             {
@@ -348,7 +349,7 @@ namespace Meadow.CLI.Core.Devices
             }
 
             DataProcessor.OnReceiveData += ResponseHandler;
-            Logger.LogTrace("Attaching completion handler(s)");
+            Logger?.LogTrace("Attaching completion handler(s)");
 
             try
             {
@@ -373,7 +374,7 @@ namespace Meadow.CLI.Core.Devices
             }
             finally
             {
-                Logger.LogTrace("Removing handlers");
+                Logger?.LogTrace("Removing handlers");
                 DataProcessor.OnReceiveData -= ResponseHandler;
                 if (command.ResponseHandler != null)
                 {
@@ -383,7 +384,7 @@ namespace Meadow.CLI.Core.Devices
 
             if (result)
             {
-                Logger.LogTrace(
+                Logger?.LogTrace(
                     "Returning to {caller} with {message}",
                     caller,
                     string.IsNullOrWhiteSpace(message) ? "[empty]" : message);

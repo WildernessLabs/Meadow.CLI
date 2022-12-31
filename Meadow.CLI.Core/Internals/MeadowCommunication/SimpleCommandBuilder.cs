@@ -1,5 +1,6 @@
-﻿using System;
-using Meadow.CLI.Core.DeviceManagement;
+﻿using Meadow.CLI.Core.DeviceManagement;
+using Meadow.Hcom;
+using System;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
@@ -93,7 +94,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                     CompletionPredicate = e => e.MessageType == CompletionMessageType;
                 else CompletionPredicate = e => e.MessageType == MeadowMessageType.Concluded;
             }
-            
+
             return new Command(RequestType, Timeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
         }
 

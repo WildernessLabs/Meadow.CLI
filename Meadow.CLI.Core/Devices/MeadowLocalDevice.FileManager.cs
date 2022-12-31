@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +15,9 @@ namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
+        string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
+        string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
+
         public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
             CancellationToken cancellationToken = default)
@@ -302,7 +306,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Console.WriteLine(
+                    Logger.LogError(
                         $"The '--McuDestAddress' argument must be followed with an address in the form '0x1800'");
 
                     return;
@@ -327,7 +331,7 @@ namespace Meadow.CLI.Core.Devices
                 string[] fileElement = fileName.Split(',');
                 if (fileElement.Length % 2 != 0)
                 {
-                    Console.WriteLine(
+                    Logger.LogError(
                         "Please provide a CSV input with \"address, fileName, address, fileName\"");
 
                     return;
@@ -355,7 +359,7 @@ namespace Meadow.CLI.Core.Devices
                     }
                     else
                     {
-                        Console.WriteLine("Please provide a CSV input with addresses like 0x1234");
+                        Logger.LogError("Please provide a CSV input with addresses like 0x1234");
                         return;
                     }
 
@@ -393,7 +397,7 @@ namespace Meadow.CLI.Core.Devices
                 sourcePath = DownloadManager.FirmwarePathForVersion(osVersion);
             }
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkMeadowCommsFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkMeadowCommsFilename),
                     mcuDestAddress: "0x10000",
@@ -401,7 +405,7 @@ namespace Meadow.CLI.Core.Devices
 
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkBootloaderFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename),
                     mcuDestAddress: "0x1000",
@@ -409,7 +413,7 @@ namespace Meadow.CLI.Core.Devices
 
             await Task.Delay(1000, cancellationToken);
 
-            Logger.LogInformation($"Transferring {DownloadManager.NetworkPartitionTableFilename}");
+            Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename)}");
             await WriteFileToEspFlash(
                     Path.Combine(sourcePath, DownloadManager.NetworkPartitionTableFilename),
                     mcuDestAddress: "0x8000",
@@ -460,11 +464,11 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
-        //ToDo this is super fragile
+        //ToDo this is super fragile (extra-super fragile!)
         //Need updated API to read files after B5.1
         async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
-            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 10), cancellationToken);
+            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), cancellationToken);
 
             bool isRoot = false;
             bool isFolder = false;
@@ -510,7 +514,7 @@ namespace Meadow.CLI.Core.Devices
                     continue;
                 }
 
-                Console.WriteLine($"Deleting {item}");
+                Logger.LogInformation($"Deleting {item}");
                 await DeleteFile(item, 0, cancellationToken);
             }
         }
@@ -524,7 +528,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 if (!File.Exists(applicationFilePath))
                 {
-                    Console.WriteLine($"{applicationFilePath} not found.");
+                    Logger.LogError($"{applicationFilePath} not found.");
                     return;
                 }
 
@@ -594,9 +598,15 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
-                    .Where(x => x.Contains("App.") == false).ToList();
+                    .Where(x => x.Contains("App.") == false)
+                   // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .ToList();
 
-                var trimmed_dependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+                var trimmedDependencies = (await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs))
+                    .Where(x => x.Contains("App.") == false)
+                    .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    .ToList();
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)
@@ -604,12 +614,20 @@ namespace Meadow.CLI.Core.Devices
                     await AddFile(file, false);
                 }
 
-                if (trimmed_dependencies != null)
+                if (trimmedDependencies != null)
                 {
                     //crawl trimmed dependencies
-                    foreach (var file in trimmed_dependencies)
+                    foreach (var file in trimmedDependencies)
                     {
                         await AddFile(file, false);
+                    }
+
+                    for(int i = 0; i < dllLinkIngoreList.Length; i++)
+                    {   //add the files from the dll link ignore list
+                        if(dependencies.Exists(f => f.Contains(dllLinkIngoreList[i])))
+                        {   
+                            await AddFile(dependencies.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i])), includePdbs);
+                        }
                     }
                 }
                 else
