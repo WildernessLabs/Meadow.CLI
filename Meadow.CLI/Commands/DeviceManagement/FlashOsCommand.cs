@@ -21,7 +21,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
         }
 
         [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
-        public string OsFile { get; init; }
+        public string OSFile { get; init; }
 
         [CommandOption("runtimeFile", 'r', Description = "Path to the Meadow Runtime binary")]
         public string RuntimeFile { get; init; }
@@ -53,13 +53,17 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    if(!string.IsNullOrEmpty(OsFile))
+                    if (string.IsNullOrEmpty(OSFile) == false)
                     {
-                        await DfuUtils.DfuFlashFile(fileName: OsFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                        await DfuUtils.FlashFile(fileName: OSFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                    }
+                    else if (string.IsNullOrEmpty(OSVersion) == false)
+                    {
+                        await DfuUtils.FlashVersion(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
                     }
                     else
                     {
-                        await DfuUtils.DfuFlash(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
+                        await DfuUtils.FlashLatest(logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
                     }
                     serialNumber = DfuUtils.LastSerialNumber;
                 }
