@@ -110,28 +110,29 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static Task<bool> DfuFlash(string version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static Task<bool> FlashVersion(string version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             var fileName = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
 
-            return DfuFlashFile(fileName: fileName, logger: logger, format: format);
+            return FlashFile(fileName: fileName, logger: logger, format: format);
         }
 
-        public static async Task<bool> DfuFlashFile(string fileName, UsbRegistry? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static Task<bool> FlashLatest(ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        {
+            var fileName = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
+
+            return FlashFile(fileName: fileName, logger: logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+        }
+
+        public static async Task<bool> FlashFile(string fileName, UsbRegistry? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             logger ??= NullLogger.Instance;
             device ??= GetDevice();
 
-            // if filename isn't specified fallback to download path
-            if (string.IsNullOrWhiteSpace(fileName))
+            if (!File.Exists(fileName))
             {
-                fileName = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
-
-                if (!File.Exists(fileName))
-                {
-                    logger.LogError($"Unable to flash {fileName} - file or folder does not exist");
-                    return false;
-                }
+                logger.LogError($"Unable to flash {fileName} - file or folder does not exist");
+                return false;
             }
 
             if (!File.Exists(fileName))
