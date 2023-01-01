@@ -2,7 +2,7 @@
   "profiles": {
     "Download": {
       "commandName": "Project",
-      "commandLineArgs": "download os -v 0.6.7.19 -f"
+      "commandLineArgs": "download os"
     },
     "Login": {
       "commandName": "Project",
