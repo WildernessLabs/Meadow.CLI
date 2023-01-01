@@ -53,13 +53,13 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    if(!string.IsNullOrEmpty(OsFile))
+                    if (!string.IsNullOrEmpty(OSVersion))
                     {
-                        await DfuUtils.DfuFlashFile(fileName: OsFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                        await DfuUtils.DfuFlash(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
                     }
                     else
                     {
-                        await DfuUtils.DfuFlash(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
+                        await DfuUtils.DfuFlashFile(fileName: OsFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
                     }
                     serialNumber = DfuUtils.LastSerialNumber;
                 }
