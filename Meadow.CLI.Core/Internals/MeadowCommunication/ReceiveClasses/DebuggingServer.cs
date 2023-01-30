@@ -93,7 +93,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             {
                 _listener.Start();
                 LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
-                _logger.LogInformation("Listening for Visual Studio to connect on {address}:{port}", LocalEndpoint.Address, LocalEndpoint.Port);
+                _logger.LogInformation($"Listening for Visual Studio to connect on {LocalEndpoint.Address}:{LocalEndpoint.Port}" + Environment.NewLine);
                 _isReady = true;
 
                 // This call will wait for the client to connect, before continuing. We shouldn't need a loop.
@@ -118,7 +118,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             {
                 lock (_lck)
                 {
-                    _logger.LogInformation ("Visual Studio has Connected");
+                    _logger.LogInformation ("Visual Studio has Connected" + Environment.NewLine);
                     if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                     {
                         _logger.LogDebug("Closing active client");
@@ -232,13 +232,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 catch (IOException ioe)
                 {
                     // VS client probably died
-                    _logger.LogInformation("Visual Studio has Disconnected");
+                    _logger.LogInformation("Visual Studio has Disconnected" + Environment.NewLine);
                     _logger.LogTrace(ioe, "Visual Studio has Disconnected");
                 }
                 catch (ObjectDisposedException ode)
                 {
                     // User probably hit stop
-                    _logger.LogInformation("Visual Studio has stopped debugging");
+                    _logger.LogInformation("Visual Studio has stopped debugging" + Environment.NewLine);
                     _logger.LogTrace(ode, "Visual Studio has stopped debugging");
                 }
                 catch (Exception ex)

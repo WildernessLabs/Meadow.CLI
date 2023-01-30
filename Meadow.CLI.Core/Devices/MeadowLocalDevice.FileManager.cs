@@ -562,7 +562,7 @@ namespace Meadow.CLI.Core.Devices
 
                 foreach (var f in deviceFiles)
                 {
-                    Logger.LogInformation("Found {file} (CRC: {crc})", f.FileName, f.Crc);
+                    Logger.LogInformation($"Found {f.FileName} (CRC: {f.Crc})" + Environment.NewLine);
                 }
 
                 var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
@@ -667,7 +667,7 @@ namespace Meadow.CLI.Core.Devices
                     {
                         await DeleteFile(devicefile.FileName, cancellationToken: cancellationToken);
 
-                        Logger.LogInformation("Removing file: {file}", devicefile.FileName);
+                        Logger.LogInformation($"Removing file: {devicefile}" + Environment.NewLine);
                     }
                 }
 
@@ -679,27 +679,27 @@ namespace Meadow.CLI.Core.Devices
 
                     if (deviceFiles.Any(d => d.FileName == filename && d.Crc == file.Value))
                     {
-                        Logger.LogInformation("Skipping file (hash match): {file}", filename);
+                        Logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
                         continue;
                     }
 
                     if (!File.Exists(file.Key))
                     {
-                        Logger.LogInformation("{file} not found", filename);
+                        Logger.LogInformation($"{filename} not found" + Environment.NewLine);
                         continue;
                     }
 
-                    Logger.LogInformation("Writing file: {file}", filename);
+                    Logger.LogInformation($"{Environment.NewLine}Sending file: {file.Key}" + Environment.NewLine);
                     await WriteFile(
                             file.Key,
                             filename,
                             DefaultTimeout,
                             cancellationToken);
 
-                    Logger.LogInformation("Wrote file: {file}", file.Key);
+                    Logger.LogInformation($"Sent file: {filename}" + Environment.NewLine + Environment.NewLine);
                 }
 
-                Logger.LogInformation("{file} deploy complete", fi.Name);
+                Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
             }
             catch (Exception ex)
             {

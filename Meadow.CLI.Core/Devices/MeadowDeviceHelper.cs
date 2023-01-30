@@ -375,7 +375,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Logger.LogInformation("Skipping update of runtime.");
+                    Logger.LogInformation("Skipping update of runtime." + Environment.NewLine);
                 }
 
                 if (skipEsp == false)
@@ -398,7 +398,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Logger.LogInformation("Skipping ESP flash");
+                    Logger.LogInformation("Skipping ESP flash" + Environment.NewLine);
                 }
 
                 //Logger.LogInformation("Enabling Mono and Resetting");
