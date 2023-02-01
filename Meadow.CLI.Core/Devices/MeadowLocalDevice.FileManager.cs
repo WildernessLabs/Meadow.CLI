@@ -704,7 +704,7 @@ namespace Meadow.CLI.Core.Devices
             catch (Exception ex)
             {
                 Logger.LogError($"An error occurred during the App deployment process.");
-                Logger.LogError($"Error:\n{ex.Message} \nStack Trace :\n{ex.StackTrace}");
+                Logger.LogError($"Error:{Environment.NewLine}{ex.Message} {Environment.NewLine}Stack Trace :{Environment.NewLine}{ex.StackTrace}");
                 throw ex;
             }
         }

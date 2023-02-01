@@ -70,7 +70,9 @@ namespace Meadow.CLI.Core.Devices
                 var fileBufOffset = 0;
                 ushort sequenceNumber = 1;
 
-                Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} [");
+                Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
+                Logger?.LogInformation("]"); // In separate call as used for progress delimiter
+
                 nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                 {
@@ -144,7 +146,8 @@ namespace Meadow.CLI.Core.Devices
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                Logger?.LogInformation($"]{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
+                Logger?.LogInformation("]"); // In separate call as used for progress delimiter
+                Logger?.LogInformation($"{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
             }
             catch (Exception ex)
             {
