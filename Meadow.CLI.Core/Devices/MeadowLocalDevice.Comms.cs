@@ -71,7 +71,7 @@ namespace Meadow.CLI.Core.Devices
                 ushort sequenceNumber = 1;
 
                 Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
-                Logger?.LogInformation("]"); // In separate call as used for progress delimiter
+                Logger?.LogInformation("["); // In separate call as used for progress delimiter
 
                 nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
