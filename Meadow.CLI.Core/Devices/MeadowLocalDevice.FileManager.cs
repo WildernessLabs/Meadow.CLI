@@ -602,11 +602,7 @@ namespace Meadow.CLI.Core.Devices
                    // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                     .ToList();
 
-                var trimmedDependencies = (await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs))
-                    .Where(x => x.Contains("App.") == false)
-                    .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .ToList();
+                var trimmedDependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)
@@ -616,6 +612,12 @@ namespace Meadow.CLI.Core.Devices
 
                 if (trimmedDependencies != null)
                 {
+                    // deploy completely unlinked files
+                    trimmedDependencies = trimmedDependencies.Where(x => x.Contains("App.") == false)
+                        .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .ToList();
+
                     //crawl trimmed dependencies
                     foreach (var file in trimmedDependencies)
                     {
