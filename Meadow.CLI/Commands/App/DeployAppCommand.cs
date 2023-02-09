@@ -1,10 +1,10 @@
-﻿using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.App
 {
@@ -43,7 +43,7 @@ namespace Meadow.CLI.Commands.App
                 console.Output.WriteLine("Meadow assemblies download failed, using local copy");
             }
 
-            await Meadow.DeployApp(File, IncludePdbs, cancellationToken);
+            await Meadow.DeployApp(File, IncludePdbs, Verbose, cancellationToken);
         }
     }
 }

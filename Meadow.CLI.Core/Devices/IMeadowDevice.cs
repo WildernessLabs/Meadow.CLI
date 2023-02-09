@@ -12,9 +12,9 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; }
 
-        public IDictionary<string, uint> FilesOnDevice { get; }
+        public IList<FileData> FilesOnDevice { get; }
         public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, CancellationToken cancellationToken = default);
-        public Task<IDictionary<string, uint>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default);
+        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default);
         public Task<FileTransferResult> WriteFile(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task DeleteFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public Task EraseFlash(CancellationToken cancellationToken = default);
@@ -49,7 +49,7 @@ namespace Meadow.CLI.Core.Devices
         public Task QspiWrite(int value, CancellationToken cancellationToken = default);
         public Task QspiRead(int value, CancellationToken cancellationToken = default);
         public Task QspiInit(int value, CancellationToken cancellationToken = default);
-        public Task DeployApp(string fileName, string osVersion, bool includePdbs = false, CancellationToken cancellationToken = default);
+        public Task DeployApp(string fileName, string osVersion, bool includePdbs = false, bool verbose = false, CancellationToken cancellationToken = default);
         public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default);
         public Task StartDebugging(int port, CancellationToken cancellationToken);
         public Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
