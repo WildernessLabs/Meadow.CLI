@@ -15,6 +15,8 @@ namespace Meadow.CLI.Commands.Files
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to list the files")]
 #endif
+        public const int FileSystemBlockSize = 4096;
+
         public int Partition { get; init; } = 0;
 
         [CommandOption("includeCrcs", 'i', Description = "Include the CRCs of the files")]
@@ -48,10 +50,12 @@ namespace Meadow.CLI.Commands.Files
                                            .FirstOrDefault();
 
                 var totalBytesUsed = 0;
+                var totalBlocksUsed = 0;
 
                 foreach (var file in files)
                 {
                     totalBytesUsed += file.FileSize;
+                    totalBlocksUsed += (file.FileSize / FileSystemBlockSize) + 1;
 
                     var line = $"{file.FileName.PadRight(longestFileName)}";
 
@@ -76,7 +80,12 @@ namespace Meadow.CLI.Commands.Files
                     _logger.LogInformation(line);
                 }
 
-                _logger.LogInformation($"\nSummary: {files.Count} files using {totalBytesUsed / 1000000d:0.00}MB");
+                _logger.LogInformation(
+                    $"\nSummary:\n" +
+                    $"\t{files.Count} files\n" +
+                    $"\t{totalBytesUsed / 1000000d:0.00}MB of file data\n" +
+                    $"\tSpanning {totalBlocksUsed} blocks\n" +
+                    $"\tConsuming {totalBlocksUsed * FileSystemBlockSize / 1000000d:0.00}MB on disk");
             }
             else
             {
