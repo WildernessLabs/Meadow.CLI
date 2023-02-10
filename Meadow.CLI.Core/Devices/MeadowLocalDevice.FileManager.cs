@@ -526,6 +526,7 @@ namespace Meadow.CLI.Core.Devices
                                     string osVersion,
                                     bool includePdbs = false,
                                     bool verbose = false,
+                                    IList<string>? noLink = null,
                                     CancellationToken cancellationToken = default)
         {
             try
@@ -611,7 +612,7 @@ namespace Meadow.CLI.Core.Devices
                     // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                     .ToList();
 
-                var trimmedDependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs);
+                var trimmedDependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)

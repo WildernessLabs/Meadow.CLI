@@ -49,7 +49,7 @@ namespace Meadow.CLI.Core.Devices
         public Task QspiWrite(int value, CancellationToken cancellationToken = default);
         public Task QspiRead(int value, CancellationToken cancellationToken = default);
         public Task QspiInit(int value, CancellationToken cancellationToken = default);
-        public Task DeployApp(string fileName, string osVersion, bool includePdbs = false, bool verbose = false, CancellationToken cancellationToken = default);
+        public Task DeployApp(string applicationFilePath, string osVersion, bool includePdbs = false, bool verbose = false, IList<string>? linkOptions = null, CancellationToken cancellationToken = default);
         public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken cancellationToken = default);
         public Task StartDebugging(int port, CancellationToken cancellationToken);
         public Task<string?> GetInitialBytesFromFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);

@@ -258,7 +258,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.QspiInit(value, cancellationToken);
         }
 
-        public async Task DeployApp(string fileName, bool includePdbs = true, bool verbose = false, CancellationToken cancellationToken = default)
+        public async Task DeployApp(string fileName, bool includePdbs = true, bool verbose = false, IList<string>? noLink = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -266,7 +266,7 @@ namespace Meadow.CLI.Core.Devices
 
                 string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
-                await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, verbose, cancellationToken);
+                await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, verbose, noLink, cancellationToken);
 
                 await MonoEnable(true, cancellationToken: cancellationToken);
 
