@@ -15,7 +15,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 {
     public class MeadowDeviceManager
     {
-        internal const int MaxAllowableMsgPacketLength = 512;
+        internal const int MaxAllowableMsgPacketLength = 8192;
 
         internal const int MaxEstimatedSizeOfEncodedPayload =
             MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
