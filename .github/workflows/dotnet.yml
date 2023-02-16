@@ -17,7 +17,6 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -57,7 +56,6 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -98,7 +96,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -143,7 +140,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -177,7 +173,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
@@ -232,7 +227,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
