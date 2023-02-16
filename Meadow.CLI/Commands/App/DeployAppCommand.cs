@@ -59,7 +59,7 @@ namespace Meadow.CLI.Commands.App
                 console.Output.WriteLine("Meadow assemblies download failed, using local copy");
             }
 
-            await Meadow.DeployApp(File, IncludePdbs, Verbose, NoLink, cancellationToken);
+            await Meadow.DeployApp(fileName: File, includePdbs: IncludePdbs, noLink: NoLink, verbose: Verbose, cancellationToken: cancellationToken);
         }
     }
 }
