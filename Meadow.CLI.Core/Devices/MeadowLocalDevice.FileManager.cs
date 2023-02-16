@@ -224,16 +224,16 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task UpdateMonoRuntime(string? fileName,
-                                                 uint partition = 0,
-                                                 CancellationToken cancellationToken = default)
+                                      uint partition = 0,
+                                      CancellationToken cancellationToken = default)
         {
             return UpdateMonoRuntime(fileName, null, partition, cancellationToken);
         }
 
         public async Task UpdateMonoRuntime(string? fileName,
-                                                 string? osVersion,
-                                                 uint partition = 0,
-                                                 CancellationToken cancellationToken = default)
+                                            string? osVersion,
+                                            uint partition = 0,
+                                            CancellationToken cancellationToken = default)
         {
             var sourceFilename = fileName;
 
