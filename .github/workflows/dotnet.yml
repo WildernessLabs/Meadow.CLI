@@ -17,7 +17,6 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -57,7 +56,6 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
@@ -98,7 +96,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -143,7 +140,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
@@ -177,7 +173,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: develop
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
@@ -222,7 +217,6 @@ jobs:
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
   publish-nuget:
-    if: startsWith(github.ref, 'refs/heads/main')
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
     name: Publish Meadow.CLI nuget
@@ -232,7 +226,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
@@ -253,5 +246,13 @@ jobs:
     - name: Build
       run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
 
-    - name: Publish
-      run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+    - name: Upload nuget Artifacts for internal testing
+      uses: actions/upload-artifact@v2
+      with:
+        name: Meadow.CLI.nuget
+        path: 'main/**/*.nupkg'
+
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Publish VSCode Extension publically
+      run: |
+        run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
