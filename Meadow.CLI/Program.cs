@@ -1,14 +1,14 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using CliFx;
+﻿using CliFx;
 using Meadow.CLI.Commands;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI
 {
@@ -40,10 +40,11 @@ namespace Meadow.CLI
             }
 
             var services = new ServiceCollection();
+
             services.AddLogging(
                 builder =>
                 {
-                    builder.AddSerilog(Log.Logger, dispose:true);
+                    builder.AddSerilog(Log.Logger, dispose: true);
                 });
 
             services.AddSingleton<MeadowDeviceManager>();
@@ -59,7 +60,7 @@ namespace Meadow.CLI
                                                                     .Build()
                                                                     .RunAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine($"Operation failed: {ex.Message}");
 #if DEBUG

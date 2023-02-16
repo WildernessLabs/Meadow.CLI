@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.Files
 {
@@ -15,6 +15,8 @@ namespace Meadow.CLI.Commands.Files
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to list the files")]
 #endif
+        public const int FileSystemBlockSize = 4096;
+
         public int Partition { get; init; } = 0;
 
         [CommandOption("includeCrcs", 'i', Description = "Include the CRCs of the files")]
@@ -43,22 +45,47 @@ namespace Meadow.CLI.Commands.Files
 
             if (files.Any())
             {
-
-                var longestFileName = files.Keys.Select(x => x.Length)
+                var longestFileName = files.Select(x => x.FileName.Length)
                                            .OrderByDescending(x => x)
                                            .FirstOrDefault();
 
-                if (IncludeCrcs)
+                var totalBytesUsed = 0;
+                var totalBlocksUsed = 0;
+
+                foreach (var file in files)
                 {
-                    foreach (var file in files)
-                        _logger.LogInformation(
-                            $"{file.Key.PadRight(longestFileName)}\t{file.Value:x8}");
+                    totalBytesUsed += file.FileSize;
+                    totalBlocksUsed += (file.FileSize / FileSystemBlockSize) + 1;
+
+                    var line = $"{file.FileName.PadRight(longestFileName)}";
+
+                    if (IncludeCrcs)
+                    {
+                        line = $"{line}\t{file.Crc:x8}";
+                    }
+
+                    if (file.FileSize > 1000000)
+                    {
+                        line = $"{line}\t{file.FileSize / 1000000d,7:0.0} MB   ";
+                    }
+                    else if (file.FileSize > 1000)
+                    {
+                        line = $"{line}\t{file.FileSize / 1000,7:0} kB   ";
+                    }
+                    else
+                    {
+                        line = $"{line}\t{file.FileSize,7} bytes";
+                    }
+
+                    _logger.LogInformation(line);
                 }
-                else
-                {
-                    foreach (var file in files)
-                        _logger.LogInformation($"{file.Key}");
-                }
+
+                _logger.LogInformation(
+                    $"\nSummary:\n" +
+                    $"\t{files.Count} files\n" +
+                    $"\t{totalBytesUsed / 1000000d:0.00}MB of file data\n" +
+                    $"\tSpanning {totalBlocksUsed} blocks\n" +
+                    $"\tConsuming {totalBlocksUsed * FileSystemBlockSize / 1000000d:0.00}MB on disk");
             }
             else
             {
