@@ -12,10 +12,6 @@ using System.Threading.Tasks;
 
 namespace Meadow.CLI
 {
-    internal class Settings
-    {
-    }
-
     public class Program
     {
         public static async Task<int> Main(string[] args)
