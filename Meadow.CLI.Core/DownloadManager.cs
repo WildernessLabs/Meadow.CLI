@@ -145,7 +145,7 @@ namespace Meadow.CLI.Core
                 }
                 else
                 {
-                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded.");
+                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded");
                     return;
                 }
             }

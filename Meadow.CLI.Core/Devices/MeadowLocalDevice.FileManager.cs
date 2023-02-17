@@ -622,7 +622,6 @@ namespace Meadow.CLI.Core.Devices
 
                 if (trimmedDependencies != null)
                 {
-                    // deploy completely unlinked files
                     trimmedDependencies = trimmedDependencies.Where(x => x.Contains("App.") == false)
                         .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                         .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
@@ -657,10 +656,13 @@ namespace Meadow.CLI.Core.Devices
                     bool found = false;
                     foreach (var localfile in files.Keys)
                     {
-                        if (Path.GetFileName(localfile).Equals(devicefile))
+                        if (Path.GetFileName(localfile).Equals(devicefile.FileName))
+                        {
                             found = true;
+                        }
+                        if(found) { break; }
                     }
-                    if (!found)
+                    if (found == false)
                     {
                         await DeleteFile(devicefile.FileName, cancellationToken: cancellationToken);
 
@@ -674,7 +676,7 @@ namespace Meadow.CLI.Core.Devices
                     // does the file name and CRC match?
                     var filename = Path.GetFileName(file.Key);
 
-                    if (deviceFiles.Any(d => d.FullPath == file.Key && d.Crc == file.Value))
+                    if (deviceFiles.Any(d => d.FileName == filename && d.Crc == file.Value))
                     {
                         Logger.LogInformation("Skipping file (hash match): {file}", filename);
                         continue;

@@ -56,8 +56,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    await SetMeadowToDfuMode(SerialPortName, cancellationToken);
-                    await Task.Delay(2000, cancellationToken);
+                    // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
+                    // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
+                    // await Task.Delay(2000, cancellationToken);
                     await FlashOsInDfuMode();
                     serialNumber = GetSerialNumber();
                 }
