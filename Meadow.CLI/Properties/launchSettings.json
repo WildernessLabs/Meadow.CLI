@@ -18,7 +18,7 @@
     },
     "FlashOS": {
       "commandName": "Project",
-      "commandLineArgs": "flash os -e -s COM24 -v 0.9.4.0"
+      "commandLineArgs": "flash os"
     },
     "EraseFlash": {
       "commandName": "Project",
@@ -50,7 +50,7 @@
     },
     "DeployApp": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f C:\\WL\\Blinky\\Blinky\\BlinkyFs\\bin\\Debug\\netstandard2.1\\App.exe -s COM13"
+      "commandLineArgs": "app deploy -f C:\\WL\\Meadow.Core.Samples\\Source\\Meadow.Core.Samples\\Blinky\\BlinkyCS\\bin\\Debug\\netstandard2.1\\App.dll -s COM3"
     },
     "DeleteFile": {
       "commandName": "Project",
