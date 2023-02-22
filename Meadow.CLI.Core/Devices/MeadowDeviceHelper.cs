@@ -1,7 +1,5 @@
-﻿using LibUsbDotNet.Main;
-using Meadow.CLI.Core.DeviceManagement;
+﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Exceptions;
-using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using System;
 using System.Collections.Generic;
@@ -32,7 +30,7 @@ namespace Meadow.CLI.Core.Devices
 
         public MeadowDeviceInfo DeviceInfo { get; private set; }
 
-        public Task<IDictionary<string, uint>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default)
+        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.GetFilesAndCrcs(timeout, partition, cancellationToken);
         }
@@ -260,7 +258,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.QspiInit(value, cancellationToken);
         }
 
-        public async Task DeployApp(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default)
+        public async Task DeployApp(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default, bool verbose = false, IList<string>? noLink = null)
         {
             try
             {
@@ -268,7 +266,7 @@ namespace Meadow.CLI.Core.Devices
 
                 string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
-                await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, cancellationToken);
+                await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, verbose, noLink, cancellationToken);
 
                 await MonoEnable(true, cancellationToken: cancellationToken);
 
