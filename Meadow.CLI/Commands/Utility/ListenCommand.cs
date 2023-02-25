@@ -28,8 +28,19 @@ namespace Meadow.CLI.Commands.Utility
             _logger.LogInformation("Listening for Meadow Console output. Press Ctrl+C to exit");
             void ResponseHandler(object s, MeadowMessageEventArgs e)
             {
-                if (e.MessageType == MeadowMessageType.Data)
-                    _logger.LogInformation(e.Message);
+                var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;
+
+                switch (e.MessageType)
+                {
+                    case MeadowMessageType.Data:
+                        _logger?.LogInformation(msg); // We may not need this
+                        break;
+                    case MeadowMessageType.ErrOutput:
+                        _logger?.LogError(msg);
+                        break;
+                    default:
+                        break;
+                }
             };
             Meadow.MeadowDevice.DataProcessor.OnReceiveData += ResponseHandler;
             try
