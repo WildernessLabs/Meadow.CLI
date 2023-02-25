@@ -318,10 +318,22 @@ namespace Meadow.CLI.Core.Devices
 
             void ResponseHandler(object s, MeadowMessageEventArgs e)
             {
-                Logger?.LogTrace(
-                    "Received MessageType: {messageType} Message: {message}",
-                    e.MessageType,
-                    string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
+
+                var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;
+
+                switch (e.MessageType)
+                {
+                    case MeadowMessageType.Data:
+                        Logger?.LogInformation(msg); // We may not need this
+                        break;
+                    case MeadowMessageType.ErrOutput:
+                        Logger?.LogError(msg);
+                        break;
+                    default:
+                        break;
+                }
+
+                Logger?.LogTrace($"Received MessageType: {e.MessageType} Message: {msg}");
 
                 if (command.ResponsePredicate(e))
                 {
