@@ -124,6 +124,7 @@ namespace Meadow.CLI.Core.Devices
                             .Build(),
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
+                            .WithTimeout(TimeSpan.FromSeconds(180))
                             .WithUserData(lastInSeries ? 1U : 0U)
                             .Build(),
                     _ => throw new ArgumentOutOfRangeException(
