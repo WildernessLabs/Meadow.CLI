@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CredentialManagement;
+using IdentityModel.Client;
 using IdentityModel.OidcClient;
 using Microsoft.IdentityModel.Logging;
+using static System.Net.WebRequestMethods;
 
 namespace Meadow.CLI.Core.Identity
 {
     public class IdentityManager
     {
         public readonly string WlRefreshCredentialName = "WL:Identity:Refresh";
-        readonly string authority = "https://identity.wildernesslabs.co";
+        readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
         readonly string redirectUri = "http://localhost:8877/";
         readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
@@ -33,7 +37,9 @@ namespace Meadow.CLI.Core.Identity
         {
             try
             {
-                var client = GetOidcClient();
+
+
+                var client = await GetOidcClient();
 
                 using (var http = new HttpListener())
                 {
@@ -73,7 +79,7 @@ namespace Meadow.CLI.Core.Identity
                     return !result.IsError;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred");
                 return false;
@@ -105,7 +111,7 @@ namespace Meadow.CLI.Core.Identity
 
             if (!string.IsNullOrEmpty(refreshToken))
             {
-                var client = GetOidcClient();
+                var client = await GetOidcClient();
                 var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
                 return result.AccessToken;
             }
@@ -139,7 +145,7 @@ namespace Meadow.CLI.Core.Identity
                 using (var libSecret = new LibSecret("WildernessLabs", credentialName))
                 {
                     //Username & Password delimited with a space. String split, and returned as a tuple.
-                    return libSecret.GetSecret().Split(' ' ) switch { var a => (a[0], a[1]) };
+                    return libSecret.GetSecret().Split(' ') switch { var a => (a[0], a[1]) };
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -150,19 +156,26 @@ namespace Meadow.CLI.Core.Identity
             {
                 _logger.LogWarning("Unsupported OS detected.");
                 throw new NotSupportedException();
-            }   
+            }
         }
 
-        private OidcClient GetOidcClient()
+        private async Task<OidcClient> GetOidcClient()
         {
             var options = new OidcClientOptions
             {
                 Authority = authority,
                 ClientId = clientId,
                 RedirectUri = redirectUri,
-                Scope = "openid email offline_access",
+                Policy = new Policy
+                {
+                    Discovery = new DiscoveryPolicy
+                    {
+                        ValidateEndpoints = false
+                    }
+                },
+                Scope = "openid email profile groups offline_access",
                 Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode,
-                ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect
+                ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
             };
             IdentityModelEventSource.ShowPII = true;
             return new OidcClient(options);
