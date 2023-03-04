@@ -99,6 +99,10 @@
     "Package Publish": {
       "commandName": "Project",
       "commandLineArgs": "package publish -p fc99586c8b364e85959685b794b57b14"
+    },
+    "Profile 1": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud provision device"
     }
   }
 }

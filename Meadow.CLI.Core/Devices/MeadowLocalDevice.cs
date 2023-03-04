@@ -366,7 +366,7 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default)
         {
-            Logger.LogInformation("Sending Meadow Cloud registration request");
+            Logger.LogInformation("Sending Meadow Cloud registration request (~2 mins)");
 
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE)
