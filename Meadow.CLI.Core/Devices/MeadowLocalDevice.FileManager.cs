@@ -322,7 +322,6 @@ namespace Meadow.CLI.Core.Devices
                               .WithDestinationFileName(targetFileName)
                               .WithMcuAddress(mcuAddress)
                               .WithSourceFileName(fileName)
-                              .WithTimeout(new TimeSpan(hours: 0, minutes: 3, seconds: 0))
                               .Build();
 
                 await SendTheEntireFile(command, true, cancellationToken);
@@ -407,7 +406,7 @@ namespace Meadow.CLI.Core.Devices
                     mcuDestAddress: "0x10000",
                     cancellationToken: cancellationToken);
 
-            await Task.Delay(3000, cancellationToken);
+            await Task.Delay(1000, cancellationToken);
 
             Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename)}");
             await WriteFileToEspFlash(
