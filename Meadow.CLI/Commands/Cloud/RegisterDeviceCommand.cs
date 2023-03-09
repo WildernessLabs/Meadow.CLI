@@ -47,7 +47,7 @@ namespace Meadow.CommandLine.Commands.Cloud
                 var userOrgs = await userService.GetUserOrgs(cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
-                    _logger.LogInformation($"You are not a member of an org. Please visit meadowcloud.com to register your account.");
+                    _logger.LogInformation($"Please visit https://www.meadowcloud.co to register your account.");
                     return;
                 }
                 else if(userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
