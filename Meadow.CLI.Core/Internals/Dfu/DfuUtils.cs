@@ -2,7 +2,6 @@
 using LibUsbDotNet.LibUsb;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core.Exceptions;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
