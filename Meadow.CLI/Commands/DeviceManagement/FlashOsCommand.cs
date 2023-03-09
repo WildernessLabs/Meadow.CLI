@@ -45,6 +45,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
         [CommandOption("osVersion", 'v', Description = "Flash a specific downloaded OS version - x.x.x.x")]
         public string OSVersion { get; init; }
 
+        [CommandOption("all", 'a', Description = "Flash all attached devices that are in bootloader mode - x.x.x.x")]
+        public bool All { get; init; }
+
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -57,11 +60,22 @@ namespace Meadow.CLI.Commands.DeviceManagement
             {
                 try
                 {
-                    // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
-                    // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
-                    // await Task.Delay(2000, cancellationToken);
-                    await FlashOsInDfuMode();
-                    serialNumber = GetSerialNumber();
+                    if (All)
+                    {
+                        var bootloaderDevices = DfuUtils.GetDevicesInBootloadMode();
+                        foreach (var device in bootloaderDevices)
+                        {
+                            await FlashOsInDfuMode(device);
+                        }
+                    }
+                    else
+                    {
+                        // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
+                        // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
+                        // await Task.Delay(2000, cancellationToken);
+                        await FlashOsInDfuMode();
+                        serialNumber = GetSerialNumber();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -232,19 +246,19 @@ namespace Meadow.CLI.Commands.DeviceManagement
             }
         }
 
-        async Task FlashOsInDfuMode()
+        async Task FlashOsInDfuMode(UsbRegistry device = null)
         {
             if (string.IsNullOrEmpty(OSFile) == false)
             {
-                await DfuUtils.FlashFile(fileName: OSFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                await DfuUtils.FlashFile(fileName: OSFile, device: device, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
             }
             else if (string.IsNullOrEmpty(OSVersion) == false)
             {
-                await DfuUtils.FlashVersion(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
+                await DfuUtils.FlashVersion(version: OSVersion, device: device, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
             }
             else
             {
-                await DfuUtils.FlashLatest(logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                await DfuUtils.FlashLatest(device: device, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
             }
         }
         

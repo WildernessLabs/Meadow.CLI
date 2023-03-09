@@ -114,7 +114,7 @@ namespace Meadow.CLI.Core
                     case UpdateState.InDFUMode:
                         try
                         {
-                            var success = await DfuUtils.FlashVersion(RequestedVersion, _logger);
+                            var success = await DfuUtils.FlashVersion(RequestedVersion, logger: _logger);
                             if (success)
                             {
                                 CurrentState = UpdateState.DFUCompleted;

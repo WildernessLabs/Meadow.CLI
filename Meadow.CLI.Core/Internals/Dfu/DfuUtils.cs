@@ -2,6 +2,7 @@
 using LibUsbDotNet.LibUsb;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core.Exceptions;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -130,18 +131,18 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static Task<bool> FlashVersion(string version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static Task<bool> FlashVersion(string version, IUsbDevice? device = null, ILogger ? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             var fileName = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
 
-            return FlashFile(fileName: fileName, logger: logger, format: format);
+            return FlashFile(fileName: fileName, device: device, logger: logger, format: format);
         }
 
-        public static Task<bool> FlashLatest(ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static Task<bool> FlashLatest(IUsbDevice? device = null, ILogger ? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             var fileName = Path.Combine(DownloadManager.FirmwareDownloadsFilePath, DownloadManager.OsFilename);
 
-            return FlashFile(fileName: fileName, logger: logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+            return FlashFile(fileName: fileName, device: device, logger: logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
 
         public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
