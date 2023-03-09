@@ -62,10 +62,22 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 {
                     if (All)
                     {
-                        var bootloaderDevices = DfuUtils.GetDevicesInBootloadMode();
-                        foreach (var device in bootloaderDevices)
+                        Logger.LogInformation($"This will flash all devices currently in booloader mode. Proceed?\n(Y/N) Press Y to flash, N to exit");
+                        var yesOrNo = "n"; // Default to No, to avoid accidental presses.
+
+                        yesOrNo = await console.Input.ReadLineAsync();
+
+                        if (yesOrNo.ToLower() == "y")
                         {
-                            await FlashOsInDfuMode(device);
+                            var bootloaderDevices = DfuUtils.GetDevicesInBootloadMode();
+                            foreach (var device in bootloaderDevices)
+                            {
+                                await FlashOsInDfuMode(device);
+                            }
+                        }
+                        else
+                        {
+                            return;
                         }
                     }
                     else
