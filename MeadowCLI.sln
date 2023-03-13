@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Hcom.6.0.0", "Meadow
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI.Core.6.0.0", "Meadow.CLI.Core\Meadow.CLI.Core.6.0.0.csproj", "{AD70EEEA-731F-445A-8AE8-6432B587D24C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{1ABE4135-E5D8-4B18-B940-499B1A19EDD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

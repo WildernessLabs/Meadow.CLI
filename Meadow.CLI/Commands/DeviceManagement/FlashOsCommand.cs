@@ -9,6 +9,9 @@ using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,13 +43,13 @@ namespace Meadow.CLI.Commands.DeviceManagement
         public bool SkipRuntime { get; init; }
 
         [CommandOption("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
-        public bool DontPrompt { get; init; }
+        public string DontPrompt { get; init; }
 
         [CommandOption("osVersion", 'v', Description = "Flash a specific downloaded OS version - x.x.x.x")]
         public string OSVersion { get; init; }
 
-        [CommandOption("all", 'a', Description = "Flash all attached devices that are in bootloader mode - x.x.x.x")]
-        public bool All { get; init; }
+        [CommandOption("serialNumber", 'n', Description = "Serial Number of device that will be flashed")]
+        public string SerialNumber { get; init; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -54,46 +57,23 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            var serialNumber = string.Empty;
-
-            if (SkipOS == false)
+            Logger.LogInformation($"[STARTED] Flash of Meadow device with Serial Number : {SerialNumber}");
+            if (!SkipOS)
             {
+                // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
+                // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
+                // await Task.Delay(2000, cancellationToken);
+
                 try
                 {
-                    if (All)
-                    {
-                        Logger.LogInformation($"This will flash all devices currently in booloader mode. Proceed?\n(Y/N) Press Y to flash, N to exit");
-                        var yesOrNo = "n"; // Default to No, to avoid accidental presses.
-
-                        yesOrNo = await console.Input.ReadLineAsync();
-
-                        if (yesOrNo.ToLower() == "y")
-                        {
-                            var bootloaderDevices = DfuUtils.GetDevicesInBootloadMode();
-                            foreach (var device in bootloaderDevices)
-                            {
-                                await FlashOsInDfuMode(device);
-                            }
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
-                        // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
-                        // await Task.Delay(2000, cancellationToken);
-                        await FlashOsInDfuMode();
-                        serialNumber = GetSerialNumber();
-                    }
+                    await FlashOsInDfuMode();
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogInformation($"Unable to flash Meadow OS: {ex.Message}");
+                    Logger.LogInformation($"Unable to flash Meadow OS on device : {SerialNumber} \n Error: {ex.Message}");
                     return;
                 }
+
             }
             else
             {
@@ -102,7 +82,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             await Task.Delay(2000, cancellationToken);
 
-            Meadow = await FindCurrentMeadowDevice(SerialPortName, serialNumber, cancellationToken);
+            Meadow = await FindCurrentMeadowDevice(SerialPortName, SerialNumber, cancellationToken);
 
             var eraseFlash = await ValidateVersionAndPromptUserToEraseFlash(console, cancellationToken);
 
@@ -126,12 +106,14 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                 await Task.Delay(2000, cancellationToken);
 
-                Meadow = await FindCurrentMeadowDevice(SerialPortName, serialNumber, cancellationToken);
+                Meadow = await FindCurrentMeadowDevice(SerialPortName, SerialNumber, cancellationToken);
             }
 
             await Meadow.WriteRuntimeAndEspBins(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
 
             Meadow?.Dispose();
+
+            Logger.LogInformation($"[COMPLETED] Flash of Meadow device with Serial Number : {SerialNumber}");
         }
 
         async Task<bool> ValidateVersionAndPromptUserToEraseFlash(IConsole console, CancellationToken cancellationToken)
@@ -152,6 +134,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 checkName = "OS";
             }
 
+            Logger.LogInformation($"Previous OS {previousOsVersion}, Minimum OS {new Version(MINIMUM_OS_VERSION)}");
             // If less that B6.1 flash
             if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0)
             {
@@ -159,10 +142,14 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 Logger.LogInformation($"Your {checkName} version is older than {MINIMUM_OS_VERSION} (or unreadable). A flash erase is highly recommended.");
                 var yesOrNo = "y";
 
-                if (!DontPrompt)
+                if (string.IsNullOrEmpty(DontPrompt))
                 {
                     Logger.LogInformation($"Proceed? (Y/N) Press Y to erase flash, N to continue install without erasing");
                     yesOrNo = await console.Input.ReadLineAsync();
+                }
+                else
+                {
+                    yesOrNo = DontPrompt;
                 }
 
                 if (yesOrNo.ToLower() == "y")
@@ -258,8 +245,9 @@ namespace Meadow.CLI.Commands.DeviceManagement
             }
         }
 
-        async Task FlashOsInDfuMode(UsbRegistry device = null)
+        async Task FlashOsInDfuMode()
         {
+            var device = DfuUtils.GetDevicesInBootloadMode().Where(d => (string)d.DeviceProperties["SerialNumber"] == SerialNumber).FirstOrDefault();
             if (string.IsNullOrEmpty(OSFile) == false)
             {
                 await DfuUtils.FlashFile(fileName: OSFile, device: device, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
