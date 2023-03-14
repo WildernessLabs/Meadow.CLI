@@ -27,13 +27,13 @@ namespace Meadow.CLI.Core
 
             if (!Directory.Exists(applicationPath))
             {
-                throw new ArgumentException("Invalid applicationPath");
+                throw new ArgumentException($"Invalid applicationPath: {applicationPath}");
             }
 
             var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion);
             if (!Directory.Exists(osFilePath))
             {
-                throw new ArgumentException("osVersion not found. Please download.");
+                throw new ArgumentException($"osVersion {osVersion} not found. Please download.");
             }
 
             var osFiles = Directory.GetFiles(osFilePath);
