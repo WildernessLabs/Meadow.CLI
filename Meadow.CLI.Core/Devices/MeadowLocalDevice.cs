@@ -364,6 +364,23 @@ namespace Meadow.CLI.Core.Devices
             await SendCommand(command, cancellationToken);
         }
 
+        public async Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default)
+        {
+            Logger.LogInformation("Sending Meadow Cloud registration request (~2 mins)");
+
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE)
+                    .WithResponseType(MeadowMessageType.DevicePublicKey)
+                    .WithCompletionResponseType(MeadowMessageType.Concluded)
+                    .WithTimeout(new TimeSpan(hours: 0, minutes: 5, seconds: 0)) // RSA keypair generation on device takes a while
+                    .Build();
+
+            var commandResponse =
+                await SendCommand(command, cancellationToken);
+
+            return commandResponse.Message;
+        }
+
         public abstract Task<bool> Initialize(CancellationToken cancellationToken);
 
         public abstract bool IsDeviceInitialized();

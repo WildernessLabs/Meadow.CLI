@@ -61,5 +61,7 @@ namespace Meadow.CLI.Core.Devices
 
         public Task<DateTimeOffset> GetRtcTime(CancellationToken cancellationToken = default);
         public Task SetRtcTime(DateTimeOffset dateTime, CancellationToken cancellationToken = default);
+
+        public Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default);
     }
 }

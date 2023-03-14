@@ -33,6 +33,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         Concluded,
         DownloadStartOkay,
         DownloadStartFail,
+        DevicePublicKey
     }
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
@@ -363,6 +364,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                                 break;
                             }
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_DEVICE_PUBLIC_KEY:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DevicePublicKey, responseString));
+                            break;
+
                     }
                 }
             }
