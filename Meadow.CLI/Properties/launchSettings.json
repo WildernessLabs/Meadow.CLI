@@ -30,7 +30,7 @@
     },
     "FlashEsp": {
       "commandName": "Project",
-      "commandLineArgs": "flash esp -v 0.9.6.1"
+      "commandLineArgs": "flash esp"
     },
     "MonoDisable": {
       "commandName": "Project",
