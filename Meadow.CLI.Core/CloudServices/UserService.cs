@@ -10,32 +10,24 @@ using System.Text.Json;
 using System.Net;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Exceptions;
+using Microsoft.Extensions.Configuration;
 
 namespace Meadow.CLI.Core.CloudServices
 {
-    public class UserService
+    public class UserService : CloudServiceBase
     {
-        private readonly ILogger _logger;
+        IConfiguration _config;
 
-        public UserService(ILogger logger)
+        public UserService(IConfiguration config, IdentityManager identityManager) : base(identityManager)
         {
-            _logger = logger;
+            _config = config;
         }
 
         public async Task<List<UserOrg>> GetUserOrgs(CancellationToken cancellationToken)
         {
-            var host = SettingsManager.GetAppSetting("wlApiHost");
-            var identityManager = new IdentityManager(_logger);
-            var authToken = await identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrEmpty(authToken))
-            {
-                throw new MeadowCloudAuthException();
-            }
+            var httpClient = await AuthenticatedHttpClient();
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-
-            var response = await client.GetAsync($"{host}/api/users/me/orgs");
+            var response = await httpClient.GetAsync($"{_config["meadowCloudHost"]}/api/users/me/orgs");
 
             if (response.IsSuccessStatusCode)
             {

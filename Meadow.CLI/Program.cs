@@ -1,11 +1,15 @@
 ﻿using CliFx;
 using Meadow.CLI.Commands;
 using Meadow.CLI.Core;
+using Meadow.CLI.Core.CloudServices;
 using Meadow.CLI.Core.DeviceManagement;
+using Meadow.CLI.Core.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +20,11 @@ namespace Meadow.CLI
     {
         public static async Task<int> Main(string[] args)
         {
+            var config = new ConfigurationBuilder()
+                        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                        .AddJsonFile("appsettings.json")
+                        .Build();
+
             var logLevel = LogEventLevel.Information;
             var logModifier = args.FirstOrDefault(a => a.Contains("-m"))
                                   ?.Count(x => x == 'm') ?? 0;
@@ -47,9 +56,18 @@ namespace Meadow.CLI
                     builder.AddSerilog(Log.Logger, dispose: true);
                 });
 
+            services.AddScoped<IConfiguration>(_ => config);
+
             services.AddSingleton<MeadowDeviceManager>();
             services.AddSingleton<DownloadManager>();
+            services.AddSingleton<UserService>();
+            services.AddSingleton<PackageService>();
+            services.AddSingleton<DeviceService>();
+            services.AddSingleton<PackageManager>();
+            services.AddSingleton<IdentityManager>();
+
             AddCommandsAsServices(services);
+
             var serviceProvider = services.BuildServiceProvider();
 
             try

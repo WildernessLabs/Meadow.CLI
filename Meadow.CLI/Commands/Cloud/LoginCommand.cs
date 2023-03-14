@@ -11,22 +11,23 @@ namespace Meadow.CLI.Commands.Cloud
     public class LoginCommand : ICommand
     {
         private readonly ILogger<LoginCommand> _logger;
+        IdentityManager _identityManager;
 
-        public LoginCommand(ILoggerFactory loggerFactory)
+        public LoginCommand(ILoggerFactory loggerFactory, IdentityManager identityManager)
         {
             _logger = loggerFactory.CreateLogger<LoginCommand>();
+            _identityManager = identityManager;
         }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var identityManager = new IdentityManager(_logger);
-            var loginResult = await identityManager.Login(cancellationToken);
+            var loginResult = await _identityManager.Login(cancellationToken);
 
             if (loginResult)
             {
-                var cred = identityManager.GetCredentials(identityManager.WlRefreshCredentialName);
+                var cred = _identityManager.GetCredentials(_identityManager.WlRefreshCredentialName);
                 _logger.LogInformation($"Signed in as {cred.username}");
             }
         }

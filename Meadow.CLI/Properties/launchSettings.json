@@ -90,7 +90,7 @@
     },
     "Package Upload": {
       "commandName": "Project",
-      "commandLineArgs": "package upload -p 20221106104.mpak"
+      "commandLineArgs": "package upload -p 20230314363.mpak"
     },
     "Package List": {
       "commandName": "Project",
@@ -98,9 +98,9 @@
     },
     "Package Publish": {
       "commandName": "Project",
-      "commandLineArgs": "package publish -p fc99586c8b364e85959685b794b57b14"
+      "commandLineArgs": "package publish -p 5d6afbb069e0496a93d019830adecaa8"
     },
-    "Profile 1": {
+    "Provision": {
       "commandName": "Project",
       "commandLineArgs": "cloud provision device"
     }

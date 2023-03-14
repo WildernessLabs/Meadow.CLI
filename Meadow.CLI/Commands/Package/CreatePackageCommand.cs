@@ -1,7 +1,7 @@
 ﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using Meadow.CLI.Core.Managers;
+using Meadow.CLI.Core;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,21 +18,20 @@ namespace Meadow.CLI.Commands.Cloud
     public class CreateCommand : ICommand
     {
         private readonly ILogger<LogoutCommand> _logger;
+        PackageManager _packageManager;
 
-        [CommandOption(
-            "applicationPath",
-            'a',
-            Description = "The path to the application directory",
-            IsRequired = true)]
+        public CreateCommand(ILoggerFactory loggerFactory, PackageManager packageManager)
+        {
+            _logger = loggerFactory.CreateLogger<LogoutCommand>();
+            _packageManager = packageManager;
+        }
+
+        [CommandOption("applicationPath", 'a', Description = "The path to the application directory", IsRequired = true)]
         public string ApplicationPath { get; init; }
 
         [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = true)]
         public string OsVersion { get; init; }
 
-        public CreateCommand(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<LogoutCommand>();
-        }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -40,10 +39,15 @@ namespace Meadow.CLI.Commands.Cloud
 
             await Task.Yield();
 
-            PackageManager manager = new PackageManager(_logger);
-            var zipFile = manager.CreatePackage(ApplicationPath, OsVersion);
-
-            
+            try
+            {
+                var zipFile = _packageManager.CreatePackage(ApplicationPath, OsVersion);
+                _logger.LogInformation($"{zipFile} created.");
+            }
+            catch(ArgumentException ex)
+            {
+                _logger.LogError(ex.Message);
+            }
         }
     }
 }
