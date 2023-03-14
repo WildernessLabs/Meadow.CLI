@@ -11,10 +11,12 @@ namespace Meadow.CLI.Commands.Cloud
     public class LogoutCommand : ICommand
     {
         private readonly ILogger<LogoutCommand> _logger;
+        IdentityManager _identityManager;
 
-        public LogoutCommand(ILoggerFactory loggerFactory)
+        public LogoutCommand(ILoggerFactory loggerFactory, IdentityManager identityManager)
         {
             _logger = loggerFactory.CreateLogger<LogoutCommand>();
+            _identityManager = identityManager;
         }
 
         public async ValueTask ExecuteAsync(IConsole console)
@@ -22,8 +24,7 @@ namespace Meadow.CLI.Commands.Cloud
             var cancellationToken = console.RegisterCancellationHandler();
 
             await Task.Yield();
-            var identityManager = new IdentityManager(_logger);
-            identityManager.Logout();
+            _identityManager.Logout();
 
             _logger.LogInformation($"Signed out of Meadow Service");
         }

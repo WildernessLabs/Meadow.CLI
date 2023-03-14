@@ -24,9 +24,9 @@ namespace Meadow.CLI.Core.Identity
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
         private readonly ILogger _logger;
 
-        public IdentityManager(ILogger logger)
+        public IdentityManager(ILoggerFactory loggerFactory)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger("IdentityManager");
         }
 
         /// <summary>
@@ -37,8 +37,6 @@ namespace Meadow.CLI.Core.Identity
         {
             try
             {
-
-
                 var client = await GetOidcClient();
 
                 using (var http = new HttpListener())

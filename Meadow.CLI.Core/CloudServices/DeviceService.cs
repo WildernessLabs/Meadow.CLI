@@ -6,29 +6,22 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Identity;
+using Microsoft.Extensions.Configuration;
 
 namespace Meadow.CLI.Core.CloudServices
 {
-    public class DeviceService
+    public class DeviceService : CloudServiceBase
     {
-        private readonly ILogger _logger;
+        IConfiguration _config;
 
-        public DeviceService(ILogger logger)
+        public DeviceService(IConfiguration config, IdentityManager identityManager) : base(identityManager)
         {
-            _logger = logger;
+            _config = config;
         }
 
         public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string serialNumber, string publicKey)
         {
-            var host = SettingsManager.GetAppSetting("wlApiHost");
-            var authToken = await new IdentityManager(_logger).GetAccessToken();
-            if (string.IsNullOrEmpty(authToken))
-            {
-                throw new MeadowCloudAuthException();
-            }
-
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+            var httpClient = await AuthenticatedHttpClient();
 
             dynamic payload = new
             {
@@ -40,7 +33,7 @@ namespace Meadow.CLI.Core.CloudServices
             var json = JsonSerializer.Serialize<dynamic>(payload);
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response  = await client.PostAsync($"{host}/api/devices", content);
+            var response  = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/devices", content);
 
             if (response.IsSuccessStatusCode)
             {
