@@ -227,7 +227,7 @@ namespace Meadow.CLI.Core.Devices
         public Task SetDeveloper(ushort level, uint userData, CancellationToken cancellationToken = default)
         {
             var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER)
                     .WithDeveloperLevel(level)
                     .WithUserData(userData)
                     .Build();
