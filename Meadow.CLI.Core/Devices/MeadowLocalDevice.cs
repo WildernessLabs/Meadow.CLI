@@ -224,6 +224,17 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
+        public Task SetDeveloper(uint mode, uint userData, CancellationToken cancellationToken = default)
+        {
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1)
+                    .WithDeveloperMode(mode)
+                    .WithUserData(userData)
+                    .Build();
+
+            return SendCommand(command, cancellationToken);
+        }
+
         public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
         {
             var command =

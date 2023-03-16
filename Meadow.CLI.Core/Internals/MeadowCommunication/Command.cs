@@ -14,6 +14,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
         public Command(HcomMeadowRequestType requestType,
                        TimeSpan timeout,
+                       uint developerMode,
                        uint userData,
                        byte[]? data,
                        Predicate<MeadowMessageEventArgs> responsePredicate,
@@ -24,6 +25,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         {
             RequestType = requestType;
             Timeout = timeout;
+            DeveloperMode = developerMode;
             UserData = userData;
             Data = data;
             ResponsePredicate = responsePredicate;
@@ -34,6 +36,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         }
 
         public HcomMeadowRequestType RequestType { get; protected set; }
+        public uint DeveloperMode { get; protected set; }
         public uint UserData { get; protected set; }
         public TimeSpan Timeout { get; protected set; }
         public byte[]? Data { get; protected set; }

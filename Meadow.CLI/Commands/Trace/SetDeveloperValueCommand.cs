@@ -19,10 +19,10 @@ namespace Meadow.CLI.Commands.Trace
             _logger = LoggerFactory.CreateLogger<SetDeveloperValueCommand>();
         }
 
-        [CommandOption("developer", 'd', Description = "The developer value to set. Valid values are 1 - 4")]
+        [CommandOption("developer", 'd', Description = "The developer value to set.")]
         public uint Developer { get; set; }
 
-        [CommandOption("value", 'v', Description = "The value to apply to the developer value. Valid values are 0 to 4,294,967,295")]
+        [CommandOption("value", 'v', Description = "The value to apply to the developer value.")]
         public uint Value { get; set; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
@@ -31,16 +31,23 @@ namespace Meadow.CLI.Commands.Trace
 
             var cancellationToken = console.RegisterCancellationHandler();
 
-            var task = Developer switch
+            /*var task = Developer switch
             {
                 1 => Meadow.SetDeveloper1(Value, cancellationToken),
                 2 => Meadow.SetDeveloper2(Value, cancellationToken),
                 3 => Meadow.SetDeveloper3(Value, cancellationToken),
                 4 => Meadow.SetDeveloper4(Value, cancellationToken),
                 _ => throw new ArgumentOutOfRangeException(nameof(Developer), Developer, "Valid values are 1 - 4")
-            };
+            };*/
 
-            await task;
+            try
+            {
+                await Meadow.SetDeveloper(Developer, Value, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error Setting Developer : {ex.Message}");
+            }
         }
     }
 }

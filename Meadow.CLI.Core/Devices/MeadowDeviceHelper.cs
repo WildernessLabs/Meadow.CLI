@@ -213,6 +213,11 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.TraceDisable(cancellationToken);
         }
 
+        public Task SetDeveloper(uint mode, uint userData, CancellationToken cancellationToken = default)
+        {
+            return _meadowDevice.SetDeveloper(mode, userData, cancellationToken);
+        }
+
         public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.SetDeveloper1(userData, cancellationToken);
