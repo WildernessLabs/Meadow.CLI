@@ -9,14 +9,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
     {
         private protected const int HcomProtocolCommandRequiredHeaderLength = 12;
         private protected const int HcomProtocolCommandSeqNumber = 0;
-        private protected const ushort HcomProtocolExtraDataDefaultValue = 0x0000;
+        // TODO No longer required? private protected const ushort HcomProtocolExtraDataDefaultValue = 0x0000;
         private protected const int HcomProtocolRequestMd5HashLength = 32;
 
         public Command(HcomMeadowRequestType requestType,
                        TimeSpan timeout,
-                       uint developerMode,
+                       ushort developerLevel,
                        uint userData,
-                       byte[]? data,
                        Predicate<MeadowMessageEventArgs> responsePredicate,
                        Predicate<MeadowMessageEventArgs> completionPredicate,
                        EventHandler<MeadowMessageEventArgs>? responseHandler,
@@ -25,9 +24,8 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         {
             RequestType = requestType;
             Timeout = timeout;
-            DeveloperMode = developerMode;
+            DeveloperLevel = developerLevel;
             UserData = userData;
-            Data = data;
             ResponsePredicate = responsePredicate;
             CompletionPredicate = completionPredicate;
             ResponseHandler = responseHandler;
@@ -36,7 +34,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         }
 
         public HcomMeadowRequestType RequestType { get; protected set; }
-        public uint DeveloperMode { get; protected set; }
+        public ushort DeveloperLevel { get; protected set; }
         public uint UserData { get; protected set; }
         public TimeSpan Timeout { get; protected set; }
         public byte[]? Data { get; protected set; }
@@ -82,7 +80,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             // Extra Data
             Array.Copy(
-                BitConverter.GetBytes(HcomProtocolExtraDataDefaultValue),
+                BitConverter.GetBytes(DeveloperLevel),
                 0,
                 messageBytes,
                 offset,

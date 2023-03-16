@@ -20,7 +20,7 @@ namespace Meadow.CLI.Commands.Trace
         }
 
         [CommandOption("developer", 'd', Description = "The developer value to set.")]
-        public uint Developer { get; set; }
+        public ushort DeveloperLevel { get; set; }
 
         [CommandOption("value", 'v', Description = "The value to apply to the developer value.")]
         public uint Value { get; set; }
@@ -42,7 +42,7 @@ namespace Meadow.CLI.Commands.Trace
 
             try
             {
-                await Meadow.SetDeveloper(Developer, Value, cancellationToken);
+                await Meadow.SetDeveloper(DeveloperLevel, Value, cancellationToken);
             }
             catch (Exception ex)
             {
