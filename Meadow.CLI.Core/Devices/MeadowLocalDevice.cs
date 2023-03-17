@@ -224,40 +224,11 @@ namespace Meadow.CLI.Core.Devices
             return SendCommand(command, cancellationToken);
         }
 
-        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
+        public Task SetDeveloper(ushort level, uint userData, CancellationToken cancellationToken = default)
         {
             var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_1)
-                    .WithUserData(userData)
-                    .Build();
-
-            return SendCommand(command, cancellationToken);
-        }
-
-        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
-        {
-            var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_2)
-                    .WithUserData(userData)
-                    .Build();
-
-            return SendCommand(command, cancellationToken);
-        }
-
-        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
-        {
-            var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_3)
-                    .WithUserData(userData)
-                    .Build();
-
-            return SendCommand(command, cancellationToken);
-        }
-
-        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
-        {
-            var command =
-                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER)
+                    .WithDeveloperLevel(level)
                     .WithUserData(userData)
                     .Build();
 
