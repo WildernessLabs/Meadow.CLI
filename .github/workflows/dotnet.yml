@@ -17,14 +17,14 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
@@ -57,14 +57,14 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Checkout Win Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
@@ -98,14 +98,14 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Set default Xcode 13.0
       run: |
@@ -143,14 +143,14 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Checkout Mac Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
       uses: actions/setup-dotnet@v1
@@ -177,14 +177,14 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: Meadow.CLI
-        ref: dominique-ProgressBarRefactor
+        ref: develop
 
     - name: Checkout VSCode Extension side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
-        ref: dominique-ProgressBarRefactor
+        ref: develop
         submodules: true
 
     - name: Setup .NET Core SDK 5.0.x & 6.0.x
