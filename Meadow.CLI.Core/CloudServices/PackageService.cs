@@ -32,6 +32,10 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 throw new ArgumentException($"Invalid path: {mpakPath}");
             }
+            var fi = new FileInfo(mpakPath);
+
+            var hasher = new Hasher();
+            var crc = await hasher.CalculateCrc32(mpakPath);
 
             var httpClient = await AuthenticatedHttpClient();
 
@@ -42,7 +46,12 @@ namespace Meadow.CLI.Core.CloudServices
                 var fileStreamContent = new StreamContent(File.OpenRead(mpakPath));
                 fileStreamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-                dynamic payload = new { orgId, description };
+                dynamic payload = new { 
+                    orgId, 
+                    description = description ?? "",
+                    crc = crc ?? "",
+                    fileSize = fi.Length
+                };
                 var json = JsonSerializer.Serialize<dynamic>(payload);
 
                 multipartFormContent.Add(fileStreamContent, name: "file", fileName: uploadFilename);
