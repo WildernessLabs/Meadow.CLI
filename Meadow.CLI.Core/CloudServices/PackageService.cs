@@ -12,6 +12,7 @@ using Meadow.CLI.Core.Exceptions;
 using System.Threading;
 using Meadow.CLI.Core.CloudServices.Messages;
 using Microsoft.Extensions.Configuration;
+using Meadow.CLI.Core.DeviceManagement.Tools;
 
 namespace Meadow.CLI.Core.CloudServices
 {
@@ -34,8 +35,8 @@ namespace Meadow.CLI.Core.CloudServices
             }
             var fi = new FileInfo(mpakPath);
 
-            var hasher = new Hasher();
-            var crc = await hasher.CalculateCrc32(mpakPath);
+            var crcChecksum = await CrcTools.CalculateCrc32FileHash(mpakPath);
+            Console.WriteLine(crcChecksum);
 
             var httpClient = await AuthenticatedHttpClient();
 
@@ -49,7 +50,7 @@ namespace Meadow.CLI.Core.CloudServices
                 dynamic payload = new { 
                     orgId, 
                     description = description ?? "",
-                    crc = crc ?? "",
+                    crc = crcChecksum ?? "",
                     fileSize = fi.Length
                 };
                 var json = JsonSerializer.Serialize<dynamic>(payload);
