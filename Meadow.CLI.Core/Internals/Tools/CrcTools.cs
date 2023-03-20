@@ -1,4 +1,9 @@
-﻿namespace Meadow.CLI.Core.DeviceManagement.Tools
+﻿using System;
+using System.IO;
+using System.IO.Hashing;
+using System.Threading.Tasks;
+
+namespace Meadow.CLI.Core.DeviceManagement.Tools
 {
     public static class CrcTools
     {
@@ -61,6 +66,20 @@
         public static uint Crc32part(byte[] buffer, int length, uint crc32val)
         {
             return Crc32part(buffer, length, 0, crc32val);
+        }
+
+        public static async Task<string> CalculateCrc32FileHash(string filePath)
+        {
+            var crc32 = new Crc32();
+
+            using (var fs = File.OpenRead(filePath))
+            {
+                await crc32.AppendAsync(fs);
+            }
+
+            var checkSum = crc32.GetCurrentHash();
+            Array.Reverse(checkSum); // make big endian
+            return BitConverter.ToString(checkSum).Replace("-", "").ToLower();
         }
     }
 }

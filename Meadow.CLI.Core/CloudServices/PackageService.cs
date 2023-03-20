@@ -12,6 +12,7 @@ using Meadow.CLI.Core.Exceptions;
 using System.Threading;
 using Meadow.CLI.Core.CloudServices.Messages;
 using Microsoft.Extensions.Configuration;
+using Meadow.CLI.Core.DeviceManagement.Tools;
 
 namespace Meadow.CLI.Core.CloudServices
 {
@@ -32,20 +33,26 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 throw new ArgumentException($"Invalid path: {mpakPath}");
             }
-
+            
             var httpClient = await AuthenticatedHttpClient();
-
-            var uploadFilename = $"{Path.GetFileName(mpakPath)}";
 
             using (var multipartFormContent = new MultipartFormDataContent())
             {
                 var fileStreamContent = new StreamContent(File.OpenRead(mpakPath));
                 fileStreamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-                dynamic payload = new { orgId, description };
+                var fi = new FileInfo(mpakPath);
+                var crcFileHash = await CrcTools.CalculateCrc32FileHash(mpakPath);
+
+                dynamic payload = new { 
+                    orgId, 
+                    description = description ?? "",
+                    crc = crcFileHash ?? "",
+                    fileSize = fi.Length
+                };
                 var json = JsonSerializer.Serialize<dynamic>(payload);
 
-                multipartFormContent.Add(fileStreamContent, name: "file", fileName: uploadFilename);
+                multipartFormContent.Add(fileStreamContent, name: "file", fileName: fi.Name);
                 multipartFormContent.Add(new StringContent(json), "json");
 
                 var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages", multipartFormContent);
