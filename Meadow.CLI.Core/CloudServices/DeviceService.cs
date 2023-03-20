@@ -19,14 +19,14 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string serialNumber, string publicKey)
+        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey)
         {
             var httpClient = await AuthenticatedHttpClient();
 
             dynamic payload = new
             {
                 orgId,
-                serialNumber,
+                id,
                 publicKey
             };
 

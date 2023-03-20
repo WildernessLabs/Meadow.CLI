@@ -18,18 +18,18 @@ using Microsoft.Extensions.Configuration;
 
 namespace Meadow.CommandLine.Commands.Cloud
 {
-    [Command("cloud provision device", Description = "Registers and prepares connected device for use with Meadow Cloud")]
-    public class CloudRegisterCommand : MeadowSerialCommand
+    [Command("device provision", Description = "Registers and prepares connected device for use with Meadow Cloud")]
+    public class ProvisionDeviceCommand : MeadowSerialCommand
     {
         DeviceService _deviceService;
         UserService _userService;
-        private readonly ILogger<CloudRegisterCommand> _logger;
+        private readonly ILogger<ProvisionDeviceCommand> _logger;
         IConfiguration _config;
 
-        public CloudRegisterCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager, IConfiguration config, DeviceService deviceService, UserService userService)
+        public ProvisionDeviceCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager, IConfiguration config, DeviceService deviceService, UserService userService)
             : base(downloadManager, loggerFactory, meadowDeviceManager)
         {
-            _logger = LoggerFactory.CreateLogger<CloudRegisterCommand>();
+            _logger = LoggerFactory.CreateLogger<ProvisionDeviceCommand>();
             _config = config;
             _deviceService = deviceService;
             _userService = userService;
@@ -78,7 +78,7 @@ namespace Meadow.CommandLine.Commands.Cloud
             var delim = "-----END PUBLIC KEY-----\n";
             publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
-            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.SerialNumber, publicKey);
+            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey);
 
             if (result.isSuccess)
             {

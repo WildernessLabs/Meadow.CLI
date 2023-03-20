@@ -86,7 +86,7 @@ namespace Meadow.CLI.Commands.Cloud
             }
             foreach (var package in packages)
             {
-                _logger.LogInformation($"{package.PackageId} {package.Name} {package.Description}");
+                _logger.LogInformation($"{package.Id} | {package.Name} | {package.Description}");
             }
         }
     }

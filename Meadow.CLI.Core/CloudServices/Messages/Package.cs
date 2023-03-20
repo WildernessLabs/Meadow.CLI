@@ -9,8 +9,6 @@ namespace Meadow.CLI.Core.CloudServices.Messages
     {
         [JsonPropertyName("id")]
         public string Id { get; set; } = default!;
-        [JsonPropertyName("packageId")]
-        public string PackageId { get; set; } = default!;
         [JsonPropertyName("orgId")]
         public string OrgId { get; set; } = default!;
         [JsonPropertyName("publishedDate")]
