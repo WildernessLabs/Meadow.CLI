@@ -74,12 +74,12 @@ namespace Meadow.CLI.Core
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
             {
-                _logger.LogInformation("Downloading latest version file");
+                _logger.LogInformation("Downloading latest version file" + Environment.NewLine);
                 versionCheckUrl = VersionCheckUrlRoot + "latest.json";
             }
             else
             {
-                _logger.LogInformation("Downloading version file for Meadow OS " + version);
+                _logger.LogInformation("Downloading version file for Meadow OS " + version + Environment.NewLine);
                 versionCheckUrl = VersionCheckUrlRoot + version + ".json";
             }
 
@@ -131,7 +131,7 @@ namespace Meadow.CLI.Core
             if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
             {
                 _logger.LogInformation(
-                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.");
+                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0." + Environment.NewLine);
                 return;
             }
 
@@ -145,7 +145,7 @@ namespace Meadow.CLI.Core
                 }
                 else
                 {
-                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded");
+                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded." + Environment.NewLine);
                     return;
                 }
             }
@@ -154,7 +154,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation($"Downloading Meadow OS");
+                _logger.LogInformation($"Downloading Meadow OS" + Environment.NewLine);
                 await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
             }
             catch
@@ -165,7 +165,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation("Downloading coprocessor firmware");
+                _logger.LogInformation("Downloading coprocessor firmware" + Environment.NewLine);
                 await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
             }
             catch
@@ -174,7 +174,7 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}");
+            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}" + Environment.NewLine);
         }
 
         public async Task InstallDfuUtil(bool is64Bit = true,

@@ -13,6 +13,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public partial class MeadowLocalDevice
     {
+        private const int PROGESS_INCREMENTS = 5;
         uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
 
@@ -21,7 +22,6 @@ namespace Meadow.CLI.Core.Devices
                                             CancellationToken cancellationToken)
         {
             _packetCrc32 = 0;
-            _lastProgress = 0;
 
             try
             {
@@ -70,7 +70,10 @@ namespace Meadow.CLI.Core.Devices
                 var fileBufOffset = 0;
                 ushort sequenceNumber = 1;
 
-                Logger?.LogInformation("Starting File Transfer...");
+                Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
+                Logger?.LogInformation("["); // In separate call as used for progress delimiter
+
+                nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                 {
                     int numBytesToSend;
@@ -143,9 +146,8 @@ namespace Meadow.CLI.Core.Devices
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                Logger?.LogInformation(
-                    "Transfer Complete, wrote {count} bytes to Meadow",
-                    fileBufOffset);
+                Logger?.LogInformation("]"); // In separate call as used for progress delimiter
+                Logger?.LogInformation($"{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
             }
             catch (Exception ex)
             {
@@ -154,15 +156,17 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        private int _lastProgress = 0;
+        private int nextProgress;
 
         private void WriteProgress(decimal i)
         {
-            //var intProgress = Convert.ToInt32(i * 100);
-            //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
+            var intProgress = Convert.ToInt32(i * 100);
 
-            //Logger?.LogInformation("Operation Progress: {progress:P0}", i);
-            //_lastProgress = intProgress;
+            if (intProgress > nextProgress)
+            {
+                Logger?.LogInformation("=");
+                nextProgress += PROGESS_INCREMENTS;
+            }
         }
 
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
