@@ -33,29 +33,26 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 throw new ArgumentException($"Invalid path: {mpakPath}");
             }
-            var fi = new FileInfo(mpakPath);
-
-            var crcChecksum = await CrcTools.CalculateCrc32FileHash(mpakPath);
-            Console.WriteLine(crcChecksum);
-
+            
             var httpClient = await AuthenticatedHttpClient();
-
-            var uploadFilename = $"{Path.GetFileName(mpakPath)}";
 
             using (var multipartFormContent = new MultipartFormDataContent())
             {
                 var fileStreamContent = new StreamContent(File.OpenRead(mpakPath));
                 fileStreamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
+                var fi = new FileInfo(mpakPath);
+                var crcFileHash = await CrcTools.CalculateCrc32FileHash(mpakPath);
+
                 dynamic payload = new { 
                     orgId, 
                     description = description ?? "",
-                    crc = crcChecksum ?? "",
+                    crc = crcFileHash ?? "",
                     fileSize = fi.Length
                 };
                 var json = JsonSerializer.Serialize<dynamic>(payload);
 
-                multipartFormContent.Add(fileStreamContent, name: "file", fileName: uploadFilename);
+                multipartFormContent.Add(fileStreamContent, name: "file", fileName: fi.Name);
                 multipartFormContent.Add(new StringContent(json), "json");
 
                 var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages", multipartFormContent);
