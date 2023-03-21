@@ -247,7 +247,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         async Task FlashOsInDfuMode()
         {
-            var device = DfuUtils.GetDevicesInBootloadMode().Where(d => (string)d.DeviceProperties["SerialNumber"] == SerialNumber).FirstOrDefault();
+            var device = DfuUtils.GetDevicesInBootloaderMode().Where(d => d.Info.SerialNumber == SerialNumber).FirstOrDefault();
             if (string.IsNullOrEmpty(OSFile) == false)
             {
                 await DfuUtils.FlashFile(fileName: OSFile, device: device, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
