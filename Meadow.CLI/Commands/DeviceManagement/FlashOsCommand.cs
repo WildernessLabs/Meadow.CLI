@@ -57,7 +57,12 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            Logger.LogInformation($"[STARTED] Flash of Meadow device with Serial Number : {SerialNumber}");
+            var serialNumber = string.Empty;
+
+            if (string.IsNullOrEmpty(SerialNumber))
+                Logger.LogInformation($"[STARTED] Flash of Meadow device");
+            else
+                Logger.LogInformation($"[STARTED] Flash of Meadow device with Serial Number : {SerialNumber}");
             if (!SkipOS)
             {
                 // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
@@ -113,7 +118,10 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            Logger.LogInformation($"[COMPLETED] Flash of Meadow device with Serial Number : {SerialNumber}");
+            if (string.IsNullOrEmpty(SerialNumber))
+                Logger.LogInformation($"[COMPLETED] Flash of Meadow device");
+            else
+                Logger.LogInformation($"[COMPLETED] Flash of Meadow device with Serial Number : {SerialNumber}");
         }
 
         async Task<bool> ValidateVersionAndPromptUserToEraseFlash(IConsole console, CancellationToken cancellationToken)
