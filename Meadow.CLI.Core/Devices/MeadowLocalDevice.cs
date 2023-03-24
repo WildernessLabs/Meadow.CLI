@@ -4,6 +4,9 @@ using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,11 +22,17 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
         public IList<FileData> FilesOnDevice { get; } = new List<FileData>();
+        public bool InMeadowCLI { get; set; }
 
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
         {
             Logger = logger;
             DataProcessor = dataProcessor;
+
+            var entryAssembly = Assembly.GetEntryAssembly()!;
+
+            if (entryAssembly != null)
+                InMeadowCLI = entryAssembly.FullName.ToLower().Contains("meadow");
         }
 
         public abstract Task Write(byte[] encodedBytes,

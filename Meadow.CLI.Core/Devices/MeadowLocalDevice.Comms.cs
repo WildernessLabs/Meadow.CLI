@@ -71,7 +71,11 @@ namespace Meadow.CLI.Core.Devices
                 ushort sequenceNumber = 1;
 
                 Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
-                Logger?.LogInformation("["); // In separate call as used for progress delimiter
+
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("[");
+                }
 
                 nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
@@ -146,7 +150,10 @@ namespace Meadow.CLI.Core.Devices
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                Logger?.LogInformation("]"); // In separate call as used for progress delimiter
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("]");
+                }
                 Logger?.LogInformation($"{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
             }
             catch (Exception ex)
@@ -164,7 +171,10 @@ namespace Meadow.CLI.Core.Devices
 
             if (intProgress > nextProgress)
             {
-                Logger?.LogInformation("=");
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("=");
+                }
                 nextProgress += PROGESS_INCREMENTS;
             }
         }
@@ -280,28 +290,28 @@ namespace Meadow.CLI.Core.Devices
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
-                    Logger?.LogError(ioe, "Write but port not opened");
+                    Logger?.LogError(ioe, $"Write but port not opened{Environment.NewLine}");
                     throw;
                 }
                 catch (ArgumentOutOfRangeException aore) // offset or count don't match buffer
                 {
-                    Logger?.LogError(aore, "Write buffer, offset and count don't line up");
+                    Logger?.LogError(aore, $"Write buffer, offset and count don't line up{Environment.NewLine}");
                     throw;
                 }
                 catch (ArgumentException ae) // offset plus count > buffer length
                 {
-                    Logger?.LogError(ae, "Write offset plus count > buffer length");
+                    Logger?.LogError(ae, $"Write offset plus count > buffer length{Environment.NewLine}");
                     throw;
                 }
                 catch (TimeoutException te) // Took too long to send
                 {
-                    Logger?.LogError(te, "Write took too long to send");
+                    Logger?.LogError(te, $"Write took too long to send {Environment.NewLine}");
                     throw;
                 }
             }
             catch (Exception except)
             {
-                Logger?.LogTrace(except, "EncodeAndSendPacket threw");
+                Logger?.LogTrace(except, $"EncodeAndSendPacket threw{Environment.NewLine}");
                 throw;
             }
         }
