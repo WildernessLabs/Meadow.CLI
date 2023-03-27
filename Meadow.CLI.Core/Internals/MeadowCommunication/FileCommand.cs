@@ -21,7 +21,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                              Predicate<MeadowMessageEventArgs> responseHandler,
                              Predicate<MeadowMessageEventArgs> completionHandler,
                              string commandBuilder)
-            : base(requestType, timeout, 0, partition, responseHandler, completionHandler, null, true, commandBuilder)
+            : base(requestType, timeout, partition, null, responseHandler, completionHandler, null, true, commandBuilder)
         {
             SourceFileName = sourceFileName;
             DestinationFileName = destinationFileName;
