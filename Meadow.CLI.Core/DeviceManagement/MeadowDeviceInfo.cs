@@ -399,6 +399,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                 deviceInfo += $"{macAddresses}" + Environment.NewLine;
             }
 
+            deviceInfo += Environment.NewLine;
             deviceInfo += $"Firmware Versions {Environment.NewLine}";
             deviceInfo += $"    OS: {MeadowOsVersion}{Environment.NewLine}";
             deviceInfo += $"    Mono: {RuntimeVersion}{Environment.NewLine}";

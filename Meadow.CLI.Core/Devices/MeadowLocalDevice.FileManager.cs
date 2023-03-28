@@ -695,8 +695,6 @@ namespace Meadow.CLI.Core.Devices
                             filename,
                             DefaultTimeout,
                             cancellationToken);
-
-                    Logger.LogInformation($"Sent file: {filename}" + Environment.NewLine + Environment.NewLine);
                 }
 
                 Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
