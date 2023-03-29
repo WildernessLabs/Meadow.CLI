@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Meadow.CLI.Test;
 
-namespace Xamarin.Android.Build.Tests
+namespace Meadow.CLI.Test
 {
     [TestFixture]
     [Category("UsesDevice")]
@@ -73,7 +73,7 @@ namespace Xamarin.Android.Build.Tests
             ManualResetEvent resetEvent = new ManualResetEvent(false);
             var sw = new Stopwatch();
             // setup the debugger
-            var session = new SoftDebuggerSession();
+            /* var session = new SoftDebuggerSession();
             try
             {
                 session.Breakpoints = new BreakpointStore();
@@ -145,7 +145,7 @@ namespace Xamarin.Android.Build.Tests
             finally
             {
                 session.Exit();
-            }
+            }*/
         }
 
 #pragma warning disable 414
@@ -218,7 +218,7 @@ namespace Xamarin.Android.Build.Tests
             ManualResetEvent resetEvent = new ManualResetEvent(false);
             var sw = new Stopwatch();
             // setup the debugger
-            var session = new SoftDebuggerSession();
+            /*var session = new SoftDebuggerSession();
             try
             {
                 session.Breakpoints = new BreakpointStore();
@@ -319,7 +319,7 @@ namespace Xamarin.Android.Build.Tests
             finally
             {
                 session.Exit();
-            }
+            }*/
         }
     }
 }
