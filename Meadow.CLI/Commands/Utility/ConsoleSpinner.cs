@@ -16,7 +16,7 @@ namespace Meadow.CLI.Commands.Utility
                 counter++;
                 Console.Write(sequence[counter % 4]);
                 Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
-                await Task.Delay(delay, CancellationToken.None); // You can adjust the speed of the spinner here
+                await Task.Delay(delay, CancellationToken.None); // Not propogating the token intentionally.
             }
         }
     }
