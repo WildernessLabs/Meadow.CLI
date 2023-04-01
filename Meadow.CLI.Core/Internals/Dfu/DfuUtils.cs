@@ -25,7 +25,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
         {
             try
             {
-                GetDeviceInBootloadMode();
+                GetDeviceInBootloaderMode();
                 return true;
             }
             catch (Exception)
@@ -34,9 +34,9 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static IUsbDevice GetDeviceInBootloadMode()
+        public static IUsbDevice GetDeviceInBootloaderMode()
         {
-            var allDevices = GetDevicesInBootloadMode();
+            var allDevices = GetDevicesInBootloaderMode();
             if (allDevices.Count() > 1)
             {
                 throw new MultipleDfuDevicesException("More than one DFU device found, please connect only one and try again.");
@@ -51,7 +51,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
             return device;
         }
 
-        public static IEnumerable<IUsbDevice> GetDevicesInBootloadMode()
+        public static IEnumerable<IUsbDevice> GetDevicesInBootloaderMode()
         {
             using (UsbContext context = new UsbContext())
             {
@@ -147,7 +147,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
         public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             logger ??= NullLogger.Instance;
-            device ??= GetDeviceInBootloadMode();
+            device ??= GetDeviceInBootloaderMode();
 
             if (!File.Exists(fileName))
             {

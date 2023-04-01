@@ -181,7 +181,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 {
                     try
                     {
-                        dfuDevice = DfuUtils.GetDeviceInBootloadMode();
+                        dfuDevice = DfuUtils.GetDeviceInBootloaderMode();
                         break;
                     }
                     catch (MultipleDfuDevicesException)
