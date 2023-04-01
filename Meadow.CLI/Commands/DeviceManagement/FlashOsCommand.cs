@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
-using LibUsbDotNet.Main;
+using LibUsbDotNet.LibUsb;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
@@ -162,14 +162,14 @@ namespace Meadow.CLI.Commands.DeviceManagement
         {
             var dfuAttempts = 0;
 
-            UsbRegistry dfuDevice;
+            IUsbDevice dfuDevice;
             while (true)
             {
                 try
                 {
                     try
                     {
-                        dfuDevice = DfuUtils.GetDevice();
+                        dfuDevice = DfuUtils.GetDeviceInBootloadMode();
                         break;
                     }
                     catch (MultipleDfuDevicesException)

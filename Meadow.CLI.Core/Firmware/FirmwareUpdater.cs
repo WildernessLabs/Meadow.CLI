@@ -94,7 +94,7 @@ namespace Meadow.CLI.Core
                         // look for DFU device
                         try
                         {
-                            var dfu = DfuUtils.GetDevice();
+                            var dfu = DfuUtils.GetDeviceInBootloadMode();
                             CurrentState = UpdateState.InDFUMode;
                         }
                         catch (Exception ex)

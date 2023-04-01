@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
@@ -11,13 +11,15 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>0.96.2</Version>
+    <Version>0.96.5</Version>
   </PropertyGroup>
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " />
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' " />
   <ItemGroup>
     <Compile Remove="Internals\Dfu\DfuContext.cs" />
     <Compile Remove="Internals\Dfu\DfuSharp.cs" />
@@ -39,7 +41,6 @@
   <ItemGroup>
     <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
     <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
-    <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
@@ -54,10 +55,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
     <None Include="images\icon.png" PackagePath="icon.png" Pack="true" />
   </ItemGroup>
 
@@ -65,4 +66,7 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.6.0.0.csproj" />
+  </ItemGroup>
 </Project>
