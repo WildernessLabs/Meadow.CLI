@@ -16,8 +16,40 @@ on:
   workflow_dispatch:
 
 jobs:
+  unit-tests:
+    runs-on: windows-latest
+    name: Run CLI Unit Tests
+
+    steps:
+    - name: Checkout Meadow.CLI.Core side-by-side
+      uses: actions/checkout@v2
+      with:
+        path: main
+
+    - name: Setup .NET Core SDK 6.0.x & 7.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Restore dependencies
+      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
+
+    # TODO - name: Run Unit Tests
+    #  run: |
+    #    cd main
+    #    dotnet test
+
   build-and-optionally-publish-nuget:
     runs-on: windows-latest
+    needs: [unit-tests]
     name: Build and Optionally Publish Meadow.CLI nuget
       
     steps:
