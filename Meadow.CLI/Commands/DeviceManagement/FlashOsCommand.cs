@@ -1,6 +1,7 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using LibUsbDotNet.LibUsb;
+using Meadow.CLI.Commands.Utility;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
@@ -81,7 +82,18 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             if (eraseFlash)
             {
-                await Meadow.MeadowDevice.EraseFlash(cancellationToken);
+                // TODO We may want to move this into Meadow.EraseFlash() so the behaviour is centralised
+                var spinnerCancellationTokenSource = new CancellationTokenSource();
+                var consoleSpinner = new ConsoleSpinner();
+                Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
+
+                await Meadow.EraseFlash(cancellationToken);
+
+                // Cancel the spinner as soon as EraseFlash finishes
+                spinnerCancellationTokenSource.Cancel();
+
+                // Let's start spinning
+                await consoleSpinnerTask;
 
                 Meadow?.Dispose();
                 Meadow = null;
