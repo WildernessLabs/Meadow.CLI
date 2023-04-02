@@ -2,8 +2,9 @@
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
+using Meadow.CLI.Core.CloudServices;
+using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Identity;
-using Meadow.CLI.Core.Managers;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -23,12 +24,16 @@ namespace Meadow.CLI.Commands.Cloud
     public class PublishCommand : ICommand
     {
         private readonly ILogger<LogoutCommand> _logger;
+        PackageService _packageService;
 
-        public PublishCommand(ILoggerFactory loggerFactory)
+        public PublishCommand(ILoggerFactory loggerFactory, PackageService packageService)
         {
             _logger = loggerFactory.CreateLogger<LogoutCommand>();
+            _packageService = packageService;
         }
-
+        
+        [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
+        public string OrgId { get; set; }
         [CommandOption("packageId", 'p', Description = "ID of the package to publish", IsRequired = true)]
         public string PackageId { get; init; }
 
@@ -38,8 +43,15 @@ namespace Meadow.CLI.Commands.Cloud
 
             await Task.Yield();
 
-            PackageManager manager = new PackageManager(_logger);
-            await manager.PublishPackage(PackageId);
+            try
+            {
+                await _packageService.PublishPackage(PackageId, cancellationToken);
+                _logger.LogInformation("Publish successful.");
+            }
+            catch(MeadowCloudException mex)
+            {
+                _logger.LogInformation($"Publish failed: {mex.Message}");
+            }
         }
     }
 }

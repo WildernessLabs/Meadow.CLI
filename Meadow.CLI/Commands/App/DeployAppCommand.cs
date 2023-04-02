@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.App
 {
@@ -17,6 +18,13 @@ namespace Meadow.CLI.Commands.App
             Description = "The path to the application to deploy to the app",
             IsRequired = true)]
         public string File { get; init; }
+
+        [CommandOption(
+            "nolink",
+            'n',
+            Description = "A list of assemblies to skip linking (trimming) on",
+            IsRequired = false)]
+        public IList<string> NoLink { get; init; } = null;
 
         [CommandOption("includePdbs", 'i', Description = "Include the PDB files on deploy to enable debugging", IsRequired = false)]
         public bool IncludePdbs { get; init; } = true;
@@ -31,10 +39,18 @@ namespace Meadow.CLI.Commands.App
             await base.ExecuteAsync(console);
             var cancellationToken = console.RegisterCancellationHandler();
 
+            // check to see if the app exists before continuing
+            if (!System.IO.File.Exists(File))
+            {
+                Logger.LogError($"Application file '{File}' not found");
+            }
+
+            // what OS version is on the target?
             var osVersion = await Meadow.GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
             try
             {
+                // make sure we have the same locally because we will do linking/trimming against that runtime
                 await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion);
             }
             catch
@@ -43,7 +59,7 @@ namespace Meadow.CLI.Commands.App
                 console.Output.WriteLine("Meadow assemblies download failed, using local copy");
             }
 
-            await Meadow.DeployApp(File, IncludePdbs, cancellationToken);
+            await Meadow.DeployApp(fileName: File, includePdbs: IncludePdbs, noLink: NoLink, verbose: Verbose, cancellationToken: cancellationToken);
         }
     }
 }

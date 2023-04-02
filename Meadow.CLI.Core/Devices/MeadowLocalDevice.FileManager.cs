@@ -52,7 +52,7 @@ namespace Meadow.CLI.Core.Devices
             return items;
         }
 
-        public async Task<IDictionary<string, uint>> GetFilesAndCrcs(
+        public async Task<IList<FileData>> GetFilesAndCrcs(
             TimeSpan timeout,
             int partition = 0,
             CancellationToken cancellationToken = default)
@@ -74,7 +74,10 @@ namespace Meadow.CLI.Core.Devices
 
                 if (e.MessageType == MeadowMessageType.FileListCrcMember)
                 {
-                    SetFileAndCrcsFromMessage(e.Message);
+                    if (FileData.TryParse(e.Message, out FileData? data))
+                    {
+                        FilesOnDevice.Add(data);
+                    }
                 }
             };
 
@@ -221,16 +224,16 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public Task UpdateMonoRuntime(string? fileName,
-                                                 uint partition = 0,
-                                                 CancellationToken cancellationToken = default)
+                                      uint partition = 0,
+                                      CancellationToken cancellationToken = default)
         {
             return UpdateMonoRuntime(fileName, null, partition, cancellationToken);
         }
 
         public async Task UpdateMonoRuntime(string? fileName,
-                                                 string? osVersion,
-                                                 uint partition = 0,
-                                                 CancellationToken cancellationToken = default)
+                                            string? osVersion,
+                                            uint partition = 0,
+                                            CancellationToken cancellationToken = default)
         {
             var sourceFilename = fileName;
 
@@ -319,6 +322,7 @@ namespace Meadow.CLI.Core.Devices
                               .WithDestinationFileName(targetFileName)
                               .WithMcuAddress(mcuAddress)
                               .WithSourceFileName(fileName)
+                              .WithTimeout(new TimeSpan(hours: 0, minutes: 3, seconds: 0))
                               .Build();
 
                 await SendTheEntireFile(command, true, cancellationToken);
@@ -403,7 +407,7 @@ namespace Meadow.CLI.Core.Devices
                     mcuDestAddress: "0x10000",
                     cancellationToken: cancellationToken);
 
-            await Task.Delay(1000, cancellationToken);
+            await Task.Delay(3000, cancellationToken);
 
             Logger.LogInformation($"Transferring {Path.Combine(sourcePath, DownloadManager.NetworkBootloaderFilename)}");
             await WriteFileToEspFlash(
@@ -520,9 +524,11 @@ namespace Meadow.CLI.Core.Devices
         }
 
         public async Task DeployApp(string applicationFilePath,
-                                        string osVersion,
-                                         bool includePdbs = false,
-                                         CancellationToken cancellationToken = default)
+                                    string osVersion,
+                                    bool includePdbs = false,
+                                    bool verbose = false,
+                                    IList<string>? noLink = null,
+                                    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -556,7 +562,7 @@ namespace Meadow.CLI.Core.Devices
 
                 foreach (var f in deviceFiles)
                 {
-                    Logger.LogInformation("Found {file} (CRC: {crc})", f.Key, f.Value);
+                    Logger.LogInformation($"Found {f.FileName} (CRC: {f.Crc})" + Environment.NewLine);
                 }
 
                 var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
@@ -570,6 +576,11 @@ namespace Meadow.CLI.Core.Devices
                 {
                     await AddFile(fileNamePdb, false);
                 }
+                else if (verbose)
+                {
+                    Logger.LogInformation("Skipping PDBs");
+                }
+
 
                 async Task AddFile(string file, bool includePdbs)
                 {
@@ -599,14 +610,10 @@ namespace Meadow.CLI.Core.Devices
 
                 var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
                     .Where(x => x.Contains("App.") == false)
-                   // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                    // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                     .ToList();
 
-                var trimmedDependencies = (await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, includePdbs: includePdbs))
-                    .Where(x => x.Contains("App.") == false)
-                    .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .ToList();
+                var trimmedDependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)
@@ -616,16 +623,21 @@ namespace Meadow.CLI.Core.Devices
 
                 if (trimmedDependencies != null)
                 {
+                    trimmedDependencies = trimmedDependencies.Where(x => x.Contains("App.") == false)
+                        .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .ToList();
+
                     //crawl trimmed dependencies
                     foreach (var file in trimmedDependencies)
                     {
                         await AddFile(file, false);
                     }
 
-                    for(int i = 0; i < dllLinkIngoreList.Length; i++)
+                    for (int i = 0; i < dllLinkIngoreList.Length; i++)
                     {   //add the files from the dll link ignore list
-                        if(dependencies.Exists(f => f.Contains(dllLinkIngoreList[i])))
-                        {   
+                        if (dependencies.Exists(f => f.Contains(dllLinkIngoreList[i])))
+                        {
                             await AddFile(dependencies.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i])), includePdbs);
                         }
                     }
@@ -640,54 +652,57 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 // delete unused files
-                foreach (var devicefile in deviceFiles.Keys)
+                foreach (var devicefile in deviceFiles)
                 {
                     bool found = false;
                     foreach (var localfile in files.Keys)
                     {
-                        if (Path.GetFileName(localfile).Equals(devicefile))
+                        if (Path.GetFileName(localfile).Equals(devicefile.FileName))
+                        {
                             found = true;
+                        }
+                        if(found) { break; }
                     }
-                    if (!found)
+                    if (found == false)
                     {
-                        await DeleteFile(devicefile, cancellationToken: cancellationToken);
+                        await DeleteFile(devicefile.FileName, cancellationToken: cancellationToken);
 
-                        Logger.LogInformation("Removing file: {file}", devicefile);
+                        Logger.LogInformation($"Removing file: {devicefile}" + Environment.NewLine);
                     }
                 }
 
                 // write new files
                 foreach (var file in files)
                 {
+                    // does the file name and CRC match?
                     var filename = Path.GetFileName(file.Key);
-                    if (deviceFiles.ContainsKey(filename) && deviceFiles[filename] == file.Value)
+
+                    if (deviceFiles.Any(d => d.FileName == filename && d.Crc == file.Value))
                     {
-                        Logger.LogInformation("Skipping file (hash match): {file}", filename);
+                        Logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
                         continue;
                     }
 
                     if (!File.Exists(file.Key))
                     {
-                        Logger.LogInformation("{file} not found", filename);
+                        Logger.LogInformation($"{filename} not found" + Environment.NewLine);
                         continue;
                     }
 
-                    Logger.LogInformation("Writing file: {file}", filename);
+                    Logger.LogInformation($"{Environment.NewLine}Sending file: {file.Key}" + Environment.NewLine);
                     await WriteFile(
                             file.Key,
                             filename,
                             DefaultTimeout,
                             cancellationToken);
-
-                    Logger.LogInformation("Wrote file: {file}", file.Key);
                 }
 
-                Logger.LogInformation("{file} deploy complete", fi.Name);
+                Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
             }
             catch (Exception ex)
             {
                 Logger.LogError($"An error occurred during the App deployment process.");
-                Logger.LogError($"Error:\n{ex.Message} \nStack Trace :\n{ex.StackTrace}");
+                Logger.LogError($"Error:{Environment.NewLine}{ex.Message} {Environment.NewLine}Stack Trace :{Environment.NewLine}{ex.StackTrace}");
                 throw ex;
             }
         }
@@ -698,20 +713,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 await GetFilesAndCrcs(DefaultTimeout, 0, cancellationToken);
             }
-            return FilesOnDevice.ContainsKey(filename);
-        }
-        private void SetFileAndCrcsFromMessage(string fileListMember)
-        {
-            int fileNameStart = fileListMember.LastIndexOf('/') + 1;
-            int crcStart = fileListMember.IndexOf('[') + 1;
-            if (fileNameStart == 0 && crcStart == 0)
-                return; // No files found
-
-            Debug.Assert(crcStart > fileNameStart);
-
-            var file = fileListMember.Substring(fileNameStart, crcStart - fileNameStart - 2);
-            var crc = Convert.ToUInt32(fileListMember.Substring(crcStart, 10), 16);
-            FilesOnDevice.Add(file.Trim(), crc);
+            return FilesOnDevice.Any(f => f.FileName == filename);
         }
     }
 }

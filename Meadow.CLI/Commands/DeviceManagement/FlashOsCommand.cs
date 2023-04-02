@@ -1,11 +1,14 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
+using LibUsbDotNet.Main;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.Devices;
+using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.Dfu;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.DeviceManagement
@@ -27,7 +30,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
         public string RuntimeFile { get; init; }
 
         [CommandOption("skipDfu", 'd', Description = "Skip DFU flash")]
-        public bool SkipDfu { get; init; }
+        public bool SkipOS { get; init; }
 
         [CommandOption("skipEsp", 'e', Description = "Skip ESP flash")]
         public bool SkipEsp { get; init; }
@@ -47,29 +50,21 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             Meadow?.Dispose();
 
-            string serialNumber = string.Empty;
+            var serialNumber = string.Empty;
 
-            if (!SkipDfu)
+            if (SkipOS == false)
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(OSFile) == false)
-                    {
-                        await DfuUtils.FlashFile(fileName: OSFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
-                    }
-                    else if (string.IsNullOrEmpty(OSVersion) == false)
-                    {
-                        await DfuUtils.FlashVersion(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
-                    }
-                    else
-                    {
-                        await DfuUtils.FlashLatest(logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
-                    }
-                    serialNumber = DfuUtils.LastSerialNumber;
+                    // ToDo - restore two lines below when OS is fixed to succesfully set Dfu mode - broken as of RC2
+                    // await SetMeadowToDfuMode(SerialPortName, cancellationToken);
+                    // await Task.Delay(2000, cancellationToken);
+                    await FlashOsInDfuMode();
+                    serialNumber = GetSerialNumber();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Logger.LogInformation("Unable to flash Meadow OS");
+                    Logger.LogInformation($"Unable to flash Meadow OS: {ex.Message}");
                     return;
                 }
             }
@@ -78,36 +73,39 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 Logger.LogInformation("Skipping step to flash Meadow OS");
             }
 
-            //try to find Meadow on the existing serial port first
-            IMeadowDevice meadow = null;
+            await Task.Delay(2000, cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(SerialPortName) == false)
+            Meadow = await FindCurrentMeadowDevice(SerialPortName, serialNumber, cancellationToken);
+
+            var eraseFlash = await ValidateVersionAndPromptUserToEraseFlash(console, cancellationToken);
+
+            if (eraseFlash)
             {
-                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(
-                    SerialPortName,
-                    true,
-                    Logger);
+                await Meadow.MeadowDevice.EraseFlash(cancellationToken);
+
+                Meadow?.Dispose();
+                Meadow = null;
+
+                await Task.Delay(2000, cancellationToken);
+
+                Meadow = await FindCurrentMeadowDevice(SerialPortName, serialNumber, cancellationToken);
             }
 
-            if (meadow == null)
-            {
-                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
-                serialNumber,
-                Logger,
-                cancellationToken: cancellationToken);
-            }
+            await Meadow.WriteRuntimeAndEspBins(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
 
-            Meadow = new MeadowDeviceHelper(meadow, Logger);
+            Meadow?.Dispose();
+        }
 
-            // Get Previous OS Version
+        async Task<bool> ValidateVersionAndPromptUserToEraseFlash(IConsole console, CancellationToken cancellationToken)
+        {
             // We just flashed the OS so it will show the current version 
             // But the runtime hasn't been updated yet so should match the previous OS version
             Version previousOsVersion;
-            var checkName = string.Empty;
+            string checkName;
 
             try
             {
-                previousOsVersion = new Version(Meadow.DeviceInfo?.RuntimeVersion.Split(',')[0]);
+                previousOsVersion = new Version(Meadow.DeviceInfo?.RuntimeVersion.Split(' ')[0]);
                 checkName = "runtime";
             }
             catch
@@ -131,33 +129,113 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
                 if (yesOrNo.ToLower() == "y")
                 {
-                    await Meadow.MeadowDevice.EraseFlash(cancellationToken);
-
-                    /* TODO EraseFlashAsync leaves the port in a dodgy state, so we need to kill it and find it again
-                    Need a more elegant solution here. */
-                    Meadow?.Dispose();
-                    Meadow = null;
-
-                    await Task.Delay(2000);
-
-                    var device = await MeadowDeviceManager.FindMeadowBySerialNumber(
-                            serialNumber,
-                            Logger,
-                            cancellationToken: cancellationToken);
-
-                    if (device == null)
-                    {
-                        Logger.LogInformation($"Meadow device not found. Please plug in your meadow device and run this command again.");
-                        return;
-                    }
-
-                    Meadow = new MeadowDeviceHelper(device, Logger);
+                    return true;
                 }
             }
-
-            await Meadow.WriteRuntimeAndEspBins(RuntimeFile, OSVersion, SkipRuntime, SkipEsp, cancellationToken);
-
-            Meadow?.Dispose();
+            return false;
         }
+
+        async Task<MeadowDeviceHelper> FindCurrentMeadowDevice(string serialPortName, string serialNumber, CancellationToken cancellationToken)
+        {
+            IMeadowDevice meadow = null;
+
+            if (string.IsNullOrWhiteSpace(SerialPortName) == false)
+            {
+                meadow = await MeadowDeviceManager.GetMeadowForSerialPort(
+                    serialPortName,
+                    true,
+                    Logger);
+            }
+
+            if (meadow == null)
+            {
+                meadow = await MeadowDeviceManager.FindMeadowBySerialNumber(
+                    serialNumber,
+                    Logger,
+                    cancellationToken: cancellationToken);
+            }
+
+            return new MeadowDeviceHelper(meadow, Logger);
+        }
+
+        async Task SetMeadowToDfuMode(string serialPortName, CancellationToken cancellationToken)
+        {
+            var dfuAttempts = 0;
+
+            UsbRegistry dfuDevice;
+            while (true)
+            {
+                try
+                {
+                    try
+                    {
+                        dfuDevice = DfuUtils.GetDevice();
+                        break;
+                    }
+                    catch (MultipleDfuDevicesException)
+                    {   // Can't determine device to flash
+                        throw;
+                    }
+                    catch (DeviceNotFoundException)
+                    {   // ignore and continue
+                    }
+
+                    // No DFU devices found - attempt to set the meadow to DFU mode
+                    using var device = await MeadowDeviceManager.GetMeadowForSerialPort(serialPortName, false);
+
+                    if (device != null)
+                    {
+                        Logger.LogInformation("Entering DFU Mode");
+                        await device.EnterDfuMode(cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogDebug(
+                        "An exception occurred while switching device to DFU Mode. Exception: {0}", ex);
+                }
+
+                switch (dfuAttempts)
+                {
+                    case 5:
+                        Logger.LogInformation(
+                            "Having trouble putting Meadow in DFU Mode, please press RST button on Meadow and press enter to try again");
+
+                        Console.ReadKey();
+                        break;
+                    case 10:
+                        Logger.LogInformation(
+                            "Having trouble putting Meadow in DFU Mode, please hold BOOT button, press RST button and release BOOT button on Meadow and press enter to try again");
+
+                        Console.ReadKey();
+                        break;
+                    case > 15:
+                        throw new Exception(
+                            "Unable to place device in DFU mode, please disconnect the Meadow, hold the BOOT button, reconnect the Meadow, release the BOOT button and try again.");
+                }
+
+                await Task.Delay(1000, cancellationToken);
+
+                dfuAttempts++;
+            }
+        }
+
+        async Task FlashOsInDfuMode()
+        {
+            if (string.IsNullOrEmpty(OSFile) == false)
+            {
+                await DfuUtils.FlashFile(fileName: OSFile, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+            }
+            else if (string.IsNullOrEmpty(OSVersion) == false)
+            {
+                await DfuUtils.FlashVersion(version: OSVersion, logger: Logger, DfuUtils.DfuFlashFormat.ConsoleOut);
+            }
+            else
+            {
+                await DfuUtils.FlashLatest(logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
+            }
+        }
+        
+        string GetSerialNumber() => DfuUtils.LastSerialNumber;
     }
 }

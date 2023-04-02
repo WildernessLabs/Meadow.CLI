@@ -33,6 +33,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         Concluded,
         DownloadStartOkay,
         DownloadStartFail,
+        DevicePublicKey
     }
 
     public class MeadowSerialDataProcessor : MeadowDataProcessor
@@ -301,7 +302,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Concluded));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.Data, responseString));
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.ErrOutput, responseString));
                             break;
                         case HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
                             foreach (var m in FormatForOutput(StdInfoPrefix, responseString))
@@ -363,6 +364,10 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                                 break;
                             }
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_DEVICE_PUBLIC_KEY:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DevicePublicKey, responseString));
+                            break;
+
                     }
                 }
             }

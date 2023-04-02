@@ -4,6 +4,9 @@ using Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses;
 using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,12 +21,18 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
-        public IDictionary<string, uint> FilesOnDevice { get; } = new SortedDictionary<string, uint>();
+        public IList<FileData> FilesOnDevice { get; } = new List<FileData>();
+        public bool InMeadowCLI { get; set; }
 
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
         {
             Logger = logger;
             DataProcessor = dataProcessor;
+
+            var entryAssembly = Assembly.GetEntryAssembly()!;
+
+            if (entryAssembly != null)
+                InMeadowCLI = entryAssembly.FullName.ToLower().Contains("meadow");
         }
 
         public abstract Task Write(byte[] encodedBytes,
@@ -362,6 +371,23 @@ namespace Meadow.CLI.Core.Devices
                     .Build();
 
             await SendCommand(command, cancellationToken);
+        }
+
+        public async Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default)
+        {
+            Logger.LogInformation("Sending Meadow Cloud registration request (~2 mins)");
+
+            var command =
+                new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE)
+                    .WithResponseType(MeadowMessageType.DevicePublicKey)
+                    .WithCompletionResponseType(MeadowMessageType.Concluded)
+                    .WithTimeout(new TimeSpan(hours: 0, minutes: 5, seconds: 0)) // RSA keypair generation on device takes a while
+                    .Build();
+
+            var commandResponse =
+                await SendCommand(command, cancellationToken);
+
+            return commandResponse.Message;
         }
 
         public abstract Task<bool> Initialize(CancellationToken cancellationToken);

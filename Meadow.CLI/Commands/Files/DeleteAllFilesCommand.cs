@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.Files
 {
@@ -52,7 +52,7 @@ namespace Meadow.CLI.Commands.Files
             {
                 _logger.LogInformation($"Deleting {file} from partition {Partition}");
 
-                await Meadow.DeleteFile(file.Key, (uint)Partition, cancellationToken);
+                await Meadow.DeleteFile(file.FileName, (uint)Partition, cancellationToken);
             }
         }
     }

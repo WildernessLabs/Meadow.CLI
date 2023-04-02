@@ -13,6 +13,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public partial class MeadowLocalDevice
     {
+        private const int PROGESS_INCREMENTS = 5;
         uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
 
@@ -21,7 +22,6 @@ namespace Meadow.CLI.Core.Devices
                                             CancellationToken cancellationToken)
         {
             _packetCrc32 = 0;
-            _lastProgress = 0;
 
             try
             {
@@ -70,7 +70,14 @@ namespace Meadow.CLI.Core.Devices
                 var fileBufOffset = 0;
                 ushort sequenceNumber = 1;
 
-                Logger?.LogInformation("Starting File Transfer...");
+                Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
+
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("[");
+                }
+
+                nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
                 {
                     int numBytesToSend;
@@ -124,6 +131,7 @@ namespace Meadow.CLI.Core.Devices
                             .Build(),
                     HcomMeadowRequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER =>
                         new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER)
+                            .WithTimeout(TimeSpan.FromSeconds(180))
                             .WithUserData(lastInSeries ? 1U : 0U)
                             .Build(),
                     _ => throw new ArgumentOutOfRangeException(
@@ -142,9 +150,11 @@ namespace Meadow.CLI.Core.Devices
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                Logger?.LogInformation(
-                    "Transfer Complete, wrote {count} bytes to Meadow",
-                    fileBufOffset);
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("]");
+                }
+                Logger?.LogInformation($"{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
             }
             catch (Exception ex)
             {
@@ -153,15 +163,20 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
-        private int _lastProgress = 0;
+        private int nextProgress;
 
         private void WriteProgress(decimal i)
         {
-            //var intProgress = Convert.ToInt32(i * 100);
-            //if (intProgress <= _lastProgress || intProgress % 5 != 0) return;
+            var intProgress = Convert.ToInt32(i * 100);
 
-            //Logger?.LogInformation("Operation Progress: {progress:P0}", i);
-            //_lastProgress = intProgress;
+            if (intProgress > nextProgress)
+            {
+                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                {
+                    Logger?.LogInformation("=");
+                }
+                nextProgress += PROGESS_INCREMENTS;
+            }
         }
 
         private async Task BuildAndSendDataPacketRequest(byte[] messageBytes,
@@ -275,28 +290,28 @@ namespace Meadow.CLI.Core.Devices
                 }
                 catch (InvalidOperationException ioe) // Port not opened
                 {
-                    Logger?.LogError(ioe, "Write but port not opened");
+                    Logger?.LogError(ioe, $"Write but port not opened{Environment.NewLine}");
                     throw;
                 }
                 catch (ArgumentOutOfRangeException aore) // offset or count don't match buffer
                 {
-                    Logger?.LogError(aore, "Write buffer, offset and count don't line up");
+                    Logger?.LogError(aore, $"Write buffer, offset and count don't line up{Environment.NewLine}");
                     throw;
                 }
                 catch (ArgumentException ae) // offset plus count > buffer length
                 {
-                    Logger?.LogError(ae, "Write offset plus count > buffer length");
+                    Logger?.LogError(ae, $"Write offset plus count > buffer length{Environment.NewLine}");
                     throw;
                 }
                 catch (TimeoutException te) // Took too long to send
                 {
-                    Logger?.LogError(te, "Write took too long to send");
+                    Logger?.LogError(te, $"Write took too long to send {Environment.NewLine}");
                     throw;
                 }
             }
             catch (Exception except)
             {
-                Logger?.LogTrace(except, "EncodeAndSendPacket threw");
+                Logger?.LogTrace(except, $"EncodeAndSendPacket threw{Environment.NewLine}");
                 throw;
             }
         }
@@ -318,10 +333,22 @@ namespace Meadow.CLI.Core.Devices
 
             void ResponseHandler(object s, MeadowMessageEventArgs e)
             {
-                Logger?.LogTrace(
-                    "Received MessageType: {messageType} Message: {message}",
-                    e.MessageType,
-                    string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message);
+
+                var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;
+
+                switch (e.MessageType)
+                {
+                    case MeadowMessageType.Data:
+                        Logger?.LogInformation(msg); // We may not need this
+                        break;
+                    case MeadowMessageType.ErrOutput:
+                        Logger?.LogError(msg);
+                        break;
+                    default:
+                        break;
+                }
+
+                Logger?.LogTrace($"Received MessageType: {e.MessageType} Message: {msg}");
 
                 if (command.ResponsePredicate(e))
                 {
