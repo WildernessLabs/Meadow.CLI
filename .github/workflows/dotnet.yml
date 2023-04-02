@@ -256,4 +256,4 @@ jobs:
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Publish VSCode Extension publically
       run: |
-        run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+        nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
