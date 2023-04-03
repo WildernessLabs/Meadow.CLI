@@ -33,7 +33,7 @@ namespace Meadow.CLI.Commands.Utility
                 switch (e.MessageType)
                 {
                     case MeadowMessageType.Data:
-                        //_logger?.LogInformation(msg); // We may not need this
+                        _logger?.LogDebug(msg); // We may not need this
                         break;
                     case MeadowMessageType.ErrOutput:
                         _logger?.LogError(msg);
