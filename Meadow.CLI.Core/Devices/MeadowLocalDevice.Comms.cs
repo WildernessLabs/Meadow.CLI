@@ -344,12 +344,12 @@ namespace Meadow.CLI.Core.Devices
                     case MeadowMessageType.ErrOutput:
                         if (msg.ToLower().Contains("newer cli protocol version"))
                         {
-                            // Parse message for versions
-                            var msgSplit = msg.ToLower().Split("required:");
-                            if (msgSplit.Length > 1)
+                            // Parse message for required version
+                            var msgSplit = msg.ToLower().Split(':');
+                            if (msgSplit.Length > 2)
                             {
                                 int requiredVersion;
-                                if (Int32.TryParse(msgSplit[1].Substring(0, 4), out requiredVersion))
+                                if (Int32.TryParse(msgSplit[3].Substring(0, 4), out requiredVersion))
                                 {
                                     if (requiredVersion == Constants.HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER)
                                     {
