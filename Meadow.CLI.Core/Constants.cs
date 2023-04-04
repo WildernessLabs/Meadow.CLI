@@ -1,13 +1,14 @@
 ﻿
-[assembly: System.Reflection.AssemblyFileVersion(MeadowCLI.Constants.CLI_VERSION)]
-[assembly: System.Reflection.AssemblyVersion(MeadowCLI.Constants.CLI_VERSION)]
-[assembly: System.Reflection.AssemblyInformationalVersion(MeadowCLI.Constants.CLI_VERSION)]
+[assembly: System.Reflection.AssemblyFileVersion(Meadow.CLI.Core.Constants.CLI_VERSION)]
+[assembly: System.Reflection.AssemblyVersion(Meadow.CLI.Core.Constants.CLI_VERSION)]
+[assembly: System.Reflection.AssemblyInformationalVersion(Meadow.CLI.Core.Constants.CLI_VERSION)]
 
-namespace MeadowCLI
+namespace Meadow.CLI.Core
 {
     public static class Constants
     {
-        public const string CLI_VERSION = "0.96.2";
+        public const string CLI_VERSION = "0.96.3";
+        public const ushort HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER = 0x0006;
         public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0007;         // Used for transmission
         public const string WILDERNESS_LABS_USB_VID = "2E6A";
     }

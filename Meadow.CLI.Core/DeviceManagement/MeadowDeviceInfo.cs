@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using MeadowCLI;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
