@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Meadow.CLI.Core.Internals.MeadowCommunication;
 
 namespace Meadow.CLI.Core.DeviceManagement
 {
@@ -403,7 +404,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             deviceInfo += $"    OS: {MeadowOsVersion}{Environment.NewLine}";
             deviceInfo += $"    Mono: {RuntimeVersion}{Environment.NewLine}";
             deviceInfo += $"    Coprocessor: {CoProcessorOsVersion}{Environment.NewLine}";
-            deviceInfo += $"    Protocol: {Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER}{Environment.NewLine}";
+            deviceInfo += $"    Protocol: {Command.HcomProtocolCommunicationVersion}{Environment.NewLine}";
 
             return (deviceInfo);
         }

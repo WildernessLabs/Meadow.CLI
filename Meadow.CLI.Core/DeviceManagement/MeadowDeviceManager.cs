@@ -15,15 +15,14 @@ namespace Meadow.CLI.Core.DeviceManagement
 {
     public class MeadowDeviceManager
     {
-        internal const int MaxAllowableMsgPacketLength = 8192;
+        internal const int PreviousMaxAllowableMsgPacketLength = 512;
+        static internal int MaxAllowableMsgPacketLength = 8192;
 
-        internal const int MaxEstimatedSizeOfEncodedPayload =
-            MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
+        static internal int MaxEstimatedSizeOfEncodedPayload = MaxAllowableMsgPacketLength + (MaxAllowableMsgPacketLength / 254) + 8;
 
         internal const int ProtocolHeaderSize = 12;
 
-        internal const int MaxAllowableMsgPayloadLength =
-            MaxAllowableMsgPacketLength - ProtocolHeaderSize;
+        static internal int MaxAllowableMsgPayloadLength = MaxAllowableMsgPacketLength - ProtocolHeaderSize;
 
         public const string NoDevicesFound = "No Devices Found";
 
@@ -320,7 +319,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             try
             {
-                const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + MeadowCLI.Constants.WILDERNESS_LABS_USB_VID;
+                const string WildernessLabsPnpDeviceIDPrefix = @"USB\VID_" + Constants.WILDERNESS_LABS_USB_VID;
 
                 // Win32_PnPEntity lives in root\CIMV2
                 const string wmiScope = "root\\CIMV2";

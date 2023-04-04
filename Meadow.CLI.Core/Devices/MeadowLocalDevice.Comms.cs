@@ -342,7 +342,27 @@ namespace Meadow.CLI.Core.Devices
                         Logger?.LogInformation(msg); // We may not need this
                         break;
                     case MeadowMessageType.ErrOutput:
-                        Logger?.LogError(msg);
+                        if (msg.ToLower().Contains("newer cli protocol version"))
+                        {
+                            // Parse message for versions
+                            var msgSplit = msg.ToLower().Split("required:");
+                            if (msgSplit.Length > 1)
+                            {
+                                int requiredVersion;
+                                if (Int32.TryParse(msgSplit[1].Substring(0, 4), out requiredVersion))
+                                {
+                                    if (requiredVersion == Constants.HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER)
+                                    {
+                                        MeadowDeviceManager.MaxAllowableMsgPacketLength = MeadowDeviceManager.PreviousMaxAllowableMsgPacketLength;
+                                        Command.HcomProtocolCommunicationVersion = Constants.HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Logger?.LogError(msg);
+                        }
                         break;
                     default:
                         break;
