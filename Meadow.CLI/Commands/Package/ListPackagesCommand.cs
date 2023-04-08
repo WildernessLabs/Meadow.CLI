@@ -72,7 +72,7 @@ namespace Meadow.CLI.Commands.Cloud
                 }
 
             }
-            catch (MeadowCloudAuthException ex)
+            catch (MeadowCloudAuthException)
             {
                 _logger.LogInformation($"You must be signed in to execute this command.");
                 return;

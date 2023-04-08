@@ -1,7 +1,9 @@
 ﻿using LibUsbDotNet;
+using LibUsbDotNet.LibUsb;
 using LibUsbDotNet.Main;
 using Meadow.CLI.Core.Exceptions;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -15,6 +17,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
     {
         static int _osAddress = 0x08000000;
         static string _usbStmName = "STM32  BOOTLOADER";
+        static int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
 
         public static string LastSerialNumber { get; private set; } = "";
 
@@ -22,7 +25,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
         {
             try
             {
-                GetDevice();
+                GetDeviceInBootloaderMode();
                 return true;
             }
             catch (Exception)
@@ -31,15 +34,15 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static UsbRegistry GetDevice()
+        public static IUsbDevice GetDeviceInBootloaderMode()
         {
-            var allDevices = UsbDevice.AllDevices;
-            if (allDevices.Count(x => x.Name == _usbStmName) > 1)
+            var allDevices = GetDevicesInBootloaderMode();
+            if (allDevices.Count() > 1)
             {
                 throw new MultipleDfuDevicesException("More than one DFU device found, please connect only one and try again.");
             }
 
-            var device = UsbDevice.AllDevices.SingleOrDefault(x => x.Name == _usbStmName);
+            var device = allDevices.SingleOrDefault();
             if (device == null)
             {
                 throw new DeviceNotFoundException("Device not found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
@@ -48,18 +51,35 @@ namespace Meadow.CLI.Core.Internals.Dfu
             return device;
         }
 
-        public static string GetDeviceSerial(UsbRegistry device)
+        public static IEnumerable<IUsbDevice> GetDevicesInBootloaderMode()
         {
-            switch (Environment.OSVersion.Platform)
+            using (UsbContext context = new UsbContext())
             {
-                case PlatformID.Win32NT:
-                    {
-                        var deviceID = device.DeviceProperties["DeviceID"].ToString();
-                        return deviceID.Substring(deviceID.LastIndexOf("\\") + 1);
-                    }
-                default:
-                    return device.DeviceProperties["SerialNumber"].ToString();
+                var allDevices = context.List();
+                var ourDevices = allDevices.Where(d => d.Info.VendorId == _usbBootLoaderVenderID);
+                if (ourDevices.Count() < 1)
+                {
+                    throw new DeviceNotFoundException("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
+                }
+                return ourDevices;
             }
+        }
+
+        public static string GetDeviceSerial(IUsbDevice device)
+        {
+            var serialNumber = string.Empty;
+
+            if (device != null)
+            {
+                device.Open();
+                if (device.IsOpen)
+                {
+                    serialNumber = device.Info?.SerialNumber;
+                    device.Close();
+                }
+            }
+
+            return serialNumber;
         }
 
         public enum DfuFlashFormat
@@ -124,10 +144,10 @@ namespace Meadow.CLI.Core.Internals.Dfu
             return FlashFile(fileName: fileName, logger: logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
 
-        public static async Task<bool> FlashFile(string fileName, UsbRegistry? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
             logger ??= NullLogger.Instance;
-            device ??= GetDevice();
+            device ??= GetDeviceInBootloaderMode();
 
             if (!File.Exists(fileName))
             {
