@@ -339,7 +339,7 @@ namespace Meadow.CLI.Core.Devices
                 switch (e.MessageType)
                 {
                     case MeadowMessageType.Data:
-                        Logger?.LogInformation(msg); // We may not need this
+                        Logger?.LogDebug(msg); // We may not need this
                         break;
                     case MeadowMessageType.ErrOutput:
                         if (msg.ToLower().Contains("newer cli protocol version"))
