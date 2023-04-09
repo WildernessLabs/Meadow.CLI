@@ -52,13 +52,11 @@ jobs:
         $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ENV.RELEASE_VERSION}}";'
         $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
 
-        echo $newcontent
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Restore dependencies
-      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
+      run: dotnet restore main/MeadowCLI.sln
 
     - name: Build
       run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
@@ -70,9 +68,9 @@ jobs:
         path: 'main/**/*.nupkg'
 
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      name: Publish VSCode Extension publically
+      name: Publish Meadow.CLI Nuget publically
       run: |
-        nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+        nuget push main\**\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
 
   build-vswin-2019:
     runs-on: windows-2019
@@ -104,11 +102,11 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
+
+    - name: Restore dependencies
+      run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
 
     - name: Build VS2019 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
@@ -144,13 +142,13 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
-
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
       with:
         vs-version: '[17.0, 18.0)'
+
+    - name: Restore dependencies
+      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
 
     - name: Build VS2022 Extension
       run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
@@ -283,7 +281,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Restore VSCode Extension dependencies
-      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Restore /p:Configuration=Release
+      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.sln
 
     - name: Build VSCode Extension
       id: VSCode-Extension
