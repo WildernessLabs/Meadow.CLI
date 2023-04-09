@@ -7,8 +7,76 @@ on:
     branches: [ main, develop ]
 
 jobs:
+  build-and-optionally-publish-nuget:
+    runs-on: windows-latest
+    name: Build and Optionally Publish Meadow.CLI nuget
+    env:
+      RELEASE_VERSION: 0.97.0
+      
+    steps:
+    - name: Checkout Meadow.CLI.Core side-by-side
+      uses: actions/checkout@v2
+      with:
+        path: main
+
+    - name: Setup .NET Core SDK 6.0.x & 7.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Update CLI Version Numbers
+      run: |
+        $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
+        $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ENV.RELEASE_VERSION}}</PackageVersion>'
+        $newcontent | Set-Content main/Meadow.CLI/Meadow.CLI.csproj
+
+        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj | Out-String
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ENV.RELEASE_VERSION}}</Version>'
+        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
+
+        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj | Out-String
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ENV.RELEASE_VERSION}}</Version>'
+        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
+
+        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj | Out-String
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ENV.RELEASE_VERSION}}</Version>'
+        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
+
+        $content = Get-Content main/Meadow.CLI.Core/Constants.cs | Out-String
+        $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ENV.RELEASE_VERSION}}";'
+        $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
+
+        echo $newcontent
+
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Restore dependencies
+      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
+
+    - name: Build
+      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
+
+    - name: Upload nuget Artifacts for internal testing
+      uses: actions/upload-artifact@v2
+      with:
+        name: Meadow.CLI.nuget
+        path: 'main/**/*.nupkg'
+
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Publish VSCode Extension publically
+      run: |
+        nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+
   build-vswin-2019:
     runs-on: windows-2019
+    needs: [build-and-optionally-publish-nuget]
     name: Build Win 2019 Extension
 
     steps:
@@ -49,6 +117,7 @@ jobs:
 
   build-vswin-2022:
     runs-on: windows-2022
+    needs: [build-and-optionally-publish-nuget]
     name: Build Win 2022 Extension
 
     steps:
@@ -90,6 +159,7 @@ jobs:
 
   build-vsmac-2019:
     name: Build Mac 2019 Extension
+    needs: [build-and-optionally-publish-nuget]
     runs-on: macos-11
 
     steps:
@@ -134,6 +204,7 @@ jobs:
 
   build-vsmac-2022:
     name: Build Mac 2022 Extension
+    needs: [build-and-optionally-publish-nuget]
     runs-on: macos-12
 
     steps:
@@ -167,6 +238,7 @@ jobs:
 
   build-vscode:
     runs-on: windows-latest
+    needs: [build-and-optionally-publish-nuget]
     name: Build VSCode Extension
 
     steps:
@@ -216,54 +288,3 @@ jobs:
     - name: Build VSCode Extension
       id: VSCode-Extension
       run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
-
-  publish-nuget:
-    runs-on: windows-latest
-    needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
-    name: Publish Meadow.CLI nuget
-    env:
-      RELEASE_VERSION: 0.97.0
-      
-    steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
-      with:
-        path: main
-
-    - name: Setup .NET Core SDK 6.0.x & 7.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: |
-          6.0.x
-          7.0.x
-
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
-
-    - name: Update CLI Version Numbers
-      run: |
-        sed -i "s/<PackageVersion>.*<\/PackageVersion>/<PackageVersion>${{ENV.RELEASE_VERSION}}<\/PackageVersion>/" main/Meadow.CLI/Meadow.CLI.csproj
-        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
-        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
-        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
-        sed -i "s/public const string CLI_VERSION = \".*\"/public const string CLI_VERSION = \"${{ENV.RELEASE_VERSION}}\"/"  main/Meadow.CLI.Core/Constants.cs
-
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
-
-    - name: Restore dependencies
-      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
-
-    - name: Build
-      run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
-
-    - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
-      with:
-        name: Meadow.CLI.nuget
-        path: 'main/**/*.nupkg'
-
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      name: Publish VSCode Extension publically
-      run: |
-        nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
