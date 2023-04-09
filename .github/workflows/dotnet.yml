@@ -221,6 +221,8 @@ jobs:
     runs-on: windows-latest
     needs: [build-vscode, build-vsmac-2019, build-vsmac-2022, build-vswin-2022, build-vswin-2019]
     name: Publish Meadow.CLI nuget
+    env:
+      RELEASE_VERSION: 0.97.0
       
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
@@ -238,11 +240,19 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Restore dependencies
-      run: dotnet restore main/MeadowCLI.sln
+    - name: Update CLI Version Numbers
+      run: |
+        sed -i "s/<PackageVersion>.*<\/PackageVersion>/<PackageVersion>${{ENV.RELEASE_VERSION}}<\/PackageVersion>/" main/Meadow.CLI/Meadow.CLI.csproj
+        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
+        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
+        sed -i "s/<Version>.*<\/Version>/<Version>${{ENV.RELEASE_VERSION}}<\/Version>/" main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
+        sed -i "s/public const string CLI_VERSION = \".*\"/public const string CLI_VERSION = \"${{ENV.RELEASE_VERSION}}\"/"  main/Meadow.CLI.Core/Constants.cs
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
+
+    - name: Restore dependencies
+      run: msbuild main/MeadowCLI.sln /t:Restore /p:Configuration=Release
 
     - name: Build
       run: msbuild main/MeadowCLI.sln /t:Rebuild /p:Configuration=Release
