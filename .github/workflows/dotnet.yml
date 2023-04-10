@@ -329,12 +329,13 @@ jobs:
 
     - name: Install NPM
       run: |
+        cd vs-code
         npm install
         npm update
 
     - name: Install vsce
       run: |
-        npm i -g vsce
+        npm i -g @vscode/vsce
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
@@ -351,11 +352,18 @@ jobs:
     #    $newcontent | Set-Content vs-code/package.json
 
     - name: Restore VSCode Extension dependencies
-      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.sln
+      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
 
     - name: Build VSCode Extension
       id: VSCode-Extension
-      run: dotnet msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
+      run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
+
+    - name: Build WebPack
+      run: |
+        cd vs-code
+        npm install -g webpack
+        npm install -D ts-loader
+        npm run webpack
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Build Pre-Release VSIX on non main branch
