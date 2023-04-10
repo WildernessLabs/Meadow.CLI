@@ -279,6 +279,7 @@ jobs:
     - name: Update VS4M VS2022 Version Numbers
       run: |
         sed "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
+        echo vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
     - name: Restore our VS2022 project
       run: |
