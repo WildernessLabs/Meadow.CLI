@@ -1,6 +1,6 @@
 name: Meadow.CLI
 env:
-  RELEASE_VERSION: 0.98.0
+  RELEASE_VERSION: 0.97.0
 
 on:
   push:
@@ -29,8 +29,8 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update CLI Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update CLI Version Numbers
       run: |
         $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
         $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ENV.RELEASE_VERSION}}</PackageVersion>'
@@ -104,8 +104,8 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update CLI Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update VS2019 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest | Out-String
         $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ENV.RELEASE_VERSION}}" Language="en-US" Publisher="Wilderness Labs"'
@@ -164,8 +164,8 @@ jobs:
       with:
         vs-version: '[17.0, 18.0)'
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update Win VS2022 Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update VS2022 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
         $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ENV.RELEASE_VERSION}}" Language="en-US" Publisher="Wilderness Labs"'
@@ -229,8 +229,8 @@ jobs:
         mv "/Applications/Visual Studio.app" "/Applications/Visual Studio 2022.app"
         mv "/Applications/Visual Studio 2019.app" "/Applications/Visual Studio.app"
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update VS4M VS2019 Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update VS2019 Version Numbers
       run: |
         sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
 
@@ -242,11 +242,21 @@ jobs:
       run: |
         msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Build /p:Configuration=Release /p:CreatePackage=true
 
-    - name: Upload Mac VS2019mpack Artifacts
+    - name: Upload Mac VS2019 mpack Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.Mac.2019.mpack
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
+        
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Create VS2019 Release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Release ${{ github.ref }}
+        draft: false
 
   build-vsmac-2022:
     name: Build Mac 2022 Extension
@@ -275,8 +285,8 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update VS4M VS2022 Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update VS2022 Version Numbers
       run: |
         sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
@@ -293,6 +303,16 @@ jobs:
       with:
         name: Meadow.Mac.2022.mpack
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
+
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Create VS2022 Release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Release ${{ github.ref }}
+        draft: false
 
   build-vscode:
     runs-on: windows-latest
@@ -340,8 +360,8 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update VSCode Version Numbers
+    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      name: Update VSCode Version Numbers
       run: |
         $content = Get-Content vs-code/package.json | Out-String
         $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.RELEASE_VERSION}}",'
