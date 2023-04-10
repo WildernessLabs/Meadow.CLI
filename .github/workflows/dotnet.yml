@@ -232,7 +232,7 @@ jobs:
     # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     - name: Update VS4M VS2019 Version Numbers
       run: |
-        sed -i "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
+        sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
 
     - name: Restore our VS2019 project
       run: |
@@ -278,7 +278,7 @@ jobs:
     # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     - name: Update VS4M VS2022 Version Numbers
       run: |
-        sed -i "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
+        sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
     - name: Restore our VS2022 project
       run: |
