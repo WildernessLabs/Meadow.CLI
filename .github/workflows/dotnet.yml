@@ -1,6 +1,6 @@
 name: Meadow.CLI
 env:
-  RELEASE_VERSION: 0.97.0
+  RELEASE_VERSION: 0.98.0
 
 on:
   push:
@@ -341,15 +341,11 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    # - name: Update VSCode Version Numbers
-    #  run: |
-    #    $content = Get-Content vs-code/package-lock.json | Out-String
-    #    $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.RELEASE_VERSION}}",'
-    #    $newcontent | Set-Content vs-code/package-lock.json
-
-    #    $content = Get-Content vs-code/package.json | Out-String
-    #    $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.RELEASE_VERSION}}",'
-    #    $newcontent | Set-Content vs-code/package.json
+    - name: Update VSCode Version Numbers
+      run: |
+        $content = Get-Content vs-code/package.json | Out-String
+        $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.RELEASE_VERSION}}",'
+        $newcontent | Set-Content vs-code/package.json
 
     - name: Restore VSCode Extension dependencies
       run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
