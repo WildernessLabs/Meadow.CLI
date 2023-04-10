@@ -233,7 +233,6 @@ jobs:
     - name: Update VS4M VS2019 Version Numbers
       run: |
         sed "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
-        # sed 's/Version = "0.*"/Version = "${{ENV.RELEASE_VERSION}}"' vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
 
     - name: Restore our VS2019 project
       run: |
@@ -247,7 +246,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.Mac.2019.mpack
-        path: 'main/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
+        path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
 
   build-vsmac-2022:
     name: Build Mac 2022 Extension
@@ -280,7 +279,6 @@ jobs:
     - name: Update VS4M VS2022 Version Numbers
       run: |
         sed "s/Version = \"0.*\"/Version = \"${{ENV.RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
-        # sed 's/Version = "0.*"/Version = "${{ENV.RELEASE_VERSION}}"' vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
     - name: Restore our VS2022 project
       run: |
@@ -294,7 +292,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.Mac.2022.mpack
-        path: 'main/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
+        path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
 
   build-vscode:
     runs-on: windows-latest
