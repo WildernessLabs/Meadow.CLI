@@ -65,7 +65,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI.nuget
-        path: 'main/**/*.nupkg'
+        path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
@@ -111,11 +111,12 @@ jobs:
         $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ENV.RELEASE_VERSION}}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest
 
-    - name: Restore dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln
+    - name: Restore VS2019 dependencies
+      run: msbuild vs-win/VS_Meadow_Extension.2019.sln /t:Restore /p:Configuration=Release
 
     - name: Build VS2019 Extension
-      run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
+      id: VS2019-Extension
+      run: msbuild vs-win/VS_Meadow_Extension.2019.sln /t:Rebuild /p:Configuration=Release
       env:
         DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
@@ -123,7 +124,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.Win.VS2019.vsix
-        path: 'main\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
+        path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
         
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Publish VS2019 Extension
@@ -170,7 +171,7 @@ jobs:
         $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ENV.RELEASE_VERSION}}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest
 
-    - name: Restore dependencies
+    - name: Restore VS2022 dependencies
       run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln
 
     - name: Build VS2022 Extension
@@ -182,7 +183,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.Win.VS2022.vsix
-        path: 'main\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
+        path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
           
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Publish VS2022 Extension
@@ -223,21 +224,23 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    - name: Update VS4M VS2019 Version Numbers
-      run: |
-        sed 's/Version = "0.*"/Version = "${{ENV.RELEASE_VERSION}}"' vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
-
-    - name: Restore dependencies
-      run: dotnet restore vs-mac/VS4Mac_Meadow_Extension.sln
-
     - name: Work around so that VS2019 is picked up.
       run: |
         mv "/Applications/Visual Studio.app" "/Applications/Visual Studio 2022.app"
         mv "/Applications/Visual Studio 2019.app" "/Applications/Visual Studio.app"
 
-    - name: Build
-      run: msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Rebuild /p:Configuration=Release
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Update VS4M VS2019 Version Numbers
+      run: |
+        sed 's/Version = "0.*"/Version = "${{ENV.RELEASE_VERSION}}"' vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
+
+    - name: Restore our VS2019 project
+      run: |
+        msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Restore /p:Configuration=Release
+
+    - name: Build and Package the VS2019 Extension
+      run: |
+        msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Build /p:Configuration=Release /p:CreatePackage=true
 
     - name: Upload Mac VS2019mpack Artifacts
       uses: actions/upload-artifact@v2
@@ -277,11 +280,13 @@ jobs:
       run: |
         sed 's/Version = "0.*"/Version = "${{ENV.RELEASE_VERSION}}"' vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
-    - name: Restore dependencies
-      run: dotnet restore vs-mac/VS4Mac_Meadow_Extension_2022.sln
+    - name: Restore our VS2022 project
+      run: |
+        dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Restore /p:Configuration=Release
 
-    - name: Build
-      run: dotnet msbuild vs-mac/VS4Mac_Meadow_Extension_2022.sln /t:Rebuild /p:Configuration=Release
+    - name: Build and Package the VS2022 Extension
+      run: |
+        dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
     
     - name: Upload Mac VS2022 mpack Artifacts
       uses: actions/upload-artifact@v2
@@ -350,25 +355,25 @@ jobs:
 
     - name: Build VSCode Extension
       id: VSCode-Extension
-      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
+      run: dotnet msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Build Pre-Release VSIX on non main branch
       run: |
-        cd main
+        cd vs-code
         vsce package --pre-release
 
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Build Release VSIX on main branch
       run: |
-        cd main
+        cd vs-code
         vsce package
 
     - name: Upload VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.VSCode.vsix
-        path: 'main/*.vsix'
+        path: 'vs-code/*.vsix'
 
     - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       name: Publish VSCode Extension
