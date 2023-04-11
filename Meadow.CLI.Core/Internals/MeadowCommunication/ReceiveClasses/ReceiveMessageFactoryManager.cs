@@ -31,6 +31,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_OKAY, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_FILE_START_FAIL, new ReceiveSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND, new ReceiveSimpleTextFactory()},
                 {HcomHostRequestType.HCOM_HOST_REQUEST_DEVICE_PUBLIC_KEY, new ReceiveSimpleTextFactory()},
             };
         }
