@@ -275,8 +275,8 @@ jobs:
         name: Meadow.Mac.2019.mpack
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
   
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      name: Get Commit Messages
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Get Commit Messages
       id: commit_messages
       uses: actions/github-script@v4
       env:
@@ -291,8 +291,8 @@ jobs:
           const messages = commits.map(commit => `- ${commit.commit.message}`).join('\n');
           return messages;
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      name: Create VS2019 Release
+    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - name: Create VS2019 Release
       id: create_release
       uses: actions/create-release@v1
       env:
