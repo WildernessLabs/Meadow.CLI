@@ -1,13 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "."
-		},
-		{
 			"path": "../VS_Mac_Meadow_Extension"
 		},
 		{
 			"path": "../VS_Win_Meadow_Extension"
+		},
+		{
+			"path": "."
 		},
 		{
 			"path": "../VSCode_Meadow_Extension"
