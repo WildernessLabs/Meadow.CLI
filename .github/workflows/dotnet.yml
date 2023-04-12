@@ -296,8 +296,8 @@ jobs:
             since: latestRelease.created_at
           });
 
-          const messages = commits.data.map(commit => `- ${commit.commit.message}`).join('  \n');
-          const formattedMessages = `**Release Notes:**  \n${messages}`;
+          const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
+          const formattedMessages = `## What's Changed  \n${messages}`;
 
           return formattedMessages;
 
@@ -404,8 +404,8 @@ jobs:
             since: latestRelease.created_at
           });
 
-          const messages = commits.data.map(commit => `- ${commit.commit.message}`).join('  \n');
-          const formattedMessages = `**Release Notes:**  \n${messages}`;
+          const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
+          const formattedMessages = `## What's Changed  \n${messages}`;
           
           return formattedMessages;
 
