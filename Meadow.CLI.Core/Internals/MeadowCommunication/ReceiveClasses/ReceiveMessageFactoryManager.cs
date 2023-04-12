@@ -24,7 +24,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER, new ReceiveSimpleTextFactory() },
-                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT, new ReceiveSimpleTextFactory() },
+                {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT, new ReceiveSimpleTextUTF8Factory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_TRACE_MSG, new ReceiveSimpleTextFactory() },
                 {HcomHostRequestType.HCOM_HOST_REQUEST_TEXT_RECONNECT, new ReceiveSimpleTextFactory() },

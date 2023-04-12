@@ -5,8 +5,15 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
 {
     internal class ReceiveSimpleText : ReceiveHeader
     {
+        private Encoding _encoding = Encoding.ASCII;
+
         public ReceiveSimpleText(byte[] receivedMessage) : base(receivedMessage)
         {
+        }
+
+        public ReceiveSimpleText(byte[] receivedMessage, Encoding encoding) : base(receivedMessage)
+        {
+            _encoding = encoding;
         }
 
         public override bool Execute(byte[] receivedMessage)
@@ -28,7 +35,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         }
         public override string ToString()
         {
-            return MessageDataLength > 0 ? Encoding.ASCII.GetString(MessageData!) : string.Empty;
+            return MessageDataLength > 0 ? _encoding.GetString(MessageData!) : string.Empty;
         }
     }
 }
