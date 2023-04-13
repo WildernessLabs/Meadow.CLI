@@ -1,6 +1,5 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.Hcom;
-using MeadowCLI;
 using System;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
@@ -11,6 +10,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         private protected const int HcomProtocolCommandSeqNumber = 0;
         private protected const ushort HcomProtocolExtraDataDefaultValue = 0x0000;
         private protected const int HcomProtocolRequestMd5HashLength = 32;
+        static internal ushort HcomProtocolCommunicationVersion = Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER;
 
         public Command(HcomMeadowRequestType requestType,
                        TimeSpan timeout,
@@ -59,7 +59,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
             // Protocol version
             Array.Copy(
-                BitConverter.GetBytes(Constants.HCOM_PROTOCOL_CURRENT_VERSION_NUMBER),
+                BitConverter.GetBytes(Command.HcomProtocolCommunicationVersion),
                 0,
                 messageBytes,
                 offset,

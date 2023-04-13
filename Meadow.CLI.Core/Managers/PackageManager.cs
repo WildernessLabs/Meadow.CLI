@@ -1,5 +1,4 @@
 ﻿using Meadow.CLI.Core.Identity;
-using MeadowCLI;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
