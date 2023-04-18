@@ -501,11 +501,11 @@ jobs:
         $newcontent | Set-Content vs-code/package.json
 
     - name: Restore VSCode Extension dependencies
-      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
+      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Release
 
     - name: Build VSCode Extension
       id: VSCode-Extension
-      run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
+      run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Release
 
     - name: Build WebPack
       run: |
