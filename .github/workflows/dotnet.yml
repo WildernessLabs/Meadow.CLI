@@ -160,10 +160,10 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore dependencies
-      run: dotnet restore vs-mac/VS4Mac_Meadow_Extension_2022.sln
+      run: dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Restore /p:Configuration=Release
 
     - name: Build
-      run: dotnet msbuild vs-mac/VS4Mac_Meadow_Extension_2022.sln /t:Rebuild /p:Configuration=Release
+      run: dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
 
   build-vscode:
     runs-on: windows-latest
@@ -211,11 +211,11 @@ jobs:
       uses: microsoft/setup-msbuild@v1.1
 
     - name: Restore VSCode Extension dependencies
-      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Restore /p:Configuration=Release
+      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
 
     - name: Build VSCode Extension
       id: VSCode-Extension
-      run: msbuild vs-code/src/csharp/VSCodeMeadow.sln /t:Rebuild /p:Configuration=Release
+      run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
 
   publish-nuget:
     runs-on: windows-latest
