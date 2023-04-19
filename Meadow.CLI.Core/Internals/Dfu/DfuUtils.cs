@@ -18,6 +18,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
         static int _osAddress = 0x08000000;
         static string _usbStmName = "STM32  BOOTLOADER";
         static int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
+        static int _usbMeadowVenderID = 11882; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
 
         public static string LastSerialNumber { get; private set; } = "";
 

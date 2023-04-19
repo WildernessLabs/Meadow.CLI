@@ -411,9 +411,7 @@ namespace Meadow.CLI.Core.Devices
                 var deviceInfo = await _meadowDevice
                                        .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
-                Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
-                                    $"Mono: {deviceInfo.RuntimeVersion}, " +
-                                    $"Coprocessor: {deviceInfo.CoProcessorOsVersion}");
+                Logger.LogInformation($"New Device Info :{Environment.NewLine}{Environment.NewLine}{deviceInfo}");
             }
             catch (Exception ex)
             {
