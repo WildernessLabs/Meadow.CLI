@@ -33,7 +33,7 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update CLI Version Numbers
       run: |
         $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
@@ -71,7 +71,7 @@ jobs:
         name: Meadow.CLI.nuget
         path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
       run: |
         nuget push main\**\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
@@ -117,7 +117,7 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update VS2019 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest | Out-String
@@ -139,7 +139,7 @@ jobs:
         name: Meadow.Win.VS2019.vsix
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
         
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish VS2019 Extension
       run: |
           & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "main\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "main\publishManifest.2019.json" -ignoreWarnings "None" -personalAccessToken "${{ secrets.MARKETPLACE_PUBLISH_PAT }}"
@@ -186,7 +186,7 @@ jobs:
       with:
         vs-version: '[17.0, 18.0)'
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update VS2022 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
@@ -207,7 +207,7 @@ jobs:
         name: Meadow.Win.VS2022.vsix
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
           
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish VS2022 Extension
       run: |
           & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "main\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\Meadow.2022.vsix" -publishManifest "main\publishManifest.2022.json" -ignoreWarnings "None" -personalAccessToken "${{ secrets.MARKETPLACE_PUBLISH_PAT }}"
@@ -260,7 +260,7 @@ jobs:
         mv "/Applications/Visual Studio.app" "/Applications/Visual Studio 2022.app"
         mv "/Applications/Visual Studio 2019.app" "/Applications/Visual Studio.app"
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update VS2019 Version Numbers
       run: |
         sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
@@ -279,7 +279,7 @@ jobs:
         name: Meadow.Mac.2019.mpack
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Get Commit Messages
       id: commit_messages
       uses: actions/github-script@v6
@@ -304,7 +304,7 @@ jobs:
 
           return formattedMessages;
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Create VS2019 Release
       id: create_release
       uses: actions/create-release@v1
@@ -321,7 +321,7 @@ jobs:
         prerelease: false
         commitish: main
   
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
     #  uses: actions/upload-release-asset@v1.0.2
     #  env:
@@ -368,7 +368,7 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update VS2022 Version Numbers
       run: |
         sed -i "" "s/Version = \"0.*\"/Version = \"${{ ENV.TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
@@ -387,7 +387,7 @@ jobs:
         name: Meadow.Mac.2022.mpack
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Get Commit Messages
       id: commit_messages
       uses: actions/github-script@v6
@@ -412,7 +412,7 @@ jobs:
           
           return formattedMessages;
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Create VS2022 Release
       id: create_release
       uses: actions/create-release@v1
@@ -429,7 +429,7 @@ jobs:
         prerelease: false
         commitish: main
 
-    # - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
     #  uses: actions/upload-release-asset@v1.0.2
     #  env:
@@ -496,7 +496,7 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Update VSCode Version Numbers
       run: |
         $content = Get-Content vs-code/package.json | Out-String
@@ -523,7 +523,7 @@ jobs:
         cd vs-code
         vsce package --pre-release
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Build Release VSIX on main branch
       run: |
         cd vs-code
@@ -535,7 +535,7 @@ jobs:
         name: Meadow.VSCode.vsix
         path: 'vs-code/*.vsix'
 
-    - if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish VSCode Extension
       run: |
         cd main
