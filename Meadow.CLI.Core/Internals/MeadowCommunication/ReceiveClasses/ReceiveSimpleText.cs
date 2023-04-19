@@ -28,7 +28,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
         }
         public override string ToString()
         {
-            return MessageDataLength > 0 ? Encoding.ASCII.GetString(MessageData!) : string.Empty;
+            return MessageDataLength > 0 ? Encoding.UTF8.GetString(MessageData!) : string.Empty;
         }
     }
 }
