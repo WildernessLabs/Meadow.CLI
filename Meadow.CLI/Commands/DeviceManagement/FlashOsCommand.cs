@@ -76,9 +76,8 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 catch (Exception ex)
                 {
                     Logger.LogInformation($"Unable to flash Meadow OS on device : {SerialNumber} \n Error: {ex.Message}");
-                    return;
+                    Environment.Exit(-1);
                 }
-
             }
             else
             {
@@ -255,7 +254,16 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
         async Task FlashOsInDfuMode()
         {
-            var device = DfuUtils.GetDevicesInBootloaderMode().Where(d => d.Info.SerialNumber == SerialNumber).FirstOrDefault();
+            IUsbDevice device = null;
+            foreach (var item in DfuUtils.GetDevicesInBootloaderMode())
+            {
+                if (item.TryOpen() && item.Info.SerialNumber == SerialNumber)
+                {
+                    device = item;
+                    break;
+                }
+            }
+
             if (string.IsNullOrEmpty(OSFile) == false)
             {
                 await DfuUtils.FlashFile(fileName: OSFile, device: device, logger: Logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
