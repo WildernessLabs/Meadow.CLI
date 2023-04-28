@@ -255,12 +255,20 @@ namespace Meadow.CLI.Commands.DeviceManagement
         async Task FlashOsInDfuMode()
         {
             IUsbDevice device = null;
-            foreach (var item in DfuUtils.GetDevicesInBootloaderMode())
+
+            if (!string.IsNullOrEmpty(SerialNumber))
             {
-                if (item.TryOpen() && item.Info.SerialNumber == SerialNumber)
+                foreach (var item in DfuUtils.GetDevicesInBootloaderMode())
                 {
-                    device = item;
-                    break;
+                    if (item.TryOpen())
+                    {
+                        // Only if we find the passed in SerialNumber do we exist.
+                        if (item.Info.SerialNumber == SerialNumber)
+                        {
+                            device = item;
+                            break;
+                        }
+                    }
                 }
             }
 
