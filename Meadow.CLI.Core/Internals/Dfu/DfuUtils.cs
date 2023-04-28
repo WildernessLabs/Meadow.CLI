@@ -66,6 +66,20 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
+        public static IEnumerable<IUsbDevice> GetMeadowDevices()
+        {
+            using (UsbContext context = new UsbContext())
+            {
+                var allDevices = context.List();
+                var ourDevices = allDevices.Where(d => d.Info.VendorId == _usbMeadowVenderID);
+                if (ourDevices.Count() < 1)
+                {
+                    throw new DeviceNotFoundException("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
+                }
+                return ourDevices;
+            }
+        }
+
         public static string GetDeviceSerial(IUsbDevice device)
         {
             var serialNumber = string.Empty;
