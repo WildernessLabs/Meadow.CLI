@@ -187,10 +187,46 @@ You'll typically need at least 5 files installed to the Meadow flash to run a Me
 
 It's a good idea to disable mono first, copy the files, and then enable mono
 
+## Uninstall the Meadow.CLI tool
 
-## Source Code Quality
+If you ever need to remove the Meadow.CLI tool, you can remove it through the .NET command-line tool as you would any other global tool.
 
-This code is ugly. We know. :) Lots of different coding styles, spanning many decades and sensibilities.
+```console
+dotnet tool uninstall WildernessLabs.Meadow.CLI --global
+```
+
+## Install a downloaded pre-release version
+
+If you want to test one of the automated pre-release builds of the Meadow.CLI tool you have downloaded, you'll need to specific some extra parameters.
+
+1. Download a pre-release version, typically from an [automated build](https://github.com/WildernessLabs/Meadow.CLI/actions).
+1. Extract the package .nupkg file from the downloaded archive.
+1. Uninstall the existing tool.
+
+    ```console
+    dotnet tool uninstall WildernessLabs.Meadow.CLI --global
+    ```
+
+1. Install the pre-release version from the download location by providing a version parameter for `{pre-release-version}` and source location of the .nupkg file for `{path-to-folder-with-downloaded-nupkg}`.
+
+    ```console
+    dotnet tool install WildernessLabs.Meadow.CLI --version '{pre-release-version}' --global --add-source '{path-to-folder-with-downloaded-nupkg}'
+    ```
+
+1. Verify the version of your Meadow.CLI tool.
+
+    ```console
+    meadow --version
+    ```
+
+### Return to an official release version
+
+After you are done testing a pre-release build, you can return to the official Meadow.CLI release by uninstalling and reinstalling without the local overrides.
+
+```console
+dotnet tool uninstall WildernessLabs.Meadow.CLI --global
+dotnet tool install WildernessLabs.Meadow.CLI --global
+```
 
 # License
 
