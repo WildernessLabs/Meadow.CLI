@@ -71,10 +71,10 @@ jobs:
         name: Meadow.CLI.nuget
         path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Publish Meadow.CLI Nuget publically
-      run: |
-        nuget push main\**\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+#    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+#      name: Publish Meadow.CLI Nuget publically
+#      run: |
+#        nuget push main\**\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
 
   build-vswin-2019:
     runs-on: windows-2019
