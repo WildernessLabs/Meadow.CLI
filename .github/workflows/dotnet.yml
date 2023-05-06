@@ -142,7 +142,7 @@ jobs:
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish VS2019 Extension
       run: |
-        & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "main\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "main\publishManifest.json" -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
+        & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "vs-win\publishManifest.json" -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
 
   build-vswin-2022:
     runs-on: windows-2022
@@ -210,7 +210,7 @@ jobs:
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish VS2022 Extension
       run: |
-        & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "main\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\Meadow.2022.vsix" -publishManifest "main\publishManifest.2022.json" -ignoreWarnings "None" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
+        & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\Meadow.2022.vsix" -publishManifest "vs-win\publishManifest.2022.json" -ignoreWarnings "None" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
 
   build-vsmac-2019:
     name: Build Mac 2019 Extension
