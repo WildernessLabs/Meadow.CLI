@@ -26,10 +26,10 @@ namespace Meadow.CLI.Commands.Cloud
             _packageManager = packageManager;
         }
 
-        [CommandOption("applicationPath", 'a', Description = "The path to the application directory", IsRequired = true)]
+        [CommandOption("applicationPath", 'a', Description = "The path to the application directory", IsRequired = false)]
         public string ApplicationPath { get; init; }
 
-        [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = true)]
+        [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = false)]
         public string OsVersion { get; init; }
 
 
@@ -42,7 +42,10 @@ namespace Meadow.CLI.Commands.Cloud
             try
             {
                 var zipFile = _packageManager.CreatePackage(ApplicationPath, OsVersion);
-                _logger.LogInformation($"{zipFile} created.");
+                if(!string.IsNullOrEmpty(zipFile))
+                {
+                    _logger.LogInformation($"{zipFile} created.");
+                }           
             }
             catch(ArgumentException ex)
             {
