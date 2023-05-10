@@ -35,13 +35,13 @@ namespace Meadow.CLI.Core
                 else
                 {
                     var fi = new FileInfo(applicationPath);
-                    if(fi.Attributes.HasFlag(FileAttributes.Directory))
+                    if ((fi.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
                     {
                         appFiles = Directory.GetFiles(applicationPath);
                     }
                     else
                     {
-                        appFiles = new List<string>{ fi.FullName }.ToArray();
+                        appFiles = new[] { fi.FullName };
                     }
                 }
             }
