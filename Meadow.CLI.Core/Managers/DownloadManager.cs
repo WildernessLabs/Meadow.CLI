@@ -4,7 +4,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +102,34 @@ namespace Meadow.CLI.Core
         //ToDo rename this method - DownloadOSAsync?
         public async Task DownloadOsBinaries(string? version = null, bool force = false)
         {
+            string local_path = string.Empty;
+            if (!string.IsNullOrEmpty(version))
+            {
+                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
+
+                if (Directory.Exists(local_path))
+                {
+                    if (force)
+                    {
+                        CleanPath(local_path);
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}{Environment.NewLine}");
+                        return;
+                    }
+                }
+
+                Directory.CreateDirectory(local_path);
+            }
+
+            // Check if there is an active internet connection
+            if (!NetworkInterface.GetIsNetworkAvailable())
+            {
+                _logger.LogError($"No internet connection! Cannot download version {version}. Please retry once an internet connection is available{Environment.NewLine}");
+                return;
+            }
+
             var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
 
             if (versionCheckFilePath == null)
@@ -131,30 +161,13 @@ namespace Meadow.CLI.Core
             if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
             {
                 _logger.LogInformation(
-                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0." + Environment.NewLine);
+                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.{Environment.NewLine}");
                 return;
             }
 
-            var local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
-
-            if (Directory.Exists(local_path))
-            {
-                if (force)
-                {
-                    CleanPath(local_path);
-                }
-                else
-                {
-                    _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded." + Environment.NewLine);
-                    return;
-                }
-            }
-
-            Directory.CreateDirectory(local_path);
-
             try
             {
-                _logger.LogInformation($"Downloading Meadow OS" + Environment.NewLine);
+                _logger.LogInformation($"Downloading Meadow OS version {version}.{Environment.NewLine}");
                 await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
             }
             catch
@@ -165,7 +178,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation("Downloading coprocessor firmware" + Environment.NewLine);
+                _logger.LogInformation($"Downloading coprocessor firmware.{Environment.NewLine}");
                 await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
             }
             catch
@@ -174,7 +187,7 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}" + Environment.NewLine);
+            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}.{Environment.NewLine}" );
         }
 
         public async Task InstallDfuUtil(bool is64Bit = true,
@@ -291,20 +304,38 @@ namespace Meadow.CLI.Core
 
         private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var downloadFileName = string.Empty;
 
-            response.EnsureSuccessStatusCode();
-
-            var downloadFileName = Path.GetTempFileName();
-            _logger.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
-            using (var stream = await response.Content.ReadAsStreamAsync())
-            using (var downloadFileStream = new DownloadFileStream(stream, _logger))
-            using (var firmwareFile = File.OpenWrite(downloadFileName))
+            try
             {
-                await downloadFileStream.CopyToAsync(firmwareFile);
+                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+                using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                response.EnsureSuccessStatusCode();
+
+                downloadFileName = Path.GetTempFileName();
+
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var downloadFileStream = new DownloadFileStream(stream, _logger))
+                {
+                    _logger.LogDebug($"Copying downloaded file to temp file {downloadFileName}");
+                    using (var firmwareFile = File.OpenWrite(downloadFileName))
+                    {
+                        await downloadFileStream.CopyToAsync(firmwareFile);
+                    }
+                }
+
+                _logger.LogDebug($"Downloaded file to temp file {downloadFileName}");
+                return downloadFileName;
             }
-            return downloadFileName;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error downloading file from {uri}");
+
+                if (File.Exists(downloadFileName))
+                    File.Delete(downloadFileName);
+                throw;
+            }
         }
 
         private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
