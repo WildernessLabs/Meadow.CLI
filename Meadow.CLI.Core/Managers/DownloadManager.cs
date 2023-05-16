@@ -115,7 +115,7 @@ namespace Meadow.CLI.Core
                     }
                     else
                     {
-                        _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}{Environment.NewLine}");
+                        _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
                         return;
                     }
                 }
@@ -126,7 +126,7 @@ namespace Meadow.CLI.Core
             // Check if there is an active internet connection
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
-                _logger.LogError($"No internet connection! Cannot download version {version}. Please retry once an internet connection is available{Environment.NewLine}");
+                _logger.LogError($"No internet connection! Cannot download Meadow OS version {version}. Please retry once an internet connection is available.{Environment.NewLine}");
                 return;
             }
 
