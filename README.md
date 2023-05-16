@@ -28,55 +28,60 @@ Appending `-v` or `-vv` to any command will increase the logging verbosity to `D
 ### Available Commands
 
 ```console
-meadow v0.90.0
+meadow v1.0.0
 
 USAGE
   meadow [options]
   meadow [command] [...]
 
 OPTIONS
-  -h|--help         Shows help text.
-  --version         Shows version information.
+  -h|--help         Shows help text. 
+  --version         Shows version information. 
 
 COMMANDS
-  debug             Debug a Meadow Application
-  download os       Downloads the latest Meadow.OS to the host PC
-  install dfu-util  Install the DfuUtil utility
-  listen            Listen for console output from Meadow
-  list ports        List available COM ports
-  set developer     Set developer value
-  trace disable     Disable Trace Logging on the Meadow
-  trace enable      Enable trace logging on the Meadow
-  trace level       Enable trace logging on the Meadow
-  uart trace        Configure trace logs to go to UART
-  flash erase       Erase the flash on the Meadow Board
-  flash verify      Verify the contents of the flash were deleted
-  qspi init         Init the QSPI on the Meadow
-  qspi read         Read a QSPI value from the Meadow
-  qspi write        Write a QSPI value to the Meadow
-  nsh disable       Disables NSH on the Meadow device
-  nsh enable        Enables NSH on the Meadow device
-  mono disable      Sets mono to NOT run on the Meadow board then resets it
-  mono enable       Sets mono to run on the Meadow board and then resets it
-  mono flash        Uploads the mono runtime file to the Meadow device. Does NOT move it into place
-  mono state        Returns whether or not mono is enabled or disabled on the Meadow device
-  mono update rt    Uploads the mono runtime files to the Meadow device and moves them into place
+  app deploy        Deploy the specified app to the Meadow 
+  cloud login       Log into the Meadow Service 
+  cloud logout      Logout of the Meadow Service 
+  debug             Debug a Meadow Application 
+  device info       Get the device info 
+  device mac        Read the ESP32's MAC address 
+  device name       Get the name of the Meadow 
+  device provision  Registers and prepares connected device for use with Meadow Cloud 
+  download os       Downloads the latest Meadow.OS to the host PC 
+  esp32 file write  Write files to the ESP File System 
+  esp32 restart     Restart the ESP32 
   file delete       Delete files from the Meadow File System Subcommands: file delete all.
-  file initial      Get the initial bytes from a file
-  file list         List files in the on-board filesystem
-  file write        Write files to the Meadow File System
-  fs renew          Create a File System on the Meadow Board
-  esp32 restart     Restart the ESP32
-  esp32 file write  Write files to the ESP File System
-  flash esp         Flash the ESP co-processor
-  flash os          Update the OS on the Meadow Board
-  device info       Get the device info
-  device mac        Read the ESP32's MAC address
-  device name       Get the name of the Meadow
+  file initial      Get the initial bytes from a file 
+  file list         List files in the on-board filesystem 
+  file write        Write files to the Meadow File System 
+  flash erase       Erase the flash on the Meadow Board 
+  flash esp         Flash the ESP co-processor 
+  flash os          Update the OS on the Meadow Board 
+  flash verify      Verify the contents of the flash were deleted 
+  fs renew          Create a File System on the Meadow Board 
+  install dfu-util  Install the DfuUtil utility 
+  list ports        List available COM ports 
+  listen            Listen for console output from Meadow 
+  mono disable      Sets mono to NOT run on the Meadow board then resets it 
+  mono enable       Sets mono to run on the Meadow board and then resets it 
+  mono flash        Uploads the mono runtime file to the Meadow device. Does NOT move it into place 
+  mono state        Returns whether or not mono is enabled or disabled on the Meadow device 
+  mono update rt    Uploads the mono runtime files to the Meadow device and moves it into place 
+  nsh disable       Disables NSH on the Meadow device 
+  nsh enable        Enables NSH on the Meadow device 
+  package create    Create Meadow Package 
+  package list      List Meadow Packages 
+  package publish   List Meadow Packages 
+  package upload    Upload Meadow Package 
+  qspi init         Init the QSPI on the Meadow 
+  qspi read         Read a QSPI value from the Meadow 
+  qspi write        Write a QSPI value to the Meadow 
+  set developer     Set developer value 
+  trace disable     Disable Trace Logging on the Meadow 
+  trace enable      Enable trace logging on the Meadow 
+  trace level       Enable trace logging on the Meadow 
+  uart trace        Configure trace logs to go to UART 
   use port          Set the preferred serial port
-  cloud login       Log into the Meadow Service
-  cloud logout      Logout of the Meadow Service
-  app deploy        Deploy the specified app to the Meadow
 ```
 
 ### Getting Help
@@ -84,7 +89,7 @@ COMMANDS
 Specifying `--help` with no command will output the list of available commands. Specifying `--help` after a command (e.g., `meadow file delete --help`) will output command specific help.
 
 ```console
-meadow v0.90.0
+meadow v1.0.0
 
 USAGE
   meadow file delete --files <values...> [options]
