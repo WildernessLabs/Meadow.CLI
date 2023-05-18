@@ -70,6 +70,7 @@ namespace Meadow.CommandLine.Commands.Cloud
             catch (MeadowCloudAuthException)
             {
                 _logger.LogInformation($"You must be signed in to execute this command.");
+                _logger.LogInformation($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
                 return;
             }
 

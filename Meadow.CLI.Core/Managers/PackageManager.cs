@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -22,36 +23,67 @@ namespace Meadow.CLI.Core
 
         public string CreatePackage(string applicationPath, string osVersion)
         {
-            var zipFile = Path.Combine(Environment.CurrentDirectory, $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}.mpak");
+            string[]? osFiles = null;
+            string[]? appFiles = null;
 
-            if (!Directory.Exists(applicationPath))
+            if(!string.IsNullOrEmpty(applicationPath))
             {
-                throw new ArgumentException($"Invalid applicationPath: {applicationPath}");
-            }
-
-            var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion);
-            if (!Directory.Exists(osFilePath))
-            {
-                throw new ArgumentException($"osVersion {osVersion} not found. Please download.");
-            }
-
-            var osFiles = Directory.GetFiles(osFilePath);
-            var files = Directory.GetFiles(applicationPath);
-
-            using (var archive = ZipFile.Open(zipFile, ZipArchiveMode.Create))
-            {
-                foreach (var fPath in files)
+                if (!File.Exists(applicationPath) && !Directory.Exists(applicationPath))
                 {
-                    archive.CreateEntryFromFile(fPath, Path.Combine("app", Path.GetFileName(fPath)));
+                    throw new ArgumentException($"Invalid applicationPath: {applicationPath}");
                 }
-
-                foreach (var fPath in osFiles)
+                else
                 {
-                    archive.CreateEntryFromFile(fPath, Path.Combine("os", Path.GetFileName(fPath)));
+                    var fi = new FileInfo(applicationPath);
+                    if ((fi.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                    {
+                        appFiles = Directory.GetFiles(applicationPath);
+                    }
+                    else
+                    {
+                        appFiles = new[] { fi.FullName };
+                    }
                 }
             }
 
-            return zipFile;
+            if(!string.IsNullOrEmpty(osVersion))
+            {
+                var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion);
+                if (!Directory.Exists(osFilePath))
+                {
+                    throw new ArgumentException($"osVersion {osVersion} not found. Please download.");
+                }
+                osFiles = Directory.GetFiles(osFilePath);
+            }
+            
+            if(appFiles != null || osFiles !=null)
+            {
+                var zipFile = Path.Combine(Environment.CurrentDirectory, $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}.mpak");
+                using (var archive = ZipFile.Open(zipFile, ZipArchiveMode.Create))
+                {
+                    if(appFiles != null)
+                    {
+                        foreach (var fPath in appFiles)
+                        {
+                            archive.CreateEntryFromFile(fPath, Path.Combine("app", Path.GetFileName(fPath)));
+                        }
+                    }
+                    
+                    if(osFiles != null)
+                    {
+                        foreach (var fPath in osFiles)
+                        {
+                            archive.CreateEntryFromFile(fPath, Path.Combine("os", Path.GetFileName(fPath)));
+                        }
+                    }
+                }
+                return zipFile;
+            }
+            else
+            {
+                _logger.LogError("Application Path or OS Version was not specified.");
+                return string.Empty;
+            }
         }
     }
 }
