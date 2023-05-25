@@ -22,17 +22,17 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
         public DebuggingServer DebuggingServer { get; }
         public IList<FileData> FilesOnDevice { get; } = new List<FileData>();
-        public bool InMeadowCLI { get; set; }
+        //public bool InMeadowCLI { get; set; }
 
         protected MeadowLocalDevice(MeadowDataProcessor dataProcessor, ILogger? logger = null)
         {
             Logger = logger;
             DataProcessor = dataProcessor;
 
-            var entryAssembly = Assembly.GetEntryAssembly()!;
+            /*var entryAssembly = Assembly.GetEntryAssembly()!;
 
             if (entryAssembly != null)
-                InMeadowCLI = entryAssembly.FullName.ToLower().Contains("meadow");
+                InMeadowCLI = entryAssembly.FullName.ToLower().Contains("meadow");*/
         }
 
         public abstract Task Write(byte[] encodedBytes,

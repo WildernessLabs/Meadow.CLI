@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.DeviceManagement;
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.CLI.Core.Progress;
 using Meadow.Hcom;
 using System;
 using System.Collections.Generic;
@@ -176,15 +177,27 @@ namespace Meadow.CLI.Core.Devices
             await SendCommand(command, cancellationToken);
         }
 
-        public Task EraseFlash(CancellationToken cancellationToken = default)
+        public async Task EraseFlash(CancellationToken cancellationToken = default)
         {
+            // TODO We may want to move this into Meadow.EraseFlash() so the behaviour is centralised
+            var spinnerCancellationTokenSource = new CancellationTokenSource();
+            var consoleSpinner = new ConsoleSpinnerProgress(250, spinnerCancellationTokenSource.Token);
+
+            Task consoleSpinnerTask = consoleSpinner.Report();
+
             var command =
                 new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_BULK_FLASH_ERASE)
                     .WithCompletionResponseType(MeadowMessageType.SerialReconnect)
                     .WithTimeout(TimeSpan.FromMinutes(5))
                     .Build();
 
-            return SendCommand(command, cancellationToken);
+            await SendCommand(command, cancellationToken);
+
+            // Cancel the spinner as soon as the SendCommand finishes
+            spinnerCancellationTokenSource.Cancel();
+
+            // Let's start spinning
+            await consoleSpinnerTask;
         }
 
         public Task VerifyErasedFlash(CancellationToken cancellationToken = default)

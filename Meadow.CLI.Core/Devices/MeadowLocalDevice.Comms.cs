@@ -2,6 +2,7 @@
 using Meadow.CLI.Core.DeviceManagement.Tools;
 using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
+using Meadow.CLI.Core.Progress;
 using Meadow.Hcom;
 using System;
 using System.Diagnostics;
@@ -16,6 +17,13 @@ namespace Meadow.CLI.Core.Devices
         private const int PROGESS_INCREMENTS = 5;
         uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
+
+        MeadowProgress meadowProgress = new MeadowProgress();
+
+        public MeadowProgress MeadowProgress {
+            get => meadowProgress;
+            set => meadowProgress = value;
+        }
 
         public async Task SendTheEntireFile(FileCommand command,
                                             bool lastInSeries,
@@ -72,10 +80,10 @@ namespace Meadow.CLI.Core.Devices
 
                 Logger?.LogInformation($"Starting File Transfer... {Environment.NewLine} ");
 
-                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                /*if (!InMeadowCLI) // In separate call as used for progress delimiter
                 {
                     Logger?.LogInformation("[");
-                }
+                }*/
 
                 nextProgress = 0;
                 while (fileBufOffset <= command.FileSize - 1) // equal would mean past the end
@@ -105,7 +113,7 @@ namespace Meadow.CLI.Core.Devices
                             cancellationToken);
 
                     var progress = (decimal)fileBufOffset / command.FileSize;
-                    WriteProgress(progress);
+                    WriteProgress(progress, command.DestinationFileName);
 
                     fileBufOffset += numBytesToSend;
 
@@ -150,10 +158,10 @@ namespace Meadow.CLI.Core.Devices
                     sequenceNumber,
                     $"{_packetCrc32:x08}");
 
-                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                /*if (!InMeadowCLI) // In separate call as used for progress delimiter
                 {
                     Logger?.LogInformation("]");
-                }
+                }*/
                 Logger?.LogInformation($"{Environment.NewLine}Transfer Complete, wrote {fileBufOffset} bytes to Meadow" + Environment.NewLine);
             }
             catch (Exception ex)
@@ -165,16 +173,17 @@ namespace Meadow.CLI.Core.Devices
 
         private int nextProgress;
 
-        private void WriteProgress(decimal i)
+        private void WriteProgress(decimal i, string fileName)
         {
             var intProgress = Convert.ToInt32(i * 100);
 
             if (intProgress > nextProgress)
             {
-                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                /*if (!InMeadowCLI) // In separate call as used for progress delimiter
                 {
                     Logger?.LogInformation("=");
-                }
+                }*/
+                meadowProgress.Report(intProgress, fileName);
                 nextProgress += PROGESS_INCREMENTS;
             }
         }
