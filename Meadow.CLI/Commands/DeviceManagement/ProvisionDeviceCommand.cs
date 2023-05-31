@@ -37,6 +37,8 @@ namespace Meadow.CommandLine.Commands.Cloud
 
         [CommandOption("orgId", 'o', Description = "The target org for device registration", IsRequired = false)]
         public string OrgId { get; set; }
+        [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
+        public string CollectionId { get; set; }
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {
@@ -58,10 +60,10 @@ namespace Meadow.CommandLine.Commands.Cloud
                 }
                 else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
                 {
-                    OrgId = userOrgs.First().OrgId;
+                    OrgId = userOrgs.First().Id;
                 }
 
-                if (!userOrgs.Select(x => x.OrgId).Contains(OrgId))
+                if (!userOrgs.Select(x => x.Id).Contains(OrgId))
                 {
                     _logger.LogInformation($"Invalid orgId: {OrgId}");
                     return;
@@ -79,7 +81,7 @@ namespace Meadow.CommandLine.Commands.Cloud
             var delim = "-----END PUBLIC KEY-----\n";
             publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
-            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey);
+            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId);
 
             if (result.isSuccess)
             {

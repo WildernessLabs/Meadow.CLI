@@ -20,8 +20,8 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Meadow.CLI/bin/Debug/net5.0/Meadow.CLI.dll",
-            "args": ["--FlashOS"],
+            "program": "${workspaceFolder}/Meadow.CLI/bin/Debug/meadow",
+            "args": ["device provision"],
             "cwd": "${workspaceFolder}/Meadow.CLI",
             "console": "internalConsole",
             "stopAtEntry": false
