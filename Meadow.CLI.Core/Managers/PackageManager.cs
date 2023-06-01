@@ -14,9 +14,14 @@ namespace Meadow.CLI.Core
 {
     public class PackageManager
     {
+        private List<string> _firmwareFilesExclude;
         public PackageManager(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<PackageManager>();
+            _firmwareFilesExclude = new List<string>()
+            {
+                "Meadow.OS.bin".ToLower()
+            };
         }
 
         private readonly ILogger _logger;
@@ -53,7 +58,9 @@ namespace Meadow.CLI.Core
                 {
                     throw new ArgumentException($"osVersion {osVersion} not found. Please download.");
                 }
-                osFiles = Directory.GetFiles(osFilePath);
+
+                osFiles = Directory.GetFiles(osFilePath)
+                    .Where(x => !_firmwareFilesExclude.Contains(new FileInfo(x).Name.ToLower())).ToArray();
             }
             
             if(appFiles != null || osFiles !=null)
