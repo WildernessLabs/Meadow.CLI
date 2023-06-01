@@ -12,9 +12,9 @@
       "commandName": "Project",
       "commandLineArgs": "cloud logout"
     },
-    "CloudProvisionDevice": {
+    "DeviceProvision": {
       "commandName": "Project",
-      "commandLineArgs": "cloud provision device"
+      "commandLineArgs": "device provision"
     },
     "DeviceInfo": {
       "commandName": "Project",
@@ -86,11 +86,15 @@
     },
     "Package Publish": {
       "commandName": "Project",
-      "commandLineArgs": "package publish -p 5d6afbb069e0496a93d019830adecaa8"
+      "commandLineArgs": "package publish -p 485f06def49740ea9615208ba6107d2a -c 4965ba4d6b504c879928494e9bbe415d"
     },
     "Package Upload": {
       "commandName": "Project",
       "commandLineArgs": "package upload -p 20230314363.mpak"
+    },
+    "Collection List": {
+      "commandName": "Project",
+      "commandLineArgs": "collection list"
     },
     "RegisterDevice": {
       "commandName": "Project",

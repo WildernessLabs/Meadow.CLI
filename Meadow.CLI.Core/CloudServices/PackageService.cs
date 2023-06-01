@@ -68,7 +68,7 @@ namespace Meadow.CLI.Core.CloudServices
             }
         }
 
-        public async Task PublishPackage(string packageId, CancellationToken cancellationToken)
+        public async Task PublishPackage(string packageId, string collectionId, CancellationToken cancellationToken)
         {
             var authToken = await _identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrEmpty(authToken))
@@ -79,7 +79,7 @@ namespace Meadow.CLI.Core.CloudServices
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages/{packageId}/publish", null);
+            var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages/{packageId}/publish/{collectionId}", null);
 
             if (!response.IsSuccessStatusCode)
             {
