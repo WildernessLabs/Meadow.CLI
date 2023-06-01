@@ -78,7 +78,7 @@
     },
     "Package Create": {
       "commandName": "Project",
-      "commandLineArgs": "package create -a C:\\Users\\brikim\\gh\\SimpleMqttServer\\src\\DeviceClient\\bin\\Debug\\Netstandard2.1 -v 0.6.4.0"
+      "commandLineArgs": "package create -v 1.0.0.0"
     },
     "Package List": {
       "commandName": "Project",
