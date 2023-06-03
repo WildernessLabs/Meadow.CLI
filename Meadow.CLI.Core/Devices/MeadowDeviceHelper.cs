@@ -213,24 +213,9 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.TraceDisable(cancellationToken);
         }
 
-        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default)
+        public Task SetDeveloper(ushort level, uint userData, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.SetDeveloper1(userData, cancellationToken);
-        }
-
-        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default)
-        {
-            return _meadowDevice.SetDeveloper2(userData, cancellationToken);
-        }
-
-        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default)
-        {
-            return _meadowDevice.SetDeveloper3(userData, cancellationToken);
-        }
-
-        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default)
-        {
-            return _meadowDevice.SetDeveloper4(userData, cancellationToken);
+            return _meadowDevice.SetDeveloper(level, userData, cancellationToken);
         }
 
         public Task Uart1Apps(CancellationToken cancellationToken = default)

@@ -32,10 +32,10 @@ namespace Meadow.CLI.Commands.Cloud
             _packageService = packageService;
         }
         
-        [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
-        public string OrgId { get; set; }
         [CommandOption("packageId", 'p', Description = "ID of the package to publish", IsRequired = true)]
         public string PackageId { get; init; }
+        [CommandOption("collectionId", 'c', Description = "The target collection for publishing", IsRequired = true)]
+        public string CollectionId { get; set; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -45,7 +45,7 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                await _packageService.PublishPackage(PackageId, cancellationToken);
+                await _packageService.PublishPackage(PackageId, CollectionId, cancellationToken);
                 _logger.LogInformation("Publish successful.");
             }
             catch(MeadowCloudException mex)

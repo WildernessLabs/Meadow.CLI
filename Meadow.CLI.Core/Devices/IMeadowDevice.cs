@@ -39,10 +39,7 @@ namespace Meadow.CLI.Core.Devices
         public Task NshDisable(CancellationToken cancellationToken = default);
         public Task TraceEnable(CancellationToken cancellationToken = default);
         public Task SetTraceLevel(uint traceLevel, CancellationToken cancellationToken = default);
-        public Task SetDeveloper1(uint userData, CancellationToken cancellationToken = default);
-        public Task SetDeveloper2(uint userData, CancellationToken cancellationToken = default);
-        public Task SetDeveloper3(uint userData, CancellationToken cancellationToken = default);
-        public Task SetDeveloper4(uint userData, CancellationToken cancellationToken = default);
+        public Task SetDeveloper(ushort mode, uint userData, CancellationToken cancellationToken = default);
         public Task Uart1Apps(CancellationToken cancellationToken = default);
         public Task Uart1Trace(CancellationToken cancellationToken = default);
         public Task TraceDisable(CancellationToken cancellationToken = default);

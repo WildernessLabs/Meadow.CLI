@@ -19,7 +19,7 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey)
+        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey, string collectionId)
         {
             var httpClient = await AuthenticatedHttpClient();
 
@@ -27,7 +27,8 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 orgId,
                 id,
-                publicKey
+                publicKey,
+                collectionId
             };
 
             var json = JsonSerializer.Serialize<dynamic>(payload);

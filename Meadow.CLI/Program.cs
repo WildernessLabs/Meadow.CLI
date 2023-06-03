@@ -62,6 +62,7 @@ namespace Meadow.CLI
             services.AddSingleton<DownloadManager>();
             services.AddSingleton<UserService>();
             services.AddSingleton<PackageService>();
+            services.AddSingleton<CollectionService>();
             services.AddSingleton<DeviceService>();
             services.AddSingleton<PackageManager>();
             services.AddSingleton<IdentityManager>();

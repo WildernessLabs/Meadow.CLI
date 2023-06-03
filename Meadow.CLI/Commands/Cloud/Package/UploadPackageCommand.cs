@@ -10,27 +10,27 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.Cloud
 {
-    [Command("package list", Description = "List Meadow Packages")]
-    public class ListCommand : ICommand
+    [Command("package upload", Description = "Upload Meadow Package")]
+    public class UploadCommand : ICommand
     {
         private readonly ILogger<LogoutCommand> _logger;
         UserService _userService;
         PackageService _packageService;
         IConfiguration _config;
 
-        public ListCommand(ILoggerFactory loggerFactory, UserService userService, PackageService packageService, IConfiguration config)
+        public UploadCommand(ILoggerFactory loggerFactory, UserService userService, PackageService packageService, IConfiguration config)
         {
             _logger = loggerFactory.CreateLogger<LogoutCommand>();
             _userService = userService;
@@ -38,8 +38,14 @@ namespace Meadow.CLI.Commands.Cloud
             _config = config;
         }
 
-        [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
+        [CommandOption("mpakPath", 'p', Description = "The full path of the mpak file", IsRequired = true)]
+        public string MpakPath { get; init; }
+
+        [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
         public string OrgId { get; set; }
+
+        [CommandOption("description", 'd', Description = "Description of the package", IsRequired = false)]
+        public string Description { get; set; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -62,10 +68,10 @@ namespace Meadow.CLI.Commands.Cloud
                 }
                 else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
                 {
-                    OrgId = userOrgs.First().OrgId;
+                    OrgId = userOrgs.First().Id;
                 }
 
-                if (!userOrgs.Select(x => x.OrgId).Contains(OrgId))
+                if (!userOrgs.Select(x => x.Id).Contains(OrgId))
                 {
                     _logger.LogInformation($"Invalid orgId: {OrgId}");
                     return;
@@ -78,15 +84,14 @@ namespace Meadow.CLI.Commands.Cloud
                 return;
             }
 
-            var packages = await _packageService.GetOrgPackages(OrgId, cancellationToken);
-
-            if(packages == null || packages.Count() == 0)
+            try
             {
-                _logger.LogInformation("No packages found.");
+                var package = await _packageService.UploadPackage(MpakPath, OrgId, Description, cancellationToken);
+                _logger.LogInformation($"Upload complete. Package Id: {package.Id}");
             }
-            foreach (var package in packages)
+            catch (MeadowCloudException mex)
             {
-                _logger.LogInformation($"{package.Id} | {package.Name} | {package.Description}");
+                _logger.LogError($"Upload failed: {mex.Message}");
             }
         }
     }
