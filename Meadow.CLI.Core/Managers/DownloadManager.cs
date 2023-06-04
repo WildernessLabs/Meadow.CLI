@@ -342,6 +342,11 @@ namespace Meadow.CLI.Core
         {
             var downloadFileName = await DownloadFile(uri, cancellationToken);
 
+            if (Directory.Exists(target_path))
+            {
+                Directory.Delete(target_path, true);
+            }
+            
             _logger.LogDebug("Extracting firmware to {path}", target_path);
             ZipFile.ExtractToDirectory(
                 downloadFileName,
