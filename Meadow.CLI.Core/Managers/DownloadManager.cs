@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,6 +155,7 @@ namespace Meadow.CLI.Core
             else if (version == null)
             {   //otherwise only update if we're pulling the latest release OS
                 File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
             }
 
             if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
@@ -167,7 +167,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation($"Downloading Meadow OS version {version}.{Environment.NewLine}");
+                _logger.LogInformation($"Downloading Meadow OS version {release.Version}.{Environment.NewLine}");
                 await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
             }
             catch
@@ -187,7 +187,7 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}.{Environment.NewLine}" );
+            _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}.{Environment.NewLine}");
         }
 
         public async Task InstallDfuUtil(bool is64Bit = true,
