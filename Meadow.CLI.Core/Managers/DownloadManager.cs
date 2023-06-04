@@ -98,30 +98,29 @@ namespace Meadow.CLI.Core
             return versionCheckFile;
         }
 
+        bool CreateFolder(string path, bool eraseIfExists)
+        {
+            if (Directory.Exists(path))
+            {
+                if (eraseIfExists)
+                {
+                    CleanPath(path);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(path);
+            }
+            return true;
+        }
+
         //ToDo rename this method - DownloadOSAsync?
         public async Task DownloadOsBinaries(string? version = null, bool force = false)
         {
-            string local_path = string.Empty;
-            if (!string.IsNullOrEmpty(version))
-            {
-                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
-
-                if (Directory.Exists(local_path))
-                {
-                    if (force)
-                    {
-                        CleanPath(local_path);
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
-                        return;
-                    }
-                }
-
-                Directory.CreateDirectory(local_path);
-            }
-
             // Check if there is an active internet connection
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
@@ -146,22 +145,25 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            if (!Directory.Exists(FirmwareDownloadsFilePathRoot))
+            CreateFolder(FirmwareDownloadsFilePathRoot, false);
+            //we'll write latest.txt regardless of version if it doesn't exist
+            File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
+
+            string local_path;
+
+            if (string.IsNullOrWhiteSpace(version))
             {
-                Directory.CreateDirectory(FirmwareDownloadsFilePathRoot);
-                //we'll write latest.txt regardless of version if it doesn't exist
-                File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
-            }
-            else if (version == null)
-            {   //otherwise only update if we're pulling the latest release OS
-                File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
                 local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
+                version = release.Version;
+            }
+            else
+            {
+                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
             }
 
-            if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
+            if (CreateFolder(local_path, force) == false)
             {
-                _logger.LogInformation(
-                    $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0.{Environment.NewLine}");
+                _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
                 return;
             }
 
