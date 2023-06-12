@@ -2,6 +2,8 @@ name: Meadow.CLI
 env:
   TOOLS_RELEASE_VERSION: 1.0.2.2
   MEADOW_OS_VERSION: 1.0.2.0
+  VS_MAC_2019_VERSION: 8.10
+  VS_MAC_2022_VERSION: 17.5
 
 on:
   push:
@@ -313,7 +315,7 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}.VS2019 
+        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}vsm${{ ENV.VS_MAC_2019_VERSION }} 
         release_name: VS Mac VS2019 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
@@ -421,7 +423,7 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}.VS2022
+        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}vsm${{ ENV.VS_MAC_2022_VERSION }}
         release_name: VS Mac VS2022 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
