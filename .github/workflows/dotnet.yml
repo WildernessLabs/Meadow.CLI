@@ -315,7 +315,7 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}vsm${{ ENV.VS_MAC_2019_VERSION }} 
+        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }} 
         release_name: VS Mac VS2019 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
@@ -423,7 +423,7 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}vsm${{ ENV.VS_MAC_2022_VERSION }}
+        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2022_VERSION }}
         release_name: VS Mac VS2022 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
