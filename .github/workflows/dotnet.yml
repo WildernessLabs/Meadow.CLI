@@ -480,10 +480,10 @@ jobs:
     - name: Setup Nuget
       uses: Nuget/setup-nuget@v1.0.5
 
-    - name: Setup Node.js 14
+    - name: Setup Node.js 16
       uses: actions/setup-node@v2
       with:
-        node-version: '14'
+        node-version: '16'
 
     - name: Install NPM
       run: |
