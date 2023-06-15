@@ -56,6 +56,12 @@ namespace Meadow.CLI.Commands
 
         private bool PortExists(string name)
         {
+            if (OperatingSystem.IsWindows())
+            {
+                // windows is case-insensitive
+                return System.IO.Ports.SerialPort.GetPortNames().Contains(name, StringComparer.InvariantCultureIgnoreCase);
+            }
+
             return System.IO.Ports.SerialPort.GetPortNames().Contains(name);
         }
 
