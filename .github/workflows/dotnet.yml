@@ -124,7 +124,7 @@ jobs:
       name: Update VS2019 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest | Out-String
-        $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
+        $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest
 
     - name: Restore VS2019 dependencies
@@ -193,7 +193,7 @@ jobs:
       name: Update VS2022 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
-        $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
+        $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest
 
     - name: Restore VS2022 dependencies
@@ -266,7 +266,7 @@ jobs:
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2019 Version Numbers
       run: |
-        sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.SHORT_TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
+        sed -i "" "s/Version = \"1.*\"/Version = \"${{ENV.SHORT_TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
 
     - name: Restore our VS2019 project
       run: |
@@ -371,10 +371,10 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2022 Version Numbers
       run: |
-        sed -i "" "s/Version = \"0.*\"/Version = \"${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
+        sed -i "" "s/Version = \"1.*\"/Version = \"${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
     - name: Restore our VS2022 project
       run: |
@@ -499,11 +499,11 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VSCode Version Numbers
       run: |
         $content = Get-Content vs-code/package.json | Out-String
-        $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.SHORT_TOOLS_RELEASE_VERSION}}",'
+        $newcontent = $content -replace '"version": "1.*",', '"version": "${{ENV.SHORT_TOOLS_RELEASE_VERSION}}",'
         $newcontent | Set-Content vs-code/package.json
 
     - name: Restore VSCode Extension dependencies
