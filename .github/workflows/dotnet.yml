@@ -71,7 +71,7 @@ jobs:
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.CLI.nuget
+        name: Meadow.CLI.nuget.${{ ENV.TOOLS_RELEASE_VERSION }}
         path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -139,7 +139,7 @@ jobs:
     - name: Upload VS2019 VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Win.VS2019.vsix
+        name: Meadow.Win.VS2019.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
         
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -207,7 +207,7 @@ jobs:
     - name: Upload VS2022 VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Win.VS2022.vsix
+        name: Meadow.Win.VS2022.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
           
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -279,7 +279,7 @@ jobs:
     - name: Upload Mac VS2019 mpack Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Mac.2019.mpack
+        name: Meadow.Mac.2019.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -332,7 +332,7 @@ jobs:
     #  with:
     #    upload_url: ${{ steps.create_release.outputs.upload_url }}
     #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack
-    #    asset_name: Meadow.Mac.2019.mpack
+    #    asset_name: Meadow.Mac.2019.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
     #    asset_content_type: application/zip
 
   build-vsmac-2022:
@@ -387,7 +387,7 @@ jobs:
     - name: Upload VS2022 mpack Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Mac.2022.mpack
+        name: Meadow.Mac.2022.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -440,7 +440,7 @@ jobs:
     #  with:
     #    upload_url: ${{ steps.create_release.outputs.upload_url }}
     #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack
-    #    asset_name: Meadow.Mac.2022.mpack
+    #    asset_name: Meadow.Mac.2022.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
     #    asset_content_type: application/zip
 
   build-vscode:
@@ -535,7 +535,7 @@ jobs:
     - name: Upload VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.VSCode.vsix
+        name: Meadow.VSCode.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-code/*.vsix'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
