@@ -17,7 +17,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         private protected MeadowMessageType? CompletionMessageType;
 
         private protected HcomMeadowRequestType RequestType { get; set; }
-        private protected ushort DeveloperLevel { get; set; }
         private protected uint UserData { get; set; }
         private protected TimeSpan Timeout { get; set; }
         private protected byte[]? Data { get; set; }
@@ -29,12 +28,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public SimpleCommandBuilder WithTimeout(TimeSpan timeout)
         {
             Timeout = timeout;
-            return this;
-        }
-
-        public SimpleCommandBuilder WithDeveloperLevel(ushort level)
-        {
-            DeveloperLevel = level;
             return this;
         }
 
@@ -102,14 +95,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                 else CompletionPredicate = e => e.MessageType == MeadowMessageType.Concluded;
             }
 
-            return new Command(RequestType, Timeout, DeveloperLevel, UserData, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
+            return new Command(RequestType, Timeout, UserData, Data, ResponsePredicate, CompletionPredicate, ResponseHandler, IsAcknowledged, ToString());
         }
 
         public override string ToString()
         {
             return $"RequestType: {RequestType} "
                  + $"Timeout: {Timeout} "
-                 + $"DeveloperLevel: {DeveloperLevel} "
                  + $"UserData: {UserData} "
                  + $"ResponseType {ResponseMessageType?.ToString() ?? "none"} "
                  + $"CompletionMessageType: {CompletionMessageType?.ToString() ?? "none"} "

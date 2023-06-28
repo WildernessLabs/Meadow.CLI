@@ -1,6 +1,7 @@
 name: Meadow.CLI
 env:
-  TOOLS_RELEASE_VERSION: 1.0.2.2
+  TOOLS_RELEASE_VERSION: 1.0.4.0
+  SHORT_TOOLS_RELEASE_VERSION: 1.0.4
   MEADOW_OS_VERSION: 1.0.2.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.5
@@ -35,7 +36,7 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update CLI Version Numbers
       run: |
         $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
@@ -70,7 +71,7 @@ jobs:
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.CLI.nuget
+        name: Meadow.CLI.nuget.${{ ENV.TOOLS_RELEASE_VERSION }}
         path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -119,11 +120,11 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2019 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest | Out-String
-        $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
+        $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest
 
     - name: Restore VS2019 dependencies
@@ -138,7 +139,7 @@ jobs:
     - name: Upload VS2019 VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Win.VS2019.vsix
+        name: Meadow.Win.VS2019.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
         
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -188,11 +189,11 @@ jobs:
       with:
         vs-version: '[17.0, 18.0)'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2022 Version Numbers
       run: |
         $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
-        $newcontent = $content -replace 'Version="0.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
+        $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
         $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest
 
     - name: Restore VS2022 dependencies
@@ -206,7 +207,7 @@ jobs:
     - name: Upload VS2022 VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Win.VS2022.vsix
+        name: Meadow.Win.VS2022.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
           
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -262,10 +263,10 @@ jobs:
         mv "/Applications/Visual Studio.app" "/Applications/Visual Studio 2022.app"
         mv "/Applications/Visual Studio 2019.app" "/Applications/Visual Studio.app"
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2019 Version Numbers
       run: |
-        sed -i "" "s/Version = \"0.*\"/Version = \"${{ENV.TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
+        sed -i "" "s/Version = \"1.*\"/Version = \"${{ENV.SHORT_TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
 
     - name: Restore our VS2019 project
       run: |
@@ -278,7 +279,7 @@ jobs:
     - name: Upload Mac VS2019 mpack Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Mac.2019.mpack
+        name: Meadow.Mac.2019.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -315,8 +316,8 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }} 
-        release_name: VS Mac VS2019 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
+        tag_name: v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }}
+        release_name: VS Mac VS2019 Extension v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
         draft: true
@@ -325,13 +326,13 @@ jobs:
   
     # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.0.2
+    #  uses: actions/upload-release-asset@v1.0.4
     #  env:
     #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
     #  with:
     #    upload_url: ${{ steps.create_release.outputs.upload_url }}
     #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack
-    #    asset_name: Meadow.Mac.2019.mpack
+    #    asset_name: Meadow.Mac.2019.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
     #    asset_content_type: application/zip
 
   build-vsmac-2022:
@@ -370,10 +371,10 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2022 Version Numbers
       run: |
-        sed -i "" "s/Version = \"0.*\"/Version = \"${{ ENV.TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
+        sed -i "" "s/Version = \"1.*\"/Version = \"${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
     - name: Restore our VS2022 project
       run: |
@@ -386,7 +387,7 @@ jobs:
     - name: Upload VS2022 mpack Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.Mac.2022.mpack
+        name: Meadow.Mac.2022.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -423,8 +424,8 @@ jobs:
       with:
         owner: WildernessLabs
         repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2022_VERSION }}
-        release_name: VS Mac VS2022 Extension v${{ ENV.TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
+        tag_name: v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2022_VERSION }}
+        release_name: VS Mac VS2022 Extension v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
         body: | 
           ${{ steps.commit_messages.outputs.result }}
         draft: true
@@ -433,13 +434,13 @@ jobs:
 
     # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.0.2
+    #  uses: actions/upload-release-asset@v1.0.4
     #  env:
     #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
     #  with:
     #    upload_url: ${{ steps.create_release.outputs.upload_url }}
     #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack
-    #    asset_name: Meadow.Mac.2022.mpack
+    #    asset_name: Meadow.Mac.2022.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
     #    asset_content_type: application/zip
 
   build-vscode:
@@ -498,11 +499,11 @@ jobs:
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VSCode Version Numbers
       run: |
         $content = Get-Content vs-code/package.json | Out-String
-        $newcontent = $content -replace '"version": "0.*",', '"version": "${{ENV.TOOLS_RELEASE_VERSION}}",'
+        $newcontent = $content -replace '"version": "1.*",', '"version": "${{ENV.SHORT_TOOLS_RELEASE_VERSION}}",'
         $newcontent | Set-Content vs-code/package.json
 
     - name: Restore VSCode Extension dependencies
@@ -534,7 +535,7 @@ jobs:
     - name: Upload VSIX Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.VSCode.vsix
+        name: Meadow.VSCode.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-code/*.vsix'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
