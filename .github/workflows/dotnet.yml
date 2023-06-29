@@ -526,7 +526,7 @@ jobs:
         cd vs-code
         vsce package --pre-release
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    - if: ${{ github.ref == 'refs/heads/main' }}
       name: Build Release VSIX on main branch
       run: |
         cd vs-code
