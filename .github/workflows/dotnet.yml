@@ -72,7 +72,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI.nuget.${{ ENV.TOOLS_RELEASE_VERSION }}
-        path: 'main\Meadow.CLI\Meadow.CLI\bin\Release\*.nupkg'
+        path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
