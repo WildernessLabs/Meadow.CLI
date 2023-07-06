@@ -302,8 +302,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                           line =>
                           {
                               var parts = line.Split(' ');
-                              var source = parts[8];
-                              var target = parts[10];
+                              var source = parts[9];
+                              var target = parts[11];
                               var port = Path.GetFullPath(Path.Combine(devicePath, target));
                               return port;
                           }).ToArray();
