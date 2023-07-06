@@ -1,8 +1,8 @@
 name: Meadow.CLI
 env:
-  TOOLS_RELEASE_VERSION: 1.0.4.0
-  SHORT_TOOLS_RELEASE_VERSION: 1.0.4
-  MEADOW_OS_VERSION: 1.0.2.0
+  TOOLS_RELEASE_VERSION: 1.1.0.0
+  SHORT_TOOLS_RELEASE_VERSION: 1.1.0
+  MEADOW_OS_VERSION: 1.1.0.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.5
 
@@ -72,7 +72,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI.nuget.${{ ENV.TOOLS_RELEASE_VERSION }}
-        path: 'main\**\Meadow.CLI\bin\Release\*.nupkg'
+        path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
@@ -326,7 +326,7 @@ jobs:
   
     # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.0.4
+    #  uses: actions/upload-release-asset@v1.1.0
     #  env:
     #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
     #  with:
@@ -434,7 +434,7 @@ jobs:
 
     # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.0.4
+    #  uses: actions/upload-release-asset@v1.1.0
     #  env:
     #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
     #  with:
