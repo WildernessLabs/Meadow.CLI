@@ -44,7 +44,7 @@ namespace Meadow.CLI.Core.Devices
                 }
             };
 
-            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_DEVELOPER_4)
+            var command = new SimpleCommandBuilder(HcomMeadowRequestType.HCOM_MDOW_REQUEST_GET_FILES_AND_FOLDERS)
                     .WithResponseHandler(handler)
                     .Build();
 
