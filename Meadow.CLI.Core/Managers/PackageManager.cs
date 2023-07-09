@@ -1,14 +1,9 @@
-﻿using Meadow.CLI.Core.Identity;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Meadow.CLI.Core
 {
@@ -97,7 +92,7 @@ namespace Meadow.CLI.Core
         {
             // Windows '\' Path separator character will be written to the zip which meadow os does not properly unpack
             //  See: https://github.com/dotnet/runtime/issues/41914
-            if (OperatingSystem.IsWindows())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 entryPath = entryPath.Replace('\\', '/');
             }
