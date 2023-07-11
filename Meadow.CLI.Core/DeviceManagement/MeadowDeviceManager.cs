@@ -293,17 +293,16 @@ namespace Meadow.CLI.Core.DeviceManagement
                 };
 
                 using var proc = Process.Start(psi);
-                proc.WaitForExit(1000);
-                var output = proc.StandardOutput.ReadToEnd();
+                _ = proc?.WaitForExit(1000);
+                var output = proc?.StandardOutput.ReadToEnd();
 
                 return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                       .Where(x => x.Contains("Wilderness_Labs"))
                       .Select(
                           line =>
                           {
-                              var parts = line.Split(' ');
-                              var source = parts[8];
-                              var target = parts[10];
+                              var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
+                              var target = parts[1];
                               var port = Path.GetFullPath(Path.Combine(devicePath, target));
                               return port;
                           }).ToArray();

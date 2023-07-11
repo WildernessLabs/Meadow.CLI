@@ -10,13 +10,14 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace Meadow.CLI.Core.Devices
 {
     public abstract partial class MeadowLocalDevice
     {
-        string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
-        string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
+        private string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
+        private string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
 
         public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
@@ -470,7 +471,7 @@ namespace Meadow.CLI.Core.Devices
 
         //ToDo this is super fragile (extra-super fragile!)
         //Need updated API to read files after B5.1
-        async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
+        private async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
             var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), cancellationToken);
 
@@ -523,6 +524,17 @@ namespace Meadow.CLI.Core.Devices
             }
         }
 
+        private record BuildOptions
+        {
+            public DeployOptions Deploy { get; set; }
+
+            public record DeployOptions
+            {
+                public List<string> NoLink { get; set; }
+                public bool? IncludePDBs { get; set; }
+            }
+        }
+
         public async Task DeployApp(string applicationFilePath,
                                     string osVersion,
                                     bool includePdbs = false,
@@ -530,6 +542,33 @@ namespace Meadow.CLI.Core.Devices
                                     IList<string>? noLink = null,
                                     CancellationToken cancellationToken = default)
         {
+            try
+            {
+                // does a meadow.build.yml file exist?
+                var buildOptionsFile = Path.Combine(Path.GetDirectoryName(applicationFilePath), "app.build.yaml");
+                if (File.Exists(buildOptionsFile))
+                {
+                    var yaml = File.ReadAllText(buildOptionsFile);
+                    var deserializer = new DeserializerBuilder()
+                        .IgnoreUnmatchedProperties()
+                        .Build();
+                    var opts = deserializer.Deserialize<BuildOptions>(yaml);
+
+                    if (opts.Deploy.NoLink != null && opts.Deploy.NoLink.Count > 0)
+                    {
+                        noLink = opts.Deploy.NoLink;
+                    }
+                    if (opts.Deploy.IncludePDBs != null)
+                    {
+                        includePdbs = opts.Deploy.IncludePDBs.Value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInformation($"Failed to read app.build.yaml: {ex.Message}");
+            }
+
             try
             {
                 if (!File.Exists(applicationFilePath))
@@ -661,7 +700,7 @@ namespace Meadow.CLI.Core.Devices
                         {
                             found = true;
                         }
-                        if(found) { break; }
+                        if (found) { break; }
                     }
                     if (found == false)
                     {
