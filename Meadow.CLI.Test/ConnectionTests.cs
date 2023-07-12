@@ -8,6 +8,7 @@ using NUnit.Framework;
 
 namespace Meadow.CLI.Test
 {
+
     [TestFixture]
     public class ConnectionTests
     {
@@ -19,7 +20,7 @@ namespace Meadow.CLI.Test
         public readonly string networkPartitionTableFilename = "partition-table.bin";
         DirectoryInfo fixturesPath = new DirectoryInfo("Fixtures");
 
-        [Test]
+        [RequiresDevice]
         public async Task FlashLatestOsTest()
         {
             // Make sure the device is in bootloader mode
@@ -30,14 +31,14 @@ namespace Meadow.CLI.Test
             Assert.True(flashed, "Device Flashed");
         }
 
-        [Test]
+        [RequiresDevice]
         public async Task AtLeastOneDevicesAttachedTest()
         {
             var ports = await MeadowDeviceManager.GetSerialPorts();
             Assert.True(ports.Count > 0, "Devices Found");
         }
 
-        [Test]
+        [RequiresDevice]
         public async Task MonoDisableTest()
         {
             var ports = await MeadowDeviceManager.GetSerialPorts();
@@ -54,7 +55,7 @@ namespace Meadow.CLI.Test
             Assert.False(monoEnabled, "monoEnabled");
         }
 
-        [Test]
+        [RequiresDevice]
         public async Task MonoEnableTest()
         {
             var ports = await MeadowDeviceManager.GetSerialPorts();
