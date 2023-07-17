@@ -23,6 +23,10 @@
         HCOM_HOST_REQUEST_TEXT_MONO_STDERR = 0x0d | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
         HCOM_HOST_REQUEST_FILE_START_OKAY = 0x0e | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
         HCOM_HOST_REQUEST_FILE_START_FAIL = 0x0f | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
+
+        // The Meadow file name is enclosed in single quotes 'filename' and CLI will
+        // need to workout what file was being downloaded and start the download over
+        HCOM_HOST_REQUEST_DNLD_FAIL_RESEND = 0x12 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
         HCOM_HOST_REQUEST_DEVICE_PUBLIC_KEY = 0x13 | HcomProtocolHeaderTypes.HCOM_PROTOCOL_HEADER_TYPE_SIMPLE_TEXT,
 
         // Simple with debugger message from Meadow
