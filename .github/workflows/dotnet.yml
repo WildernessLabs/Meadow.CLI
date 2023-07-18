@@ -1,7 +1,7 @@
 name: Meadow.CLI
 env:
-  TOOLS_RELEASE_VERSION: 1.1.0.0
-  SHORT_TOOLS_RELEASE_VERSION: 1.1.0
+  TOOLS_RELEASE_VERSION: 1.1.1.0
+  SHORT_TOOLS_RELEASE_VERSION: 1.1.1
   MEADOW_OS_VERSION: 1.1.0.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.5
@@ -142,10 +142,10 @@ jobs:
         name: Meadow.Win.VS2019.vsix.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
         
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Publish VS2019 Extension
-      run: |
-        & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "vs-win\publishManifest.json" -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
+    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    #  name: Publish VS2019 Extension
+    #  run: |
+    #    & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "vs-win\publishManifest.json" -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
 
   build-vswin-2022:
     runs-on: windows-2022
@@ -282,47 +282,47 @@ jobs:
         name: Meadow.Mac.2019.mpack.${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Get Commit Messages
-      id: commit_messages
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
-        script: |
-          const { owner, repo } = context.repo;
+    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    #  name: Get Commit Messages
+    #  id: commit_messages
+    #  uses: actions/github-script@v6
+    #  with:
+    #    github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
+    #    script: |
+    #      const { owner, repo } = context.repo;
 
-          const latestRelease = await github.rest.repos.getLatestRelease({
-            owner: 'WildernessLabs',
-            repo: 'VS_Mac_Meadow_Extension',
-          });
+    #      const latestRelease = await github.rest.repos.getLatestRelease({
+    #        owner: 'WildernessLabs',
+    #        repo: 'VS_Mac_Meadow_Extension',
+    #      });
 
-          const commits = await github.rest.repos.listCommits({
-            owner: 'WildernessLabs',
-            repo: 'VS_Mac_Meadow_Extension',
-            since: latestRelease.created_at
-          });
+    #      const commits = await github.rest.repos.listCommits({
+    #        owner: 'WildernessLabs',
+    #        repo: 'VS_Mac_Meadow_Extension',
+    #        since: latestRelease.created_at
+    #      });
 
-          const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
-          const formattedMessages = `## What's Changed  \n${messages}`;
+    #      const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
+    #      const formattedMessages = `## What's Changed  \n${messages}`;
 
-          return formattedMessages;
+    #      return formattedMessages;
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Create VS2019 Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
-      with:
-        owner: WildernessLabs
-        repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }}
-        release_name: VS Mac VS2019 Extension v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
-        body: | 
-          ${{ steps.commit_messages.outputs.result }}
-        draft: true
-        prerelease: false
-        commitish: main
+    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    #  name: Create VS2019 Release
+    #  id: create_release
+    #  uses: actions/create-release@v1
+    #  env:
+    #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
+    #  with:
+    #    owner: WildernessLabs
+    #    repo: VS_Mac_Meadow_Extension
+    #    tag_name: v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }}
+    #    release_name: VS Mac VS2019 Extension v${{ ENV.SHORT_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
+    #    body: | 
+    #      ${{ steps.commit_messages.outputs.result }}
+    #    draft: true
+    #    prerelease: false
+    #    commitish: main
   
     # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #- name: Upload Release Asset
