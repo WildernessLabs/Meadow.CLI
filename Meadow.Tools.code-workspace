@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../VSCode_Meadow_Extension"
+		},
+		{
+			"path": "../Meadow.Sdk"
 		}
 	],
 }
