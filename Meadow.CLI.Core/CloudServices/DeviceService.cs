@@ -19,8 +19,13 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey, string collectionId)
+        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey, string collectionId, string host)
         {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config["meadowCloudHost"];
+            }
+            
             var httpClient = await AuthenticatedHttpClient();
 
             dynamic payload = new
@@ -34,7 +39,7 @@ namespace Meadow.CLI.Core.CloudServices
             var json = JsonSerializer.Serialize<dynamic>(payload);
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response  = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/devices", content);
+            var response  = await httpClient.PostAsync($"{host}/api/devices", content);
 
             if (response.IsSuccessStatusCode)
             {

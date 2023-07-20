@@ -19,15 +19,20 @@ namespace Meadow.CLI.Core.CloudServices
     {
         IConfiguration _config;
         IdentityManager _identityManager;
-
+        
         public PackageService(IConfiguration config, IdentityManager identityManager) : base(identityManager)
         {
             _config = config;
             _identityManager = identityManager;
         }
 
-        public async Task<Package> UploadPackage(string mpakPath, string orgId, string description, CancellationToken cancellationToken)
+        public async Task<Package> UploadPackage(string mpakPath, string orgId, string description, string host, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config["meadowCloudHost"];
+            }
+            
             if (!File.Exists(mpakPath))
             {
                 throw new ArgumentException($"Invalid path: {mpakPath}");
@@ -54,7 +59,7 @@ namespace Meadow.CLI.Core.CloudServices
                 multipartFormContent.Add(fileStreamContent, name: "file", fileName: fi.Name);
                 multipartFormContent.Add(new StringContent(json), "json");
 
-                var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages", multipartFormContent);
+                var response = await httpClient.PostAsync($"{host}/api/packages", multipartFormContent);
                 if (response.IsSuccessStatusCode)
                 {
                     var package = JsonSerializer.Deserialize<Package>(await response.Content.ReadAsStringAsync());
@@ -68,8 +73,13 @@ namespace Meadow.CLI.Core.CloudServices
             }
         }
 
-        public async Task PublishPackage(string packageId, string collectionId, CancellationToken cancellationToken)
+        public async Task PublishPackage(string packageId, string collectionId, string metadata, string host, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config["meadowCloudHost"];
+            }
+            
             var authToken = await _identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrEmpty(authToken))
             {
@@ -79,7 +89,9 @@ namespace Meadow.CLI.Core.CloudServices
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var response = await httpClient.PostAsync($"{_config["meadowCloudHost"]}/api/packages/{packageId}/publish/{collectionId}", null);
+            var payload = new { metadata = metadata };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish/{collectionId}", content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -88,8 +100,13 @@ namespace Meadow.CLI.Core.CloudServices
             }
         }
 
-        public async Task<List<Package>> GetOrgPackages(string orgId, CancellationToken cancellationToken)
+        public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config["meadowCloudHost"];
+            }
+            
             var authToken = await _identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrEmpty(authToken))
             {
@@ -99,7 +116,7 @@ namespace Meadow.CLI.Core.CloudServices
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var result = await httpClient.GetStringAsync($"{_config["meadowCloudHost"]}/api/orgs/{orgId}/packages");
+            var result = await httpClient.GetStringAsync($"{host}/api/orgs/{orgId}/packages");
             return JsonSerializer.Deserialize<List<Package>>(result);
         }
     }
