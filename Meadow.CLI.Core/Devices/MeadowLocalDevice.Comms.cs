@@ -16,6 +16,8 @@ namespace Meadow.CLI.Core.Devices
         private const int PROGESS_INCREMENTS = 5;
         uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
+        bool reUploadSkippedFiles = false;
+        byte reUploadCounter = 0;
 
         public async Task SendTheEntireFile(FileCommand command,
                                             bool lastInSeries,
@@ -363,6 +365,10 @@ namespace Meadow.CLI.Core.Devices
                         {
                             Logger?.LogError(msg);
                         }
+                        break;
+                    case MeadowMessageType.DownloadFailed:
+                        // Set Re-download flag, increment download count.
+                        reUploadSkippedFiles = true;
                         break;
                     default:
                         break;

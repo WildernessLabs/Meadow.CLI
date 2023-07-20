@@ -736,7 +736,32 @@ namespace Meadow.CLI.Core.Devices
                             cancellationToken);
                 }
 
-                Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
+                if (reUploadSkippedFiles)
+                {
+                    reUploadCounter++;
+                    if (reUploadCounter < 3)
+                    {
+                        await DeployApp(applicationFilePath,
+                            osVersion,
+                            includePdbs,
+                            verbose,
+                            noLink,
+                            cancellationToken);
+                    }
+                    else
+                    {
+                        // Clean up the reload variables.
+                        reUploadSkippedFiles = false;
+                        reUploadCounter = 0;
+
+                        // Let's bail out of here
+                        throw new Exception("Tried to send files to Meadow at least 3 times and failed. Something it seriously wrong! Check you are running the latest OS etc.");
+                    }
+                }
+                else
+                {
+                    Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
+                }
             }
             catch (Exception ex)
             {

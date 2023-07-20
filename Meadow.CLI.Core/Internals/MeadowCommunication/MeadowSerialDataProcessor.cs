@@ -33,6 +33,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         Concluded,
         DownloadStartOkay,
         DownloadStartFail,
+        DownloadFailed,
         DevicePublicKey
     }
 
@@ -364,6 +365,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                                 break;
                             }
+
+                        case HcomHostRequestType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND:
+                            OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DownloadFailed, responseString));
+                            break;
+
                         case HcomHostRequestType.HCOM_HOST_REQUEST_DEVICE_PUBLIC_KEY:
                             OnReceiveData?.Invoke(this, new MeadowMessageEventArgs(MeadowMessageType.DevicePublicKey, responseString));
                             break;
