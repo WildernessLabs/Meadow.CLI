@@ -31,6 +31,8 @@ public class ListCollectionCommand
 
         [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
         public string OrgId { get; set; }
+        [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+        public string Host { get; set; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -40,7 +42,7 @@ public class ListCollectionCommand
 
             try
             {
-                var userOrgs = await _userService.GetUserOrgs(cancellationToken).ConfigureAwait(false);
+                var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
                     _logger.LogInformation($"Please visit {_config["meadowCloudHost"]} to register your account.");
@@ -67,8 +69,8 @@ public class ListCollectionCommand
                 _logger.LogInformation($"You must be signed in to execute this command.");
                 return;
             }
-
-            var collections = await _collectionService.GetOrgCollections(OrgId, cancellationToken);
+            
+            var collections = await _collectionService.GetOrgCollections(OrgId, Host, cancellationToken);
 
             if (collections == null || collections.Count() == 0)
             {
