@@ -1,14 +1,9 @@
-﻿using Meadow.CLI.Core.Identity;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Meadow.CLI.Core
 {
@@ -72,7 +67,7 @@ namespace Meadow.CLI.Core
                     {
                         foreach (var fPath in appFiles)
                         {
-                            archive.CreateEntryFromFile(fPath, Path.Combine("app", Path.GetFileName(fPath)));
+                            CreateEntry(archive, fPath, Path.Combine("app", Path.GetFileName(fPath)));
                         }
                     }
                     
@@ -80,7 +75,7 @@ namespace Meadow.CLI.Core
                     {
                         foreach (var fPath in osFiles)
                         {
-                            archive.CreateEntryFromFile(fPath, Path.Combine("os", Path.GetFileName(fPath)));
+                            CreateEntry(archive, fPath, Path.Combine("os", Path.GetFileName(fPath)));
                         }
                     }
                 }
@@ -91,6 +86,18 @@ namespace Meadow.CLI.Core
                 _logger.LogError("Application Path or OS Version was not specified.");
                 return string.Empty;
             }
+        }
+
+        void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
+        {
+            // Windows '\' Path separator character will be written to the zip which meadow os does not properly unpack
+            //  See: https://github.com/dotnet/runtime/issues/41914
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                entryPath = entryPath.Replace('\\', '/');
+            }
+
+            archive.CreateEntryFromFile(fromFile, entryPath);
         }
     }
 }
