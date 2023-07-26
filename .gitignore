@@ -261,3 +261,5 @@ SourceVersions
 
 # NETMF
 OnBoardFlash.dat
+
+.vscode

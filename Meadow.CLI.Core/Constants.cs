@@ -11,5 +11,6 @@ namespace Meadow.CLI.Core
         public const ushort HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER = 0x0006;
         public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0007;         // Used for transmission
         public const string WILDERNESS_LABS_USB_VID = "2E6A";
+        public const string MEADOW_CLOUD_HOST_CONFIG_NAME = "meadowCloudHost";
     }
 }
