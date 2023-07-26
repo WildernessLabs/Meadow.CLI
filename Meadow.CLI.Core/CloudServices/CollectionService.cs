@@ -29,7 +29,7 @@ public class CollectionService : CloudServiceBase
     {
         if (string.IsNullOrEmpty(host))
         {
-            host = _config["meadowCloudHost"];
+            host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
         }
 
         var authToken = await _identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);

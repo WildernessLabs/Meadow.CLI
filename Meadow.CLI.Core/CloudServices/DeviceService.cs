@@ -23,7 +23,7 @@ namespace Meadow.CLI.Core.CloudServices
         {
             if (string.IsNullOrEmpty(host))
             {
-                host = _config["meadowCloudHost"];
+                host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
             }
             
             var httpClient = await AuthenticatedHttpClient();

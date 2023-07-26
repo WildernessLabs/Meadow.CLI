@@ -52,7 +52,7 @@ namespace Meadow.CommandLine.Commands.Cloud
                 var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
-                    _logger.LogInformation($"Please visit {_config["meadowCloudHost"]} to register your account.");
+                    _logger.LogInformation($"Please visit {_config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME]} to register your account.");
                     return;
                 }
                 else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
