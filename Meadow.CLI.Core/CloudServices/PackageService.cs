@@ -89,9 +89,9 @@ namespace Meadow.CLI.Core.CloudServices
             HttpClient httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-            var payload = new { metadata = metadata };
+            var payload = new { metadata, collectionId };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish/{collectionId}", content);
+            var response = await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish", content);
 
             if (!response.IsSuccessStatusCode)
             {
