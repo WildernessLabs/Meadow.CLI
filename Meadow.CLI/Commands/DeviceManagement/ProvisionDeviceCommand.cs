@@ -39,7 +39,9 @@ namespace Meadow.CommandLine.Commands.Cloud
         public string OrgId { get; set; }
         [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
         public string CollectionId { get; set; }
-
+        [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+        public string Host { get; set; }
+        
         public override async ValueTask ExecuteAsync(IConsole console)
         {
             await base.ExecuteAsync(console);
@@ -47,10 +49,10 @@ namespace Meadow.CommandLine.Commands.Cloud
 
             try
             {
-                var userOrgs = await _userService.GetUserOrgs(cancellationToken).ConfigureAwait(false);
+                var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
-                    _logger.LogInformation($"Please visit {_config["meadowCloudHost"]} to register your account.");
+                    _logger.LogInformation($"Please visit {_config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME]} to register your account.");
                     return;
                 }
                 else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
@@ -76,12 +78,13 @@ namespace Meadow.CommandLine.Commands.Cloud
                 return;
             }
 
+            
             using var device = await MeadowDeviceManager.GetMeadowForSerialPort(this.SerialPortName, true, _logger);
             var publicKey = await device.CloudRegisterDevice(cancellationToken);
             var delim = "-----END PUBLIC KEY-----\n";
             publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
-
-            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId);
+            
+            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId, Host);
 
             if (result.isSuccess)
             {

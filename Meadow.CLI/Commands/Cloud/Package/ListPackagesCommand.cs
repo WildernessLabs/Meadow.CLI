@@ -40,7 +40,9 @@ namespace Meadow.CLI.Commands.Cloud
 
         [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
         public string OrgId { get; set; }
-
+        [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+        public string Host { get; set; }
+        
         public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -49,10 +51,10 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                var userOrgs = await _userService.GetUserOrgs(cancellationToken).ConfigureAwait(false);
+                var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
-                    _logger.LogInformation($"Please visit {_config["meadowCloudHost"]} to register your account.");
+                    _logger.LogInformation($"Please visit {_config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME]} to register your account.");
                     return;
                 }
                 else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
@@ -77,8 +79,8 @@ namespace Meadow.CLI.Commands.Cloud
                 _logger.LogInformation($"You must be signed in to execute this command.");
                 return;
             }
-
-            var packages = await _packageService.GetOrgPackages(OrgId, cancellationToken);
+            
+            var packages = await _packageService.GetOrgPackages(OrgId, Host, cancellationToken);
 
             if(packages == null || packages.Count() == 0)
             {

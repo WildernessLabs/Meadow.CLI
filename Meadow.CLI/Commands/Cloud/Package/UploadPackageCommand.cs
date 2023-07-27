@@ -46,7 +46,8 @@ namespace Meadow.CLI.Commands.Cloud
 
         [CommandOption("description", 'd', Description = "Description of the package", IsRequired = false)]
         public string Description { get; set; }
-
+        [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+        public string Host { get; set; }
         public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
@@ -55,10 +56,10 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                var userOrgs = await _userService.GetUserOrgs(cancellationToken).ConfigureAwait(false);
+                var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
                 if (!userOrgs.Any())
                 {
-                    _logger.LogInformation($"Please visit {_config["meadowCloudHost"]} to register your account.");
+                    _logger.LogInformation($"Please visit {_config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME]} to register your account.");
                     return;
                 }
                 else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
@@ -86,7 +87,7 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                var package = await _packageService.UploadPackage(MpakPath, OrgId, Description, cancellationToken);
+                var package = await _packageService.UploadPackage(MpakPath, OrgId, Description, Host, cancellationToken);
                 _logger.LogInformation($"Upload complete. Package Id: {package.Id}");
             }
             catch (MeadowCloudException mex)

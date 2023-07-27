@@ -25,8 +25,13 @@ public class CollectionService : CloudServiceBase
         _identityManager = identityManager;
     }
     
-    public async Task<List<Collection>> GetOrgCollections(string orgId, CancellationToken cancellationToken)
+    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(host))
+        {
+            host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
+        }
+
         var authToken = await _identityManager.GetAccessToken(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrEmpty(authToken))
         {
@@ -36,7 +41,7 @@ public class CollectionService : CloudServiceBase
         HttpClient httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
-        var result = await httpClient.GetStringAsync($"{_config["meadowCloudHost"]}/api/orgs/{orgId}/collections");
+        var result = await httpClient.GetStringAsync($"{host}/api/orgs/{orgId}/collections");
         return JsonSerializer.Deserialize<List<Collection>>(result);
     }
 }

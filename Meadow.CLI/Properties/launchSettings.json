@@ -14,7 +14,7 @@
     },
     "DeviceProvision": {
       "commandName": "Project",
-      "commandLineArgs": "device provision"
+      "commandLineArgs": "device provision -o 5b1d2b0dab744a04b79b245d881e18b8"
     },
     "DeviceInfo": {
       "commandName": "Project",
@@ -82,11 +82,11 @@
     },
     "Package List": {
       "commandName": "Project",
-      "commandLineArgs": "package list"
+      "commandLineArgs": "package list -o 5b1d2b0dab744a04b79b245d881e18b8"
     },
     "Package Publish": {
       "commandName": "Project",
-      "commandLineArgs": "package publish -p 485f06def49740ea9615208ba6107d2a -c 4965ba4d6b504c879928494e9bbe415d"
+      "commandLineArgs": "package publish -p 7aedf4b3e304482e97f2a43041ebc30b -c 4965ba4d6b504c879928494e9bbe415d -m \"this is my metadata\""
     },
     "Package Upload": {
       "commandName": "Project",

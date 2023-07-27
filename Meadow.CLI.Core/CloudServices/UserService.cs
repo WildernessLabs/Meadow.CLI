@@ -23,11 +23,16 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<List<UserOrg>> GetUserOrgs(CancellationToken cancellationToken)
+        public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
+            }
+            
             var httpClient = await AuthenticatedHttpClient();
 
-            var response = await httpClient.GetAsync($"{_config["meadowCloudHost"]}/api/users/me/orgs");
+            var response = await httpClient.GetAsync($"{host}/api/users/me/orgs");
 
             if (response.IsSuccessStatusCode)
             {
