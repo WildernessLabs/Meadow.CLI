@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Meadow.CLI.Core.Devices;
 
 namespace Meadow.CLI.Core.Internals.MeadowCommunication
 {
@@ -41,7 +42,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
     {
         private readonly ILogger _logger;
         //collapse to one and use enum
-        private readonly SerialPort _serialPort;
+        private /*readonly*/ SerialPort _serialPort;
         readonly Socket _socket;
         private readonly Task _dataProcessorTask;
 
@@ -208,6 +209,22 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
                                     message = null;
                                 }
                             }
+                        }
+                    }
+                    catch (System.OperationCanceledException ex)
+                    {
+                        string portName = _serialPort.PortName;
+                        if (ex.Message == "The operation was canceled.")
+                        {
+                            _logger?.LogCritical( "-----------------------------------------------------");
+                            _logger?.LogCritical( "An error occurred while listening to the serial port.");
+                            _logger?.LogCritical($"Open new MeadowSerialDevice.OpenSerialPort(\"{_serialPort.PortName}\")");
+                            _logger?.LogCritical( "-----------------------------------------------------");
+                            _serialPort = MeadowSerialDevice.OpenSerialPort(_serialPort.PortName);
+                        }
+                        else
+                        {
+                            _logger.LogCritical(ex,$"An error occurred while listening to the serial port. ex.Message={ex.Message}");
                         }
                     }
                     catch (TimeoutException)

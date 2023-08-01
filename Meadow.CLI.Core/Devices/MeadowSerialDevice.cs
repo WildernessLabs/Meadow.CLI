@@ -111,7 +111,7 @@ namespace Meadow.CLI.Core.Devices
             throw new Exception($"Device not ready after {initTimeout}s");
         }
 
-        private static SerialPort OpenSerialPort(string portName)
+        internal static SerialPort OpenSerialPort(string portName)
         {
             if (string.IsNullOrEmpty(portName))
             {
