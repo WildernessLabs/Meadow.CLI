@@ -150,7 +150,15 @@ namespace Meadow.CLI.Core.Identity
                 using (var libSecret = new LibSecret("WildernessLabs", credentialName))
                 {
                     //Username & Password delimited with a space. String split, and returned as a tuple.
-                    return libSecret.GetSecret().Split(' ') switch { var a => (a[0], a[1]) };
+                    var splits = libSecret.GetSecret()?.Split(' ');
+                    if (splits?.Length > 1)
+                    {
+                        return (splits[0], splits[1]);
+                    }
+                    else
+                    {
+                        return (string.Empty, string.Empty);
+                    }
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -166,24 +174,27 @@ namespace Meadow.CLI.Core.Identity
 
         private async Task<OidcClient> GetOidcClient()
         {
-            var options = new OidcClientOptions
+            return await Task.Run(() =>
             {
-                Authority = authority,
-                ClientId = clientId,
-                RedirectUri = redirectUri,
-                Policy = new Policy
+                var options = new OidcClientOptions
                 {
-                    Discovery = new DiscoveryPolicy
+                    Authority = authority,
+                    ClientId = clientId,
+                    RedirectUri = redirectUri,
+                    Policy = new Policy
                     {
-                        ValidateEndpoints = false
-                    }
-                },
-                Scope = "openid email profile groups offline_access",
-                Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode,
-                ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
-            };
-            IdentityModelEventSource.ShowPII = true;
-            return new OidcClient(options);
+                        Discovery = new DiscoveryPolicy
+                        {
+                            ValidateEndpoints = false
+                        }
+                    },
+                    Scope = "openid email profile groups offline_access",
+                    Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode,
+                    ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
+                };
+                IdentityModelEventSource.ShowPII = true;
+                return new OidcClient(options);
+            });
         }
 
         public void DeleteCredential(string credentialName)

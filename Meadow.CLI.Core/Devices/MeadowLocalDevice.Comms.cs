@@ -333,7 +333,7 @@ namespace Meadow.CLI.Core.Devices
             var message = string.Empty;
             var messageType = MeadowMessageType.ErrOutput;
 
-            void ResponseHandler(object s, MeadowMessageEventArgs e)
+            void ResponseHandler(object? s, MeadowMessageEventArgs e)
             {
 
                 var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;

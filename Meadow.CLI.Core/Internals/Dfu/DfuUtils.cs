@@ -16,10 +16,9 @@ namespace Meadow.CLI.Core.Internals.Dfu
     public static class DfuUtils
     {
         static int _osAddress = 0x08000000;
-        static string _usbStmName = "STM32  BOOTLOADER";
-        static int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
+        static readonly int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
 
-        public static string LastSerialNumber { get; private set; } = "";
+        public static string? LastSerialNumber { get; private set; } = "";
 
         public static bool CheckForValidDevice()
         {
@@ -114,8 +113,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 return string.Empty;
         }
 #else
-        public static string GetDeviceSerial(IUsbDevice device)
-
+        public static string? GetDeviceSerial(IUsbDevice device)
         {
             var serialNumber = string.Empty;
 
@@ -181,11 +179,16 @@ namespace Meadow.CLI.Core.Internals.Dfu
             }
         }
 
-        public static Task<bool> FlashVersion(string version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+        public static Task<bool> FlashVersion(string? version, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
         {
-            var fileName = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                var fileName = Path.Combine(DownloadManager.FirmwarePathForVersion(version), DownloadManager.OsFilename);
 
-            return FlashFile(fileName: fileName, logger: logger, format: format);
+                return FlashFile(fileName: fileName, logger: logger, format: format);
+            }
+            else
+                return Task.FromResult(false);
         }
 
         public static Task<bool> FlashLatest(ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
@@ -337,17 +340,20 @@ namespace Meadow.CLI.Core.Internals.Dfu
                     process.Start();
 
                     var reader = process.StandardOutput;
-                    string output = reader.ReadLine();
-                    if (output.StartsWith("dfu-util"))
+                    if (reader != null)
                     {
-                        var split = output.Split(new char[] { ' ' });
-                        if (split.Length == 2)
+                        string? output = reader.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(output) && output.StartsWith("dfu-util"))
                         {
-                            return split[1];
+                            var split = output.Split(new char[] { ' ' });
+                            if (split.Length == 2)
+                            {
+                                return split[1];
+                            }
                         }
-                    }
 
-                    process.WaitForExit();
+                        process.WaitForExit();
+                    }
                     return string.Empty;
                 }
             }

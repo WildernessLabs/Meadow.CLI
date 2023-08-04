@@ -138,13 +138,15 @@ namespace Meadow.CLI.Core
                         Connect();
                     }
                 }
-                catch (TimeoutException)
+                catch (TimeoutException te)
                 {
+                    Logger?.LogTrace($"TimeoutException: {te.Message}");
                     // this is a fallback
                     lastState = false;
                 }
                 catch (Exception ex)
                 {
+                    Logger?.LogTrace($"Exception: {ex.Message}");
                     lastState = false;
                 }
 

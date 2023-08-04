@@ -127,8 +127,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         CloseActiveClient();
                     }
 
-                    _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
-                    _activeClientCount++;
+                    if (_cancellationTokenSource != null)
+                    {
+                        _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
+                        _activeClientCount++;
+                    }
                 }
             }
             catch (Exception ex)
@@ -278,7 +281,7 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         }
                     }
                 }
-                catch (OperationCanceledException oce)
+                catch (OperationCanceledException)
                 {
                     // User probably hit stop; Removed logging as User doesn't need to see this
                     // Keeping it as a TODO in case we find a side effect that needs logging.

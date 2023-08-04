@@ -8,7 +8,7 @@ namespace Meadow.CLI.Core.Devices
 {
     public interface IMeadowDevice : IDisposable
     {
-        public ILogger Logger { get; }
+        public ILogger? Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; }
 
@@ -27,7 +27,7 @@ namespace Meadow.CLI.Core.Devices
 
         public Task FlashEsp(string? sourcePath, string? osVersion = null, CancellationToken cancellationToken = default);
 
-        public Task<MeadowDeviceInfo> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default);
+        public Task<MeadowDeviceInfo?> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<string?> GetDeviceName(TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task<bool> GetMonoRunState(CancellationToken cancellationToken = default);
         public Task MonoDisable(CancellationToken cancellationToken = default);
@@ -59,6 +59,6 @@ namespace Meadow.CLI.Core.Devices
         public Task<DateTimeOffset> GetRtcTime(CancellationToken cancellationToken = default);
         public Task SetRtcTime(DateTimeOffset dateTime, CancellationToken cancellationToken = default);
 
-        public Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default);
+        public Task<string?> CloudRegisterDevice(CancellationToken cancellationToken = default);
     }
 }

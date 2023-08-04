@@ -26,8 +26,7 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<Package> UploadPackage(string mpakPath, string orgId, string description, string host,
-            CancellationToken cancellationToken)
+        public async Task<Package?> UploadPackage(string mpakPath, string orgId, string description, string host, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(host))
             {
@@ -127,7 +126,7 @@ namespace Meadow.CLI.Core.CloudServices
             }
         }
 
-        public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken cancellationToken)
+        public async Task<List<Package>?> GetOrgPackages(string orgId, string host, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(host))
             {

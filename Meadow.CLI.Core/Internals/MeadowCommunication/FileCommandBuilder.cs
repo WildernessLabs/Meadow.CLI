@@ -62,15 +62,17 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
         public Predicate<MeadowMessageEventArgs>? ResponsePredicate { get; protected set; }
         public Predicate<MeadowMessageEventArgs>? CompletionPredicate { get; protected set; }
 
-        public FileCommandBuilder WithDestinationFileName(string destinationFileName)
+        public FileCommandBuilder WithDestinationFileName(string? destinationFileName)
         {
-            DestinationFileName = destinationFileName;
+            if (!string.IsNullOrWhiteSpace(destinationFileName))
+                DestinationFileName = destinationFileName;
             return this;
         }
 
-        public FileCommandBuilder WithSourceFileName(string sourceFileName)
+        public FileCommandBuilder WithSourceFileName(string? sourceFileName)
         {
-            SourceFileName = sourceFileName;
+            if (!string.IsNullOrWhiteSpace(sourceFileName))
+                SourceFileName = sourceFileName;
             return this;
         }
 

@@ -17,7 +17,7 @@ public class CollectionService : CloudServiceBase
         _config = config;
     }
     
-    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken cancellationToken)
+    public async Task<List<Collection>?> GetOrgCollections(string orgId, string host, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(host))
         {

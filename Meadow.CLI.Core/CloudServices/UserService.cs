@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken cancellationToken)
+        public async Task<List<UserOrg>?> GetUserOrgs(string host, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(host))
             {

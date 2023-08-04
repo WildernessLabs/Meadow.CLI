@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,18 +35,15 @@ namespace Meadow.CLI.Core
             await manager.DownloadOsBinaries(versionNumber, true);
         }
 
-        public static async Task<string> GetCloudLatestFirmwareVersion()
+        public static async Task<string?> GetCloudLatestFirmwareVersion()
         {
-            var request = (HttpWebRequest)WebRequest.Create($"{DownloadManager.VersionCheckUrlRoot}latest.json");
-            using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
-            using (Stream stream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(stream))
+            using (var httpClient = new HttpClient())
             {
-                var json = await reader.ReadToEndAsync();
+                var response = await httpClient.GetStringAsync($"{DownloadManager.VersionCheckUrlRoot}latest.json");
+                if (string.IsNullOrEmpty(response)) return string.Empty;
 
-                if (json == null) return string.Empty;
-
-                return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty }).version;
+                var json = JsonDocument.Parse(response);
+                return json.RootElement.GetProperty("version").GetString();
             }
         }
 
@@ -94,7 +92,7 @@ namespace Meadow.CLI.Core
                         list.Add(fi);
                     }
                 }
-                catch (JsonException ex)
+                catch (JsonException)
                 {
                     // work around for Issue #229 (bad json)
                     var index = json.IndexOf(']');
@@ -149,7 +147,7 @@ namespace Meadow.CLI.Core
                     await connection.Device.GetDeviceInfo(TimeSpan.FromSeconds(5));
                 }
 
-                var osVersion = connection.Device.DeviceInfo.MeadowOsVersion;
+                var osVersion = connection.Device.DeviceInfo?.MeadowOsVersion;
 
                 await connection.Device.MonoDisable();
                 // the device will disconnect and reconnect here
@@ -160,9 +158,16 @@ namespace Meadow.CLI.Core
                 // wait for reconnect
                 await connection.WaitForConnection(TimeSpan.FromSeconds(15));
 
-                await connection.Device.DeployApp(Path.Combine(appFolder.FullName, "App.dll"), osVersion);
+                if (!string.IsNullOrWhiteSpace(osVersion))
+                {
+                    await connection.Device.DeployApp(Path.Combine(appFolder.FullName, "App.dll"), osVersion);
 
-                await connection.Device.MonoEnable();
+                    await connection.Device.MonoEnable();
+                }
+                else
+                {
+                    logger?.LogError("osVersion Invalid. Aborting.");
+                }
             }
             catch (Exception ex)
             {

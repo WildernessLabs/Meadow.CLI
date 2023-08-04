@@ -100,22 +100,28 @@ namespace Meadow.CLI.Core
 
         bool CreateFolder(string path, bool eraseIfExists)
         {
-            if (Directory.Exists(path))
-            {
-                if (eraseIfExists)
+            if (!string.IsNullOrWhiteSpace(path)) {
+                if (Directory.Exists(path))
                 {
-                    CleanPath(path);
+                    if (eraseIfExists)
+                    {
+                        CleanPath(path);
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
-                    return false;
+                    Directory.CreateDirectory(path);
                 }
+                return true;
             }
             else
             {
-                Directory.CreateDirectory(path);
+                return false;
             }
-            return true;
         }
 
         //ToDo rename this method - DownloadOSAsync?
@@ -149,14 +155,14 @@ namespace Meadow.CLI.Core
             //we'll write latest.txt regardless of version if it doesn't exist
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
 
-            string local_path;
+            string local_path = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(version))
+            if (string.IsNullOrWhiteSpace(version) && !string.IsNullOrWhiteSpace(release.Version))
             {
                 local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
                 version = release.Version;
             }
-            else
+            else if (version!=null)
             {
                 local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
             }
@@ -169,8 +175,11 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation($"Downloading Meadow OS version {release.Version}.{Environment.NewLine}");
-                await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
+                if (!string.IsNullOrWhiteSpace(release.DownloadURL))
+                {
+                    _logger.LogInformation($"Downloading Meadow OS version {release.Version}.{Environment.NewLine}");
+                    await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
+                }
             }
             catch
             {
@@ -180,8 +189,11 @@ namespace Meadow.CLI.Core
 
             try
             {
-                _logger.LogInformation($"Downloading coprocessor firmware.{Environment.NewLine}");
-                await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
+                if (!string.IsNullOrWhiteSpace(release.NetworkDownloadURL))
+                {
+                    _logger.LogInformation($"Downloading coprocessor firmware.{Environment.NewLine}");
+                    await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
+                }
             }
             catch
             {
@@ -281,8 +293,8 @@ namespace Meadow.CLI.Core
             try
             {
                 var packageId = "WildernessLabs.Meadow.CLI";
-                var appVersion = Assembly.GetEntryAssembly()!
-                                         .GetCustomAttribute<AssemblyFileVersionAttribute>()
+                var appVersion = Assembly.GetEntryAssembly()?
+                                         .GetCustomAttribute<AssemblyFileVersionAttribute>()?
                                          .Version;
 
                 var json = await Client.GetStringAsync(
@@ -290,7 +302,7 @@ namespace Meadow.CLI.Core
 
                 var result = JsonSerializer.Deserialize<PackageVersions>(json);
 
-                if (!string.IsNullOrEmpty(result?.Versions.LastOrDefault()))
+                if (!string.IsNullOrWhiteSpace(appVersion) && !string.IsNullOrWhiteSpace(result?.Versions?.LastOrDefault()))
                 {
                     var latest = result!.Versions!.Last();
                     return (latest.ToVersion() > appVersion.ToVersion(), latest, appVersion);

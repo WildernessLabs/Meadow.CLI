@@ -41,9 +41,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
     {
         private readonly ILogger _logger;
         //collapse to one and use enum
-        private readonly SerialPort _serialPort;
-        readonly Socket _socket;
-        private readonly Task _dataProcessorTask;
+        private readonly SerialPort? _serialPort;
+        readonly Socket? _socket;
+        private readonly Task? _dataProcessorTask;
 
         private readonly ReceiveMessageFactoryManager _receiveMessageFactoryManager;
         private readonly CancellationTokenSource _cts;
@@ -89,10 +89,13 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
             {
                 while (!_cts.IsCancellationRequested)
                 {
-                    var segment = new ArraySegment<byte>(buffer);
-                    var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None);
+                    if (_socket != null)
+                    {
+                        var segment = new ArraySegment<byte>(buffer);
+                        var receivedLength = await _socket.ReceiveAsync(segment, SocketFlags.None);
 
-                    DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token);
+                        DecodeAndProcessPacket(buffer.AsMemory(0, receivedLength), _cts.Token);
+                    }
 
                     await Task.Delay(50);
                 }
@@ -357,11 +360,14 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication
 
                         case HcomHostRequestType.HCOM_HOST_REQUEST_GET_INITIAL_FILE_BYTES:
                             {
-                                var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
+                                if (processor.MessageData?.Length > 0)
+                                {
+                                    var msg = System.Text.Encoding.UTF8.GetString(processor.MessageData);
 
-                                OnReceiveData?.Invoke(
-                                    this,
-                                    new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+                                    OnReceiveData?.Invoke(
+                                        this,
+                                        new MeadowMessageEventArgs(MeadowMessageType.InitialFileData, msg));
+                                }
 
                                 break;
                             }

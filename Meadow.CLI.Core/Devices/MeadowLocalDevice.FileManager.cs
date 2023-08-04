@@ -288,7 +288,7 @@ namespace Meadow.CLI.Core.Devices
             await SendTheEntireFile(command, true, cancellationToken);
         }
 
-        public async Task WriteFileToEspFlash(string fileName,
+        public async Task WriteFileToEspFlash(string? fileName,
                                                    uint partition = 0,
                                                    string? mcuDestAddress = null,
                                                    CancellationToken cancellationToken = default)
@@ -333,8 +333,8 @@ namespace Meadow.CLI.Core.Devices
                 // At this point, the fileName field should contain a CSV string containing the destination
                 // addresses followed by file's location within the host's file system.
                 // E.g. "0x8000, C:\Blink\partition-table.bin, 0x1000, C:\Blink\bootloader.bin, 0x10000, C:\Blink\blink.bin"
-                string[] fileElement = fileName.Split(',');
-                if (fileElement.Length % 2 != 0)
+                string[]? fileElement = fileName?.Split(',');
+                if (fileElement?.Length % 2 != 0)
                 {
                     Logger.LogError(
                         "Please provide a CSV input with \"address, fileName, address, fileName\"");
@@ -343,7 +343,7 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 uint mcuAddress;
-                for (int i = 0; i < fileElement.Length; i += 2)
+                for (int i = 0; i < fileElement?.Length; i += 2)
                 {
                     // Trim any white space from this mcu addr and file name
                     fileElement[i] = fileElement[i]
@@ -526,11 +526,11 @@ namespace Meadow.CLI.Core.Devices
 
         private record BuildOptions
         {
-            public DeployOptions Deploy { get; set; }
+            public DeployOptions? Deploy { get; set; }
 
             public record DeployOptions
             {
-                public List<string> NoLink { get; set; }
+                public List<string>? NoLink { get; set; }
                 public bool? IncludePDBs { get; set; }
             }
         }
@@ -544,23 +544,27 @@ namespace Meadow.CLI.Core.Devices
         {
             try
             {
-                // does a meadow.build.yml file exist?
-                var buildOptionsFile = Path.Combine(Path.GetDirectoryName(applicationFilePath), "app.build.yaml");
-                if (File.Exists(buildOptionsFile))
+                var dirName = Path.GetDirectoryName(applicationFilePath);
+                if (!string.IsNullOrWhiteSpace(dirName))
                 {
-                    var yaml = File.ReadAllText(buildOptionsFile);
-                    var deserializer = new DeserializerBuilder()
-                        .IgnoreUnmatchedProperties()
-                        .Build();
-                    var opts = deserializer.Deserialize<BuildOptions>(yaml);
+                    // does a meadow.build.yml file exist?
+                    var buildOptionsFile = Path.Combine(dirName, "app.build.yaml");
+                    if (File.Exists(buildOptionsFile))
+                    {
+                        var yaml = File.ReadAllText(buildOptionsFile);
+                        var deserializer = new DeserializerBuilder()
+                            .IgnoreUnmatchedProperties()
+                            .Build();
+                        var opts = deserializer.Deserialize<BuildOptions>(yaml);
 
-                    if (opts.Deploy.NoLink != null && opts.Deploy.NoLink.Count > 0)
-                    {
-                        noLink = opts.Deploy.NoLink;
-                    }
-                    if (opts.Deploy.IncludePDBs != null)
-                    {
-                        includePdbs = opts.Deploy.IncludePDBs.Value;
+                        if (opts?.Deploy?.NoLink != null && opts.Deploy.NoLink.Count > 0)
+                        {
+                            noLink = opts.Deploy.NoLink;
+                        }
+                        if (opts?.Deploy?.IncludePDBs != null)
+                        {
+                            includePdbs = opts.Deploy.IncludePDBs.Value;
+                        }
                     }
                 }
             }
@@ -677,7 +681,11 @@ namespace Meadow.CLI.Core.Devices
                     {   //add the files from the dll link ignore list
                         if (dependencies.Exists(f => f.Contains(dllLinkIngoreList[i])))
                         {
-                            await AddFile(dependencies.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i])), includePdbs);
+                            var file = dependencies.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i]));
+                            if (!string.IsNullOrWhiteSpace(file))
+                            {
+                                await AddFile(file, includePdbs);
+                            }
                         }
                     }
                 }
@@ -767,7 +775,7 @@ namespace Meadow.CLI.Core.Devices
             {
                 Logger.LogError($"An error occurred during the App deployment process.");
                 Logger.LogError($"Error:{Environment.NewLine}{ex.Message} {Environment.NewLine}Stack Trace :{Environment.NewLine}{ex.StackTrace}");
-                throw ex;
+                throw;
             }
         }
 

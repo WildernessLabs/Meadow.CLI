@@ -60,79 +60,75 @@ namespace Meadow.CLI.Core.DeviceManagement
             Directory.CreateDirectory(postlink_dir);
 
             var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var illinker_path = Path.Combine(base_path, IL_LINKER_DIR, "illink.dll");
-            var descriptor_path = Path.Combine(base_path, IL_LINKER_DIR, "meadow_link.xml");
-
-            if (linkerOptions != null)
+            if (!string.IsNullOrWhiteSpace(base_path))
             {
-                var fi = new FileInfo(linkerOptions);
+                var illinker_path = Path.Combine(base_path, IL_LINKER_DIR, "illink.dll");
+                var descriptor_path = Path.Combine(base_path, IL_LINKER_DIR, "meadow_link.xml");
 
-                if (fi.Exists)
+                if (linkerOptions != null)
                 {
-                    logger?.LogInformation($"Using linker options from '{linkerOptions}'");
-                }
-                else
-                {
-                    logger?.LogWarning($"Linker options file '{linkerOptions}' not found");
-                }
-            }
+                    var fi = new FileInfo(linkerOptions);
 
-            // add in any run-time no-link arguments
-            var no_link_args = string.Empty;
-            if (noLink != null)
-            {
-                no_link_args = string.Join(" ", noLink.Select(o => $"-p copy \"{o}\""));
-            }
-
-            var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
-
-            Console.WriteLine("Trimming assemblies to reduce size (may take several seconds)...");
-
-            using (var process = new Process())
-            {
-                process.StartInfo.FileName = "dotnet";
-                process.StartInfo.Arguments = monolinker_args;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.Start();
-
-                // To avoid deadlocks, read the output stream first and then wait
-                string stdOutReaderResult;
-                using (StreamReader stdOutReader = process.StandardOutput)
-                {
-                    stdOutReaderResult = await stdOutReader.ReadToEndAsync();
-                    if (verbose)
+                    if (fi.Exists)
                     {
+                        logger?.LogInformation($"Using linker options from '{linkerOptions}'");
+                    }
+                    else
+                    {
+                        logger?.LogWarning($"Linker options file '{linkerOptions}' not found");
+                    }
+                }
+
+                // add in any run-time no-link arguments
+                var no_link_args = string.Empty;
+                if (noLink != null)
+                {
+                    no_link_args = string.Join(" ", noLink.Select(o => $"-p copy \"{o}\""));
+                }
+
+                var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
+
+                Console.WriteLine("Trimming assemblies to reduce size (may take several seconds)...");
+
+                using (var process = new Process())
+                {
+                    process.StartInfo.FileName = "dotnet";
+                    process.StartInfo.Arguments = monolinker_args;
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.Start();
+
+                    // To avoid deadlocks, read the output stream first and then wait
+                    string stdOutReaderResult;
+                    using (StreamReader stdOutReader = process.StandardOutput)
+                    {
+                        stdOutReaderResult = await stdOutReader.ReadToEndAsync();
                         Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
                     }
-                    
-                }
 
-                string stdErrorReaderResult;
-                using (StreamReader stdErrorReader = process.StandardError)
-                {
-                    stdErrorReaderResult = await stdErrorReader.ReadToEndAsync();
-                    if (!string.IsNullOrEmpty(stdErrorReaderResult))
+                    string stdErrorReaderResult;
+                    using (StreamReader stdErrorReader = process.StandardError)
                     {
+                        stdErrorReaderResult = await stdErrorReader.ReadToEndAsync();
                         Console.WriteLine("StandardError Contains: " + stdErrorReaderResult);
+                    }
+
+                    process.WaitForExit(60000);
+                    if (process.ExitCode != 0)
+                    {
+#if DEBUG
+                        Console.WriteLine($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+#else
+                        Console.WriteLine($"Trimming failed - ILLinker execution error!\nExit Code: {process.ExitCode}");
+#endif
+                        return null;
                     }
                 }
 
-                process.WaitForExit(60000);
-                if (process.ExitCode != 0)
-                {
-#if DEBUG
-                    Console.WriteLine($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
-#else
-                    Console.WriteLine($"Trimming failed - ILLinker execution error!\nExit Code: {process.ExitCode}");
-#endif
-                    return null;
-                }
+                Console.WriteLine("Trimming complete");
             }
-
-            Console.WriteLine("Trimming complete");
 
             return Directory.EnumerateFiles(postlink_dir);
         }
@@ -163,15 +159,22 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         static (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
         {
-            static string? ResolvePath(string fileName, string path)
+            static string? ResolvePath(string fileName, string? path)
             {
-                string attempted_path = Path.Combine(path, fileName);
-                if (Path.GetExtension(fileName) != ".exe" &&
-                    Path.GetExtension(fileName) != ".dll")
+                if (!string.IsNullOrWhiteSpace(path))
                 {
-                    attempted_path += ".dll";
+                    string attempted_path = Path.Combine(path, fileName);
+                    if (Path.GetExtension(fileName) != ".exe" &&
+                        Path.GetExtension(fileName) != ".dll")
+                    {
+                        attempted_path += ".dll";
+                    }
+                    return File.Exists(attempted_path) ? attempted_path : null;
                 }
-                return File.Exists(attempted_path) ? attempted_path : null;
+                else
+                {
+                    return null;
+                }
             }
 
             //ToDo - is it ever correct to fall back to the root path without a version?
@@ -191,22 +194,29 @@ namespace Meadow.CLI.Core.DeviceManagement
 
         static List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
         {
-            if (dependencyMap.Contains(references.Item2))
-                return dependencyMap;
-
-            dependencyMap.Add(references.Item2);
-
-            foreach (var ar in references.Item1)
+            if (references.Item2 != null && references.Item1 != null)
             {
-                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+                if (dependencyMap.Contains(references.Item2))
+                    return dependencyMap;
 
-                if (namedRefs.Item1 == null)
-                    continue;
+                dependencyMap.Add(references.Item2);
 
-                GetDependencies(namedRefs, dependencyMap, folderPath);
+                foreach (var ar in references.Item1)
+                {
+                    var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+
+                    if (namedRefs.Item1 == null)
+                        continue;
+
+                    GetDependencies(namedRefs, dependencyMap, folderPath);
+                }
+
+                return dependencyMap;
             }
-
-            return dependencyMap;
+            else
+            {
+                return new List<string>();
+            }
         }
     }
 }

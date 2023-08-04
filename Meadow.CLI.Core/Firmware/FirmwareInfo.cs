@@ -17,7 +17,9 @@ namespace Meadow.CLI.Core
 
             if (!reader.TryGetDateTime(out DateTime value))
             {
-                value = DateTime.ParseExact(reader.GetString(), FormatString, CultureInfo.InvariantCulture);
+                string? dateString = reader.GetString();
+                if (dateString != null)
+                    value = DateTime.ParseExact(dateString, FormatString, CultureInfo.InvariantCulture);
             }
 
             return value;
@@ -38,11 +40,12 @@ namespace Meadow.CLI.Core
         public string BuildHash { get; set; } = string.Empty;
         public bool IsLatest { get; set; }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            var other = obj as FirmwareInfo;
-            if (other == null) return false;
-            return BuildHash.Equals(other.BuildHash);
+            if (obj != null && obj is FirmwareInfo other)
+                return BuildHash.Equals(other.BuildHash);
+            else
+                return false;  
         }
 
         public override int GetHashCode()

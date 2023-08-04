@@ -10,7 +10,6 @@ namespace Meadow.CLI.Core.Devices
 {
     public class MeadowSocketDevice : MeadowLocalDevice
     {
-        private readonly AddressFamily _addressFamily;
         public readonly Socket Socket;
 
         public MeadowSocketDevice(Socket socket, ILogger<MeadowSocketDevice>? logger = null)
@@ -67,7 +66,7 @@ namespace Meadow.CLI.Core.Devices
             if (ep.Length != 2)
                 return false;
 
-            if (!IPAddress.TryParse(ep[0], out IPAddress ip))
+            if (!IPAddress.TryParse(ep[0], out IPAddress? ip))
                 return false;
 
             int port;

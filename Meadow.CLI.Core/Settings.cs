@@ -30,16 +30,17 @@ namespace Meadow.CLI.Core
             }
 
             FileInfo fi = new FileInfo(Path);
-            if (!Directory.Exists(fi.Directory.FullName))
+            var directoryFullName = fi.Directory?.FullName;
+            if (!string.IsNullOrEmpty(directoryFullName) && !Directory.Exists(directoryFullName))
             {
-                Directory.CreateDirectory(fi.Directory.FullName);
+                _ = Directory.CreateDirectory(directoryFullName);
             }
 
             var json = JsonSerializer.Serialize(settings);
             File.WriteAllText(Path, json);
         }
 
-        public static string GetAppSetting(string name)
+        public static string? GetAppSetting(string name)
         {
             if (ConfigurationManager.AppSettings.AllKeys.Contains(name))
             {

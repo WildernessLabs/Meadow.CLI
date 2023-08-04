@@ -20,7 +20,7 @@ namespace Meadow.CLI.Core.Devices
         public ILogger? Logger { get; }
         public MeadowDataProcessor DataProcessor { get; }
         public MeadowDeviceInfo? DeviceInfo { get; protected set; }
-        public DebuggingServer DebuggingServer { get; }
+        public DebuggingServer? DebuggingServer { get; }
         public IList<FileData> FilesOnDevice { get; } = new List<FileData>();
         public bool InMeadowCLI { get; set; }
 
@@ -31,7 +31,7 @@ namespace Meadow.CLI.Core.Devices
 
             var entryAssembly = Assembly.GetEntryAssembly()!;
 
-            if (entryAssembly != null)
+            if (entryAssembly != null && !string.IsNullOrWhiteSpace(entryAssembly.FullName))
                 InMeadowCLI = entryAssembly.FullName.ToLower().Contains("meadow");
         }
 
@@ -327,7 +327,14 @@ namespace Meadow.CLI.Core.Devices
                 await SendCommand(command, cancellationToken);
 
             // return will be in the format "UTC time:2022-10-22T10:40:19+0:00"
-            return DateTimeOffset.Parse(commandResponse.Message.Substring(9));
+            if (commandResponse != null && commandResponse.Message != null)
+            {
+                return DateTimeOffset.Parse(commandResponse.Message.Substring(9));
+            }
+            else
+            {
+                return default;
+            }
         }
 
         public async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken cancellationToken)
@@ -343,7 +350,7 @@ namespace Meadow.CLI.Core.Devices
             await SendCommand(command, cancellationToken);
         }
 
-        public async Task<string> CloudRegisterDevice(CancellationToken cancellationToken = default)
+        public async Task<string?> CloudRegisterDevice(CancellationToken cancellationToken = default)
         {
             Logger.LogInformation("Sending Meadow Cloud registration request (~2 mins)");
 

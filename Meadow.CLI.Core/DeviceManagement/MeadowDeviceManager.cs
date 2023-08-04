@@ -280,7 +280,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
                 throw new PlatformNotSupportedException("This method is only supported on Linux");
 
-            return await Task.Run(() =>
+            return await Task.Run(IList<string> () =>
             {
                 const string devicePath = "/dev/serial/by-id";
                 logger ??= NullLogger.Instance;
@@ -295,17 +295,29 @@ namespace Meadow.CLI.Core.DeviceManagement
                 using var proc = Process.Start(psi);
                 _ = proc?.WaitForExit(1000);
                 var output = proc?.StandardOutput.ReadToEnd();
-
-                return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                      .Where(x => x.Contains("Wilderness_Labs"))
-                      .Select(
-                          line =>
-                          {
-                              var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
-                              var target = parts[1];
-                              var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                              return port;
-                          }).ToArray();
+                var devices = output?.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                if (devices != null)
+                {
+                    var result = new List<string>();
+                    foreach (var line in devices)
+                    {
+                        if (line.Contains("Wilderness_Labs"))
+                        {
+                            var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length >= 2)
+                            {
+                                var target = parts[1].Trim();
+                                var port = Path.GetFullPath(Path.Combine(devicePath, target));
+                                result.Add(port);
+                            }
+                        }
+                    }
+                    return result;
+                }
+                else
+                {
+                    return new List<string>();
+                }
             });
         }
 
@@ -333,39 +345,51 @@ namespace Meadow.CLI.Core.DeviceManagement
 
                 List<string> results = new();
 
-                // build the searcher for the query
-                using ManagementObjectSearcher searcher = new(wmiScope, query);
-
                 // get the query results
-                foreach (ManagementObject moResult in searcher.Get())
-                {
-                    // Try Caption and if not Name, they both seems to contain the COM port 
-                    string portLongName = moResult["Caption"].ToString();
-                    if (string.IsNullOrEmpty(portLongName))
-                        portLongName = moResult["Name"].ToString();
-                    string pnpDeviceId = moResult["PNPDeviceID"].ToString();
+#pragma warning disable CA1416 // Validate platform compatibility
+                // build the searcher for the query
+                ManagementObjectSearcher managementObjectSearcher = new ManagementObjectSearcher(wmiScope, query);
+                using ManagementObjectSearcher searcher = managementObjectSearcher;
 
-                    // we could collect and return a fair bit of other info from the query:
+                if (searcher.Get() is ManagementObjectCollection searcherResults) {
+                    foreach (ManagementObject moResult in searcherResults)
+                    {
+                        // Try Caption and if not Name, they both seems to contain the COM port
+                        string? portLongName = moResult["Caption"].ToString();
+                        if (string.IsNullOrEmpty(portLongName))
+                            portLongName = moResult["Name"].ToString();
+                        string? pnpDeviceId = moResult["PNPDeviceID"].ToString();
 
-                    //string description = moResult["Description"].ToString();
-                    //string service = moResult["Service"].ToString();
-                    //string manufacturer = moResult["Manufacturer"].ToString();
+                        // we could collect and return a fair bit of other info from the query:
 
-                    var comIndex = portLongName.IndexOf("(COM") + 1;
-                    var copyLength = portLongName.IndexOf(")") - comIndex;
-                    var port = portLongName.Substring(comIndex, copyLength);
+                        //string description = moResult["Description"].ToString();
+                        //string service = moResult["Service"].ToString();
+                        //string manufacturer = moResult["Manufacturer"].ToString();
 
-                    // the meadow serial is in the device id, after
-                    // the characters: USB\VID_XXXX&PID_XXXX\
-                    // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
-                    var splits = pnpDeviceId.Split('\\');
-                    var serialNumber = splits[2];
+                        var comIndex = portLongName?.IndexOf("(COM") + 1;
+                        var copyLength = portLongName?.IndexOf(")") - comIndex;
+                        if (comIndex.HasValue && copyLength.HasValue)
+                        {
+                            var port = portLongName?.Substring(comIndex.Value, copyLength.Value);
 
-                    logger.LogDebug($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
-                    results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                            // the meadow serial is in the device id, after
+                            // the characters: USB\VID_XXXX&PID_XXXX\
+                            // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
+                            var splits = pnpDeviceId?.Split('\\');
+                            var serialNumber = splits?[2];
+
+                            logger.LogDebug($"Found Wilderness Labs device at `{port}` with serial `{serialNumber}`");
+                            results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                        }
+                    }
+
+                    return results.ToArray();
                 }
-
-                return results.ToArray();
+                else
+                {
+                    return results;
+                }
+#pragma warning restore CA1416 // Validate platform compatibility
             }
             catch (Exception aex)
             {

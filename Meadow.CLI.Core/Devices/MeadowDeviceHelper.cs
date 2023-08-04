@@ -106,10 +106,13 @@ namespace Meadow.CLI.Core.Devices
         public async Task<string> GetOSVersion(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             var deviceInfo = await GetDeviceInfo(timeout, cancellationToken);
-            return deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
+            if (deviceInfo != null)
+                return deviceInfo.MeadowOsVersion.Split(' ')[0]; // we want the first part of e.g. '0.5.3.0 (Oct 13 2021 13:39:12)'
+            else
+                return string.Empty;
         }
 
-        public Task<MeadowDeviceInfo> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<MeadowDeviceInfo?> GetDeviceInfo(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             return _meadowDevice.GetDeviceInfo(timeout, cancellationToken);
         }
@@ -259,8 +262,10 @@ namespace Meadow.CLI.Core.Devices
             }
             catch (Exception ex)
             {
+                Logger.LogError($"An error occurred during the App deployment process.");
+                Logger.LogError($"Error:{Environment.NewLine}{ex.Message} {Environment.NewLine}Stack Trace :{Environment.NewLine}{ex.StackTrace}");
                 await MonoDisable(true, cancellationToken);
-                throw ex;
+                throw;
             }
         }
 
@@ -411,9 +416,9 @@ namespace Meadow.CLI.Core.Devices
                 var deviceInfo = await _meadowDevice
                                        .GetDeviceInfo(TimeSpan.FromSeconds(60), cancellationToken);
 
-                Logger.LogInformation($"Updated Meadow to OS: {deviceInfo.MeadowOsVersion}, " +
-                                    $"Mono: {deviceInfo.RuntimeVersion}, " +
-                                    $"Coprocessor: {deviceInfo.CoProcessorOsVersion}");
+                Logger.LogInformation($"Updated Meadow to OS: {deviceInfo?.MeadowOsVersion}, " +
+                                    $"Mono: {deviceInfo?.RuntimeVersion}, " +
+                                    $"Coprocessor: {deviceInfo?.CoProcessorOsVersion}");
             }
             catch (Exception ex)
             {
@@ -455,22 +460,29 @@ namespace Meadow.CLI.Core.Devices
             var assembly = Assembly.LoadFrom(executablePath);
             try
             {
-                var baseType = assembly.GetTypes()[0].BaseType.ToString();
-                string appVersion = string.Empty;
-
-                // IIRC using Linq would be way slower.
-                foreach (var item in deviceVersionTable)
+                var baseType = assembly?.GetTypes()[0]?.BaseType?.ToString();
+                if (baseType != null)
                 {
-                    if (baseType.Contains(item.Value))
+                    string appVersion = string.Empty;
+
+                    // IIRC using Linq would be way slower.
+                    foreach (var item in deviceVersionTable)
                     {
-                        appVersion = item.Value;
-                        break;
+                        if (baseType.Contains(item.Value))
+                        {
+                            appVersion = item.Value;
+                            break;
+                        }
+                    }
+
+                    if (deviceVersionTable[deviceVersion] != appVersion)
+                    {
+                        Logger.LogInformation($"Current device version is: {deviceVersion}. Current application version is {appVersion}. Update your application version to {deviceVersionTable[deviceVersion]} to deploy to this Meadow device.");
+                        return false;
                     }
                 }
-
-                if (deviceVersionTable[deviceVersion] != appVersion)
+                else
                 {
-                    Logger.LogInformation($"Current device version is: {deviceVersion}. Current application version is {appVersion}. Update your application version to {deviceVersionTable[deviceVersion]} to deploy to this Meadow device.");
                     return false;
                 }
             }

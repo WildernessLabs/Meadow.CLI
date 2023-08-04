@@ -80,13 +80,21 @@ namespace Meadow.CLI.Core.Internals.Tools
 
             // finalize and generate GUID from hash value
             cryptoStream.FlushFinalBlock();
-            Guid guid = Guid.Parse(BitConverter.ToString(hash.Hash).Replace("-", string.Empty).Substring(0, 32));
-         /*   var mvidVersion = Assembly.GetExecutingAssembly().GetName().Version;
-            LogInfo($"Mvid.SieExtensions.Fody ver {mvidVersion}");
-            LogInfo($"Generated MVID ({ModuleDefinition.Name}) : {guid}");
-            ModuleDefinition.Mvid = guid; */
 
-            return guid;
+            if (hash.Hash != null)
+            {
+                Guid guid = Guid.Parse(BitConverter.ToString(hash.Hash).Replace("-", string.Empty).Substring(0, 32));
+                /*   var mvidVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                   LogInfo($"Mvid.SieExtensions.Fody ver {mvidVersion}");
+                   LogInfo($"Generated MVID ({ModuleDefinition.Name}) : {guid}");
+                   ModuleDefinition.Mvid = guid; */
+
+                return guid;
+            }
+            else
+            {
+                return default;
+            }
         }
 
         public void WriteGuidToFile(Guid guid, string filename, string path)

@@ -8,11 +8,11 @@ namespace Meadow.CLI.Core.CloudServices.Messages
     public class UserOrg
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string? Id { get; set; }
         [JsonPropertyName("name")]
-        public object Name { get; set; }
+        public object? Name { get; set; }
         [JsonPropertyName("defaultCollectionId")]
-        public string DefaultCollectionId { get; set; }
+        public string? DefaultCollectionId { get; set; }
     }
 
 }
