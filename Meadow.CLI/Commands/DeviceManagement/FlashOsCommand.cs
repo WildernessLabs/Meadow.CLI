@@ -117,7 +117,16 @@ namespace Meadow.CLI.Commands.DeviceManagement
 
             try
             {
-                previousOsVersion = new Version(Meadow.DeviceInfo?.RuntimeVersion.Split(' ')[0]);
+                var runtimeVersion = Meadow.DeviceInfo?.RuntimeVersion;
+                if (string.IsNullOrWhiteSpace(runtimeVersion) || (!string.IsNullOrWhiteSpace(runtimeVersion) && runtimeVersion.Equals("Unknown")))
+                {
+                    // Let's force a flash
+                    return true;
+                }
+                else
+                {
+                    previousOsVersion = new Version(runtimeVersion.Split(' ')[0]);
+                }
                 checkName = "runtime";
             }
             catch
