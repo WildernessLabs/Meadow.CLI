@@ -1,6 +1,11 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
+#if WIN_10
+using LibUsbDotNet.Main;
+#else
+using LibUsbDotNet;
 using LibUsbDotNet.LibUsb;
+#endif
 using Meadow.CLI.Commands.Utility;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
@@ -182,8 +187,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
         async Task SetMeadowToDfuMode(string serialPortName, CancellationToken cancellationToken)
         {
             var dfuAttempts = 0;
-
+#if WIN_10
+            UsbRegistry dfuDevice;
+#else
             IUsbDevice dfuDevice;
+#endif
             while (true)
             {
                 try

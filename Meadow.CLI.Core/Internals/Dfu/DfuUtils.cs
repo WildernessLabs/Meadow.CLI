@@ -33,8 +33,11 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 return false;
             }
         }
-
+#if WIN_10
+        public static UsbRegistry GetDeviceInBootloaderMode()
+#else
         public static IUsbDevice GetDeviceInBootloaderMode()
+#endif
         {
             var allDevices = GetDevicesInBootloaderMode();
             if (allDevices.Count() > 1)
@@ -50,9 +53,22 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             return device;
         }
-
+#if WIN_10
+        public static IEnumerable<UsbRegistry> GetDevicesInBootloaderMode()
+#else
         public static IEnumerable<IUsbDevice> GetDevicesInBootloaderMode()
+#endif
         {
+#if WIN_10
+
+            var allDevices = UsbDevice.AllDevices.ToList();
+            var ourDevices = allDevices.Where(d => d.Device.Info.ProductString == _usbStmName);
+            if (ourDevices.Count() < 1)
+            {
+                throw new DeviceNotFoundException("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
+            }
+            return ourDevices;
+#else
             using (UsbContext context = new UsbContext())
             {
                 var allDevices = context.List();
@@ -63,9 +79,20 @@ namespace Meadow.CLI.Core.Internals.Dfu
                 }
                 return ourDevices;
             }
+#endif
         }
 
+#if WIN_10
+        public static string GetDeviceSerial(UsbRegistry device)
+        {
+            if (device != null && device.DeviceProperties != null)
+                return device.DeviceProperties["SerialNumber"].ToString();
+            else
+                return string.Empty;
+        }
+#else
         public static string GetDeviceSerial(IUsbDevice device)
+
         {
             var serialNumber = string.Empty;
 
@@ -81,6 +108,7 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             return serialNumber;
         }
+#endif
 
         public enum DfuFlashFormat
         {
@@ -143,8 +171,11 @@ namespace Meadow.CLI.Core.Internals.Dfu
 
             return FlashFile(fileName: fileName, logger: logger, format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
-
+#if WIN_10
+        public static async Task<bool> FlashFile(string fileName, UsbRegistry? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+#else
         public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+#endif
         {
             logger ??= NullLogger.Instance;
             device ??= GetDeviceInBootloaderMode();
