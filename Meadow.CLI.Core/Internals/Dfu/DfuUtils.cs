@@ -61,8 +61,8 @@ namespace Meadow.CLI.Core.Internals.Dfu
         {
 #if WIN_10
 
-            var allDevices = UsbDevice.AllDevices.ToList();
-            var ourDevices = allDevices.Where(d => d.Device.Info.ProductString == _usbStmName);
+            var allDevices = UsbDevice.AllDevices;
+            var ourDevices = allDevices.Where(d => d.DeviceProperties["FriendlyName"].ToString() == _usbStmName);
             if (ourDevices.Count() < 1)
             {
                 throw new DeviceNotFoundException("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
@@ -86,7 +86,19 @@ namespace Meadow.CLI.Core.Internals.Dfu
         public static string GetDeviceSerial(UsbRegistry device)
         {
             if (device != null && device.DeviceProperties != null)
-                return device.DeviceProperties["SerialNumber"].ToString();
+            {
+                switch (Environment.OSVersion.Platform)
+                {
+                    case PlatformID.Win32NT:
+                        var deviceID = device.DeviceProperties["DeviceID"].ToString();
+                        if (!string.IsNullOrWhiteSpace(deviceID))
+                            return deviceID.Substring(deviceID.LastIndexOf("\\") + 1);
+                        else
+                            return string.Empty;
+                    default:
+                        return device.DeviceProperties["SerialNumber"].ToString();
+                }
+            }
             else
                 return string.Empty;
         }
