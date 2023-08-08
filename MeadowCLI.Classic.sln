@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI.Test", "Meadow.CLI.Test\Meadow.CLI.Test.csproj", "{0A7887E0-9DCA-4072-91D8-6409C5562243}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Hcom.6.0.0", "Meadow.Hcom\Meadow.Hcom.6.0.0.csproj", "{197F26BB-F7CD-4ADA-9A15-ADBA36F825E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI.Core.Classic", "Meadow.CLI.Core\Meadow.CLI.Core.Classic.csproj", "{7C3AF1F9-4FD3-45EE-844E-60D18D64CA1F}"
@@ -17,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0A7887E0-9DCA-4072-91D8-6409C5562243}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0A7887E0-9DCA-4072-91D8-6409C5562243}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0A7887E0-9DCA-4072-91D8-6409C5562243}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0A7887E0-9DCA-4072-91D8-6409C5562243}.Release|Any CPU.Build.0 = Release|Any CPU
 		{197F26BB-F7CD-4ADA-9A15-ADBA36F825E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{197F26BB-F7CD-4ADA-9A15-ADBA36F825E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{197F26BB-F7CD-4ADA-9A15-ADBA36F825E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
