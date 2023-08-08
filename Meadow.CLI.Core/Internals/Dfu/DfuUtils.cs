@@ -62,7 +62,18 @@ namespace Meadow.CLI.Core.Internals.Dfu
 #if WIN_10
 
             var allDevices = UsbDevice.AllDevices;
-            var ourDevices = allDevices.Where(d => d.DeviceProperties["FriendlyName"].ToString() == _usbStmName);
+            IEnumerable<UsbRegistry> ourDevices;
+
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                    ourDevices = allDevices.Where(d => d.DeviceProperties["FriendlyName"].ToString() == _usbStmName);
+                    break;
+                default:
+                    ourDevices = allDevices.Where(d => d.DeviceProperties["DeviceDesc"].ToString() == _usbStmName);
+                    break;
+            }
+
             if (ourDevices.Count() < 1)
             {
                 throw new DeviceNotFoundException("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");

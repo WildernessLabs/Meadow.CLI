@@ -19,8 +19,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>TRACE;DEBUG;NET;NET6_0;NETCOREAPP;WIN_10</DefineConstants>
+    <DefineConstants>TRACE;WIN_10;DEBUG;NET;NET6_0;NETCOREAPP</DefineConstants>
     <WarningLevel>4</WarningLevel>
+    <ExternalConsole>false</ExternalConsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
