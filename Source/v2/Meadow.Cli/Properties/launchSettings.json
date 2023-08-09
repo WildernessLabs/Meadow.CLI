@@ -1,0 +1,59 @@
+{
+  "profiles": {
+    "Meadow.Cli": {
+      "commandName": "Project"
+    },
+    "Device Info": {
+      "commandName": "Project",
+      "commandLineArgs": "device info"
+    },
+    "Device Reset": {
+      "commandName": "Project",
+      "commandLineArgs": "device reset"
+    },
+    "Device Clock Read": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock"
+    },
+    "Device Clock Set": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock now"
+    },
+    "Config: Set Route Serial": {
+      "commandName": "Project",
+      "commandLineArgs": "config route COM8"
+    },
+    "Config: Set Route TCP": {
+      "commandName": "Project",
+      "commandLineArgs": "config route 172.26.8.20"
+    },
+    "Config: List": {
+      "commandName": "Project",
+      "commandLineArgs": "config --list"
+    },
+    "Config: Help": {
+      "commandName": "Project",
+      "commandLineArgs": "config --help"
+    },
+    "Runtime Enable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime enable"
+    },
+    "Runtime Disable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime disable"
+    },
+    "Runtime State": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime state"
+    },
+    "File List": {
+      "commandName": "Project",
+      "commandLineArgs": "file list"
+    },
+    "File List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "file list --verbose"
+    }
+  }
+}
