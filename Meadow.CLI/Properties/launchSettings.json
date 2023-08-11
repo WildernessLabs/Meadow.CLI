@@ -6,7 +6,7 @@
     },
     "CloudLogin": {
       "commandName": "Project",
-      "commandLineArgs": "cloud login"
+      "commandLineArgs": "cloud login --host https://staging.meadowcloud.dev"
     },
     "CloudLogout": {
       "commandName": "Project",
