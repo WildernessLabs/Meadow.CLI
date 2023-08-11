@@ -68,6 +68,12 @@ jobs:
     - name: Build Classic CLI
       run: dotnet build main/MeadowCLI.Classic.sln /p:Configuration=Release
 
+    - name: Upload nuget Artifacts for internal testing
+      uses: actions/upload-artifact@v2
+      with:
+        name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION }}
+        path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
+
     - name: Restore normal dependencies
       run: dotnet restore main/MeadowCLI.sln /p:Configuration=Release
 
