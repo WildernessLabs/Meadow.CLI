@@ -11,10 +11,18 @@ namespace Meadow.CLI.Commands.Mono
     public class MonoUpdateRuntimeCommand : MeadowSerialCommand
     {
         [CommandOption("filename",'f', Description = "The local name of the mono runtime file - Default is empty")]
+#if WIN_10
+        public string Filename { get; }
+#else
         public string Filename {get; init;}
+#endif
 
         [CommandOption("osVersion", 'v', Description = "Flash the mono runtime from a specific downloaded OS version - x.x.x.x")]
+#if WIN_10
+        public string OSVersion { get; }
+#else
         public string OSVersion { get; init; }
+#endif
 
         private readonly ILogger<MonoRunStateCommand> _logger;
 

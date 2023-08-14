@@ -17,10 +17,18 @@ namespace Meadow.CLI.Commands.Files
 #endif
         public const int FileSystemBlockSize = 4096;
 
+#if WIN_10
+        public int Partition { get; } = 0;
+#else
         public int Partition { get; init; } = 0;
+#endif
 
         [CommandOption("includeCrcs", 'i', Description = "Include the CRCs of the files")]
+#if WIN_10
+        public bool IncludeCrcs { get; }
+#else
         public bool IncludeCrcs { get; init; }
+#endif
 
         private readonly ILogger<ListFilesCommand> _logger;
 

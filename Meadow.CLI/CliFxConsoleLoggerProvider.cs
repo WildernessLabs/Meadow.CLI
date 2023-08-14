@@ -53,6 +53,10 @@ namespace Meadow.CLI
 
     public class CliFxConsoleLoggerProviderConfig
     {
+#if WIN_10
+        public LogLevel LogLevel { get; }
+#else
         public LogLevel LogLevel {get; init; }
+#endif
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace Meadow.CLI.Commands.Utility
             var cancellationToken = console.RegisterCancellationHandler();
             await base.ExecuteAsync(console);
 
-            if (OperatingSystem.IsWindows())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 if(IsAdministrator())
                 {
@@ -34,22 +35,28 @@ namespace Meadow.CLI.Commands.Utility
                     _logger.LogInformation("To install on Windows, you'll need to open a Command Prompt or Terminal as an administrator");
                 }
             }
-            else if (OperatingSystem.IsMacOS())
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 _logger.LogInformation("To install on macOS, run: brew install dfu-util");
-            } else if (OperatingSystem.IsLinux())
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 _logger.LogInformation(
                     "To install on Linux, use the package manager to install the dfu-util package");
             }
         }
 
-        [SupportedOSPlatform("windows")]
         private static bool IsAdministrator()
         {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

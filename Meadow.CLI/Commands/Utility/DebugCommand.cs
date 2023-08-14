@@ -22,7 +22,11 @@ namespace Meadow.CLI.Commands.Utility
         // VS 2017 - 4022
         // VS 2015 - 4020
         [CommandOption("DebugPort", 'p', Description = "The port to run the debug server on")]
+#if WIN_10
+        public int Port { get; } = 4024;
+#else
         public int Port { get; init; } = 4024;
+#endif
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {

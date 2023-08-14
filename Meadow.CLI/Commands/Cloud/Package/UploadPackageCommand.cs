@@ -39,7 +39,11 @@ namespace Meadow.CLI.Commands.Cloud
         }
 
         [CommandOption("mpakPath", 'p', Description = "The full path of the mpak file", IsRequired = true)]
+#if WIN_10
+        public string MpakPath { get; }
+#else
         public string MpakPath { get; init; }
+#endif
 
         [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
         public string OrgId { get; set; }

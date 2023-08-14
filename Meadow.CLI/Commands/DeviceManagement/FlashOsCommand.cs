@@ -29,25 +29,53 @@ namespace Meadow.CLI.Commands.DeviceManagement
         }
 
         [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
+#if WIN_10
+        public string OSFile { get; }
+#else
         public string OSFile { get; init; }
+#endif
 
         [CommandOption("runtimeFile", 'r', Description = "Path to the Meadow Runtime binary")]
+#if WIN_10
+        public string RuntimeFile { get; }
+#else
         public string RuntimeFile { get; init; }
+#endif
 
         [CommandOption("skipDfu", 'd', Description = "Skip DFU flash")]
+#if WIN_10
+        public bool SkipOS { get; }
+#else
         public bool SkipOS { get; init; }
+#endif
 
         [CommandOption("skipEsp", 'e', Description = "Skip ESP flash")]
+#if WIN_10
+        public bool SkipEsp { get; }
+#else
         public bool SkipEsp { get; init; }
+#endif
 
         [CommandOption("skipRuntime", 'k', Description = "Skip updating the runtime")]
+#if WIN_10
+        public bool SkipRuntime { get; }
+#else
         public bool SkipRuntime { get; init; }
+#endif
 
         [CommandOption("dontPrompt", 'p', Description = "Don't show bulk erase prompt")]
+#if WIN_10
+        public bool DontPrompt { get; }
+#else
         public bool DontPrompt { get; init; }
+#endif
 
         [CommandOption("osVersion", 'v', Description = "Flash a specific downloaded OS version - x.x.x.x")]
+#if WIN_10
+        public string OSVersion { get; }
+#else
         public string OSVersion { get; init; }
+#endif
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {

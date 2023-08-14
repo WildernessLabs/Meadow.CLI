@@ -19,7 +19,11 @@ namespace Meadow.CLI.Commands.Mono
         }
 
         [CommandOption("force",'f', Description = "Send the Mono Enable Command even if Mono is already enabled")]
+#if WIN_10
+        public bool Force { get; }
+#else
         public bool Force { get; init; }
+#endif
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-	  <TargetFrameworks>net6.0</TargetFrameworks>
+	  <TargetFrameworks>net5.0</TargetFrameworks>
     <PackAsTool>true</PackAsTool>
     <Company>Wilderness Labs, Inc</Company>
     <ToolCommandName>meadow</ToolCommandName>
@@ -28,13 +28,13 @@
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>..\Meadow.CLI.Classic\bin\Debug</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NET;NET6_0;NETCOREAPP;WIN_10</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NET;NETCOREAPP;WIN_10</DefineConstants>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\Meadow.CLI.Classic\bin\Release</OutputPath>
-    <DefineConstants>TRACE;WIN_10;RELEASE;NET;NET6_0;NETCOREAPP</DefineConstants>
+    <DefineConstants>TRACE;WIN_10;RELEASE;NET;NETCOREAPP</DefineConstants>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
@@ -51,11 +51,11 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="System.Management" Version="7.0.2" />
-    <PackageReference Include="CliFx" Version="*" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
-    <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    <PackageReference Include="CliFx" Version="2.3.4" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>

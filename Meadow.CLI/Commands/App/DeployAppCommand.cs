@@ -17,17 +17,29 @@ namespace Meadow.CLI.Commands.App
             'f',
             Description = "The path to the application to deploy to the app",
             IsRequired = true)]
+#if WIN_10
+        public string File { get; }
+#else
         public string File { get; init; }
+#endif
 
         [CommandOption(
             "nolink",
             'n',
             Description = "A list of assemblies to skip linking (trimming) on",
             IsRequired = false)]
+#if WIN_10
+        public IList<string> NoLink { get; } = null;
+#else
         public IList<string> NoLink { get; init; } = null;
+#endif
 
         [CommandOption("includePdbs", 'i', Description = "Include the PDB files on deploy to enable debugging", IsRequired = false)]
+#if WIN_10
+        public bool IncludePdbs { get; } = true;
+#else
         public bool IncludePdbs { get; init; } = true;
+#endif
 
         public DeployAppCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(downloadManager, loggerFactory, meadowDeviceManager)

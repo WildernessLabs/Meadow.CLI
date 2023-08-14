@@ -17,16 +17,28 @@ namespace Meadow.CLI.Commands.Esp32
             'f',
             Description = "The file to write to the Meadow's ESP32 File System",
             IsRequired = true)]
+#if WIN_10
+        public string Filename { get; }
+#else
         public string Filename { get; init; }
+#endif
 
         [CommandOption(
             "targetFile",
             't',
             Description = "The filename to use on the Meadow's ESP32 File System")]
+#if WIN_10
+        public string TargetFilename { get; }
+#else
         public string TargetFilename { get; init; }
+#endif
 
         [CommandOption("McuDestAddress", Description = "Where file is stored in MCU's internal flash e.g. 0x10000", IsRequired = true)]
+#if WIN_10
+        public string McuDestAddress { get; }
+#else
         public string McuDestAddress { get; init; }
+#endif
 
         private readonly ILogger<WriteEsp32FileCommand> _logger;
 

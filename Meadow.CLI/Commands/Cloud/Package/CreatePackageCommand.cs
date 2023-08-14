@@ -27,10 +27,18 @@ namespace Meadow.CLI.Commands.Cloud
         }
 
         [CommandOption("applicationPath", 'a', Description = "The path to the application directory", IsRequired = false)]
+#if WIN_10
+        public string ApplicationPath { get; }
+#else
         public string ApplicationPath { get; init; }
+#endif
 
         [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = false)]
+#if WIN_10
+        public string OsVersion { get; }
+#else
         public string OsVersion { get; init; }
+#endif
 
 
         public async ValueTask ExecuteAsync(IConsole console)

@@ -14,7 +14,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
     public class FlashEspCommand : MeadowSerialCommand
     {
         [CommandOption("osVersion", 'v', Description = "Flash the ESP from a specific downloaded OS version - x.x.x.x")]
+#if WIN_10
+        public string OSVersion { get; }
+#else
         public string OSVersion { get; init; }
+#endif
 
         public FlashEspCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(downloadManager, loggerFactory, meadowDeviceManager)

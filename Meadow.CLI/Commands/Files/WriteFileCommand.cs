@@ -19,18 +19,30 @@ namespace Meadow.CLI.Commands.Files
             'f',
             Description = "The file(s) to write to the Meadow Files System",
             IsRequired = true)]
+#if WIN_10
+        public IList<string> Files { get; }
+#else
         public IList<string> Files { get; init; }
+#endif
 
         [CommandOption(
             "targetFiles",
             't',
             Description = "The filename(s) to use on the Meadow File System")]
+#if WIN_10
+        public IList<string> TargetFileNames { get; } = Array.Empty<string>();
+#else
         public IList<string> TargetFileNames { get; init; } = Array.Empty<string>();
+#endif
 
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to write to on the Meadow")]
 #endif
+#if WIN_10
+        public int Partition { get; } = 0;
+#else
         public int Partition { get; init; } = 0;
+#endif
 
         private readonly ILogger<WritesFileCommand> _logger;
 

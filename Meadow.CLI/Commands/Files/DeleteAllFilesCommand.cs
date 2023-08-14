@@ -13,12 +13,20 @@ namespace Meadow.CLI.Commands.Files
     [Command("file delete all", Description = "Delete all files from the Meadow File System")]
     public class DeleteAllFilesCommand : MeadowSerialCommand
     {
+#if WIN_10
+        public IList<string> Files { get; }
+#else
         public IList<string> Files { get; init; }
+#endif
 
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to write to on the Meadow")]
 #endif
+#if WIN_10
+        public int Partition { get; } = 0;
+#else
         public int Partition { get; init; } = 0;
+#endif
 
         private readonly ILogger<DeleteFileCommand> _logger;
 

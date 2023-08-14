@@ -13,7 +13,11 @@ namespace Meadow.CLI.Commands.Qspi
         private readonly ILogger<QspiInitCommand> _logger;
 
         [CommandOption("value",'v', Description = "The QSPI Value to initialize", IsRequired = true)]
+#if WIN_10
+        public int Value { get; }
+#else
         public int Value {get; init;}
+#endif
 
         public QspiInitCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(downloadManager, loggerFactory, meadowDeviceManager)
