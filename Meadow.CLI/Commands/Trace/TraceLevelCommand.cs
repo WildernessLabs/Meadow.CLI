@@ -19,11 +19,7 @@ namespace Meadow.CLI.Commands.Trace
         }
 
         [CommandOption("TraceLevel",'t', Description = "The desired trace level")]
-#if WIN_10
-        public uint TraceLevel { get; }
-#else
         public uint TraceLevel { get; init; }
-#endif
 
         public override async ValueTask ExecuteAsync(IConsole console)
         {

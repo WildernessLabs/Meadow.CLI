@@ -21,11 +21,7 @@ namespace Meadow.CLI.Commands
         }
 
         [CommandOption("LogVerbosity", 'g', Description = "Log verbosity")]
-#if WIN_10
-        public string[] Verbosity { get; }
-#else
         public string[] Verbosity { get; init; }
-#endif
 
         public virtual async ValueTask ExecuteAsync(IConsole console)
         {

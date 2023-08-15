@@ -17,20 +17,12 @@ namespace Meadow.CLI.Commands.Files
             'f',
             Description = "The file(s) to delete from the Meadow Files System",
             IsRequired = true)]
-#if WIN_10
-        public IList<string> Files { get; }
-#else
         public IList<string> Files { get; init; }
-#endif
 
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to write to on the Meadow")]
 #endif
-#if WIN_10
-        public uint Partition { get; } = 0;
-#else
         public uint Partition { get; init; } = 0;
-#endif
 
         private readonly ILogger<DeleteFileCommand> _logger;
 

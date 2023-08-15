@@ -13,22 +13,14 @@ namespace Meadow.CLI.Commands.Files
 #if USE_PARTITIONS
         [CommandOption("Partition", 'p', Description = "The partition to list the files")]
 #endif
-#if WIN_10
-        public uint Partition { get; } = 0;
-#else
         public uint Partition { get; init; } = 0;
-#endif
 
         [CommandOption(
             "file",
             'f',
             Description = "The file to get the bytes from",
             IsRequired = true)]
-#if WIN_10
-        public string Filename { get; }
-#else
         public string Filename { get; init; }
-#endif
 
         private readonly ILogger<ListFilesCommand> _logger;
 
