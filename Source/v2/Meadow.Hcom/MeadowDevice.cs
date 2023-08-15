@@ -232,12 +232,7 @@
 
         public async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
         {
-            var command = RequestBuilder.Build<InitFileWriteRequest>();
-            command.LocalFileName = localFileName;
-            command.MeadowFileName = meadowFileName;
-
-            _connection.EnqueueRequest(command);
-            return false;
+            return await _connection.WriteFile(localFileName, meadowFileName, cancellationToken);
         }
 
         public Task FlashOS(string requestedversion, CancellationToken? cancellationToken = null)

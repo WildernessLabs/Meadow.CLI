@@ -54,6 +54,10 @@ internal class SerialResponse
                 return new RequestErrorTextResponse(data, length);
             case ResponseType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
                 return new ReconnectRequiredResponse(data, length);
+            case ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_FAIL:
+                return new FileWriteInitFailedSerialResponse(data, length);
+            case ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_OKAY:
+                return new FileWriteInitOkSerialResponse(data, length);
             default:
                 return new SerialResponse(data, length);
         }

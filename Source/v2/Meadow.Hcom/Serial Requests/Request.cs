@@ -19,7 +19,7 @@ public abstract class Request : IRequest
 
     public byte[]? Payload { get; protected set; }
 
-    public byte[] Serialize()
+    public virtual byte[] Serialize()
     {
         var messageBytes = new byte[2 + 2 + 2 + 2 + 4 + (Payload?.Length ?? 0)];
 

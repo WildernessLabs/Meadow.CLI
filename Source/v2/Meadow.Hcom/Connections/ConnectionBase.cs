@@ -16,6 +16,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<string> FileReadCompleted;
     public event EventHandler<Exception> FileException;
     public event EventHandler<Exception> ConnectionError;
+    public event EventHandler FileWriteAccepted;
 
     internal abstract Task DeliverRequest(IRequest request);
     public abstract string Name { get; }
@@ -70,6 +71,9 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
                 MeadowFileName = sfr.MeadowFileName,
                 LocalFileName = sfr.LocalFileName,
             };
+        }
+        else if (command is InitFileWriteRequest fwr)
+        {
         }
 
         _pendingCommands.Enqueue(command);
@@ -132,4 +136,8 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -190,8 +190,8 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-
-                                        (this as IMeadowConnection).EnqueueRequest(uploadRequest);
+                                        EncodeAndSendPacket(uploadRequest.Serialize());
+                                        //                                        (this as IMeadowConnection).EnqueueRequest(uploadRequest);
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {
@@ -226,6 +226,15 @@ namespace Meadow.Hcom
                                     {
                                         _lastError = ret.Text;
                                     }
+                                    else if (response is FileWriteInitFailedSerialResponse fwf)
+                                    {
+                                        _readFileInfo = null;
+                                        FileException?.Invoke(this, new Exception(_lastError ?? "unknown error"));
+                                    }
+                                    else if (response is FileWriteInitOkSerialResponse)
+                                    {
+                                        FileWriteAccepted?.Invoke(this, EventArgs.Empty);
+                                    }
                                     else
                                     {
                                         Debug.WriteLine($"{response.GetType().Name} for:{response.RequestType}");
@@ -239,8 +248,10 @@ namespace Meadow.Hcom
                     {
                         FileException?.Invoke(this, dnf);
                     }
-                    catch (IOException)
+                    catch (IOException ioe)
                     {
+
+                        FileException?.Invoke(this, ioe);
                         // attempt to read timed out (i.e. there's just no data)
                         // NOP
                     }

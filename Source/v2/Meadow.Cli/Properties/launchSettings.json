@@ -21,7 +21,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM8"
+      "commandLineArgs": "config route COM10"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -54,6 +54,14 @@
     "File List verbose": {
       "commandName": "Project",
       "commandLineArgs": "file list --verbose"
+    },
+    "File Read": {
+      "commandName": "Project",
+      "commandLineArgs": "file read test.txt \"f:\\temp\\test2.txt\""
+    },
+    "File Write": {
+      "commandName": "Project",
+      "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
     }
   }
 }

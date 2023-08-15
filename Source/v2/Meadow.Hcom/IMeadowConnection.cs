@@ -5,6 +5,7 @@
         event EventHandler<string> FileReadCompleted;
         event EventHandler<Exception> FileException;
         event EventHandler<Exception> ConnectionError;
+        event EventHandler FileWriteAccepted;
 
         string Name { get; }
         IMeadowDevice? Device { get; }
@@ -16,5 +17,11 @@
         void AddListener(IConnectionListener listener);
         void RemoveListener(IConnectionListener listener);
         void EnqueueRequest(IRequest command);
+
+
+
+        Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
+
+
     }
 }
