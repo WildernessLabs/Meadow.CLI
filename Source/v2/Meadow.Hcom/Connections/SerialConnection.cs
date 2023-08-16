@@ -12,16 +12,16 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
 
-    public event EventHandler<string> FileReadCompleted = delegate { };
+    private event EventHandler<string> FileReadCompleted = delegate { };
+    private event EventHandler FileWriteAccepted;
+
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
     public event EventHandler<Exception> ConnectionError;
-    public event EventHandler FileWriteAccepted;
 
     private SerialPort _port;
     private ILogger? _logger;
     private bool _isDisposed;
     private ConnectionState _state;
-    private readonly CancellationTokenSource _cts;
     private List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private Queue<IRequest> _pendingCommands = new Queue<IRequest>();
     private bool _maintainConnection;
@@ -36,8 +36,6 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
 
     public SerialConnection(string port, ILogger? logger = default)
     {
-        _cts = new CancellationTokenSource();
-
         if (!SerialPort.GetPortNames().Contains(port, StringComparer.InvariantCultureIgnoreCase))
         {
             throw new ArgumentException($"Serial Port '{port}' not found.");
@@ -482,6 +480,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
     // ----------------------------------------------
 
     private Exception? _lastException;
+    private bool? _textListComplete;
 
     public int CommandTimeoutSeconds { get; set; } = 30;
 
@@ -505,6 +504,213 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         }
 
         return true;
+    }
+
+    private DeviceInfo? _deviceInfo;
+    private int? _lastRequestConcluded = null;
+    private List<string> StdOut { get; } = new List<string>();
+    private List<string> StdErr { get; } = new List<string>();
+    private List<string> InfoMessages { get; } = new List<string>();
+
+    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
+    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
+    private const string RuntimeStateToken = "Mono is";
+    private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string RtcRetrievalToken = "UTC time:";
+
+    public async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<SetRtcTimeRequest>();
+        command.Time = dateTime;
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        var success = await WaitForResult(() =>
+        {
+            if (_lastRequestConcluded != null && _lastRequestConcluded == 0x303)
+            {
+                return true;
+            }
+
+            return false;
+        }, cancellationToken);
+    }
+
+    public async Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetRtcTimeRequest>();
+
+        InfoMessages.Clear();
+
+        EnqueueRequest(command);
+
+        DateTimeOffset? now = null;
+
+        var success = await WaitForResult(() =>
+        {
+            if (InfoMessages.Count > 0)
+            {
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(RtcRetrievalToken));
+                if (m != null)
+                {
+                    var timeString = m.Substring(m.IndexOf(RtcRetrievalToken) + RtcRetrievalToken.Length);
+                    now = DateTimeOffset.Parse(timeString);
+                    return true;
+                }
+            }
+
+            return false;
+        }, cancellationToken);
+
+        return now;
+    }
+
+    public async Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetRuntimeStateRequest>();
+
+        InfoMessages.Clear();
+
+        EnqueueRequest(command);
+
+        // wait for an information response
+        var timeout = CommandTimeoutSeconds * 2;
+        while (timeout-- > 0)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false) return false;
+            if (timeout <= 0) throw new TimeoutException();
+
+            if (InfoMessages.Count > 0)
+            {
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
+                if (m != null)
+                {
+                    return m == RuntimeIsEnabledToken;
+                }
+            }
+
+            await Task.Delay(500);
+        }
+        return false;
+    }
+
+    public async Task RuntimeEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<RuntimeEnableRequest>();
+
+        InfoMessages.Clear();
+
+        EnqueueRequest(command);
+
+        // we have to give time for the device to actually reset
+        await Task.Delay(500);
+
+        var success = await WaitForResult(() =>
+        {
+            if (InfoMessages.Count > 0)
+            {
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeSucessfullyEnabledToken));
+                if (m != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }, cancellationToken);
+
+        if (!success) throw new Exception("Unable to enable runtime");
+    }
+
+    public async Task RuntimeDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<RuntimeDisableRequest>();
+
+        InfoMessages.Clear();
+
+        EnqueueRequest(command);
+
+        // we have to give time for the device to actually reset
+        await Task.Delay(500);
+
+        var success = await WaitForResult(() =>
+        {
+            if (InfoMessages.Count > 0)
+            {
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeSucessfullyDisabledToken));
+                if (m != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }, cancellationToken);
+
+        if (!success) throw new Exception("Unable to disable runtime");
+    }
+
+    public async Task Reset(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<ResetDeviceRequest>();
+
+        EnqueueRequest(command);
+
+        // we have to give time for the device to actually reset
+        await Task.Delay(500);
+
+        await WaitForMeadowAttach(cancellationToken);
+    }
+
+    public async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetDeviceInfoRequest>();
+
+        _deviceInfo = null;
+
+        _lastException = null;
+        EnqueueRequest(command);
+
+        if (!await WaitForResult(
+            () => _deviceInfo != null,
+            cancellationToken))
+        {
+            return null;
+        }
+
+        return _deviceInfo;
+    }
+
+    public async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetFileListRequest>();
+        command.IncludeCrcs = includeCrcs;
+
+        EnqueueRequest(command);
+
+        if (!await WaitForResult(
+            () => _textListComplete ?? false,
+            cancellationToken))
+        {
+            _textListComplete = null;
+            return null;
+        }
+
+        var list = new List<MeadowFileInfo>();
+
+        foreach (var candidate in _textList)
+        {
+            var fi = MeadowFileInfo.Parse(candidate);
+            if (fi != null)
+            {
+                list.Add(fi);
+            }
+        }
+
+        _textListComplete = null;
+        return list.ToArray();
     }
 
     public async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
@@ -574,5 +780,50 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
 
         return true;
 
+    }
+
+    public async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<InitFileReadRequest>();
+        command.MeadowFileName = meadowFileName;
+        command.LocalFileName = localFileName;
+
+        var completed = false;
+        Exception? ex = null;
+
+        void OnFileReadCompleted(object? sender, string filename)
+        {
+            completed = true;
+        }
+        void OnFileError(object? sender, Exception exception)
+        {
+            ex = exception;
+        }
+
+        try
+        {
+            FileReadCompleted += OnFileReadCompleted;
+            FileException += OnFileError;
+
+            EnqueueRequest(command);
+
+            if (!await WaitForResult(
+                () =>
+                {
+                    if (ex != null) throw ex;
+                    return completed;
+                },
+                cancellationToken))
+            {
+                return false;
+            }
+
+            return true;
+        }
+        finally
+        {
+            FileReadCompleted -= OnFileReadCompleted;
+            FileException -= OnFileError;
+        }
     }
 }

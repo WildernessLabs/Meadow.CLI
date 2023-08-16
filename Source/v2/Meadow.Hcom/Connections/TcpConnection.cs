@@ -47,6 +47,21 @@ public class TcpConnection : ConnectionBase
         // TODO: web socket for listen?
     }
 
+    public override async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
+    {
+        var response = await _client.GetAsync($"{_baseUri}/api/info");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var r = JsonSerializer.Deserialize<DeviceInfoHttpResponse>(await response.Content.ReadAsStringAsync());
+            return new DeviceInfo(r.ToDictionary());
+        }
+        else
+        {
+            throw new Exception($"API responded with {response.StatusCode}");
+        }
+    }
+
     internal override async Task DeliverRequest(IRequest request)
     {
         if (request is GetDeviceInfoRequest)
@@ -82,6 +97,51 @@ public class TcpConnection : ConnectionBase
     }
 
     public Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task Reset(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task RuntimeDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task RuntimeEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }

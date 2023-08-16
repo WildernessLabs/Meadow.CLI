@@ -13,14 +13,22 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public ConnectionState State { get; protected set; }
     public IMeadowDevice? Device { get; protected set; }
 
-    public event EventHandler<string> FileReadCompleted;
-    public event EventHandler<Exception> FileException;
     public event EventHandler<Exception> ConnectionError;
-    public event EventHandler FileWriteAccepted;
 
     internal abstract Task DeliverRequest(IRequest request);
     public abstract string Name { get; }
+
     public abstract Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10);
+    public abstract Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null);
+    public abstract Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
+    public abstract Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
+    public abstract Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
+    public abstract Task Reset(CancellationToken? cancellationToken = null);
+    public abstract Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null);
+    public abstract Task RuntimeDisable(CancellationToken? cancellationToken = null);
+    public abstract Task RuntimeEnable(CancellationToken? cancellationToken = null);
+    public abstract Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
+    public abstract Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
 
     public ConnectionBase()
     {
@@ -134,10 +142,5 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     {
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
-    }
-
-    public Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
-    {
-        throw new NotImplementedException();
     }
 }

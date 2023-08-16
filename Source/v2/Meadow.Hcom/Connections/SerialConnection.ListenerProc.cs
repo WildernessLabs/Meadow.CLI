@@ -93,34 +93,26 @@ namespace Meadow.Hcom
                                         // send the message to any listeners
                                         Debug.WriteLine($"INFO> {tir.Text}");
 
-                                        foreach (var listener in _listeners)
-                                        {
-                                            listener.OnInformationMessageReceived(tir.Text);
-                                        }
+                                        InfoMessages.Add(tir.Text);
                                     }
                                     else if (response is TextStdOutResponse tso)
                                     {
                                         // send the message to any listeners
                                         Debug.WriteLine($"STDOUT> {tso.Text}");
 
-                                        foreach (var listener in _listeners)
-                                        {
-                                            listener.OnStdOutReceived(tso.Text);
-                                        }
+                                        StdOut.Add(tso.Text);
                                     }
                                     else if (response is TextStdErrResponse tse)
                                     {
                                         // send the message to any listeners
                                         Debug.WriteLine($"STDERR> {tse.Text}");
 
-                                        foreach (var listener in _listeners)
-                                        {
-                                            listener.OnStdErrReceived(tse.Text);
-                                        }
+                                        StdErr.Add(tse.Text);
                                     }
                                     else if (response is TextListHeaderResponse tlh)
                                     {
                                         // start of a list
+                                        _textListComplete = false;
                                         _textList.Clear();
                                     }
                                     else if (response is TextListMemberResponse tlm)
@@ -133,10 +125,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is TextConcludedResponse tcr)
                                     {
-                                        foreach (var listener in _listeners)
-                                        {
-                                            listener.OnTextMessageConcluded((int)tcr.RequestType);
-                                        }
+                                        _lastRequestConcluded = (int)tcr.RequestType;
 
                                         if (_reconnectInProgress)
                                         {
@@ -145,9 +134,9 @@ namespace Meadow.Hcom
                                         }
                                         else
                                         {
-                                            foreach (var listener in _listeners)
+                                            if (_textListComplete != null)
                                             {
-                                                listener.OnTextListReceived(_textList.ToArray());
+                                                _textListComplete = true;
                                             }
                                         }
                                     }
@@ -158,10 +147,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is DeviceInfoSerialResponse dir)
                                     {
-                                        foreach (var listener in _listeners)
-                                        {
-                                            listener.OnDeviceInformationMessageReceived(dir.Fields);
-                                        }
+                                        _deviceInfo = new DeviceInfo(dir.Fields);
                                     }
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
