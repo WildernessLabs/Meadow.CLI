@@ -13,30 +13,9 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var listener = new TestListener();
-                connection.AddListener(listener);
+                var info = await connection.GetDeviceInfo();
 
-                var command = RequestBuilder.Build<GetDeviceInfoRequest>();
-                command.SequenceNumber = 0;
-
-                // dev note: something has to happen to generate messages - right now a manual reset is the action
-                // in the future, we'll implement a Reset() command
-
-                connection.EnqueueRequest(command);
-
-                var timeoutSecs = 10;
-
-                while (timeoutSecs-- > 0)
-                {
-                    if (listener.DeviceInfo.Count > 0)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(1000);
-                }
-
-                Assert.True(listener.DeviceInfo.Count > 0);
+                Assert.NotNull(info);
             }
         }
 

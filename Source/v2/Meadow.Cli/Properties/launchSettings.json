@@ -3,6 +3,14 @@
     "Meadow.Cli": {
       "commandName": "Project"
     },
+    "Listen": {
+      "commandName": "Project",
+      "commandLineArgs": "listen"
+    },
+    "Listen (no prefix)": {
+      "commandName": "Project",
+      "commandLineArgs": "listen -n"
+    },
     "Device Info": {
       "commandName": "Project",
       "commandLineArgs": "device info"

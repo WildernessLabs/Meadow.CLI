@@ -9,7 +9,7 @@ namespace Meadow.Hcom
 
         public event EventHandler<Exception> FileException = delegate { };
 
-        public async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
+        public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
             var timeout = 20;
 
@@ -94,6 +94,7 @@ namespace Meadow.Hcom
                                         Debug.WriteLine($"INFO> {tir.Text}");
 
                                         InfoMessages.Add(tir.Text);
+                                        base.RaiseDeviceMessageReceived(tir.Text, "info");
                                     }
                                     else if (response is TextStdOutResponse tso)
                                     {
@@ -101,6 +102,7 @@ namespace Meadow.Hcom
                                         Debug.WriteLine($"STDOUT> {tso.Text}");
 
                                         StdOut.Add(tso.Text);
+                                        base.RaiseDeviceMessageReceived(tso.Text, "stdout");
                                     }
                                     else if (response is TextStdErrResponse tse)
                                     {
@@ -108,6 +110,7 @@ namespace Meadow.Hcom
                                         Debug.WriteLine($"STDERR> {tse.Text}");
 
                                         StdErr.Add(tse.Text);
+                                        base.RaiseDeviceMessageReceived(tse.Text, "stderr");
                                     }
                                     else if (response is TextListHeaderResponse tlh)
                                     {

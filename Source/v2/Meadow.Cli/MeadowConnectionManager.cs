@@ -7,6 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class MeadowConnectionManager
 {
     private ISettingsManager _settingsManager;
+    private IMeadowConnection? _currentConnection;
 
     public MeadowConnectionManager(ISettingsManager settingsManager)
     {
@@ -21,6 +22,9 @@ public class MeadowConnectionManager
         {
             throw new Exception("No 'route' configuration set");
         }
+
+        // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
+        if (_currentConnection != null) return _currentConnection;
 
         // try to determine what the route is
         string? uri = null;
@@ -39,8 +43,13 @@ public class MeadowConnectionManager
 
         if (uri != null)
         {
-            return new TcpConnection(uri);
+            _currentConnection = new TcpConnection(uri);
         }
-        return new SerialConnection(route);
+        else
+        {
+            _currentConnection = new SerialConnection(route);
+        }
+
+        return _currentConnection;
     }
 }

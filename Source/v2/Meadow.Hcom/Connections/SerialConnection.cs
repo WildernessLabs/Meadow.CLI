@@ -7,7 +7,7 @@ namespace Meadow.Hcom;
 
 public delegate void ConnectionStateChangedHandler(SerialConnection connection, ConnectionState oldState, ConnectionState newState);
 
-public partial class SerialConnection : IDisposable, IMeadowConnection
+public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
@@ -16,7 +16,6 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
     private event EventHandler FileWriteAccepted;
 
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
-    public event EventHandler<Exception> ConnectionError;
 
     private SerialPort _port;
     private ILogger? _logger;
@@ -31,8 +30,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
     private ReadFileInfo? _readFileInfo = null;
     private string? _lastError = null;
 
-    public IMeadowDevice? Device { get; private set; }
-    public string Name { get; }
+    public override string Name { get; }
 
     public SerialConnection(string port, ILogger? logger = default)
     {
@@ -164,7 +162,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         State = ConnectionState.Disconnected;
     }
 
-    public async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
+    public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
         try
         {
@@ -518,7 +516,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
     private const string RuntimeIsEnabledToken = "Mono is enabled";
     private const string RtcRetrievalToken = "UTC time:";
 
-    public async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
+    public override async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<SetRtcTimeRequest>();
         command.Time = dateTime;
@@ -538,7 +536,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         }, cancellationToken);
     }
 
-    public async Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
+    public override async Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetRtcTimeRequest>();
 
@@ -567,7 +565,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         return now;
     }
 
-    public async Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null)
+    public override async Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetRuntimeStateRequest>();
 
@@ -596,7 +594,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         return false;
     }
 
-    public async Task RuntimeEnable(CancellationToken? cancellationToken = null)
+    public override async Task RuntimeEnable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<RuntimeEnableRequest>();
 
@@ -624,7 +622,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         if (!success) throw new Exception("Unable to enable runtime");
     }
 
-    public async Task RuntimeDisable(CancellationToken? cancellationToken = null)
+    public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<RuntimeDisableRequest>();
 
@@ -652,7 +650,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         if (!success) throw new Exception("Unable to disable runtime");
     }
 
-    public async Task Reset(CancellationToken? cancellationToken = null)
+    public override async Task ResetDevice(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<ResetDeviceRequest>();
 
@@ -664,7 +662,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         await WaitForMeadowAttach(cancellationToken);
     }
 
-    public async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
+    public override async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetDeviceInfoRequest>();
 
@@ -683,7 +681,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         return _deviceInfo;
     }
 
-    public async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetFileListRequest>();
         command.IncludeCrcs = includeCrcs;
@@ -713,7 +711,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
         return list.ToArray();
     }
 
-    public async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
+    public override async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<InitFileWriteRequest>();
         command.SetParameters(localFileName, meadowFileName ?? Path.GetFileName(localFileName));
@@ -782,7 +780,7 @@ public partial class SerialConnection : IDisposable, IMeadowConnection
 
     }
 
-    public async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
+    public override async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<InitFileReadRequest>();
         command.MeadowFileName = meadowFileName;

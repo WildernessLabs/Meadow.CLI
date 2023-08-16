@@ -62,41 +62,7 @@ public class TcpConnection : ConnectionBase
         }
     }
 
-    internal override async Task DeliverRequest(IRequest request)
-    {
-        if (request is GetDeviceInfoRequest)
-        {
-            try
-            {
-                var response = await _client.GetAsync($"{_baseUri}/api/info");
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var r = JsonSerializer.Deserialize<DeviceInfoHttpResponse>(await response.Content.ReadAsStringAsync());
-                    var d = r.ToDictionary();
-
-                    foreach (var listener in ConnectionListeners)
-                    {
-                        listener.OnDeviceInformationMessageReceived(d);
-                    }
-                }
-                else
-                {
-                    RaiseConnectionError(new Exception($"API responded with {response.StatusCode}"));
-                }
-            }
-            catch (Exception ex)
-            {
-                RaiseConnectionError(ex);
-            }
-        }
-        else
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
+    public override Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
@@ -106,7 +72,7 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task Reset(CancellationToken? cancellationToken = null)
+    public override Task ResetDevice(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }

@@ -4,7 +4,7 @@ namespace Meadow.HCom.Integration.Tests
 {
     public class SerialCommandTests
     {
-        public string ValidPortName { get; } = "COM9";
+        public string ValidPortName { get; } = "COM10";
 
         [Fact]
         public async void TestDeviceReset()
@@ -13,30 +13,9 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var listener = new TestListener();
-                connection.AddListener(listener);
+                await connection.ResetDevice();
 
-                var command = RequestBuilder.Build<ResetDeviceRequest>();
-                command.SequenceNumber = 0;
-
-                // dev note: something has to happen to generate messages - right now a manual reset is the action
-                // in the future, we'll implement a Reset() command
-
-                ((IMeadowConnection)connection).EnqueueRequest(command);
-
-                var timeoutSecs = 10;
-
-                while (timeoutSecs-- > 0)
-                {
-                    if (listener.Messages.Count > 0)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(1000);
-                }
-
-                Assert.True(listener.Messages.Count > 0);
+                // TODO: find a way to verify device reset
             }
         }
 
@@ -47,30 +26,9 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var listener = new TestListener();
-                connection.AddListener(listener);
+                var info = await connection.GetDeviceInfo();
 
-                var command = RequestBuilder.Build<GetDeviceInfoRequest>();
-                command.SequenceNumber = 0;
-
-                // dev note: something has to happen to generate messages - right now a manual reset is the action
-                // in the future, we'll implement a Reset() command
-
-                ((IMeadowConnection)connection).EnqueueRequest(command);
-
-                var timeoutSecs = 10;
-
-                while (timeoutSecs-- > 0)
-                {
-                    if (listener.DeviceInfo.Count > 0)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(1000);
-                }
-
-                Assert.True(listener.DeviceInfo.Count > 0);
+                Assert.NotNull(info);
             }
         }
 
@@ -81,30 +39,10 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var listener = new TestListener();
-                connection.AddListener(listener);
+                var files = await connection.GetFileList(false);
 
-                var command = RequestBuilder.Build<GetFileListRequest>();
-                command.SequenceNumber = 0;
-
-                // dev note: something has to happen to generate messages - right now a manual reset is the action
-                // in the future, we'll implement a Reset() command
-
-                ((IMeadowConnection)connection).EnqueueRequest(command);
-
-                var timeoutSecs = 10;
-
-                while (timeoutSecs-- > 0)
-                {
-                    if (listener.DeviceInfo.Count > 0)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(1000);
-                }
-
-                Assert.True(listener.TextList.Count > 0);
+                Assert.NotNull(files);
+                Assert.True(files.Length > 0);
             }
         }
 
@@ -115,32 +53,10 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var listener = new TestListener();
-                connection.AddListener(listener);
+                var files = await connection.GetFileList(true);
 
-                var command = RequestBuilder.Build<GetFileListRequest>();
-                command.IncludeCrcs = true;
-
-                command.SequenceNumber = 0;
-
-                // dev note: something has to happen to generate messages - right now a manual reset is the action
-                // in the future, we'll implement a Reset() command
-
-                ((IMeadowConnection)connection).EnqueueRequest(command);
-
-                var timeoutSecs = 10;
-
-                while (timeoutSecs-- > 0)
-                {
-                    if (listener.DeviceInfo.Count > 0)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(1000);
-                }
-
-                Assert.True(listener.TextList.Count > 0);
+                Assert.NotNull(files);
+                Assert.True(files.Length > 0);
             }
         }
     }

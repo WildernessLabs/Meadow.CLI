@@ -16,7 +16,7 @@
 
         public async Task Reset(CancellationToken? cancellationToken = null)
         {
-            await _connection.Reset(cancellationToken);
+            await _connection.ResetDevice(cancellationToken);
         }
 
         public async Task RuntimeDisable(CancellationToken? cancellationToken = null)
