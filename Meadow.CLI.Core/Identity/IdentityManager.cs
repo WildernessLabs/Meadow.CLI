@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using CredentialManagement;
 using IdentityModel.Client;
 using IdentityModel.OidcClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Logging;
 using static System.Net.WebRequestMethods;
 
@@ -20,23 +21,29 @@ namespace Meadow.CLI.Core.Identity
         public readonly string WlRefreshCredentialName = "WL:Identity:Refresh";
         readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
         readonly string redirectUri = "http://localhost:8877/";
-        readonly string postAuthRedirectUri = "https://www.wildernesslabs.co";
         readonly string clientId = "0oa3axsuyupb7J6E15d6";
         private readonly ILogger _logger;
-
-        public IdentityManager(ILoggerFactory loggerFactory)
+        private IConfiguration _config;
+        
+        public IdentityManager(IConfiguration config, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger("IdentityManager");
+            _config = config;
         }
 
         /// <summary>
         /// Kick off login
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> Login(CancellationToken cancellationToken = default)
+        public async Task<bool> Login(string host, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (string.IsNullOrEmpty(host))
+                {
+                    host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
+                }
+                
                 var client = await GetOidcClient();
 
                 using (var http = new HttpListener())
@@ -52,7 +59,7 @@ namespace Meadow.CLI.Core.Identity
                     var context = await http.GetContextAsync();
                     var raw = context.Request.RawUrl;
                     context.Response.StatusCode = 302;
-                    context.Response.AddHeader("Location", postAuthRedirectUri);
+                    context.Response.AddHeader("Location", host);
                     context.Response.Close();
 
                     var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);

@@ -29,7 +29,7 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
             }
-            
+
             var httpClient = await AuthenticatedHttpClient();
 
             var response = await httpClient.GetAsync($"{host}/api/users/me/orgs");
@@ -42,6 +42,32 @@ namespace Meadow.CLI.Core.CloudServices
             else
             {
                 return new List<UserOrg>();
+            }
+        }
+
+        public async Task<User?> GetMe(string host, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
+            }
+
+            var httpClient = await AuthenticatedHttpClient();
+
+            var response = await httpClient.GetAsync($"{host}/api/users/me");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<User>(message, new JsonSerializerOptions()
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            else
+            {
+                return null;
             }
         }
     }
