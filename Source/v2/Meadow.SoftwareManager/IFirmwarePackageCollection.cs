@@ -16,6 +16,8 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
     public event EventHandler<long> DownloadProgress;
 
     FirmwarePackage? DefaultPackage { get; }
+    Task SetDefaultPackage(string version);
+    Task DeletePackage(string version);
     Task Refresh();
     Task<string?> GetLatestAvailableVersion();
     Task<string?> UpdateAvailable();

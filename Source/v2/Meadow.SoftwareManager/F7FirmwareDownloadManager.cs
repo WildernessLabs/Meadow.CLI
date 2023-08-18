@@ -62,6 +62,11 @@ internal class F7FirmwareDownloadManager
         }
     }
 
+    public void SetDefaultVersion(string destinationRoot, string version)
+    {
+        File.WriteAllText(Path.Combine(destinationRoot, "latest.txt"), version);
+    }
+
     public async Task<bool> DownloadRelease(string destinationRoot, string version, bool overwrite = false)
     {
         var downloadManager = new F7FirmwareDownloadManager();
@@ -69,8 +74,9 @@ internal class F7FirmwareDownloadManager
         if (meta == null) return false;
 
         CreateFolder(destinationRoot, false);
+
         //we'll write latest.txt regardless of version if it doesn't exist
-        File.WriteAllText(Path.Combine(destinationRoot, "latest.txt"), meta.Version);
+        SetDefaultVersion(destinationRoot, meta.Version);
 
         string local_path;
 

@@ -85,7 +85,15 @@
     },
     "Firmware Download version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware download 1.2.0.1 --force"
+      "commandLineArgs": "firmware download 1.0.2.0 --force"
+    },
+    "Firmware Default": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware default 1.2.0.1"
+    },
+    "Firmware Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware delete 1.2.0.1"
     }
   }
 }

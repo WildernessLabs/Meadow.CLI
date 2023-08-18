@@ -1,6 +1,4 @@
-﻿using CliFx;
-using CliFx.Attributes;
-using CliFx.Infrastructure;
+﻿using CliFx.Attributes;
 using Meadow.Cli;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -8,15 +6,11 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware download", Description = "Download a firmware package")]
-public class FirmwareDownloadCommand : ICommand
+public class FirmwareDownloadCommand : BaseCommand<FirmwareDownloadCommand>
 {
-    private readonly ISettingsManager _settingsManager;
-    private readonly ILogger<DeviceInfoCommand>? _logger;
-
-    public FirmwareDownloadCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+    public FirmwareDownloadCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+        : base(settingsManager, loggerFactory)
     {
-        _settingsManager = settingsManager;
-        _logger = loggerFactory?.CreateLogger<DeviceInfoCommand>();
     }
 
     [CommandOption("force", 'f', IsRequired = false)]
@@ -25,7 +19,7 @@ public class FirmwareDownloadCommand : ICommand
     [CommandParameter(0, Name = "Version number to download", IsRequired = false)]
     public string? Version { get; set; } = default!;
 
-    public async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
     {
         var manager = new FileManager();
 
@@ -41,27 +35,27 @@ public class FirmwareDownloadCommand : ICommand
 
             if (latest == null)
             {
-                _logger?.LogError($"Unable to get latest version information.");
+                Logger?.LogError($"Unable to get latest version information.");
                 return;
             }
 
-            _logger?.LogInformation($"Latest available version is '{latest}'...");
+            Logger?.LogInformation($"Latest available version is '{latest}'...");
             Version = latest;
         }
         else
         {
-            _logger?.LogInformation($"Checking for firmware package '{Version}'...");
+            Logger?.LogInformation($"Checking for firmware package '{Version}'...");
         }
 
         var isAvailable = await collection.IsVersionAvailableForDownload(Version);
 
         if (!isAvailable)
         {
-            _logger?.LogError($"Requested package version '{Version}' is not available.");
+            Logger?.LogError($"Requested package version '{Version}' is not available.");
             return;
         }
 
-        _logger?.LogInformation($"Downloading firmware package '{Version}'...");
+        Logger?.LogInformation($"Downloading firmware package '{Version}'...");
 
 
         try
@@ -72,16 +66,16 @@ public class FirmwareDownloadCommand : ICommand
 
             if (!result)
             {
-                _logger?.LogError($"Unable to download package '{Version}'.");
+                Logger?.LogError($"Unable to download package '{Version}'.");
             }
             else
             {
-                _logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
+                Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+            Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
         }
     }
 
