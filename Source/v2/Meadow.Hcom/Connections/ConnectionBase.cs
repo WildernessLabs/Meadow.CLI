@@ -25,6 +25,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
     public abstract Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
 
+    public Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public ConnectionBase()
     {
     }

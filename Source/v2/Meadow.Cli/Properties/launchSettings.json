@@ -70,6 +70,14 @@
     "File Write": {
       "commandName": "Project",
       "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
+    },
+    "Firmware List": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list"
+    },
+    "Firmware List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list --verbose"
     }
   }
 }

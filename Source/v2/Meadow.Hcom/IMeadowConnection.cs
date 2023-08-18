@@ -21,5 +21,7 @@
         Task RuntimeEnable(CancellationToken? cancellationToken = null);
         Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
         Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
+
+        Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null);
     }
 }

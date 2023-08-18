@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("config", Description = "Get the device info")]
+[Command("config", Description = "Read or modify the meadow CLI configuration")]
 public class ConfigCommand : ICommand
 {
     private readonly ISettingsManager _settingsManager;
