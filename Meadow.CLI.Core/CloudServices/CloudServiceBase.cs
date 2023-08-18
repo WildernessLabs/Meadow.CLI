@@ -1,32 +1,30 @@
 ﻿using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Identity;
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Net.Http;
-using System.Text;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.CloudServices
 {
     public abstract class CloudServiceBase
     {
-        IdentityManager _identityManager;
+        readonly IdentityManager _identityManager;
 
         protected CloudServiceBase(IdentityManager identityManager)
         {
             _identityManager = identityManager;
         }
 
-        protected async Task<HttpClient> AuthenticatedHttpClient()
+        protected async Task<HttpClient> GetAuthenticatedHttpClient(CancellationToken cancellationToken = default)
         {
-            var authToken = await _identityManager.GetAccessToken();
+            var authToken = await _identityManager.GetAccessToken(cancellationToken);
             if (string.IsNullOrEmpty(authToken))
             {
                 throw new MeadowCloudAuthException();
             }
 
-            HttpClient client = new HttpClient();
+            HttpClient client = new();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
             return client;
