@@ -78,6 +78,14 @@
     "Firmware List verbose": {
       "commandName": "Project",
       "commandLineArgs": "firmware list --verbose"
+    },
+    "Firmware Download latest": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download"
+    },
+    "Firmware Download version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download 1.2.0.1 --force"
     }
   }
 }

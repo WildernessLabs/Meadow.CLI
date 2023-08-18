@@ -1,79 +1,17 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 namespace Meadow.Software;
-
-internal class DownloadFileStream : Stream, IDisposable
-{
-    private readonly Stream _stream;
-
-    private long _position;
-
-    public DownloadFileStream(Stream stream)
-    {
-        _stream = stream;
-    }
-
-    public override bool CanRead => _stream.CanRead;
-    public override bool CanSeek => false;
-    public override bool CanWrite => false;
-    public override long Length => _stream.Length;
-    public override long Position { get => _position; set => throw new NotImplementedException(); }
-
-    public override void Flush()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override int Read(byte[] buffer, int offset, int count)
-    {
-        var b = _stream.Read(buffer, offset, count);
-        _position += b;
-        return b;
-    }
-
-    public override long Seek(long offset, SeekOrigin origin)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void SetLength(long value)
-    {
-        _stream.SetLength(value);
-    }
-
-    public override void Write(byte[] buffer, int offset, int count)
-    {
-        throw new NotImplementedException();
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-    }
-}
-
-public class ReleaseMetadata
-{
-    [JsonPropertyName("version")]
-    public string Version { get; set; } = default!;
-    [JsonPropertyName("minCLIVersion")]
-    public string MinCLIVersion { get; set; } = default!;
-    [JsonPropertyName("downloadUrl")]
-    public string DownloadURL { get; set; } = default!;
-    [JsonPropertyName("networkDownloadUrl")]
-    public string NetworkDownloadURL { get; set; } = default!;
-
-}
 
 internal class F7FirmwareDownloadManager
 {
+    public event EventHandler<long> DownloadProgress = default!;
+
     private const string VersionCheckUrlRoot =
            "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
 
@@ -89,7 +27,7 @@ internal class F7FirmwareDownloadManager
         return contents?.Version ?? string.Empty;
     }
 
-    private async Task<ReleaseMetadata?> GetReleaseMetadata(string? version = null)
+    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null)
     {
         string versionCheckUrl;
         if (version is null || string.IsNullOrWhiteSpace(version))
@@ -114,13 +52,105 @@ internal class F7FirmwareDownloadManager
 
         try
         {
-            var content = JsonSerializer.Deserialize<ReleaseMetadata>(File.ReadAllText(versionCheckFile));
+            var content = JsonSerializer.Deserialize<F7ReleaseMetadata>(File.ReadAllText(versionCheckFile));
 
             return content;
         }
         catch
         {
             return null;
+        }
+    }
+
+    public async Task<bool> DownloadRelease(string destinationRoot, string version, bool overwrite = false)
+    {
+        var downloadManager = new F7FirmwareDownloadManager();
+        var meta = await downloadManager.GetReleaseMetadata(version);
+        if (meta == null) return false;
+
+        CreateFolder(destinationRoot, false);
+        //we'll write latest.txt regardless of version if it doesn't exist
+        File.WriteAllText(Path.Combine(destinationRoot, "latest.txt"), meta.Version);
+
+        string local_path;
+
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            local_path = Path.Combine(destinationRoot, meta.Version);
+            version = meta.Version;
+        }
+        else
+        {
+            local_path = Path.Combine(destinationRoot, version);
+        }
+
+        if (CreateFolder(local_path, overwrite) == false)
+        {
+            throw new Exception($"Firmware version {version} already exists locally");
+        }
+
+        try
+        {
+            await DownloadAndExtractFile(new Uri(meta.DownloadURL), local_path);
+        }
+        catch
+        {
+            throw new Exception($"Unable to download OS files for {version}");
+        }
+
+        try
+        {
+            await DownloadAndExtractFile(new Uri(meta.NetworkDownloadURL), local_path);
+        }
+        catch
+        {
+            throw new Exception($"Unable to download Coprocessor files for {version}");
+        }
+
+        return true;
+    }
+
+    private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
+    {
+        var downloadFileName = await DownloadFile(uri, cancellationToken);
+
+        ZipFile.ExtractToDirectory(
+            downloadFileName,
+            target_path);
+
+        File.Delete(downloadFileName);
+    }
+
+    private bool CreateFolder(string path, bool eraseIfExists = true)
+    {
+        if (Directory.Exists(path))
+        {
+            if (eraseIfExists)
+            {
+                CleanPath(path);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            Directory.CreateDirectory(path);
+        }
+        return true;
+    }
+
+    private void CleanPath(string path)
+    {
+        var di = new DirectoryInfo(path);
+        foreach (FileInfo file in di.GetFiles())
+        {
+            file.Delete();
+        }
+        foreach (DirectoryInfo dir in di.GetDirectories())
+        {
+            dir.Delete(true);
         }
     }
 
@@ -134,8 +164,14 @@ internal class F7FirmwareDownloadManager
         var downloadFileName = Path.GetTempFileName();
 
         using var stream = await response.Content.ReadAsStreamAsync();
+
+        var contentLength = response.Content.Headers.ContentLength;
+
         using var downloadFileStream = new DownloadFileStream(stream);
         using var firmwareFile = File.OpenWrite(downloadFileName);
+
+        downloadFileStream.DownloadProgress += (s, e) => { DownloadProgress?.Invoke(this, e); };
+
         await downloadFileStream.CopyToAsync(firmwareFile);
 
         return downloadFileName;

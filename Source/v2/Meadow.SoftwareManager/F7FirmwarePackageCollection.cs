@@ -10,6 +10,9 @@ namespace Meadow.Software;
 
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
+    /// <inheritdoc/>
+    public event EventHandler<long> DownloadProgress;
+
     private readonly string _rootPath;
     private List<FirmwarePackage> _f7Packages = new();
 
@@ -53,6 +56,53 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         }
 
         return null;
+    }
+
+    public async Task<bool> IsVersionAvailableForDownload(string version)
+    {
+        var downloadManager = new F7FirmwareDownloadManager();
+
+        var meta = await downloadManager.GetReleaseMetadata(version);
+
+        if (meta == null) return false;
+        if (meta.Version != string.Empty) return true;
+
+        return false;
+    }
+
+    public async Task<string?> GetLatestAvailableVersion()
+    {
+        var downloadManager = new F7FirmwareDownloadManager();
+
+        var meta = await downloadManager.GetReleaseMetadata();
+
+        if (meta == null) return null;
+        if (meta.Version == string.Empty) return null;
+
+        return meta.Version;
+    }
+
+    public async Task<bool> RetrievePackage(string version, bool overwrite = false)
+    {
+        var downloadManager = new F7FirmwareDownloadManager();
+
+        void ProgressHandler(object sender, long e)
+        {
+            DownloadProgress?.Invoke(this, e);
+        }
+
+        downloadManager.DownloadProgress += ProgressHandler;
+        try
+        {
+            var meta = await downloadManager.GetReleaseMetadata(version);
+            if (meta == null) return false;
+
+            return await downloadManager.DownloadRelease(_rootPath, version, overwrite);
+        }
+        finally
+        {
+            downloadManager.DownloadProgress -= ProgressHandler;
+        }
     }
 
     public Task Refresh()
