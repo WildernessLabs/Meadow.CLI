@@ -147,7 +147,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         if (!_port.IsOpen)
         {
-            _port.Open();
+            try
+            {
+                _port.Open();
+            }
+            catch (FileNotFoundException)
+            {
+                throw new Exception($"Serial port '{_port.PortName}' not found");
+            }
         }
         State = ConnectionState.Connected;
     }

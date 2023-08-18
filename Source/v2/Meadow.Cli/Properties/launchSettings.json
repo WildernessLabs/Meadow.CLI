@@ -29,7 +29,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM10"
+      "commandLineArgs": "config route COM7"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -94,6 +94,18 @@
     "Firmware Delete": {
       "commandName": "Project",
       "commandLineArgs": "firmware delete 1.2.0.1"
+    },
+    "Firmware Write all": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write"
+    },
+    "Firmware Write version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write -v 1.2.0.1"
+    },
+    "Firmware Write os": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write os esp"
     }
   }
 }

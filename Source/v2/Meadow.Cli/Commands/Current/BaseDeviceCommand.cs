@@ -53,6 +53,10 @@ public abstract class BaseDeviceCommand<T> : ICommand
             {
                 Logger.LogError($"Timeout attempting to attach to device on {c.Name}");
             }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed: {ex.Message}");
+            }
         }
     }
 }
