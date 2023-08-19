@@ -2,7 +2,7 @@
   "profiles": {
     "AppDeploy": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f C:\\WL\\Meadow.Core.Samples\\Source\\Meadow.Core.Samples\\Blinky\\BlinkyCS\\bin\\Debug\\netstandard2.1\\App.dll -s COM3"
+      "commandLineArgs": "app deploy -f /Users/briankim/gh/OtaSample/bin/Debug/netstandard2.1/App.dll"
     },
     "CloudLogin": {
       "commandName": "Project",
@@ -78,7 +78,7 @@
     },
     "Package Create": {
       "commandName": "Project",
-      "commandLineArgs": "package create -v 1.0.0.0"
+      "commandLineArgs": "package create -p /Users/briankim/gh/OtaSample/OtaSample.csproj -v 1.2.0.1" 
     },
     "Package List": {
       "commandName": "Project",
