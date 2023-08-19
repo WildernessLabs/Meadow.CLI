@@ -38,7 +38,7 @@ namespace Meadow.CLI.Commands.Cloud
 
         [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
             IsRequired = false)]
-        public string FilesToInclude { get; init; } = "*";
+        public string Filter { get; init; } = "*";
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -48,7 +48,7 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                var mpak = await _packageManager.CreatePackage(ProjectPath, OsVersion, MpakName, FilesToInclude);
+                var mpak = await _packageManager.CreatePackage(ProjectPath, OsVersion, MpakName, Filter);
                 if (!string.IsNullOrEmpty(mpak))
                 {
                     _logger.LogInformation($"{mpak} created.");
