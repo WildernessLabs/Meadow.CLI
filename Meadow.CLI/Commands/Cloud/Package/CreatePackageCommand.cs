@@ -36,9 +36,9 @@ namespace Meadow.CLI.Commands.Cloud
         [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
         public string MpakName { get; init; } = default!;
 
-        [CommandOption("files", 'f', Description = "Files to include in mpak (glob path). Default is all.",
+        [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
             IsRequired = false)]
-        public string FilesToInclude { get; init; } = "**";
+        public string FilesToInclude { get; init; } = "*";
 
         public async ValueTask ExecuteAsync(IConsole console)
         {

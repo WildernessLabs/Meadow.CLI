@@ -78,7 +78,7 @@
     },
     "Package Create": {
       "commandName": "Project",
-      "commandLineArgs": "package create -p /Users/briankim/gh/OtaSample/OtaSample.csproj -v 1.2.0.1" 
+      "commandLineArgs": "package create -p /Users/briankim/gh/OtaSample/OtaSample.csproj -v 1.2.0.1 -n awesome_app -f {app.dll}" 
     },
     "Package List": {
       "commandName": "Project",

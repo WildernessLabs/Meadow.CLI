@@ -16,39 +16,35 @@ namespace Meadow.CLI.Core
 {
     public class PackageManager
     {
-        private List<string> _firmwareFilesExclude;
-
         public PackageManager(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<PackageManager>();
-            _firmwareFilesExclude = new List<string>()
-            {
-                "Meadow.OS.bin".ToLower()
-            };
         }
 
         private readonly ILogger _logger;
+        private string _mpakExtension = ".mpak";
+        private string _info_json = "info.json";
 
         public async Task<string> CreatePackage(string projectPath, string osVersion, string mpakName, string globPath)
         {
+            // build project
             var projectPathInfo = new FileInfo(projectPath);
-
             BuildProject(projectPath);
-            var targetFramework = GetProjectTargetFramework(projectPath);
 
+            // get target framework and App.dll path
+            var targetFramework = GetProjectTargetFramework(projectPath);
             var targetFrameworkDir = Path.Combine(projectPathInfo.DirectoryName, "bin", "Debug", targetFramework);
             string appDllPath = Path.Combine(targetFrameworkDir, "App.dll");
 
             await TrimDependencies(appDllPath, osVersion);
 
+            // create mpak file
             var postlinkBinDir = Path.Combine(targetFrameworkDir, "postlink_bin");
-
             return CreateMpak(postlinkBinDir, mpakName, osVersion, globPath);
         }
 
         void BuildProject(string projectPath)
         {
-            // run dotnet build on the project file
             var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
             proc.StartInfo.Arguments = $"build {projectPath}";
@@ -72,17 +68,21 @@ namespace Meadow.CLI.Core
 
             if (exitCode != 0)
             {
-                _logger.LogError("Package creation aborted. Build failed.");
+                _logger.LogError("Build failed. Package creation aborted.");
                 Environment.Exit(0);
             }
         }
 
         string GetProjectTargetFramework(string projectPath)
         {
-            // open the project file to get the TargetFramework value
             XmlDocument doc = new XmlDocument();
             doc.Load(projectPath);
-            return doc?.DocumentElement?.SelectSingleNode("/Project/PropertyGroup/TargetFramework")?.InnerText;
+            var targetFramework =
+                doc?.DocumentElement?.SelectSingleNode("/Project/PropertyGroup/TargetFramework")?.InnerText;
+
+            return string.IsNullOrEmpty(targetFramework)
+                ? throw new ArgumentException("Could not find TargetFrame in project file.")
+                : targetFramework;
         }
 
         async Task TrimDependencies(string appDllPath, string osVersion)
@@ -94,20 +94,20 @@ namespace Meadow.CLI.Core
                 .Where(x => x.Contains("App.") == false)
                 .ToList();
 
-            await AssemblyManager.TrimDependencies(projectAppDll.Name, projectAppDll.DirectoryName, dependencies, null,
-                null, false, verbose: false);
+            await AssemblyManager.TrimDependencies(projectAppDll.Name, projectAppDll.DirectoryName,
+                dependencies, null, null, false, verbose: false);
         }
 
         string CreateMpak(string postlinkBinDir, string mpakName, string osVersion, string globPath)
         {
             if (string.IsNullOrEmpty(mpakName))
             {
-                mpakName = $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}.mpak";
+                mpakName = $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}{_mpakExtension}";
             }
 
-            if (!mpakName.EndsWith(".mpak"))
+            if (!mpakName.EndsWith(_mpakExtension))
             {
-                mpakName += ".mpak";
+                mpakName += _mpakExtension;
             }
 
             var mpakPath = Path.Combine(Environment.CurrentDirectory, mpakName);
@@ -147,8 +147,8 @@ namespace Meadow.CLI.Core
             // write a metadata file info.json in the mpak
             var info = new { v = 1, osVersion };
             var infoJson = JsonSerializer.Serialize(info);
-            File.WriteAllText("info.json", infoJson);
-            CreateEntry(archive, "info.json", Path.GetFileName("info.json"));
+            File.WriteAllText(_info_json, infoJson);
+            CreateEntry(archive, _info_json, Path.GetFileName(_info_json));
 
             return mpakPath;
         }
