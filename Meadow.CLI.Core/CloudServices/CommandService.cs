@@ -50,5 +50,37 @@ namespace Meadow.CLI.Core.CloudServices
                 throw new MeadowCloudException(message);
             }
         }
+
+        public async Task PublishCommandForDevices(
+            string[] deviceIds,
+            string commandName,
+            JsonDocument? arguments = null,
+            int qualityOfService = 0,
+            string? host = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(host))
+            {
+                host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
+            }
+
+            var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
+
+            var payload = new
+            {
+                deviceIds,
+                commandName,
+                args = arguments,
+                qos = qualityOfService
+            };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync($"{host}/api/devices/commands", content, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                throw new MeadowCloudException(message);
+            }
+        }
     }
 }
