@@ -90,7 +90,7 @@
     },
     "Package Upload": {
       "commandName": "Project",
-      "commandLineArgs": "package upload -p 20230314363.mpak"
+      "commandLineArgs": "package upload -p awesome_app.mpak -o 5b1d2b0dab744a04b79b245d881e18b8 --host https://staging.meadowcloud.dev"
     },
     "Collection List": {
       "commandName": "Project",

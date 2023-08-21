@@ -145,7 +145,11 @@ namespace Meadow.CLI.Core
             }
 
             // write a metadata file info.json in the mpak
-            var info = new { v = 1, osVersion };
+            PackageInfo info = new PackageInfo()
+            {
+                Version = "1",
+                OsVersion = osVersion
+            };
             var infoJson = JsonSerializer.Serialize(info);
             File.WriteAllText(_info_json, infoJson);
             CreateEntry(archive, _info_json, Path.GetFileName(_info_json));
