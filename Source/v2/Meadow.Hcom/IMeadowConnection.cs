@@ -24,5 +24,6 @@
         Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
 
         Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
+        Task<bool> WriteCoprocessorFile(string localFileName, int destinationAddress, CancellationToken? cancellationToken = null);
     }
 }

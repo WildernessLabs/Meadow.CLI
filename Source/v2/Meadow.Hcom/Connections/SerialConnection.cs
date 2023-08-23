@@ -355,7 +355,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             try
             {
                 // Send the data to Meadow
-                Debug.WriteLine($"Sending {encodedToSend} bytes...");
+                Debug.Write($"Sending {encodedToSend} bytes...");
+                _port.WriteTimeout = 50000;
                 _port.Write(encodedBytes, 0, encodedToSend);
                 Debug.WriteLine($"sent");
             }
@@ -718,19 +719,26 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return list.ToArray();
     }
 
-    public override async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
+    public override async Task<bool> WriteFile(
+        string localFileName,
+        string? meadowFileName = null,
+        CancellationToken? cancellationToken = null)
     {
         return await WriteFile(localFileName, meadowFileName,
             RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
             RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+            0,
             cancellationToken);
     }
 
-    public override async Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null)
+    public override async Task<bool> WriteRuntime(
+        string localFileName,
+        CancellationToken? cancellationToken = null)
     {
         var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
             RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
             RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
+            0,
             cancellationToken);
 
         // TODO: after writing the runtime, the device will erase flash and move the binary
@@ -738,17 +746,31 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return status;
     }
 
+    public override async Task<bool> WriteCoprocessorFile(
+        string localFileName,
+        int destinationAddress,
+        CancellationToken? cancellationToken = null)
+    {
+        return await WriteFile(localFileName, null,
+            RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
+            RequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
+            destinationAddress,
+            cancellationToken);
+    }
+
     private async Task<bool> WriteFile(
         string localFileName,
         string? meadowFileName,
         RequestType initialRequestType,
         RequestType endRequestType,
+        int writeAddress = 0,
         CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<InitFileWriteRequest>();
         command.SetParameters(
             localFileName,
             meadowFileName ?? Path.GetFileName(localFileName),
+            writeAddress,
             initialRequestType);
 
         var accepted = false;
@@ -768,6 +790,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
+        // this will wait for a "file write accepted" from the target
         if (!await WaitForResult(
                            () =>
                            {
@@ -804,12 +827,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             sequenceNumber++;
 
-            // sequenc number at the start of the packet
+            // sequence number at the start of the packet
             Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
             // followed by the file data
             bytesRead = fs.Read(packet, 2, packet.Length - 2);
             if (bytesRead <= 0) break;
             EncodeAndSendPacket(packet, bytesRead + 2);
+            await Task.Delay(10);
             progress += bytesRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
         }

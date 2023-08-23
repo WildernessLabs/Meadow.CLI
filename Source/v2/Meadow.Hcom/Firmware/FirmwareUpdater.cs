@@ -228,7 +228,7 @@ public class FirmwareUpdater
                             }
 
                             Debug.WriteLine(">> flashing ESP");
-                            await _connection.Device.FlashCoprocessor(RequestedVersion);
+                            //await _connection.Device.FlashCoprocessor(RequestedVersion);
                             //                            await _connection.Device.FlashCoprocessor(DownloadManager.FirmwareDownloadsFilePath, RequestedVersion);
                         }
                         catch (Exception ex)

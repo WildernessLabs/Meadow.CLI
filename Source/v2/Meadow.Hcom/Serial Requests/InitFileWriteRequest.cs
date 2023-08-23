@@ -83,6 +83,7 @@ internal class InitFileWriteRequest : Request
     public void SetParameters(
         string localFile,
         string meadowFileName,
+        int espAddress = 0,
         RequestType requestType = RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
     {
         // file write has additional header payload that's sent with the request, build it here
@@ -96,14 +97,13 @@ internal class InitFileWriteRequest : Request
         MeadowFileName = meadowFileName;
 
         var nameBytes = Encoding.ASCII.GetBytes(meadowFileName);
-        var data = File.ReadAllBytes(source.FullName);
         var espHash = Encoding.ASCII.GetBytes("12345678901234567890123456789012");        // Must be 32 bytes
 
         Payload = new byte[4 + 4 + 4 + 32 + nameBytes.Length];
         Array.Copy(BitConverter.GetBytes((uint)source.Length), 0, Payload, 0, 4); // file size
         Array.Copy(BitConverter.GetBytes((uint)source.Length), 0, Payload, 4, 4); // file crc
-        Array.Copy(BitConverter.GetBytes(0), 0, Payload, 8, 4); // TODO: flash address
-        Array.Copy(espHash, 0, Payload, 12, espHash.Length); // TODO: ESP hash
+        Array.Copy(BitConverter.GetBytes(espAddress), 0, Payload, 8, 4); // ESP flash address offset
+        Array.Copy(espHash, 0, Payload, 12, espHash.Length); // TODO: ESP hash (dev note: this appears to never be used or needed?)
         Array.Copy(nameBytes, 0, Payload, 44, nameBytes.Length); // file name
     }
 }

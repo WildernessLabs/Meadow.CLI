@@ -93,7 +93,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             if (Files.Contains(FirmwareType.ESP))
             {
-                Logger.LogInformation($"{Environment.NewLine}Writing ESP...");
+                Logger.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
+
+                var fileList = new string[]
+                    {
+                        package.GetFullyQualifiedPath(package.CoprocApplication),
+                        package.GetFullyQualifiedPath(package.CoprocBootloader),
+                        package.GetFullyQualifiedPath(package.CoprocPartitionTable),
+                    };
+
+                await device.WriteCoprocessorFiles(fileList, cancellationToken);
             }
         }
 

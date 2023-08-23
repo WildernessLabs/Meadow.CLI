@@ -116,4 +116,9 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task<bool> WriteCoprocessorFile(string localFileName, int destinationAddress, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

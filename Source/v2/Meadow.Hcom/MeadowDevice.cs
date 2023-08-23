@@ -54,6 +54,42 @@
             return await _connection.WriteRuntime(localFileName, cancellationToken);
         }
 
+        public async Task<bool> WriteCoprocessorFiles(string[] localFileNames, CancellationToken? cancellationToken = null)
+        {
+            foreach (var file in localFileNames)
+            {
+                var result = await _connection.WriteCoprocessorFile(
+                    file,
+                    GetFileTargetAddress(file),
+                    cancellationToken);
+
+                if (!result)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private int GetFileTargetAddress(string fileName)
+        {
+            // TODO: determine device type so we can map the file names to target locations
+            //       for now we only support the F7 so these are static and well-known
+
+            var fn = Path.GetFileName(fileName).ToLower();
+            switch (fn)
+            {
+                case "meadowcomms.bin":
+                    return 0x10000;
+                case "bootloader.bin":
+                    return 0x1000;
+                case "partition-table.bin":
+                    return 0x8000;
+                default: throw new NotSupportedException($"Unsupported coprocessor file: '{fn}'");
+            }
+        }
+
         public async Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
         {
             return await _connection.GetRtcTime(cancellationToken);
@@ -65,11 +101,6 @@
         }
 
         public Task FlashOS(string requestedversion, CancellationToken? cancellationToken = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task FlashCoprocessor(string requestedversion, CancellationToken? cancellationToken = null)
         {
             throw new NotImplementedException();
         }

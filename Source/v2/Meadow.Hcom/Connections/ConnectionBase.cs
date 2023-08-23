@@ -26,6 +26,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
     public abstract Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
     public abstract Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
+    public abstract Task<bool> WriteCoprocessorFile(string localFileName, int destinationAddress, CancellationToken? cancellationToken = null);
 
     public Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null)
     {
