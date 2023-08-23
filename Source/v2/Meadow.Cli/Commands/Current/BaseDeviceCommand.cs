@@ -1,5 +1,6 @@
 ﻿using CliFx;
 using CliFx.Infrastructure;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -15,7 +16,7 @@ public abstract class BaseDeviceCommand<T> : ICommand
         ConnectionManager = connectionManager;
     }
 
-    protected abstract ValueTask ExecuteCommand(Hcom.IMeadowDevice device, CancellationToken cancellationToken);
+    protected abstract ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken);
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -46,7 +47,7 @@ public abstract class BaseDeviceCommand<T> : ICommand
                 }
                 else
                 {
-                    await ExecuteCommand(c.Device, cancellationToken);
+                    await ExecuteCommand(c, c.Device, cancellationToken);
                 }
             }
             catch (TimeoutException)

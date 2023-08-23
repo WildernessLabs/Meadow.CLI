@@ -4,6 +4,7 @@
     {
         event EventHandler<(string message, string? source)> DeviceMessageReceived;
         event EventHandler<Exception> ConnectionError;
+        event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
 
         string Name { get; }
         IMeadowDevice? Device { get; }
@@ -22,6 +23,6 @@
         Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
         Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
 
-        Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null);
+        Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
     }
 }

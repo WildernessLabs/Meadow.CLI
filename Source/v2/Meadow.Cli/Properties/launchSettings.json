@@ -103,9 +103,9 @@
       "commandName": "Project",
       "commandLineArgs": "firmware write -v 1.2.0.1"
     },
-    "Firmware Write os": {
+    "Firmware Write runtime": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write os esp"
+      "commandLineArgs": "firmware write runtime"
     }
   }
 }

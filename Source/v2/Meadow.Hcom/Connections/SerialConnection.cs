@@ -720,8 +720,36 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override async Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null)
     {
+        return await WriteFile(localFileName, meadowFileName,
+            RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
+            RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+            cancellationToken);
+    }
+
+    public override async Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null)
+    {
+        var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
+            RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
+            RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
+            cancellationToken);
+
+        // TODO: after writing the runtime, the device will erase flash and move the binary
+        //       we need to wait for that to complete
+        return status;
+    }
+
+    private async Task<bool> WriteFile(
+        string localFileName,
+        string? meadowFileName,
+        RequestType initialRequestType,
+        RequestType endRequestType,
+        CancellationToken? cancellationToken = null)
+    {
         var command = RequestBuilder.Build<InitFileWriteRequest>();
-        command.SetParameters(localFileName, meadowFileName ?? Path.GetFileName(localFileName));
+        command.SetParameters(
+            localFileName,
+            meadowFileName ?? Path.GetFileName(localFileName),
+            initialRequestType);
 
         var accepted = false;
         Exception? ex = null;
@@ -760,6 +788,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         int bytesRead;
         ushort sequenceNumber = 0;
 
+        var progress = 0;
+        var expected = fs.Length;
+
+        var fileName = Path.GetFileName(localFileName);
+
+        base.RaiseFileWriteProgress(fileName, progress, expected);
+
         while (true)
         {
             if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
@@ -775,11 +810,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             bytesRead = fs.Read(packet, 2, packet.Length - 2);
             if (bytesRead <= 0) break;
             EncodeAndSendPacket(packet, bytesRead + 2);
-
+            progress += bytesRead;
+            base.RaiseFileWriteProgress(fileName, progress, expected);
         }
+
+        base.RaiseFileWriteProgress(fileName, expected, expected);
 
         // finish with an "end" message - not enqued because this is all a serial operation
         var request = RequestBuilder.Build<EndFileWriteRequest>();
+        request.SetRequestType(endRequestType);
         var p = request.Serialize();
         EncodeAndSendPacket(p);
 

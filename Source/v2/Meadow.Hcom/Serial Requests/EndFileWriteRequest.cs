@@ -2,5 +2,12 @@
 
 internal class EndFileWriteRequest : Request
 {
-    public override RequestType RequestType => RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER;
+    private RequestType _requestType = RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER;
+
+    public override RequestType RequestType => _requestType;
+
+    public void SetRequestType(RequestType requestType)
+    {
+        _requestType = requestType;
+    }
 }

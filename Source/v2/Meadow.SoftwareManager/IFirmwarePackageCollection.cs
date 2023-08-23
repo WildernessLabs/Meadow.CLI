@@ -23,4 +23,6 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
     Task<string?> UpdateAvailable();
     Task<bool> IsVersionAvailableForDownload(string version);
     Task<bool> RetrievePackage(string version, bool overwrite = false);
+
+    string PackageFileRoot { get; }
 }

@@ -13,7 +13,8 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// <inheritdoc/>
     public event EventHandler<long> DownloadProgress;
 
-    private readonly string _rootPath;
+    public string PackageFileRoot { get; }
+
     private List<FirmwarePackage> _f7Packages = new();
 
     public FirmwarePackage? DefaultPackage { get; private set; }
@@ -35,7 +36,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
             Directory.CreateDirectory(rootPath);
         }
 
-        _rootPath = rootPath;
+        PackageFileRoot = rootPath;
     }
 
     /// <summary>
@@ -77,7 +78,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         _f7Packages.Remove(DefaultPackage);
         SetDefaultPackage(newDefault);
 
-        var path = Path.Combine(_rootPath, version);
+        var path = Path.Combine(PackageFileRoot, version);
 
         Directory.Delete(path, true);
 
@@ -94,7 +95,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         }
 
         var downloadManager = new F7FirmwareDownloadManager();
-        downloadManager.SetDefaultVersion(_rootPath, version);
+        downloadManager.SetDefaultVersion(PackageFileRoot, version);
 
         return Task.CompletedTask;
     }
@@ -138,7 +139,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
             var meta = await downloadManager.GetReleaseMetadata(version);
             if (meta == null) return false;
 
-            return await downloadManager.DownloadRelease(_rootPath, version, overwrite);
+            return await downloadManager.DownloadRelease(PackageFileRoot, version, overwrite);
         }
         finally
         {
@@ -150,11 +151,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
         _f7Packages.Clear();
 
-        foreach (var directory in Directory.GetDirectories(_rootPath))
+        foreach (var directory in Directory.GetDirectories(PackageFileRoot))
         {
             var hasFiles = false;
 
-            var package = new FirmwarePackage
+            var package = new FirmwarePackage(this)
             {
                 Version = Path.GetFileName(directory)
             };
@@ -202,7 +203,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
             }
         }
 
-        var fi = new FileInfo(Path.Combine(_rootPath, "latest.txt"));
+        var fi = new FileInfo(Path.Combine(PackageFileRoot, "latest.txt"));
         if (fi.Exists)
         {
             // get default

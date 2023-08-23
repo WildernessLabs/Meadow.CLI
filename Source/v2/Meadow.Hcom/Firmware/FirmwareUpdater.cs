@@ -181,7 +181,7 @@ public class FirmwareUpdater
                                 info = await _connection.Device.GetDeviceInfo();
                             }
 
-                            await _connection.Device.FlashRuntime(RequestedVersion);
+                            //                            await _connection.Device.FlashRuntime(RequestedVersion);
                         }
                         catch (Exception ex)
                         {

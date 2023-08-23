@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -24,7 +25,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
     {
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
@@ -33,6 +34,12 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
             return;
         }
+
+        connection.FileWriteProgress += (s, e) =>
+        {
+            var p = (e.completed / (double)e.total) * 100d;
+            Console.Write($"Writing {e.fileName}: {p:0}%     \r");
+        };
 
         Logger.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
 

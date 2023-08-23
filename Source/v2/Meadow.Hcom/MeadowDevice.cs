@@ -49,6 +49,11 @@
             return await _connection.WriteFile(localFileName, meadowFileName, cancellationToken);
         }
 
+        public async Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null)
+        {
+            return await _connection.WriteRuntime(localFileName, cancellationToken);
+        }
+
         public async Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null)
         {
             return await _connection.GetRtcTime(cancellationToken);
@@ -66,17 +71,6 @@
 
         public Task FlashCoprocessor(string requestedversion, CancellationToken? cancellationToken = null)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task FlashRuntime(string requestedversion, CancellationToken? cancellationToken = null)
-        {
-            // TODO: do we have the version locally?
-
-            // TODO: download the version
-
-            // TODO: send the file
-
             throw new NotImplementedException();
         }
     }

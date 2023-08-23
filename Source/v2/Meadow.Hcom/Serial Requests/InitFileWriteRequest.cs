@@ -68,7 +68,9 @@ internal static class NuttxCrc
 
 internal class InitFileWriteRequest : Request
 {
-    public override RequestType RequestType => RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER;
+    private RequestType _requestType;
+
+    public override RequestType RequestType => _requestType;
 
     public uint FileSize { get; set; }
     public uint CheckSum { get; set; }
@@ -78,9 +80,13 @@ internal class InitFileWriteRequest : Request
     public string LocalFileName { get; private set; } = default!;
     public string MeadowFileName { get; private set; }
 
-    public void SetParameters(string localFile, string meadowFileName)
+    public void SetParameters(
+        string localFile,
+        string meadowFileName,
+        RequestType requestType = RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
     {
         // file write has additional header payload that's sent with the request, build it here
+        _requestType = requestType;
 
         var source = new FileInfo(localFile);
 

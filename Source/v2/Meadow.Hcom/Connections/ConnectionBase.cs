@@ -9,6 +9,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 
     public event EventHandler<(string message, string? source)> DeviceMessageReceived = default!;
     public event EventHandler<Exception> ConnectionError = default!;
+    public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
 
     public abstract string Name { get; }
 
@@ -24,6 +25,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task RuntimeEnable(CancellationToken? cancellationToken = null);
     public abstract Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
     public abstract Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
+    public abstract Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
 
     public Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null)
     {
@@ -32,6 +34,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 
     public ConnectionBase()
     {
+    }
+
+    protected void RaiseFileWriteProgress(string fileName, long progress, long total)
+    {
+        FileWriteProgress?.Invoke(this, (fileName, progress, total));
     }
 
     protected void RaiseDeviceMessageReceived(string message, string? source)

@@ -26,12 +26,6 @@ public class FirmwareDeleteCommand : BaseCommand<FirmwareDeleteCommand>
         // TODO: add switch and support for other platforms
         var collection = manager.Firmware["Meadow F7"];
 
-        var existing = collection.FirstOrDefault(p => p.Version == Version);
-
-        if (existing == null)
-        {
-        }
-
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
         await collection.DeletePackage(Version);
