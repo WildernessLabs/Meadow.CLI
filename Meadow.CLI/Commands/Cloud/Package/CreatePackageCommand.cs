@@ -32,7 +32,6 @@ namespace Meadow.CLI.Commands.Cloud
         [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = false)]
         public string OsVersion { get; init; }
 
-
         public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();

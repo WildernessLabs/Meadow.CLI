@@ -7,6 +7,7 @@ using Meadow.CLI.Core.Devices;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands
@@ -56,7 +57,7 @@ namespace Meadow.CLI.Commands
 
         private bool PortExists(string name)
         {
-            if (OperatingSystem.IsWindows())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // windows is case-insensitive
                 return System.IO.Ports.SerialPort.GetPortNames().Contains(name, StringComparer.InvariantCultureIgnoreCase);
