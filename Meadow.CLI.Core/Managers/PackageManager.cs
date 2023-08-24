@@ -114,12 +114,13 @@ namespace Meadow.CLI.Core
 
             if (File.Exists(mpakPath))
             {
-                Console.WriteLine($"{mpakPath} already exists. Do you with to overwrite (Y/n)");
+                Console.WriteLine($"{mpakPath} already exists. Do you wish to overwrite? (Y/n)");
 
                 while (true)
                 {
                     Console.Write("> ");
                     var input = Console.ReadKey();
+                    Console.WriteLine();
                     switch (input.Key)
                     {
                         case ConsoleKey.Y:
