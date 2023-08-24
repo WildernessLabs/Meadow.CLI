@@ -103,14 +103,21 @@ namespace Meadow.CLI.Core.DeviceManagement
                 using (StreamReader stdOutReader = process.StandardOutput)
                 {
                     stdOutReaderResult = await stdOutReader.ReadToEndAsync();
-                    Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
+                    if (verbose)
+                    {
+                        Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
+                    }
+                    
                 }
 
                 string stdErrorReaderResult;
                 using (StreamReader stdErrorReader = process.StandardError)
                 {
                     stdErrorReaderResult = await stdErrorReader.ReadToEndAsync();
-                    Console.WriteLine("StandardError Contains: " + stdErrorReaderResult);
+                    if (!string.IsNullOrEmpty(stdErrorReaderResult))
+                    {
+                        Console.WriteLine("StandardError Contains: " + stdErrorReaderResult);
+                    }
                 }
 
                 process.WaitForExit(60000);

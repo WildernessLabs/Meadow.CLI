@@ -11,7 +11,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.2.0.0</Version>
+    <Version>1.3.0.0</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -43,6 +43,7 @@
 
   <ItemGroup>
     <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
+    <PackageReference Include="Glob" Version="1.1.9" />
     <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
     <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />

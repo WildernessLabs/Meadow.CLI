@@ -1,6 +1,10 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
+#if WIN_10
+using LibUsbDotNet.Main;
+#else
 using LibUsbDotNet.LibUsb;
+#endif
 using Meadow.CLI.Commands.Utility;
 using Meadow.CLI.Core;
 using Meadow.CLI.Core.DeviceManagement;
@@ -112,7 +116,7 @@ namespace Meadow.CLI.Commands.DeviceManagement
         {
             // We just flashed the OS so it will show the current version 
             // But the runtime hasn't been updated yet so should match the previous OS version
-            Version previousOsVersion;
+            System.Version previousOsVersion;
             string checkName;
 
             try
@@ -125,18 +129,18 @@ namespace Meadow.CLI.Commands.DeviceManagement
                 }
                 else
                 {
-                    previousOsVersion = new Version(runtimeVersion.Split(' ')[0]);
+                    previousOsVersion = new System.Version(runtimeVersion.Split(' ')[0]);
                 }
                 checkName = "runtime";
             }
             catch
             {
-                previousOsVersion = new Version(MINIMUM_OS_VERSION);
+                previousOsVersion = new System.Version(MINIMUM_OS_VERSION);
                 checkName = "OS";
             }
 
             // If less that B6.1 flash
-            if (previousOsVersion.CompareTo(new Version(MINIMUM_OS_VERSION)) <= 0)
+            if (previousOsVersion.CompareTo(new System.Version(MINIMUM_OS_VERSION)) <= 0)
             {
                 // Ask User 1st before wiping
                 Logger.LogInformation($"Your {checkName} version is older than {MINIMUM_OS_VERSION} (or unreadable). A flash erase is highly recommended.");
@@ -182,8 +186,11 @@ namespace Meadow.CLI.Commands.DeviceManagement
         async Task SetMeadowToDfuMode(string serialPortName, CancellationToken cancellationToken)
         {
             var dfuAttempts = 0;
-
+#if WIN_10
+            UsbRegistry dfuDevice;
+#else
             IUsbDevice dfuDevice;
+#endif
             while (true)
             {
                 try
