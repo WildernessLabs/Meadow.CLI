@@ -39,6 +39,8 @@ namespace Meadow.CommandLine.Commands.Cloud
         public string OrgId { get; set; }
         [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
         public string CollectionId { get; set; }
+        [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
+        public string Name { get; set; }
         [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
         public string Host { get; set; }
         
@@ -84,7 +86,7 @@ namespace Meadow.CommandLine.Commands.Cloud
             var delim = "-----END PUBLIC KEY-----\n";
             publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
             
-            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId, Host);
+            var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId, Name, Host);
 
             if (result.isSuccess)
             {

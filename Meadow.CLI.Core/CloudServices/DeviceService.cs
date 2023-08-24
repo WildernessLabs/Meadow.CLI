@@ -17,7 +17,7 @@ namespace Meadow.CLI.Core.CloudServices
             _config = config;
         }
 
-        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey, string collectionId, string host, CancellationToken cancellationToken = default)
+        public async Task<(bool isSuccess, string message)> AddDevice(string orgId, string id, string publicKey, string collectionId, string name, string host, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(host))
             {
@@ -31,7 +31,8 @@ namespace Meadow.CLI.Core.CloudServices
                 orgId,
                 id,
                 publicKey,
-                collectionId
+                collectionId,
+                name
             };
 
             var json = JsonSerializer.Serialize<dynamic>(payload);
