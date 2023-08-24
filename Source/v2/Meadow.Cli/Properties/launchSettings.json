@@ -29,7 +29,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM7"
+      "commandLineArgs": "config route COM4"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -110,6 +110,10 @@
     "Firmware Write esp": {
       "commandName": "Project",
       "commandLineArgs": "firmware write esp"
+    },
+    "Firmware Write os DFU": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write os -v 1.2.0.1 -d"
     }
   }
 }

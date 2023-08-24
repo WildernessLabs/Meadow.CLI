@@ -18,7 +18,7 @@ public abstract class BaseDeviceCommand<T> : ICommand
 
     protected abstract ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken);
 
-    public async ValueTask ExecuteAsync(IConsole console)
+    public virtual async ValueTask ExecuteAsync(IConsole console)
     {
         var cancellationToken = console.RegisterCancellationHandler();
         var c = ConnectionManager.GetCurrentConnection();
