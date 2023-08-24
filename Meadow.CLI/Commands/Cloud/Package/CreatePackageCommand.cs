@@ -26,11 +26,19 @@ namespace Meadow.CLI.Commands.Cloud
             _packageManager = packageManager;
         }
 
-        [CommandOption("applicationPath", 'a', Description = "The path to the application directory", IsRequired = false)]
-        public string ApplicationPath { get; init; }
+        [CommandOption("projectFilePath", 'p', Description = "The path to the project file (ie .csproj)",
+            IsRequired = true)]
+        public string ProjectPath { get; init; } = default!;
 
-        [CommandOption("osVersion", 'v', Description = "Version of Meadow OS to include in package", IsRequired = false)]
-        public string OsVersion { get; init; }
+        [CommandOption("osVersion", 'v', Description = "Target OS version for the app", IsRequired = true)]
+        public string OsVersion { get; init; } = default!;
+
+        [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
+        public string MpakName { get; init; } = default!;
+
+        [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
+            IsRequired = false)]
+        public string Filter { get; init; } = "*";
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -40,13 +48,13 @@ namespace Meadow.CLI.Commands.Cloud
 
             try
             {
-                var zipFile = _packageManager.CreatePackage(ApplicationPath, OsVersion);
-                if(!string.IsNullOrEmpty(zipFile))
+                var mpak = await _packageManager.CreatePackage(ProjectPath, OsVersion, MpakName, Filter);
+                if (!string.IsNullOrEmpty(mpak))
                 {
-                    _logger.LogInformation($"{zipFile} created.");
-                }           
+                    _logger.LogInformation($"{mpak} created.");
+                }
             }
-            catch(ArgumentException ex)
+            catch (ArgumentException ex)
             {
                 _logger.LogError(ex.Message);
             }

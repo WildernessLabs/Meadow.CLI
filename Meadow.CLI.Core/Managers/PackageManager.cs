@@ -1,91 +1,161 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Xml;
+using GlobExpressions;
+using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core
 {
     public class PackageManager
     {
-        private List<string> _firmwareFilesExclude;
         public PackageManager(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<PackageManager>();
-            _firmwareFilesExclude = new List<string>()
-            {
-                "Meadow.OS.bin".ToLower()
-            };
         }
 
         private readonly ILogger _logger;
+        private string _mpakExtension = ".mpak";
+        private string _info_json = "info.json";
 
-        public string CreatePackage(string applicationPath, string osVersion)
+        public async Task<string> CreatePackage(string projectPath, string osVersion, string mpakName, string globPath)
         {
-            string[]? osFiles = null;
-            string[]? appFiles = null;
+            // build project
+            var projectPathInfo = new FileInfo(projectPath);
+            BuildProject(projectPath);
 
-            if(!string.IsNullOrEmpty(applicationPath))
+            // get target framework and App.dll path
+            var targetFramework = GetProjectTargetFramework(projectPath);
+            var targetFrameworkDir = Path.Combine(projectPathInfo.DirectoryName, "bin", "Debug", targetFramework);
+            string appDllPath = Path.Combine(targetFrameworkDir, "App.dll");
+
+            await TrimDependencies(appDllPath, osVersion);
+
+            // create mpak file
+            var postlinkBinDir = Path.Combine(targetFrameworkDir, "postlink_bin");
+            return CreateMpak(postlinkBinDir, mpakName, osVersion, globPath);
+        }
+
+        void BuildProject(string projectPath)
+        {
+            var proc = new Process();
+            proc.StartInfo.FileName = "dotnet";
+            proc.StartInfo.Arguments = $"build {projectPath}";
+
+            proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.ErrorDialog = false;
+            proc.StartInfo.RedirectStandardError = true;
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+
+            proc.ErrorDataReceived += (sendingProcess, errorLine) => Console.WriteLine(errorLine.Data);
+            proc.OutputDataReceived += (sendingProcess, dataLine) => Console.WriteLine(dataLine.Data);
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+
+            proc.WaitForExit();
+            var exitCode = proc.ExitCode;
+            proc.Close();
+
+            if (exitCode != 0)
             {
-                if (!File.Exists(applicationPath) && !Directory.Exists(applicationPath))
+                _logger.LogError("Build failed. Package creation aborted.");
+                Environment.Exit(0);
+            }
+        }
+
+        string GetProjectTargetFramework(string projectPath)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(projectPath);
+            var targetFramework =
+                doc?.DocumentElement?.SelectSingleNode("/Project/PropertyGroup/TargetFramework")?.InnerText;
+
+            return string.IsNullOrEmpty(targetFramework)
+                ? throw new ArgumentException("Could not find TargetFrame in project file.")
+                : targetFramework;
+        }
+
+        async Task TrimDependencies(string appDllPath, string osVersion)
+        {
+            FileInfo projectAppDll = new FileInfo(appDllPath);
+
+            var dependencies = AssemblyManager
+                .GetDependencies(projectAppDll.Name, projectAppDll.DirectoryName, osVersion)
+                .Where(x => x.Contains("App.") == false)
+                .ToList();
+
+            await AssemblyManager.TrimDependencies(projectAppDll.Name, projectAppDll.DirectoryName,
+                dependencies, null, null, false, verbose: false);
+        }
+
+        string CreateMpak(string postlinkBinDir, string mpakName, string osVersion, string globPath)
+        {
+            if (string.IsNullOrEmpty(mpakName))
+            {
+                mpakName = $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}{_mpakExtension}";
+            }
+
+            if (!mpakName.EndsWith(_mpakExtension))
+            {
+                mpakName += _mpakExtension;
+            }
+
+            var mpakPath = Path.Combine(Environment.CurrentDirectory, mpakName);
+
+            if (File.Exists(mpakPath))
+            {
+                Console.WriteLine($"{mpakPath} already exists. Do you wish to overwrite? (Y/n)");
+
+                while (true)
                 {
-                    throw new ArgumentException($"Invalid applicationPath: {applicationPath}");
-                }
-                else
-                {
-                    var fi = new FileInfo(applicationPath);
-                    if ((fi.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                    Console.Write("> ");
+                    var input = Console.ReadKey();
+                    Console.WriteLine();
+                    switch (input.Key)
                     {
-                        appFiles = Directory.GetFiles(applicationPath);
+                        case ConsoleKey.Y:
+                            File.Delete(mpakPath);
+                            break;
+                        case ConsoleKey.N:
+                            Environment.Exit(0);
+                            break;
+                        default:
+                            continue;
                     }
-                    else
-                    {
-                        appFiles = new[] { fi.FullName };
-                    }
+
+                    break;
                 }
             }
 
-            if(!string.IsNullOrEmpty(osVersion))
-            {
-                var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion);
-                if (!Directory.Exists(osFilePath))
-                {
-                    throw new ArgumentException($"osVersion {osVersion} not found. Please download.");
-                }
+            var appFiles = Glob.Files(postlinkBinDir, globPath, GlobOptions.CaseInsensitive).ToArray();
+            using var archive = ZipFile.Open(mpakPath, ZipArchiveMode.Create);
 
-                osFiles = Directory.GetFiles(osFilePath)
-                    .Where(x => !_firmwareFilesExclude.Contains(new FileInfo(x).Name.ToLower())).ToArray();
-            }
-            
-            if(appFiles != null || osFiles !=null)
+            foreach (var fPath in appFiles)
             {
-                var zipFile = Path.Combine(Environment.CurrentDirectory, $"{DateTime.UtcNow.ToString("yyyyMMdd")}{DateTime.UtcNow.Millisecond.ToString()}.mpak");
-                using (var archive = ZipFile.Open(zipFile, ZipArchiveMode.Create))
-                {
-                    if(appFiles != null)
-                    {
-                        foreach (var fPath in appFiles)
-                        {
-                            CreateEntry(archive, fPath, Path.Combine("app", Path.GetFileName(fPath)));
-                        }
-                    }
-                    
-                    if(osFiles != null)
-                    {
-                        foreach (var fPath in osFiles)
-                        {
-                            CreateEntry(archive, fPath, Path.Combine("os", Path.GetFileName(fPath)));
-                        }
-                    }
-                }
-                return zipFile;
+                CreateEntry(archive, Path.Combine(postlinkBinDir, fPath), Path.Combine("app", Path.GetFileName(fPath)));
             }
-            else
+
+            // write a metadata file info.json in the mpak
+            PackageInfo info = new PackageInfo()
             {
-                _logger.LogError("Application Path or OS Version was not specified.");
-                return string.Empty;
-            }
+                Version = "1",
+                OsVersion = osVersion
+            };
+            var infoJson = JsonSerializer.Serialize(info);
+            File.WriteAllText(_info_json, infoJson);
+            CreateEntry(archive, _info_json, Path.GetFileName(_info_json));
+
+            return mpakPath;
         }
 
         void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
