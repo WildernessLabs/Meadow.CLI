@@ -37,10 +37,8 @@ namespace Meadow.CLI.Commands.Cloud
 
         [CommandOption("collectionId", 'c', Description = "The target collection for publishing", IsRequired = true)]
         public string CollectionId { get; set; }
-
         [CommandOption("metadata", 'm', Description = "Pass through metadata", IsRequired = false)]
         public string Metadata { get; set; }
-
         [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
         public string Host { get; set; }
 
