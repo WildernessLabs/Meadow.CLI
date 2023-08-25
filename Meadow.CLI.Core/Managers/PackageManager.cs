@@ -27,20 +27,30 @@ namespace Meadow.CLI.Core
 
         public async Task<string> CreatePackage(string projectPath, string osVersion, string mpakName, string globPath)
         {
-            // build project
-            var projectPathInfo = new FileInfo(projectPath);
-            BuildProject(projectPath);
+            if (!string.IsNullOrWhiteSpace(projectPath))
+            {
+                // build project
+                var projectPathInfo = new FileInfo(projectPath);
+                BuildProject(projectPath);
 
-            // get target framework and App.dll path
-            var targetFramework = GetProjectTargetFramework(projectPath);
-            var targetFrameworkDir = Path.Combine(projectPathInfo.DirectoryName, "bin", "Debug", targetFramework);
-            string appDllPath = Path.Combine(targetFrameworkDir, "App.dll");
+                // get target framework and App.dll path
+                var targetFramework = GetProjectTargetFramework(projectPath);
+                if (!string.IsNullOrWhiteSpace(projectPathInfo?.DirectoryName))
+                {
+                    var targetFrameworkDir = Path.Combine(projectPathInfo.DirectoryName, "bin", "Debug", targetFramework);
+                    string appDllPath = Path.Combine(targetFrameworkDir, "App.dll");
 
-            await TrimDependencies(appDllPath, osVersion);
+                    await TrimDependencies(appDllPath, osVersion);
 
-            // create mpak file
-            var postlinkBinDir = Path.Combine(targetFrameworkDir, "postlink_bin");
-            return CreateMpak(postlinkBinDir, mpakName, osVersion, globPath);
+                    // create mpak file
+                    var postlinkBinDir = Path.Combine(targetFrameworkDir, "postlink_bin");
+                    return CreateMpak(postlinkBinDir, mpakName, osVersion, globPath);
+                }
+                else
+                    return string.Empty;
+            }
+            else
+                return string.Empty;
         }
 
         void BuildProject(string projectPath)
@@ -89,13 +99,16 @@ namespace Meadow.CLI.Core
         {
             FileInfo projectAppDll = new FileInfo(appDllPath);
 
-            var dependencies = AssemblyManager
+            if (!string.IsNullOrWhiteSpace(projectAppDll?.DirectoryName))
+            {
+                var dependencies = AssemblyManager
                 .GetDependencies(projectAppDll.Name, projectAppDll.DirectoryName, osVersion)
                 .Where(x => x.Contains("App.") == false)
                 .ToList();
 
-            await AssemblyManager.TrimDependencies(projectAppDll.Name, projectAppDll.DirectoryName,
-                dependencies, null, null, false, verbose: false);
+                await AssemblyManager.TrimDependencies(projectAppDll.Name, projectAppDll.DirectoryName,
+                    dependencies, null, null, false, verbose: false);
+            }
         }
 
         string CreateMpak(string postlinkBinDir, string mpakName, string osVersion, string globPath)

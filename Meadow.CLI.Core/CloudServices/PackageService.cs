@@ -77,7 +77,7 @@ namespace Meadow.CLI.Core.CloudServices
             }
         }
 
-        private string GetPackageOsVersion(string packagePath)
+        private string? GetPackageOsVersion(string packagePath)
         {
             var result = string.Empty;
 
@@ -97,7 +97,7 @@ namespace Meadow.CLI.Core.CloudServices
             {
                 var content = File.ReadAllText(tempInfoJson);
                 var packageInfo = JsonSerializer.Deserialize<PackageInfo>(content);
-                result = packageInfo.OsVersion;
+                result = packageInfo?.OsVersion;
                 File.Delete(tempInfoJson);
             }
 
