@@ -3,6 +3,10 @@
     "Meadow.Cli": {
       "commandName": "Project"
     },
+    "Version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
     "Listen": {
       "commandName": "Project",
       "commandLineArgs": "listen"
@@ -113,7 +117,7 @@
     },
     "Firmware Write os DFU": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write os -v 1.2.0.1 -d"
+      "commandLineArgs": "firmware write os -v 1.2.0.1"
     }
   }
 }

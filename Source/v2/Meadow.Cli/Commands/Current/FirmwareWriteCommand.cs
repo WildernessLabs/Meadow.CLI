@@ -47,6 +47,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 };
         }
 
+        bool deviceSupportsOta = false; // TODO: get this based on device OS version
+
+        if (package.OsWithoutBootloader == null
+            || !deviceSupportsOta
+            || UseDfu)
+        {
+            UseDfu = true;
+        }
+
+
         if (UseDfu)
         {
             if (!Files.Contains(FirmwareType.OS))
@@ -132,17 +142,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (Files.Contains(FirmwareType.OS))
         {
-            bool useDfu = false;
-            bool deviceSupportsOta = false; // TODO: get this based on device OS version
-
-            if (package.OsWithoutBootloader == null
-                || !deviceSupportsOta
-                || UseDfu)
-            {
-                useDfu = true;
-            }
-
-            if (useDfu)
+            if (UseDfu)
             {
                 // this would have already happened before now (in ExecuteAsync) so ignore
             }
