@@ -36,8 +36,7 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' }}
-      name: Update CLI Version Numbers
+    - name: Update CLI Version Numbers
       run: |
         $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
         $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION }}</PackageVersion>'
@@ -58,6 +57,14 @@ jobs:
         $content = Get-Content main/Meadow.CLI.Core/Constants.cs | Out-String
         $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ ENV.CLI_RELEASE_VERSION }}";'
         $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
+
+        $content = Get-Content main/Meadow.CLI/Meadow.CLI.Classic.csproj | Out-String
+        $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION }}</PackageVersion>'
+        $newcontent | Set-Content main/Meadow.CLI/Meadow.CLI.Classic.csproj
+
+        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.Classic.csproj | Out-String
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION }}</Version>'
+        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.Classic.csproj
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
