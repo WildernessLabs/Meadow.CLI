@@ -735,14 +735,51 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         string localFileName,
         CancellationToken? cancellationToken = null)
     {
+        CommandTimeoutSeconds = 120;
+
+        InfoMessages.Clear();
+
         var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
             RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
             RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
             0,
             cancellationToken);
 
-        // TODO: after writing the runtime, the device will erase flash and move the binary
-        //       we need to wait for that to complete
+        Console.WriteLine("\nErasing runtime flash blocks...");
+
+        status = await WaitForResult(() =>
+        {
+            var m = string.Join('\n', InfoMessages);
+            return m.Contains("Mono memory erase success");
+        },
+        cancellationToken);
+
+        InfoMessages.Clear();
+
+        Console.WriteLine("Moving runtime to flash...");
+
+        status = await WaitForResult(() =>
+        {
+            var m = string.Join('\n', InfoMessages);
+            return m.Contains("Verifying runtime flash operation.");
+        },
+        cancellationToken);
+
+        InfoMessages.Clear();
+
+        Console.WriteLine("Verifying...");
+
+        status = await WaitForResult(() =>
+        {
+            var m = string.Join('\n', InfoMessages);
+            return m.Contains("Mono runtime successfully flashed.");
+        },
+        cancellationToken);
+
+        Console.WriteLine("Done.");
+
+        CommandTimeoutSeconds = 30;
+
         return status;
     }
 
