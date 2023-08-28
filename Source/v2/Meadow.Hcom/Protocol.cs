@@ -19,8 +19,8 @@
 
         // Define the absolute maximum packet sizes for sent and receive.
         // Note: The length on the wire will be longer because it's encoded.
-        public const int HCOM_PROTOCOL_PACKET_MAX_SIZE = 512;
-        public const int HCOM_PROTOCOL_ENCODED_MAX_SIZE = HCOM_PROTOCOL_PACKET_MAX_SIZE + 8;
+        public const int HCOM_PROTOCOL_PACKET_MAX_SIZE = 8192;
+        public const int HCOM_PROTOCOL_ENCODED_MAX_SIZE = HCOM_PROTOCOL_PACKET_MAX_SIZE;
 
         // The maximum payload is max packet - header (12 bytes)
         public const int HCOM_PROTOCOL_DATA_MAX_SIZE = HCOM_PROTOCOL_PACKET_MAX_SIZE - 12;

@@ -47,6 +47,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 };
         }
 
+        if (!Files.Contains(FirmwareType.OS) && UseDfu)
+        {
+            Logger.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
+            return;
+        }
+
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
 
         if (package.OsWithoutBootloader == null
@@ -57,14 +63,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
 
 
-        if (UseDfu)
+        if (UseDfu && Files.Contains(FirmwareType.OS))
         {
-            if (!Files.Contains(FirmwareType.OS))
-            {
-                Logger.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
-                return;
-            }
-
             // no connection is required here - in fact one won't exist
             // unless maybe we add a "DFUConnection"?
             await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader));

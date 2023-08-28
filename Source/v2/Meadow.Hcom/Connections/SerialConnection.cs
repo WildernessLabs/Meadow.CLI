@@ -279,12 +279,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _pendingCommands.Enqueue(command);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
     {
-        EncodeAndSendPacket(messageBytes, messageBytes.Length);
+        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, int length)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
         Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
@@ -311,7 +311,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // The encoded size using COBS is just a bit more than the original size adding 1 byte
                 // every 254 bytes plus 1 and need room for beginning and ending delimiters.
-                encodedBytes = new byte[Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE];
+                var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
+                encodedBytes = new byte[l + 2];
 
                 // Skip over first byte so it can be a start delimiter
                 encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
@@ -355,10 +356,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             try
             {
                 // Send the data to Meadow
-                Debug.Write($"Sending {encodedToSend} bytes...");
-                _port.WriteTimeout = 50000;
-                _port.Write(encodedBytes, 0, encodedToSend);
-                Debug.WriteLine($"sent");
+                //                Debug.Write($"Sending {encodedToSend} bytes...");
+                await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                //                Debug.WriteLine($"sent");
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
@@ -751,11 +751,21 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         int destinationAddress,
         CancellationToken? cancellationToken = null)
     {
-        return await WriteFile(localFileName, null,
+        // push the file to the device
+        await WriteFile(localFileName, null,
             RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
             RequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
             destinationAddress,
             cancellationToken);
+
+        // now wait for the STM32 to finish writing to the ESP32
+        return await WaitForResult(() =>
+        {
+            var m = string.Join('\n', InfoMessages);
+            Console.WriteLine(m);
+            return m.Contains("TransferComplete");
+        },
+        cancellationToken);
     }
 
     private async Task<bool> WriteFile(
@@ -792,12 +802,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         // this will wait for a "file write accepted" from the target
         if (!await WaitForResult(
-                           () =>
-                           {
-                               if (ex != null) throw ex;
-                               return accepted;
-                           },
-                           cancellationToken))
+                () =>
+                {
+                    if (ex != null) throw ex;
+                    return accepted;
+                },
+                cancellationToken))
         {
             return false;
         }
@@ -832,7 +842,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // followed by the file data
             bytesRead = fs.Read(packet, 2, packet.Length - 2);
             if (bytesRead <= 0) break;
-            EncodeAndSendPacket(packet, bytesRead + 2);
+            await EncodeAndSendPacket(packet, bytesRead + 2, cancellationToken);
             await Task.Delay(10);
             progress += bytesRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
@@ -844,7 +854,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var request = RequestBuilder.Build<EndFileWriteRequest>();
         request.SetRequestType(endRequestType);
         var p = request.Serialize();
-        EncodeAndSendPacket(p);
+        await EncodeAndSendPacket(p, cancellationToken);
 
         return true;
 
