@@ -157,7 +157,7 @@ namespace Meadow.CLI.Core
 
             return mpakPath;
         }
-
+        
         void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
         {
             // Windows '\' Path separator character will be written to the zip which meadow os does not properly unpack

@@ -23,7 +23,7 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <AssemblyName>meadow</AssemblyName>
 	<LangVersion>latest</LangVersion>
-	<Copyright>Copyright 2020-2022 Wilderness Labs</Copyright>
+	<Copyright>Copyright 2020-2023 Wilderness Labs</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

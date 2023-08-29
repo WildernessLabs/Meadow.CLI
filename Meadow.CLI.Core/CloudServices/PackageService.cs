@@ -40,7 +40,7 @@ namespace Meadow.CLI.Core.CloudServices
             }
 
             var fi = new FileInfo(mpakPath);
-            
+
             var osVersion = GetPackageOsVersion(fi.FullName);
 
             var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
@@ -49,7 +49,7 @@ namespace Meadow.CLI.Core.CloudServices
 
             var fileStreamContent = new StreamContent(File.OpenRead(mpakPath));
             fileStreamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            
+
             var crcFileHash = await CrcTools.CalculateCrc32FileHash(mpakPath);
 
             dynamic payload = new
@@ -104,6 +104,7 @@ namespace Meadow.CLI.Core.CloudServices
 
             return result;
         }
+
         public async Task PublishPackage(string packageId, string collectionId, string metadata, string host,
             CancellationToken cancellationToken)
         {
@@ -136,6 +137,7 @@ namespace Meadow.CLI.Core.CloudServices
             var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
             var result = await httpClient.GetStringAsync($"{host}/api/orgs/{orgId}/packages");
+
             return JsonSerializer.Deserialize<List<Package>>(result) ?? new List<Package>();
         }
     }
