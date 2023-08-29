@@ -84,6 +84,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 var cancellationToken = console.RegisterCancellationHandler();
                 await ExecuteCommand(connection, connection.Device, cancellationToken);
             }
+            Logger.LogInformation($"Done.");
         }
         else
         {

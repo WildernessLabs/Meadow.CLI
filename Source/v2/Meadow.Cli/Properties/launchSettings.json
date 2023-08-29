@@ -7,6 +7,10 @@
       "commandName": "Project",
       "commandLineArgs": "--version"
     },
+    "Port List": {
+      "commandName": "Project",
+      "commandLineArgs": "port list"
+    },
     "Listen": {
       "commandName": "Project",
       "commandLineArgs": "listen"

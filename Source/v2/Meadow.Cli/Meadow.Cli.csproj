@@ -36,6 +36,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
 		<PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
+		<PackageReference Include="System.Management" Version="7.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>
