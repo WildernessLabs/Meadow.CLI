@@ -128,19 +128,16 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is TextConcludedResponse tcr)
                                     {
-                                        _lastRequestConcluded = (int)tcr.RequestType;
+                                        _lastRequestConcluded = (RequestType)tcr.RequestType;
 
                                         if (_reconnectInProgress)
                                         {
                                             _state = ConnectionState.MeadowAttached;
                                             _reconnectInProgress = false;
                                         }
-                                        else
+                                        else if (_textListComplete != null)
                                         {
-                                            if (_textListComplete != null)
-                                            {
-                                                _textListComplete = true;
-                                            }
+                                            _textListComplete = true;
                                         }
                                     }
                                     else if (response is TextRequestResponse trr)

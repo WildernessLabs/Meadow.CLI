@@ -513,7 +513,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     }
 
     private DeviceInfo? _deviceInfo;
-    private int? _lastRequestConcluded = null;
+    private RequestType? _lastRequestConcluded = null;
     private List<string> StdOut { get; } = new List<string>();
     private List<string> StdErr { get; } = new List<string>();
     private List<string> InfoMessages { get; } = new List<string>();
@@ -535,7 +535,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var success = await WaitForResult(() =>
         {
-            if (_lastRequestConcluded != null && _lastRequestConcluded == 0x303)
+            if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
             {
                 return true;
             }
@@ -735,52 +735,63 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         string localFileName,
         CancellationToken? cancellationToken = null)
     {
+        var commandTimeout = CommandTimeoutSeconds;
+
+
         CommandTimeoutSeconds = 120;
+        _lastRequestConcluded = null;
 
-        InfoMessages.Clear();
+        try
+        {
+            InfoMessages.Clear();
 
-        var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
-            RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
-            RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
-            0,
+            var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
+                RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
+                RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
+                0,
+                cancellationToken);
+
+            RaiseConnectionMessage("\nErasing runtime flash blocks...");
+
+            status = await WaitForResult(() =>
+            {
+                var m = string.Join('\n', InfoMessages);
+                return m.Contains("Mono memory erase success");
+            },
             cancellationToken);
 
-        Console.WriteLine("\nErasing runtime flash blocks...");
+            InfoMessages.Clear();
 
-        status = await WaitForResult(() =>
+            RaiseConnectionMessage("Moving runtime to flash...");
+
+            status = await WaitForResult(() =>
+            {
+                var m = string.Join('\n', InfoMessages);
+                return m.Contains("Verifying runtime flash operation.");
+            },
+            cancellationToken);
+
+            InfoMessages.Clear();
+
+            RaiseConnectionMessage("Verifying...");
+
+            status = await WaitForResult(() =>
+            {
+                if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+                {
+                    return true;
+                }
+
+                return false;
+            },
+            cancellationToken);
+
+            return status;
+        }
+        finally
         {
-            var m = string.Join('\n', InfoMessages);
-            return m.Contains("Mono memory erase success");
-        },
-        cancellationToken);
-
-        InfoMessages.Clear();
-
-        Console.WriteLine("Moving runtime to flash...");
-
-        status = await WaitForResult(() =>
-        {
-            var m = string.Join('\n', InfoMessages);
-            return m.Contains("Verifying runtime flash operation.");
-        },
-        cancellationToken);
-
-        InfoMessages.Clear();
-
-        Console.WriteLine("Verifying...");
-
-        status = await WaitForResult(() =>
-        {
-            var m = string.Join('\n', InfoMessages);
-            return m.Contains("Mono runtime successfully flashed.");
-        },
-        cancellationToken);
-
-        Console.WriteLine("Done.");
-
-        CommandTimeoutSeconds = 30;
-
-        return status;
+            CommandTimeoutSeconds = commandTimeout;
+        }
     }
 
     public override async Task<bool> WriteCoprocessorFile(
@@ -788,21 +799,50 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         int destinationAddress,
         CancellationToken? cancellationToken = null)
     {
-        // push the file to the device
-        await WriteFile(localFileName, null,
-            RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
-            RequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
-            destinationAddress,
-            cancellationToken);
+        // make the timeouts much bigger, as the ESP flash takes a lot of time
+        var readTimeout = _port.ReadTimeout;
+        var commandTimeout = CommandTimeoutSeconds;
+        _lastRequestConcluded = null;
 
-        // now wait for the STM32 to finish writing to the ESP32
-        return await WaitForResult(() =>
+        _port.ReadTimeout = 60000;
+        CommandTimeoutSeconds = 180;
+        InfoMessages.Clear();
+        var infoCount = 0;
+
+        try
         {
-            var m = string.Join('\n', InfoMessages);
-            Console.WriteLine(m);
-            return m.Contains("TransferComplete");
-        },
-        cancellationToken);
+            // push the file to the device
+            await WriteFile(localFileName, null,
+                RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
+                RequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
+                destinationAddress,
+                cancellationToken);
+
+            RaiseConnectionMessage("\nTransferring file to coprocessor...");
+
+            // now wait for the STM32 to finish writing to the ESP32
+            return await WaitForResult(() =>
+            {
+                if (InfoMessages.Count != infoCount)
+                {
+                    infoCount = InfoMessages.Count;
+                    RaiseConnectionMessage(InfoMessages.Last());
+                }
+
+                if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+                {
+                    return true;
+                }
+
+                return false;
+            },
+            cancellationToken);
+        }
+        finally
+        {
+            _port.ReadTimeout = readTimeout;
+            CommandTimeoutSeconds = commandTimeout;
+        }
     }
 
     private async Task<bool> WriteFile(
@@ -880,7 +920,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             bytesRead = fs.Read(packet, 2, packet.Length - 2);
             if (bytesRead <= 0) break;
             await EncodeAndSendPacket(packet, bytesRead + 2, cancellationToken);
-            await Task.Delay(10);
             progress += bytesRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
         }

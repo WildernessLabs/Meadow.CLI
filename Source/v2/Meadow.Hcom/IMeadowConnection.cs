@@ -4,6 +4,7 @@
     {
         event EventHandler<(string message, string? source)> DeviceMessageReceived;
         event EventHandler<Exception> ConnectionError;
+        event EventHandler<string> ConnectionMessage;
         event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
 
         string Name { get; }

@@ -48,6 +48,7 @@ public abstract class BaseDeviceCommand<T> : ICommand
                 else
                 {
                     await ExecuteCommand(c, c.Device, cancellationToken);
+                    Logger.LogInformation($"Done.");
                 }
             }
             catch (TimeoutException)

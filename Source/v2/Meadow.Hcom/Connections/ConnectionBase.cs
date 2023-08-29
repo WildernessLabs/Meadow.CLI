@@ -10,6 +10,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<(string message, string? source)> DeviceMessageReceived = default!;
     public event EventHandler<Exception> ConnectionError = default!;
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
+    public event EventHandler<string> ConnectionMessage = default!;
 
     public abstract string Name { get; }
 
@@ -35,6 +36,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 
     public ConnectionBase()
     {
+    }
+
+    protected void RaiseConnectionMessage(string message)
+    {
+        ConnectionMessage?.Invoke(this, message);
     }
 
     protected void RaiseFileWriteProgress(string fileName, long progress, long total)
