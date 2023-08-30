@@ -122,6 +122,18 @@
     "Firmware Write os DFU": {
       "commandName": "Project",
       "commandLineArgs": "firmware write os -v 1.2.0.1"
+    },
+    "Trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace enable"
+    },
+    "Trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace disable"
+    },
+    "Trace level": {
+      "commandName": "Project",
+      "commandLineArgs": "trace level 2"
     }
   }
 }

@@ -9,7 +9,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 
     public event EventHandler<(string message, string? source)> DeviceMessageReceived = default!;
     public event EventHandler<Exception> ConnectionError = default!;
-    public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
+    public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
 
     public abstract string Name { get; }
@@ -28,11 +28,9 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
     public abstract Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
     public abstract Task<bool> WriteCoprocessorFile(string localFileName, int destinationAddress, CancellationToken? cancellationToken = null);
-
-    public Task UpdateRuntime(string localFileName, CancellationToken? cancellationToken = null)
-    {
-        throw new NotImplementedException();
-    }
+    public abstract Task TraceEnable(CancellationToken? cancellationToken = null);
+    public abstract Task TraceDisable(CancellationToken? cancellationToken = null);
+    public abstract Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
 
     public ConnectionBase()
     {

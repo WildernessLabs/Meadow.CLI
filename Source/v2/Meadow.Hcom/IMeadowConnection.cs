@@ -26,5 +26,9 @@
 
         Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
         Task<bool> WriteCoprocessorFile(string localFileName, int destinationAddress, CancellationToken? cancellationToken = null);
+
+        Task TraceEnable(CancellationToken? cancellationToken = null);
+        Task TraceDisable(CancellationToken? cancellationToken = null);
+        Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
     }
 }

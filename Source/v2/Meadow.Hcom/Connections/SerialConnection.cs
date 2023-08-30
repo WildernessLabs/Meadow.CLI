@@ -487,6 +487,17 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private Exception? _lastException;
     private bool? _textListComplete;
+    private DeviceInfo? _deviceInfo;
+    private RequestType? _lastRequestConcluded = null;
+    private List<string> StdOut { get; } = new List<string>();
+    private List<string> StdErr { get; } = new List<string>();
+    private List<string> InfoMessages { get; } = new List<string>();
+
+    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
+    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
+    private const string RuntimeStateToken = "Mono is";
+    private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
 
@@ -512,17 +523,38 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return true;
     }
 
-    private DeviceInfo? _deviceInfo;
-    private RequestType? _lastRequestConcluded = null;
-    private List<string> StdOut { get; } = new List<string>();
-    private List<string> StdErr { get; } = new List<string>();
-    private List<string> InfoMessages { get; } = new List<string>();
+    private async Task<bool> WaitForResponseText(string textToAwait, CancellationToken? cancellationToken = null)
+    {
+        return await WaitForResult(() =>
+        {
+            if (InfoMessages.Count > 0)
+            {
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(textToAwait));
+                if (m != null)
+                {
+                    return true;
+                }
+            }
 
-    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
-    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
-    private const string RuntimeStateToken = "Mono is";
-    private const string RuntimeIsEnabledToken = "Mono is enabled";
-    private const string RtcRetrievalToken = "UTC time:";
+            return false;
+        }, cancellationToken);
+    }
+
+    private async Task<bool> WaitForConcluded(RequestType? requestType = null, CancellationToken? cancellationToken = null)
+    {
+        return await WaitForResult(() =>
+        {
+            if (_lastRequestConcluded != null)
+            {
+                if (requestType == null || requestType == _lastRequestConcluded)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }, cancellationToken);
+    }
 
     public override async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
     {
@@ -613,19 +645,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // we have to give time for the device to actually reset
         await Task.Delay(500);
 
-        var success = await WaitForResult(() =>
-        {
-            if (InfoMessages.Count > 0)
-            {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeSucessfullyEnabledToken));
-                if (m != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }, cancellationToken);
+        var success = await WaitForResponseText(RuntimeSucessfullyEnabledToken);
 
         if (!success) throw new Exception("Unable to enable runtime");
     }
@@ -641,21 +661,43 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // we have to give time for the device to actually reset
         await Task.Delay(500);
 
-        var success = await WaitForResult(() =>
-        {
-            if (InfoMessages.Count > 0)
-            {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeSucessfullyDisabledToken));
-                if (m != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }, cancellationToken);
+        var success = await WaitForResponseText(RuntimeSucessfullyDisabledToken);
 
         if (!success) throw new Exception("Unable to disable runtime");
+    }
+
+    public override async Task TraceEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<TraceEnableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task TraceDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<TraceDisableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task SetTraceLevel(int level, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<TraceLevelRequest>();
+        command.UserData = (uint)level;
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
     }
 
     public override async Task ResetDevice(CancellationToken? cancellationToken = null)

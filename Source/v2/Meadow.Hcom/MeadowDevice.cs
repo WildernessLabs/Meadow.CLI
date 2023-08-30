@@ -100,9 +100,19 @@
             await _connection.SetRtcTime(dateTime, cancellationToken);
         }
 
-        public Task FlashOS(string requestedversion, CancellationToken? cancellationToken = null)
+        public async Task TraceEnable(CancellationToken? cancellationToken = null)
         {
-            throw new NotImplementedException();
+            await _connection.TraceEnable(cancellationToken);
+        }
+
+        public async Task TraceDisable(CancellationToken? cancellationToken = null)
+        {
+            await _connection.TraceDisable(cancellationToken);
+        }
+
+        public async Task SetTraceLevel(int level, CancellationToken? cancellationToken = null)
+        {
+            await _connection.SetTraceLevel(level, cancellationToken);
         }
     }
 }

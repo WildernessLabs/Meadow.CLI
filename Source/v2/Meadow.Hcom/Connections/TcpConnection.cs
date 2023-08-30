@@ -121,4 +121,19 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task TraceEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task TraceDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task SetTraceLevel(int level, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

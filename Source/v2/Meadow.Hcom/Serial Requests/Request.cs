@@ -11,7 +11,7 @@ public abstract class Request : IRequest
     public ushort SequenceNumber { get; set; }
     public ushort ProtocolVersion { get; set; }
     public ushort ExtraData { get; set; } // TODO: what is this for?
-    public uint UserData { get; set; } // TODO: what is this for?
+    public uint UserData { get; set; }
 
     public Request()
     {

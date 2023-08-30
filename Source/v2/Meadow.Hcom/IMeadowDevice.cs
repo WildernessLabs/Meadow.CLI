@@ -14,7 +14,8 @@
         Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
         Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);
         Task<bool> WriteCoprocessorFiles(string[] localFileNames, CancellationToken? cancellationToken = null);
-
-        Task FlashOS(string requestedversion, CancellationToken? cancellationToken = null);
+        Task TraceEnable(CancellationToken? cancellationToken = null);
+        Task TraceDisable(CancellationToken? cancellationToken = null);
+        Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
     }
 }
