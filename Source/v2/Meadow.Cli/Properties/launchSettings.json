@@ -134,6 +134,10 @@
     "Trace level": {
       "commandName": "Project",
       "commandLineArgs": "trace level 2"
+    },
+    "Developer": {
+      "commandName": "Project",
+      "commandLineArgs": "developer -p 2 -v 20"
     }
   }
 }

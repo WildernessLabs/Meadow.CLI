@@ -114,5 +114,10 @@
         {
             await _connection.SetTraceLevel(level, cancellationToken);
         }
+
+        public async Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+        {
+            await _connection.SetDeveloperParameter(parameter, value, cancellationToken);
+        }
     }
 }

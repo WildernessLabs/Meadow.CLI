@@ -136,4 +136,9 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

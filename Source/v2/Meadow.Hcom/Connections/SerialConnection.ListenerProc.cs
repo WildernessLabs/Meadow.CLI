@@ -210,6 +210,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is RequestErrorTextResponse ret)
                                     {
+                                        RaiseDeviceMessageReceived(ret.Text, "hcom");
                                         _lastError = ret.Text;
                                     }
                                     else if (response is FileWriteInitFailedSerialResponse fwf)

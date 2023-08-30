@@ -700,6 +700,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await WaitForConcluded(null, cancellationToken);
     }
 
+    public override async Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<DeveloperRequest>();
+        command.ExtraData = parameter;
+        command.UserData = value;
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
     public override async Task ResetDevice(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<ResetDeviceRequest>();

@@ -10,7 +10,7 @@ public abstract class Request : IRequest
 
     public ushort SequenceNumber { get; set; }
     public ushort ProtocolVersion { get; set; }
-    public ushort ExtraData { get; set; } // TODO: what is this for?
+    public ushort ExtraData { get; set; }
     public uint UserData { get; set; }
 
     public Request()
