@@ -105,7 +105,7 @@
     },
     "Firmware Write all": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write"
+      "commandLineArgs": "firmware write runtime esp"
     },
     "Firmware Write version": {
       "commandName": "Project",
@@ -138,6 +138,14 @@
     "Developer": {
       "commandName": "Project",
       "commandLineArgs": "developer -p 2 -v 20"
+    },
+    "Uart trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace enable"
+    },
+    "Uart trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace disable"
     }
   }
 }

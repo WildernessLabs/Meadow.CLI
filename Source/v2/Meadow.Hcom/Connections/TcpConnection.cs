@@ -141,4 +141,14 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task UartTraceEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task UartTraceDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

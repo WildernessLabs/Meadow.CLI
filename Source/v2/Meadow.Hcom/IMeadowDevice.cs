@@ -18,5 +18,7 @@
         Task TraceDisable(CancellationToken? cancellationToken = null);
         Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
         Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
+        Task UartTraceEnable(CancellationToken? cancellationToken = null);
+        Task UartTraceDisable(CancellationToken? cancellationToken = null);
     }
 }

@@ -688,6 +688,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await WaitForConcluded(null, cancellationToken);
     }
 
+    public override async Task UartTraceEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartTraceEnableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task UartTraceDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartTraceDisableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
     public override async Task SetTraceLevel(int level, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<TraceLevelRequest>();
@@ -810,6 +832,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             status = await WaitForResult(() =>
             {
+                if (_lastRequestConcluded != null)
+                {
+                    // happens on error
+                    return true;
+                }
+
                 var m = string.Join('\n', InfoMessages);
                 return m.Contains("Mono memory erase success");
             },
@@ -821,6 +849,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             status = await WaitForResult(() =>
             {
+                if (_lastRequestConcluded != null)
+                {
+                    // happens on error
+                    return true;
+                }
+
                 var m = string.Join('\n', InfoMessages);
                 return m.Contains("Verifying runtime flash operation.");
             },
@@ -832,7 +866,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             status = await WaitForResult(() =>
             {
-                if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+                if (_lastRequestConcluded != null)
                 {
                     return true;
                 }
@@ -884,7 +918,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                     RaiseConnectionMessage(InfoMessages.Last());
                 }
 
-                if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+                if (_lastRequestConcluded != null)
                 {
                     return true;
                 }

@@ -72,6 +72,16 @@
             return true;
         }
 
+        public async Task UartTraceEnable(CancellationToken? cancellationToken = null)
+        {
+            await _connection.UartTraceEnable(cancellationToken);
+        }
+
+        public async Task UartTraceDisable(CancellationToken? cancellationToken = null)
+        {
+            await _connection.UartTraceDisable(cancellationToken);
+        }
+
         private int GetFileTargetAddress(string fileName)
         {
             // TODO: determine device type so we can map the file names to target locations

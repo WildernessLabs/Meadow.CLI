@@ -126,9 +126,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
     {
         // the connection passes messages back to us (info about actions happening on-device
-        connection.ConnectionMessage += (s, m) =>
+        connection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(m);
+            Logger.LogInformation(e.message);
         };
 
         var package = await GetSelectedPackage();

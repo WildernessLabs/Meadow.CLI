@@ -46,7 +46,7 @@
     },
     "FlashOS": {
       "commandName": "Project",
-      "commandLineArgs": "flash os"
+      "commandLineArgs": "flash os -d -k"
     },
     "Help": {
       "commandName": "Project",
