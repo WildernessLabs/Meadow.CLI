@@ -35,6 +35,9 @@ namespace Meadow.CLI
                 logLevel = 0;
             }
 
+            if (args.Contains("--verbose"))
+                logLevel = LogEventLevel.Verbose;
+
             var outputTemplate = logLevel == LogEventLevel.Verbose
                                      ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
                                      : "{Message:lj}{NewLine}{Exception}";
