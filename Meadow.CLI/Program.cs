@@ -26,14 +26,6 @@ namespace Meadow.CLI
                         .Build();
 
             var logLevel = LogEventLevel.Information;
-            var logModifier = args.FirstOrDefault(a => a.Equals("-m"))
-                                  ?.Count(x => x == 'm') ?? 0;
-
-            logLevel -= logModifier;
-            if (logLevel < 0)
-            {
-                logLevel = 0;
-            }
 
             if (args.Contains("--verbose"))
                 logLevel = LogEventLevel.Verbose;
