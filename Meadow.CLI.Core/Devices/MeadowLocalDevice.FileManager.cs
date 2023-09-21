@@ -577,17 +577,24 @@ namespace Meadow.CLI.Core.Devices
                     return;
                 }
 
-                await DeleteTemporaryFiles(cancellationToken);
-
                 var fi = new FileInfo(applicationFilePath);
+                var directoryName = fi.DirectoryName ?? string.Empty;
+                var meadowDll = Path.Combine(directoryName, "Meadow.dll");
+
+                if (!File.Exists(meadowDll))
+                {
+                    Logger.LogError($"{meadowDll} not found.");
+                    return;
+                }
+
+                var fileName = fi.Name;
+                var fileNamePdb = Path.Combine(directoryName, "App.pdb");
+
+                await DeleteTemporaryFiles(cancellationToken);
 
                 var deviceFiles = await GetFilesAndCrcs(
                                           DefaultTimeout,
                                           cancellationToken: cancellationToken);
-
-                var directoryName = fi.DirectoryName ?? string.Empty;
-                var fileName = fi.Name;
-                var fileNamePdb = Path.Combine(directoryName, "App.pdb");
 
                 foreach (var f in deviceFiles)
                 {
@@ -600,6 +607,9 @@ namespace Meadow.CLI.Core.Devices
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
                 var files = new Dictionary<string, uint>();
+
+                // Add the App.dll
+                await AddFile(Path.Combine(directoryName, fileName), false);
 
                 if (includePdbs)
                 {
