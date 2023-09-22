@@ -577,39 +577,39 @@ namespace Meadow.CLI.Core.Devices
                     return;
                 }
 
-                await DeleteTemporaryFiles(cancellationToken);
-
                 var fi = new FileInfo(applicationFilePath);
+                var directoryName = fi.DirectoryName ?? string.Empty;
+                var meadowDll = Path.Combine(directoryName, "Meadow.dll");
+
+                if (!File.Exists(meadowDll))
+                {
+                    Logger.LogError($"{meadowDll} not found.");
+                    return;
+                }
+
+                var fileName = fi.Name;
+                var fileNamePdb = Path.Combine(directoryName, "App.pdb");
+
+                await DeleteTemporaryFiles(cancellationToken);
 
                 var deviceFiles = await GetFilesAndCrcs(
                                           DefaultTimeout,
                                           cancellationToken: cancellationToken);
-
-                //rename App.dll to App.exe
-                var fileNameDll = Path.Combine(fi.DirectoryName, "App.dll");
-                var fileNameExe = Path.Combine(fi.DirectoryName, "App.exe");
-                var fileNamePdb = Path.Combine(fi.DirectoryName, "App.pdb");
-
-                if (File.Exists(fileNameDll))
-                {
-                    if (File.Exists(fileNameExe))
-                    {
-                        File.Delete(fileNameExe);
-                    }
-                    File.Copy(fileNameDll, fileNameExe);
-                }
 
                 foreach (var f in deviceFiles)
                 {
                     Logger.LogInformation($"Found {f.FileName} (CRC: {f.Crc})" + Environment.NewLine);
                 }
 
-                var binaries = Directory.EnumerateFiles(fi.DirectoryName, "*.*", SearchOption.TopDirectoryOnly)
+                var binaries = Directory.EnumerateFiles(directoryName, "*.*", SearchOption.TopDirectoryOnly)
                                        .Where(s => new FileInfo(s).Extension != ".dll")
                                        .Where(s => new FileInfo(s).Extension != ".pdb");
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
                 var files = new Dictionary<string, uint>();
+
+                // Add the App.dll
+                await AddFile(Path.Combine(directoryName, fileName), false);
 
                 if (includePdbs)
                 {
@@ -647,12 +647,12 @@ namespace Meadow.CLI.Core.Devices
                     }
                 }
 
-                var dependencies = AssemblyManager.GetDependencies(fi.Name, fi.DirectoryName, osVersion)
+                var dependencies = AssemblyManager.GetDependencies(fileName, directoryName, osVersion)
                     .Where(x => x.Contains("App.") == false)
                     // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                     .ToList();
 
-                var trimmedDependencies = await AssemblyManager.TrimDependencies(fi.Name, fi.DirectoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
+                var trimmedDependencies = await AssemblyManager.TrimDependencies(fileName, directoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
 
                 //add local files (this includes App.exe)
                 foreach (var file in binaries)
@@ -760,7 +760,7 @@ namespace Meadow.CLI.Core.Devices
                 }
                 else
                 {
-                    Logger.LogInformation($"{Environment.NewLine}{fi.Name} deploy complete!{Environment.NewLine}");
+                    Logger.LogInformation($"{Environment.NewLine}{fileName} deploy complete!{Environment.NewLine}");
                 }
             }
             catch (Exception ex)
