@@ -25,6 +25,7 @@
 	  <AssemblyName>meadow</AssemblyName>
 	  <LangVersion>latest</LangVersion>
 	  <Copyright>Copyright 2020-2022 Wilderness Labs</Copyright>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
 	<ItemGroup>
@@ -37,6 +38,8 @@
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
 		<PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
 		<PackageReference Include="System.Management" Version="7.0.2" />
+		<PackageReference Include="YamlDotNet" Version="13.4.0" />
+		<PackageReference Include="Mono.Cecil" Version="0.11.3" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -46,6 +49,21 @@
 
 	<ItemGroup>
 		<None Include="..\icon.png" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="lib\illink.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="lib\illink.runtimeconfig.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="lib\meadow_link.xml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="lib\Mono.Cecil.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

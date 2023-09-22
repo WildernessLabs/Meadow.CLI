@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware default", Description = "Sets the current default firmware package")]
-public class FirmwareDefaultCommand : BaseCommand<FirmwareDefaultCommand>
+public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 {
-    public FirmwareDefaultCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public FirmwareDefaultCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+        : base(fileManager, settingsManager, loggerFactory)
     {
     }
 
@@ -18,13 +18,11 @@ public class FirmwareDefaultCommand : BaseCommand<FirmwareDefaultCommand>
 
     protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
     {
-        var manager = new FileManager();
-
-        await manager.Refresh();
+        await FileManager.Refresh();
 
         // for now we only support F7
         // TODO: add switch and support for other platforms
-        var collection = manager.Firmware["Meadow F7"];
+        var collection = FileManager.Firmware["Meadow F7"];
 
         var existing = collection.FirstOrDefault(p => p.Version == Version);
 

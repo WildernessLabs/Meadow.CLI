@@ -146,6 +146,18 @@
     "Uart trace disable": {
       "commandName": "Project",
       "commandLineArgs": "uart trace disable"
+    },
+    "App Build": {
+      "commandName": "Project",
+      "commandLineArgs": "app build F:\\temp\\MeadowApplication1"
+    },
+    "App Build Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "app build F:\\temp\\MeadowApplication1 -c Debug"
+    },
+    "App Trim": {
+      "commandName": "Project",
+      "commandLineArgs": "app trim F:\\temp\\MeadowApplication1"
     }
   }
 }

@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware download", Description = "Download a firmware package")]
-public class FirmwareDownloadCommand : BaseCommand<FirmwareDownloadCommand>
+public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
-    public FirmwareDownloadCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public FirmwareDownloadCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+        : base(fileManager, settingsManager, loggerFactory)
     {
     }
 
@@ -21,13 +21,11 @@ public class FirmwareDownloadCommand : BaseCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
     {
-        var manager = new FileManager();
-
-        await manager.Refresh();
+        await FileManager.Refresh();
 
         // for now we only support F7
         // TODO: add switch and support for other platforms
-        var collection = manager.Firmware["Meadow F7"];
+        var collection = FileManager.Firmware["Meadow F7"];
 
         if (Version == null)
         {

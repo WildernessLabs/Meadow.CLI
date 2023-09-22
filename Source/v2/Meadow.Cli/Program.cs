@@ -1,6 +1,7 @@
 ﻿using CliFx;
 using Meadow.Cli;
 using Meadow.CLI.Commands.DeviceManagement;
+using Meadow.Software;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
@@ -42,7 +43,10 @@ public class Program
             });
 
         services.AddSingleton<MeadowConnectionManager>();
+        services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
+        services.AddSingleton<IPackageManager, PackageManager>();
+
         /*
         services.AddSingleton<MeadowDeviceManager>();
         services.AddSingleton<DownloadManager>();

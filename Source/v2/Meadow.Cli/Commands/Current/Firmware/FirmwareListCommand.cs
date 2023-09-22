@@ -16,26 +16,26 @@ public class FirmwareListCommand : ICommand
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; set; }
 
-    public FirmwareListCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+    private FileManager FileManager { get; }
+
+    public FirmwareListCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
     {
+        FileManager = fileManager;
         _settingsManager = settingsManager;
         _logger = loggerFactory?.CreateLogger<DeviceInfoCommand>();
     }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-
-        var manager = new FileManager();
-
-        await manager.Refresh();
+        await FileManager.Refresh();
 
         if (Verbose)
         {
-            await DisplayVerboseResults(manager);
+            await DisplayVerboseResults(FileManager);
         }
         else
         {
-            await DisplayTerseResults(manager);
+            await DisplayTerseResults(FileManager);
         }
     }
 

@@ -26,9 +26,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandParameter(0, Name = "Files to write", IsRequired = false)]
     public FirmwareType[]? Files { get; set; } = default!;
 
-    public FirmwareWriteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    private FileManager FileManager { get; }
+
+    public FirmwareWriteCommand(FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
+        FileManager = fileManager;
     }
 
     public override async ValueTask ExecuteAsync(IConsole console)
@@ -94,10 +97,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
     {
-        var manager = new FileManager();
-        await manager.Refresh();
+        await FileManager.Refresh();
 
-        var collection = manager.Firmware["Meadow F7"];
+        var collection = FileManager.Firmware["Meadow F7"];
         FirmwarePackage package;
 
         if (Version != null)

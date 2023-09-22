@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware delete", Description = "Delete a local firmware package")]
-public class FirmwareDeleteCommand : BaseCommand<FirmwareDeleteCommand>
+public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
 {
-    public FirmwareDeleteCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public FirmwareDeleteCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+        : base(fileManager, settingsManager, loggerFactory)
     {
     }
 
@@ -18,13 +18,11 @@ public class FirmwareDeleteCommand : BaseCommand<FirmwareDeleteCommand>
 
     protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
     {
-        var manager = new FileManager();
-
-        await manager.Refresh();
+        await FileManager.Refresh();
 
         // for now we only support F7
         // TODO: add switch and support for other platforms
-        var collection = manager.Firmware["Meadow F7"];
+        var collection = FileManager.Firmware["Meadow F7"];
 
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
