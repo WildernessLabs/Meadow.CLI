@@ -10,7 +10,7 @@
     <Authors>Peter Moody, Adrian Stevens, Brian Kim, Pete Garafano, Dominique Louis</Authors>
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.3.0.0</PackageVersion>
+    <PackageVersion>1.3.4.0</PackageVersion>
     <Platforms>AnyCPU</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
     <PackageIcon>icon.png</PackageIcon>
