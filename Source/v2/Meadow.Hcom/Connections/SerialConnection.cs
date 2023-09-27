@@ -1069,4 +1069,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             FileException -= OnFileError;
         }
     }
+
+    public override async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<FileDeleteRequest>();
+        command.MeadowFileName = meadowFileName;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
 }

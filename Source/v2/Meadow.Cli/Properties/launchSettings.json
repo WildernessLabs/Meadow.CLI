@@ -41,7 +41,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM4"
+      "commandLineArgs": "config route COM7"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -74,6 +74,10 @@
     "File List verbose": {
       "commandName": "Project",
       "commandLineArgs": "file list --verbose"
+    },
+    "File Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete meadow.log"
     },
     "File Read": {
       "commandName": "Project",

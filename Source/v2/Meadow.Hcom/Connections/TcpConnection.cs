@@ -112,6 +112,11 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public override Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();

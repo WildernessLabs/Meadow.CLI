@@ -10,6 +10,7 @@
         Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
         Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
         Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
+        Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null);
         Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null);
         Task<DateTimeOffset?> GetRtcTime(CancellationToken? cancellationToken = null);
         Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null);

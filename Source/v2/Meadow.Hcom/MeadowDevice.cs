@@ -129,5 +129,10 @@
         {
             await _connection.SetDeveloperParameter(parameter, value, cancellationToken);
         }
+
+        public async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+        {
+            await _connection.DeleteFile(meadowFileName, cancellationToken);
+        }
     }
 }

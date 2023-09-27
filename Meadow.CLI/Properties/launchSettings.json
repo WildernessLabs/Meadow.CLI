@@ -26,7 +26,7 @@
     },
     "FileDelete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete -f"
+      "commandLineArgs": "file delete -f dns.conf"
     },
     "FileList": {
       "commandName": "Project",
@@ -106,7 +106,7 @@
     },
     "UsePort": {
       "commandName": "Project",
-      "commandLineArgs": "use port COM10"
+      "commandLineArgs": "use port COM7"
     },
     "Version": {
       "commandName": "Project",
