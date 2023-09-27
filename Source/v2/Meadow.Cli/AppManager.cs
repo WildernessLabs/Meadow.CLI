@@ -70,23 +70,37 @@ public static class AppManager
         }
 
         // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList(true, cancellationToken);
+        var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
         // get a list of files of the device files that are not in the list we intend to deploy
         var removeFiles = deviceFiles
-            .Select(f => f.Name)
+            .Select(f => Path.GetFileName(f.Name))
             .Except(localFiles.Keys
                 .Select(f => Path.GetFileName(f)));
 
         // delete those files
         foreach (var file in removeFiles)
         {
+            logger.LogInformation($"Deleting file '{file}'...");
             await connection.DeleteFile(file, cancellationToken);
         }
 
-        // erase all files on device not in list of files to send
+        // now send all files with differing CRCs
+        foreach (var localFile in localFiles)
+        {
+            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
-        // send any file that has a different CRC
+            if (existing != null)
+            {
+                if (int.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
+                {
+                    // exists and has a matching CRC, skip it
+                    continue;
+                }
+            }
+
+            await connection?.WriteFile(localFile.Key, null, cancellationToken);
+        }
 
 
         if (wasRuntimeEnabled)

@@ -8,6 +8,9 @@ namespace Meadow.Cli;
 
 public partial class PackageManager
 {
+    private const string IL_LINKER_DIR = "lib";
+    public const string PostLinkDirectoryName = "postlink_bin";
+
     private readonly List<string> dependencyMap = new();
 
     private string? _meadowAssembliesPath;
@@ -28,8 +31,6 @@ public partial class PackageManager
             return _meadowAssembliesPath;
         }
     }
-
-    private const string IL_LINKER_DIR = "lib";
 
     public async Task<IEnumerable<string>?> TrimDependencies(FileInfo file, List<string> dependencies, IList<string>? noLink, ILogger? logger, bool includePdbs, bool verbose = false, string? linkerOptions = null)
     {
@@ -63,7 +64,7 @@ public partial class PackageManager
             }
         }
 
-        var postlink_dir = Path.Combine(file.DirectoryName, "postlink_bin");
+        var postlink_dir = Path.Combine(file.DirectoryName, PostLinkDirectoryName);
         if (Directory.Exists(postlink_dir))
         {
             Directory.Delete(postlink_dir, recursive: true);

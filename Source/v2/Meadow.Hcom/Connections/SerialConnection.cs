@@ -1075,6 +1075,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var command = RequestBuilder.Build<FileDeleteRequest>();
         command.MeadowFileName = meadowFileName;
 
+        _lastRequestConcluded = null;
+
         EnqueueRequest(command);
 
         await WaitForConcluded(null, cancellationToken);

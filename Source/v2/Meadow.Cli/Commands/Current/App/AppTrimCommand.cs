@@ -39,7 +39,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
                 return;
             }
 
-            // it's a directory - we need to determine the latest build (they might have a Debug and Release config)
+            // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
             var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
             if (candidates.Length == 0)
