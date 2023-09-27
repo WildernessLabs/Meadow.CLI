@@ -32,7 +32,7 @@ namespace Meadow.CLI.Commands.Utility
                 }
                 else
                 {
-                    _logger.LogInformation("To install on Windows, you'll need to open a Command Prompt or Terminal as an administrator");
+                    _logger.LogInformation("To install dfu-util on Windows you'll need to open a Command Prompt or Terminal as an administrator and re-run the `meadow install dfu-util` command again.");
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
