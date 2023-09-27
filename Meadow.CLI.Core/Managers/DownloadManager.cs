@@ -228,7 +228,9 @@ namespace Meadow.CLI.Core
                     WildernessLabsTemp);
 
                 var dfuUtilExe = new FileInfo(
-                    Path.Combine(WildernessLabsTemp, is64Bit ? "win64" : "win32", "dfu-util.exe"));
+                    Path.Combine(WildernessLabsTemp,
+                        is64Bit ? "win64" : "win32",
+                        "dfu-util.exe"));
 
                 var libUsbDll = new FileInfo(
                     Path.Combine(
@@ -257,7 +259,7 @@ namespace Meadow.CLI.Core
                     File.Delete(libUsbPath);
                 }
 
-                _logger.LogInformation("dfu-util 0.10 installed");
+                _logger.LogInformation("dfu-util 0.11 installed");
             }
             catch (Exception ex)
             {
