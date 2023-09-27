@@ -4,14 +4,14 @@ namespace Meadow.Hcom;
 
 public class DownloadFileStream : Stream, IDisposable
 {
-    private readonly ILogger _logger;
+    private readonly ILogger? _logger;
     private readonly Stream _stream;
 
     private long _position;
     private DateTimeOffset _lastLog;
     private long _lastPosition;
 
-    public DownloadFileStream(Stream stream, ILogger logger)
+    public DownloadFileStream(Stream stream, ILogger? logger = null)
     {
         _stream = stream;
         _logger = logger;
@@ -72,17 +72,17 @@ public class DownloadFileStream : Stream, IDisposable
 
         if (_position < 1024)
         {
-            _logger.LogInformation("Downloaded {position} bytes", _position);
+            _logger?.LogInformation("Downloaded {position} bytes", _position);
             _lastPosition = _position;
         }
         else if (_position < (1024 * 1024))
         {
-            _logger.LogInformation("Downloaded {position} KiB", Math.Round(_position / 1024M, 2, MidpointRounding.ToEven));
+            _logger?.LogInformation("Downloaded {position} KiB", Math.Round(_position / 1024M, 2, MidpointRounding.ToEven));
             _lastPosition = _position;
         }
         else
         {
-            _logger.LogInformation("Downloaded {position} MiB", Math.Round(_position / 1024M / 1024M, 2, MidpointRounding.ToEven));
+            _logger?.LogInformation("Downloaded {position} MiB", Math.Round(_position / 1024M / 1024M, 2, MidpointRounding.ToEven));
             _lastPosition = _position;
         }
     }

@@ -3,6 +3,10 @@
     "Meadow.Cli": {
       "commandName": "Project"
     },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
     "Version": {
       "commandName": "Project",
       "commandLineArgs": "--version"
@@ -158,6 +162,14 @@
     "App Trim": {
       "commandName": "Project",
       "commandLineArgs": "app trim F:\\temp\\MeadowApplication1"
+    },
+    "Dfu Install": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install"
+    },
+    "Dfu Install 0.10": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install -v 0.10"
     }
   }
 }

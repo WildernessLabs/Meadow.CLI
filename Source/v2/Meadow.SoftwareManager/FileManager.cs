@@ -1,10 +1,16 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 
 
 namespace Meadow.Software;
 
 public class FileManager
 {
+    public static readonly string WildernessTempFolderPath = Path.Combine(
+               Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+               "WildernessLabs",
+               "temp");
     /*
     public static readonly string OsFilename = "Meadow.OS.bin";
     public static readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";

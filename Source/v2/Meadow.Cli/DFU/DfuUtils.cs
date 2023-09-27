@@ -1,8 +1,10 @@
 ﻿using LibUsbDotNet.LibUsb;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 namespace Meadow.CLI.Core.Internals.Dfu;
@@ -296,4 +298,83 @@ public static class DfuUtils
             }
         }
     }
+
+    public static async Task InstallDfuUtil(
+        string tempFolder,
+        string dfuUtilVersion = "0.11",
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (Directory.Exists(tempFolder))
+            {
+                Directory.Delete(tempFolder, true);
+            }
+
+            using var client = new HttpClient();
+
+            Directory.CreateDirectory(tempFolder);
+
+            var downloadUrl = $"https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-{dfuUtilVersion}-binaries.zip";
+
+            var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/", StringComparison.Ordinal) + 1);
+            var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (response.IsSuccessStatusCode == false)
+            {
+                throw new Exception("Failed to download dfu-util");
+            }
+
+            using (var stream = await response.Content.ReadAsStreamAsync())
+            using (var downloadFileStream = new DownloadFileStream(stream))
+            using (var fs = File.OpenWrite(Path.Combine(tempFolder, downloadFileName)))
+            {
+                await downloadFileStream.CopyToAsync(fs);
+            }
+
+            ZipFile.ExtractToDirectory(
+                Path.Combine(tempFolder, downloadFileName),
+                tempFolder);
+
+            var is64Bit = Environment.Is64BitOperatingSystem;
+
+            var dfuUtilExe = new FileInfo(
+                Path.Combine(tempFolder, is64Bit ? "win64" : "win32", "dfu-util.exe"));
+
+            var libUsbDll = new FileInfo(
+                Path.Combine(
+                    tempFolder,
+                    is64Bit ? "win64" : "win32",
+                    "libusb-1.0.dll"));
+
+            var targetDir = is64Bit
+                                ? Environment.GetFolderPath(Environment.SpecialFolder.System)
+                                : Environment.GetFolderPath(
+                                    Environment.SpecialFolder.SystemX86);
+
+            File.Copy(dfuUtilExe.FullName, Path.Combine(targetDir, dfuUtilExe.Name), true);
+            File.Copy(libUsbDll.FullName, Path.Combine(targetDir, libUsbDll.Name), true);
+
+            // clean up from previous version
+            var dfuPath = Path.Combine(@"C:\Windows\System", dfuUtilExe.Name);
+            var libUsbPath = Path.Combine(@"C:\Windows\System", libUsbDll.Name);
+            if (File.Exists(dfuPath))
+            {
+                File.Delete(dfuPath);
+            }
+
+            if (File.Exists(libUsbPath))
+            {
+                File.Delete(libUsbPath);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempFolder))
+            {
+                Directory.Delete(tempFolder, true);
+            }
+        }
+    }
+
 }

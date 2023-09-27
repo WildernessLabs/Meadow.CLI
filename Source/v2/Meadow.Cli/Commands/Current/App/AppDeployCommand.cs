@@ -4,18 +4,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app build", Description = "Compiles a Meadow application")]
-public class AppBuildCommand : BaseCommand<AppBuildCommand>
+[Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
+public class AppDeployCommand : BaseCommand<AppDeployCommand>
 {
     private IPackageManager _packageManager;
 
-    [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
-    public string? Configuration { get; set; }
-
-    [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
+    [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppBuildCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+    public AppDeployCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(settingsManager, loggerFactory)
     {
         _packageManager = packageManager;
@@ -37,13 +34,14 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
                 return;
             }
         }
+        else
+        {
+            // TODO: only deploy if it's App.dll
+        }
 
-        if (Configuration == null) Configuration = "Release";
+        // TODO: send files
 
-        Logger.LogInformation($"Building {Configuration} configuration of of {path}...");
-
-        // TODO: enable cancellation of this call
-        var success = _packageManager.BuildApplication(path, Configuration);
+        var success = false;
 
         if (!success)
         {
