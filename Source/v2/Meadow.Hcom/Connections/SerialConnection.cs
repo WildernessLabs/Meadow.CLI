@@ -223,7 +223,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void CommandManager()
+    private async void CommandManager()
     {
         while (!_isDisposed)
         {
@@ -236,7 +236,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 // if this is a file write, we need to packetize for progress
 
                 var payload = command.Serialize();
-                EncodeAndSendPacket(payload);
+                await EncodeAndSendPacket(payload);
 
                 // TODO: re-queue on fail?
             }

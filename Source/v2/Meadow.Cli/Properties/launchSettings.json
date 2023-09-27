@@ -182,6 +182,10 @@
     "App Deploy (untrimmed output)": {
       "commandName": "Project",
       "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
+    },
+    "App run": {
+      "commandName": "Project",
+      "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
     }
   }
 }

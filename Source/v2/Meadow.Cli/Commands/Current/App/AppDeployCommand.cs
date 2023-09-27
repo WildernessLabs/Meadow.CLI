@@ -8,12 +8,15 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
+    private IPackageManager _packageManager;
+
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppDeployCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
+        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
@@ -83,7 +86,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         var targetDirectory = file.DirectoryName;
 
-        await AppManager.DeployApplication(connection, targetDirectory, true, false, Logger, cancellationToken);
+        await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, cancellationToken);
 
         if (wasRuntimeEnabled)
         {

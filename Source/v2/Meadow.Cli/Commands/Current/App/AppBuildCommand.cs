@@ -40,7 +40,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
         if (Configuration == null) Configuration = "Release";
 
-        Logger.LogInformation($"Building {Configuration} configuration of of {path}...");
+        Logger.LogInformation($"Building {Configuration} configuration of {path}...");
 
         // TODO: enable cancellation of this call
         var success = _packageManager.BuildApplication(path, Configuration);

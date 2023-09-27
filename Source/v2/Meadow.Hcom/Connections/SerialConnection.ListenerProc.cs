@@ -257,6 +257,11 @@ namespace Meadow.Hcom
                         // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
                         Debug.WriteLine($"listen on closed port");
                     }
+                    catch (OperationCanceledException)
+                    {
+                        Debug.WriteLine($"Operation Cancelled");
+                        // TODO: figure out why this happens occasionally
+                    }
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"listen error {ex.Message}");

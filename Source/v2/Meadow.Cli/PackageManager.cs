@@ -108,10 +108,6 @@ public partial class PackageManager : IPackageManager
             verbose: false);
     }
 
-    public async Task DeployApplication()
-    {
-    }
-
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
     {
         if (!Directory.Exists(rootFolder)) throw new FileNotFoundException();
@@ -127,6 +123,13 @@ public partial class PackageManager : IPackageManager
         {
             foreach (var dir in Directory.GetDirectories(directory))
             {
+                var shortname = System.IO.Path.GetFileName(dir);
+
+                if (shortname == PackageManager.PostLinkDirectoryName || shortname == PackageManager.PreLinkDirectoryName)
+                {
+                    continue;
+                }
+
                 var file = Directory.GetFiles(dir).FirstOrDefault(f => string.Compare(Path.GetFileName(f), appName, true) == 0);
                 if (file != null)
                 {
@@ -134,6 +137,7 @@ public partial class PackageManager : IPackageManager
                 }
 
                 FindApp(dir, fileList);
+
             }
         }
 

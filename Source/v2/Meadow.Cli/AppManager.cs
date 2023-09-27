@@ -27,6 +27,7 @@ public static class AppManager
     }
 
     public static async Task DeployApplication(
+        IPackageManager packageManager,
         IMeadowConnection connection,
         string localBinaryDirectory,
         bool includePdbs,
@@ -39,8 +40,10 @@ public static class AppManager
         var localFiles = new Dictionary<string, uint>();
 
         // get a list of files to send
+        var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
+
         logger.LogInformation("Generating the list of files to deploy...");
-        foreach (var file in Directory.GetFiles(localBinaryDirectory))
+        foreach (var file in dependencies)
         {
             // TODO: add any other filtering capability here
 
