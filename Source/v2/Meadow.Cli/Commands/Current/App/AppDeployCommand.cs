@@ -1,24 +1,22 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cli;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
-public class AppDeployCommand : BaseCommand<AppDeployCommand>
+public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
-    private IPackageManager _packageManager;
-
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppDeployCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public AppDeployCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        : base(connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -39,7 +37,11 @@ public class AppDeployCommand : BaseCommand<AppDeployCommand>
             // TODO: only deploy if it's App.dll
         }
 
-        // TODO: send files
+        // do we have the full app path, or just the project root?
+
+        // TODO: determine the latest build
+
+        await AppManager.DeployApplication(connection, "", true, false, Logger, cancellationToken);
 
         var success = false;
 

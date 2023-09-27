@@ -38,6 +38,8 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
         connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
+
+            // Console instead of Logger due to line breaking for progress bar
             Console.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
