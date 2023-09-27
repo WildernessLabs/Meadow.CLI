@@ -69,9 +69,11 @@ namespace Meadow.CLI.Commands
             if (updateExists)
             {
                 logger.LogInformation(
-                    "An update is available. Current Version {currentVersion} Latest Version {latestVersion}. Run `dotnet tool update WildernessLabs.Meadow.CLI --global` to update",
+                    "A Meadow.CLI update is available. Current Version {currentVersion} Latest Version {latestVersion}.",
                     currentVersion,
                     latestVersion);
+                logger.LogInformation("Run `dotnet tool update WildernessLabs.Meadow.CLI --global` to update.");
+                logger.LogInformation("");
             }
         }
     }
