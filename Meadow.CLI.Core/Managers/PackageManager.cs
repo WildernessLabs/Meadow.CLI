@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using GlobExpressions;
+using Meadow.CLI.Core.DeviceManagement;
+using System;
 using System.Diagnostics;
-using System.Dynamic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,8 +9,6 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
-using GlobExpressions;
-using Meadow.CLI.Core.DeviceManagement;
 
 namespace Meadow.CLI.Core
 {
@@ -43,7 +41,7 @@ namespace Meadow.CLI.Core
             return CreateMpak(postlinkBinDir, mpakName, osVersion, globPath);
         }
 
-        void BuildProject(string projectPath)
+        private void BuildProject(string projectPath)
         {
             var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
@@ -73,7 +71,7 @@ namespace Meadow.CLI.Core
             }
         }
 
-        string GetProjectTargetFramework(string projectPath)
+        private string GetProjectTargetFramework(string projectPath)
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(projectPath);
@@ -85,7 +83,7 @@ namespace Meadow.CLI.Core
                 : targetFramework;
         }
 
-        async Task TrimDependencies(string appDllPath, string osVersion)
+        private async Task TrimDependencies(string appDllPath, string osVersion)
         {
             FileInfo projectAppDll = new FileInfo(appDllPath);
 
@@ -98,7 +96,7 @@ namespace Meadow.CLI.Core
                 dependencies, null, null, false, verbose: false);
         }
 
-        string CreateMpak(string postlinkBinDir, string mpakName, string osVersion, string globPath)
+        private string CreateMpak(string postlinkBinDir, string mpakName, string osVersion, string globPath)
         {
             if (string.IsNullOrEmpty(mpakName))
             {
@@ -157,8 +155,8 @@ namespace Meadow.CLI.Core
 
             return mpakPath;
         }
-        
-        void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
+
+        private void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
         {
             // Windows '\' Path separator character will be written to the zip which meadow os does not properly unpack
             //  See: https://github.com/dotnet/runtime/issues/41914

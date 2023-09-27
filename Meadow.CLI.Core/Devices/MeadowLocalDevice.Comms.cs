@@ -14,10 +14,10 @@ namespace Meadow.CLI.Core.Devices
     public partial class MeadowLocalDevice
     {
         private const int PROGESS_INCREMENTS = 5;
-        uint _packetCrc32;
+        private uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
-        bool reUploadSkippedFiles = false;
-        byte reUploadCounter = 0;
+        private bool reUploadSkippedFiles = false;
+        private byte reUploadCounter = 0;
 
         public async Task SendTheEntireFile(FileCommand command,
                                             bool lastInSeries,
@@ -173,7 +173,7 @@ namespace Meadow.CLI.Core.Devices
 
             if (intProgress > nextProgress)
             {
-                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                if (!InMeadowCLI || Debugger.IsAttached) // In separate call as used for progress delimiter
                 {
                     Logger?.LogInformation("=");
                 }
