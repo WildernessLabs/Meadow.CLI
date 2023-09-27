@@ -27,6 +27,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         var lastFile = string.Empty;
 
+        // in order to deploy, the runtime must be disabled
+        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
+        if (wasRuntimeEnabled)
+        {
+            Logger.LogInformation("Disabling runtime...");
+
+            await connection.RuntimeDisable(cancellationToken);
+        }
+
         connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
@@ -75,5 +84,13 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         var targetDirectory = file.DirectoryName;
 
         await AppManager.DeployApplication(connection, targetDirectory, true, false, Logger, cancellationToken);
+
+        if (wasRuntimeEnabled)
+        {
+            // restore runtime state
+            Logger.LogInformation("Enabling runtime...");
+
+            await connection.RuntimeEnable(cancellationToken);
+        }
     }
 }

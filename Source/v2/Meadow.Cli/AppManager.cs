@@ -34,16 +34,6 @@ public static class AppManager
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        // in order to deploy, the runtime must be disabled
-        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
-
-        if (wasRuntimeEnabled)
-        {
-            logger.LogInformation("Disabling runtime...");
-
-            await connection.RuntimeDisable(cancellationToken);
-        }
-
         // TODO: add sub-folder support when HCOM supports it
 
         var localFiles = new Dictionary<string, uint>();
@@ -92,7 +82,7 @@ public static class AppManager
 
             if (existing != null)
             {
-                if (int.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
+                if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
                 {
                     // exists and has a matching CRC, skip it
                     continue;
@@ -101,15 +91,5 @@ public static class AppManager
 
             await connection?.WriteFile(localFile.Key, null, cancellationToken);
         }
-
-
-        if (wasRuntimeEnabled)
-        {
-            // restore runtime state
-            logger.LogInformation("Enabling runtime...");
-
-            await connection.RuntimeEnable(cancellationToken);
-        }
-
     }
 }
