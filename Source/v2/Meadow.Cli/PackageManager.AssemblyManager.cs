@@ -25,8 +25,16 @@ public partial class PackageManager
                 // for now we only support F7
                 // TODO: add switch and support for other platforms
                 var store = _fileManager.Firmware["Meadow F7"];
-                store.Refresh();
-                _meadowAssembliesPath = store.DefaultPackage.GetFullyQualifiedPath(store.DefaultPackage.BclFolder);
+                if (store != null)
+                {
+                    store.Refresh();
+                    if (store.DefaultPackage != null)
+                    {
+                        var defaultPackage = store.DefaultPackage;
+                        if (defaultPackage.BclFolder != null)
+                            _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                    }
+                }
             }
 
             return _meadowAssembliesPath;

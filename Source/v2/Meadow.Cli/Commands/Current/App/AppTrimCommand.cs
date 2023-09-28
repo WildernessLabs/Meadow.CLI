@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
@@ -15,13 +16,13 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppTrimCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -35,7 +36,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger.LogError($"Invalid application path '{path}'");
+                Logger?.LogError($"Invalid application path '{path}'");
                 return;
             }
 
@@ -44,7 +45,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
             if (candidates.Length == 0)
             {
-                Logger.LogError($"Cannot find a compiled application at '{path}'");
+                Logger?.LogError($"Cannot find a compiled application at '{path}'");
                 return;
             }
 
@@ -56,8 +57,8 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         }
 
         // if no configuration was provided, find the most recently built
-        Logger.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
+        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
-        await _packageManager.TrimApplication(file, false, null, cancellationToken);
+        await _packageManager.TrimApplication(file, false, null, cancellationToken ?? default);
     }
 }

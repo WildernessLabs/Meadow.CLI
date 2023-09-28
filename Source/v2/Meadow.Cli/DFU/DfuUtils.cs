@@ -75,7 +75,7 @@ public static class DfuUtils
             }
         }
 
-        return serialNumber;
+        return serialNumber ?? string.Empty;
     }
 
     public enum DfuFlashFormat
@@ -318,6 +318,7 @@ public static class DfuUtils
             var downloadUrl = $"https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-{dfuUtilVersion}-binaries.zip";
 
             var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/", StringComparison.Ordinal) + 1);
+
             var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
             if (response.IsSuccessStatusCode == false)

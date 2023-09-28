@@ -107,9 +107,14 @@ public class SettingsManager : ISettingsManager
     {
         var fi = new FileInfo(Path);
 
-        if (!Directory.Exists(fi.Directory.FullName))
+        var directory = fi.Directory;
+        if (directory != null)
         {
-            Directory.CreateDirectory(fi.Directory.FullName);
+            var directoryFullName = directory?.FullName;
+            if (!string.IsNullOrWhiteSpace(directoryFullName) && !Directory.Exists(directoryFullName))
+            {
+                Directory.CreateDirectory(directoryFullName);
+            }
         }
 
         if (File.Exists(Path))

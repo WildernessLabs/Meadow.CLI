@@ -1,5 +1,7 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -15,13 +17,13 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppBuildCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public AppBuildCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -33,25 +35,25 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger.LogError($"Invalid application path '{path}'");
+                Logger?.LogError($"Invalid application path '{path}'");
                 return;
             }
         }
 
         if (Configuration == null) Configuration = "Release";
 
-        Logger.LogInformation($"Building {Configuration} configuration of {path}...");
+        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
         // TODO: enable cancellation of this call
         var success = _packageManager.BuildApplication(path, Configuration);
 
         if (!success)
         {
-            Logger.LogError($"Build failed!");
+            Logger?.LogError($"Build failed!");
         }
         else
         {
-            Logger.LogError($"Build success.");
+            Logger?.LogError($"Build success.");
         }
     }
 }

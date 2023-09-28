@@ -1,5 +1,7 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
+using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +21,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
     [CommandParameter(0, Name = "Version number to download", IsRequired = false)]
     public string? Version { get; set; } = default!;
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         await FileManager.Refresh();
 
@@ -79,6 +81,6 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     private void OnDownloadProgress(object? sender, long e)
     {
-        Console.Write($"Retrieved {e} bytes...                    \r");
+        Logger?.LogInformation($"Retrieved {e} bytes...                    \r");
     }
 }
