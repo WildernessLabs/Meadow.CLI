@@ -1,22 +1,22 @@
 ﻿using CliFx;
 using CliFx.Infrastructure;
-using Meadow.Cli;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseCommand<T> : ICommand
 {
-    protected ILogger<T> Logger { get; }
-    protected ISettingsManager SettingsManager { get; }
+    protected ILogger<T>? Logger { get; }
+    protected ILoggerFactory? LoggerFactory { get; }
 
-    public BaseCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+    public BaseCommand(ILoggerFactory? loggerFactory)
     {
-        Logger = loggerFactory.CreateLogger<T>();
-        SettingsManager = settingsManager;
+        LoggerFactory = loggerFactory;
+        Logger = loggerFactory?.CreateLogger<T>();
     }
 
-    protected abstract ValueTask ExecuteCommand(CancellationToken cancellationToken);
+    protected abstract ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken);
 
     public virtual async ValueTask ExecuteAsync(IConsole console)
     {
@@ -24,11 +24,11 @@ public abstract class BaseCommand<T> : ICommand
 
         try
         {
-            await ExecuteCommand(cancellationToken);
+            await ExecuteCommand(console, cancellationToken);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex.Message);
+            Logger?.LogError(ex.Message);
         }
     }
 }

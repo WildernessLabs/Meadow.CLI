@@ -1,11 +1,12 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
-public class AppTrimCommand : BaseCommand<AppTrimCommand>
+public class AppTrimCommand : BaseSettingsCommand<AppTrimCommand>
 {
     private IPackageManager _packageManager;
 
@@ -21,7 +22,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -35,7 +36,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger.LogError($"Invalid application path '{path}'");
+                Logger?.LogError($"Invalid application path '{path}'");
                 return;
             }
 
@@ -44,7 +45,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
             if (candidates.Length == 0)
             {
-                Logger.LogError($"Cannot find a compiled application at '{path}'");
+                Logger?.LogError($"Cannot find a compiled application at '{path}'");
                 return;
             }
 
@@ -56,7 +57,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         }
 
         // if no configuration was provided, find the most recently built
-        Logger.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
+        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
         await _packageManager.TrimApplication(file, false, null, cancellationToken);
     }

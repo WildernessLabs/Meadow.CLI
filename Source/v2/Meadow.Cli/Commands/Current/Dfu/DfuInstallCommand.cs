@@ -1,6 +1,8 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
@@ -9,7 +11,7 @@ using System.Security.Principal;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("dfu install", Description = "Deploys a built Meadow application to a target device")]
-public class DfuInstallCommand : BaseCommand<AppDeployCommand>
+public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
 {
     public const string DefaultVersion = "0.11";
 
@@ -27,7 +29,7 @@ public class DfuInstallCommand : BaseCommand<AppDeployCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
     {
         if (Version == null)
         {

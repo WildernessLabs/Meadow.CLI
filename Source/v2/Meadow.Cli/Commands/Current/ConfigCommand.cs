@@ -8,40 +8,36 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("config", Description = "Read or modify the meadow CLI configuration")]
-public class ConfigCommand : ICommand
+public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
 {
-    private readonly ISettingsManager _settingsManager;
-    private readonly ILogger<DeviceInfoCommand>? _logger;
-
     [CommandOption("list", IsRequired = false)]
     public bool List { get; set; }
 
     [CommandParameter(0, Name = "Settings", IsRequired = false)]
     public string[] Settings { get; set; }
 
-    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory) : base(settingsManager, loggerFactory)
     {
-        _logger = loggerFactory?.CreateLogger<DeviceInfoCommand>();
-        _settingsManager = settingsManager;
+        
     }
 
-    public async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
     {
         if (List)
         {
-            _logger?.LogInformation($"Current CLI configuration");
+            Logger?.LogInformation($"Current CLI configuration");
 
             // display all current config
-            var settings = _settingsManager.GetPublicSettings();
+            var settings = SettingsManager.GetPublicSettings();
             if (settings.Count == 0)
             {
-                _logger?.LogInformation($"  <no settings found>");
+                Logger?.LogInformation($"  <no settings found>");
             }
             else
             {
-                foreach (var kvp in _settingsManager.GetPublicSettings())
+                foreach (var kvp in SettingsManager.GetPublicSettings())
                 {
-                    _logger?.LogInformation($"  {kvp.Key} = {kvp.Value}");
+                    Logger?.LogInformation($"  {kvp.Key} = {kvp.Value}");
                 }
             }
         }
@@ -54,13 +50,13 @@ public class ConfigCommand : ICommand
                     throw new CommandException($"No setting provided");
                 case 1:
                     // erase a setting
-                    _logger?.LogInformation($"Deleting Setting {Settings[0]}");
-                    _settingsManager.DeleteSetting(Settings[0]);
+                    Logger?.LogInformation($"Deleting Setting {Settings[0]}");
+                    SettingsManager.DeleteSetting(Settings[0]);
                     break;
                 case 2:
                     // set a setting
-                    _logger?.LogInformation($"Setting {Settings[0]}={Settings[1]}");
-                    _settingsManager.SaveSetting(Settings[0], Settings[1]);
+                    Logger?.LogInformation($"Setting {Settings[0]}={Settings[1]}");
+                    SettingsManager.SaveSetting(Settings[0], Settings[1]);
                     break;
                 default:
                     // not valid;

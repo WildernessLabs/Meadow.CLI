@@ -1,5 +1,7 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.Cli;
+using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +18,7 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
     [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
     public string Version { get; set; } = default!;
 
-    protected override async ValueTask ExecuteCommand(CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
     {
         await FileManager.Refresh();
 
