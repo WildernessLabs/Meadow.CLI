@@ -18,9 +18,30 @@ namespace Meadow.Hcom
                 if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
                 if (timeout <= 0) throw new TimeoutException();
 
-                if (State == ConnectionState.MeadowAttached) return;
+                if (State == ConnectionState.MeadowAttached)
+                {
+                    if (Device == null)
+                    {
+                        // no device set - this happens when we are waiting for attach from DFU mode
+                        await Attach(cancellationToken, 5);
+                    }
+
+                    return;
+                }
 
                 await Task.Delay(500);
+
+                if (!_port.IsOpen)
+                {
+                    try
+                    {
+                        Open();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Unable to open port: {ex.Message}");
+                    }
+                }
             }
 
             throw new TimeoutException();
@@ -64,7 +85,7 @@ namespace Meadow.Hcom
 
                                 try
                                 {
-                                    _port.Open();
+                                    Open();
                                     Debug.WriteLine($"Port re-opened");
                                 }
                                 catch

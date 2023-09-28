@@ -113,7 +113,7 @@
     },
     "Firmware Write all": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write runtime esp"
+      "commandLineArgs": "firmware write"
     },
     "Firmware Write version": {
       "commandName": "Project",
