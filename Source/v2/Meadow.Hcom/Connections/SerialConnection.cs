@@ -2,6 +2,8 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Meadow.Hcom;
 
@@ -931,10 +933,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<InitFileWriteRequest>();
+
+        var fileBytes = File.ReadAllBytes(localFileName);
+
+        var fileHash = Encoding.ASCII.GetBytes("12345678901234567890123456789012"); // must be 32 bytes
+        if (writeAddress != 0)
+        {
+            // calculate the MD5 hash of the file - we have to send it as a UTF8 string, not as bytes.
+            using var md5 = MD5.Create();
+            var hashBytes = md5.ComputeHash(fileBytes);
+            var hashString = BitConverter.ToString(hashBytes)
+                .Replace("-", "")
+                .ToLowerInvariant();
+            fileHash = Encoding.UTF8.GetBytes(hashString);
+        }
+        var fileCrc = NuttxCrc.Crc32part(fileBytes, (uint)fileBytes.Length, 0);
+
         command.SetParameters(
             localFileName,
             meadowFileName ?? Path.GetFileName(localFileName),
+            fileCrc,
             writeAddress,
+            fileHash,
             initialRequestType);
 
         var accepted = false;
@@ -967,20 +987,20 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         // now send the file data
-
-        using FileStream fs = File.OpenRead(localFileName);
-
         // The maximum data bytes is max packet size - 2 bytes for the sequence number
         byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
         int bytesRead;
         ushort sequenceNumber = 0;
 
         var progress = 0;
-        var expected = fs.Length;
+        var expected = fileBytes.Length;
 
         var fileName = Path.GetFileName(localFileName);
 
         base.RaiseFileWriteProgress(fileName, progress, expected);
+
+        var oldTimeout = _port.ReadTimeout;
+        _port.ReadTimeout = 60000;
 
         while (true)
         {
@@ -991,15 +1011,20 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             sequenceNumber++;
 
-            // sequence number at the start of the packet
             Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
-            // followed by the file data
-            bytesRead = fs.Read(packet, 2, packet.Length - 2);
-            if (bytesRead <= 0) break;
-            await EncodeAndSendPacket(packet, bytesRead + 2, cancellationToken);
-            progress += bytesRead;
+
+            var toRead = fileBytes.Length - progress;
+            if (toRead > packet.Length - 2)
+            {
+                toRead = packet.Length - 2;
+            }
+            Array.Copy(fileBytes, progress, packet, 2, toRead);
+            await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+            progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
+            if (progress >= fileBytes.Length) break;
         }
+        _port.ReadTimeout = oldTimeout;
 
         base.RaiseFileWriteProgress(fileName, expected, expected);
 
@@ -1035,21 +1060,21 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             FileReadCompleted += OnFileReadCompleted;
             FileException += OnFileError;
+            ConnectionError += OnFileError;
 
             EnqueueRequest(command);
 
             if (!await WaitForResult(
                 () =>
                 {
-                    if (ex != null) throw ex;
-                    return completed;
+                    return completed | ex != null;
                 },
                 cancellationToken))
             {
                 return false;
             }
 
-            return true;
+            return ex == null;
         }
         finally
         {

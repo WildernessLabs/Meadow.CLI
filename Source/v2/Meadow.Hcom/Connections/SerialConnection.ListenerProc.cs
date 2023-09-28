@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Meadow.Hcom
 {
@@ -230,8 +229,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-                                        EncodeAndSendPacket(uploadRequest.Serialize());
-                                        //                                        (this as IMeadowConnection).EnqueueRequest(uploadRequest);
+                                        await EncodeAndSendPacket(uploadRequest.Serialize());
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {
@@ -318,8 +316,8 @@ namespace Meadow.Hcom
                     }
                     catch (Exception ex)
                     {
+                        RaiseConnectionError(ex);
                         Debug.WriteLine($"listen error {ex.Message}");
-                        _logger?.LogTrace(ex, "An error occurred while listening to the serial port.");
                         await Task.Delay(1000);
                     }
                 }
