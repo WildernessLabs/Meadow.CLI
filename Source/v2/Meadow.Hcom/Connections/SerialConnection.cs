@@ -461,7 +461,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return true;
     }
 
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (!_isDisposed)
         {
@@ -473,12 +473,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             _isDisposed = true;
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
     }
 
     // ----------------------------------------------
@@ -640,14 +634,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         InfoMessages.Clear();
 
+        _lastRequestConcluded = null;
+
         EnqueueRequest(command);
 
-        // we have to give time for the device to actually reset
-        await Task.Delay(500);
-
-        var success = await WaitForResponseText(RuntimeSucessfullyEnabledToken);
-
-        if (!success) throw new Exception("Unable to enable runtime");
+        await WaitForConcluded(null, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -656,14 +647,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         InfoMessages.Clear();
 
+        _lastRequestConcluded = null;
+
         EnqueueRequest(command);
 
-        // we have to give time for the device to actually reset
-        await Task.Delay(500);
-
-        var success = await WaitForResponseText(RuntimeSucessfullyDisabledToken);
-
-        if (!success) throw new Exception("Unable to disable runtime");
+        await WaitForConcluded(null, cancellationToken);
     }
 
     public override async Task TraceEnable(CancellationToken? cancellationToken = null)

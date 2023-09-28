@@ -32,6 +32,7 @@ namespace Meadow.Hcom
             var decodedBuffer = new byte[8192];
             var messageBytes = new CircularBuffer<byte>(8192 * 2);
             var delimiter = new byte[] { 0x00 };
+            var receivedLength = 0;
 
             while (!_isDisposed)
             {
@@ -41,7 +42,39 @@ namespace Meadow.Hcom
                     {
                         Debug.WriteLine($"listening...");
 
-                        var receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                    read:
+                        try
+                        {
+                            receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Debug.WriteLine($"Device reset detected");
+
+                            var timeout = 20;
+
+                            while (!_port.IsOpen)
+                            {
+                                await Task.Delay(500);
+
+                                if (timeout-- < 0)
+                                {
+                                    return;
+                                }
+
+                                try
+                                {
+                                    _port.Open();
+                                    Debug.WriteLine($"Port re-opened");
+                                }
+                                catch
+                                {
+                                    Debug.WriteLine($"Failed to re-open port");
+                                }
+                            }
+
+                            goto read;
+                        }
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 
@@ -259,8 +292,8 @@ namespace Meadow.Hcom
                     }
                     catch (OperationCanceledException)
                     {
+                        // this happens on disconnect - could be cable pulled, could be device reset
                         Debug.WriteLine($"Operation Cancelled");
-                        // TODO: figure out why this happens occasionally
                     }
                     catch (Exception ex)
                     {
