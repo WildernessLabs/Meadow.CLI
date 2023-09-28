@@ -18,7 +18,7 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
     [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
     public string Version { get; set; } = default!;
 
-    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         await FileManager.Refresh();
 

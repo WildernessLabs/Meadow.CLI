@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
-public class AppTrimCommand : BaseSettingsCommand<AppTrimCommand>
+public class AppTrimCommand : BaseCommand<AppTrimCommand>
 {
     private IPackageManager _packageManager;
 
@@ -16,13 +16,13 @@ public class AppTrimCommand : BaseSettingsCommand<AppTrimCommand>
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppTrimCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -59,6 +59,6 @@ public class AppTrimCommand : BaseSettingsCommand<AppTrimCommand>
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
-        await _packageManager.TrimApplication(file, false, null, cancellationToken);
+        await _packageManager.TrimApplication(file, false, null, cancellationToken ?? default);
     }
 }

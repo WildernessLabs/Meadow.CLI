@@ -9,6 +9,7 @@ public abstract class BaseCommand<T> : ICommand
 {
     protected ILogger<T>? Logger { get; }
     protected ILoggerFactory? LoggerFactory { get; }
+    protected IConsole? Console { get; private set; }
 
     public BaseCommand(ILoggerFactory? loggerFactory)
     {
@@ -16,15 +17,17 @@ public abstract class BaseCommand<T> : ICommand
         Logger = loggerFactory?.CreateLogger<T>();
     }
 
-    protected abstract ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken);
+    protected abstract ValueTask ExecuteCommand(CancellationToken? cancellationToken);
 
     public virtual async ValueTask ExecuteAsync(IConsole console)
     {
-        var cancellationToken = console.RegisterCancellationHandler();
+        Console = console;
+        var cancellationToken = Console?.RegisterCancellationHandler();
 
         try
         {
-            await ExecuteCommand(console, cancellationToken);
+            if (cancellationToken!= null)
+                await ExecuteCommand(cancellationToken);
         }
         catch (Exception ex)
         {

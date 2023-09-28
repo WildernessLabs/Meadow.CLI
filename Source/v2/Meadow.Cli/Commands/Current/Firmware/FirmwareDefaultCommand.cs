@@ -18,7 +18,7 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
     [CommandParameter(0, Name = "Version number to use as default", IsRequired = true)]
     public string Version { get; set; } = default!;
 
-    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         await FileManager.Refresh();
 

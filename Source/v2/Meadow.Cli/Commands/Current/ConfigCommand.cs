@@ -14,14 +14,15 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
     public bool List { get; set; }
 
     [CommandParameter(0, Name = "Settings", IsRequired = false)]
-    public string[] Settings { get; set; }
+    public string[]? Settings { get; set; }
 
-    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory) : base(settingsManager, loggerFactory)
+    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+        : base(settingsManager, loggerFactory)
     {
         
     }
 
-    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         if (List)
         {
@@ -43,19 +44,19 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
         }
         else
         {
-            switch (Settings.Length)
+            switch (Settings?.Length)
             {
                 case 0:
                     // not valid
                     throw new CommandException($"No setting provided");
                 case 1:
                     // erase a setting
-                    Logger?.LogInformation($"Deleting Setting {Settings[0]}");
+                    Logger?.LogInformation($"{Environment.NewLine}Deleting Setting {Settings[0]}");
                     SettingsManager.DeleteSetting(Settings[0]);
                     break;
                 case 2:
                     // set a setting
-                    Logger?.LogInformation($"Setting {Settings[0]}={Settings[1]}");
+                    Logger?.LogInformation($"{Environment.NewLine}Setting {Settings[0]}={Settings[1]}");
                     SettingsManager.SaveSetting(Settings[0], Settings[1]);
                     break;
                 default:

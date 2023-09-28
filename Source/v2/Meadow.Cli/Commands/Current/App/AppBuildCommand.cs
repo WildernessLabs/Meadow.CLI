@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app build", Description = "Compiles a Meadow application")]
-public class AppBuildCommand : BaseSettingsCommand<AppBuildCommand>
+public class AppBuildCommand : BaseCommand<AppBuildCommand>
 {
     private IPackageManager _packageManager;
 
@@ -17,13 +17,13 @@ public class AppBuildCommand : BaseSettingsCommand<AppBuildCommand>
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppBuildCommand(IPackageManager packageManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+    public AppBuildCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(IConsole console, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
