@@ -20,6 +20,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
     public abstract Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
     public abstract Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
+    public abstract Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null);
     public abstract Task ResetDevice(CancellationToken? cancellationToken = null);
     public abstract Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null);
     public abstract Task RuntimeDisable(CancellationToken? cancellationToken = null);

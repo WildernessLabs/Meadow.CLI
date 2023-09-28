@@ -27,6 +27,7 @@ public static class AppManager
     }
 
     public static async Task DeployApplication(
+        IPackageManager packageManager,
         IMeadowConnection connection,
         string localBinaryDirectory,
         bool includePdbs,
@@ -34,23 +35,15 @@ public static class AppManager
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        // in order to deploy, the runtime must be disabled
-        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
-
-        if (wasRuntimeEnabled)
-        {
-            logger.LogInformation("Disabling runtime...");
-
-            await connection.RuntimeDisable(cancellationToken);
-        }
-
         // TODO: add sub-folder support when HCOM supports it
 
         var localFiles = new Dictionary<string, uint>();
 
         // get a list of files to send
+        var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
+
         logger.LogInformation("Generating the list of files to deploy...");
-        foreach (var file in Directory.GetFiles(localBinaryDirectory))
+        foreach (var file in dependencies)
         {
             // TODO: add any other filtering capability here
 
@@ -70,21 +63,36 @@ public static class AppManager
         }
 
         // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList(true, cancellationToken);
+        var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
+        // get a list of files of the device files that are not in the list we intend to deploy
+        var removeFiles = deviceFiles
+            .Select(f => Path.GetFileName(f.Name))
+            .Except(localFiles.Keys
+                .Select(f => Path.GetFileName(f)));
 
-        // erase all files on device not in list of files to send
-
-        // send any file that has a different CRC
-
-
-        if (wasRuntimeEnabled)
+        // delete those files
+        foreach (var file in removeFiles)
         {
-            // restore runtime state
-            logger.LogInformation("Enabling runtime...");
-
-            await connection.RuntimeEnable(cancellationToken);
+            logger.LogInformation($"Deleting file '{file}'...");
+            await connection.DeleteFile(file, cancellationToken);
         }
 
+        // now send all files with differing CRCs
+        foreach (var localFile in localFiles)
+        {
+            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
+
+            if (existing != null)
+            {
+                if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
+                {
+                    // exists and has a matching CRC, skip it
+                    continue;
+                }
+            }
+
+            await connection?.WriteFile(localFile.Key, null, cancellationToken);
+        }
     }
 }

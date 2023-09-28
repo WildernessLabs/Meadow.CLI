@@ -18,9 +18,30 @@ namespace Meadow.Hcom
                 if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
                 if (timeout <= 0) throw new TimeoutException();
 
-                if (State == ConnectionState.MeadowAttached) return;
+                if (State == ConnectionState.MeadowAttached)
+                {
+                    if (Device == null)
+                    {
+                        // no device set - this happens when we are waiting for attach from DFU mode
+                        await Attach(cancellationToken, 5);
+                    }
+
+                    return;
+                }
 
                 await Task.Delay(500);
+
+                if (!_port.IsOpen)
+                {
+                    try
+                    {
+                        Open();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Unable to open port: {ex.Message}");
+                    }
+                }
             }
 
             throw new TimeoutException();
@@ -32,6 +53,7 @@ namespace Meadow.Hcom
             var decodedBuffer = new byte[8192];
             var messageBytes = new CircularBuffer<byte>(8192 * 2);
             var delimiter = new byte[] { 0x00 };
+            var receivedLength = 0;
 
             while (!_isDisposed)
             {
@@ -41,7 +63,39 @@ namespace Meadow.Hcom
                     {
                         Debug.WriteLine($"listening...");
 
-                        var receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                    read:
+                        try
+                        {
+                            receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Debug.WriteLine($"Device reset detected");
+
+                            var timeout = 20;
+
+                            while (!_port.IsOpen)
+                            {
+                                await Task.Delay(500);
+
+                                if (timeout-- < 0)
+                                {
+                                    return;
+                                }
+
+                                try
+                                {
+                                    Open();
+                                    Debug.WriteLine($"Port re-opened");
+                                }
+                                catch
+                                {
+                                    Debug.WriteLine($"Failed to re-open port");
+                                }
+                            }
+
+                            goto read;
+                        }
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 
@@ -256,6 +310,11 @@ namespace Meadow.Hcom
                     {
                         // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
                         Debug.WriteLine($"listen on closed port");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // this happens on disconnect - could be cable pulled, could be device reset
+                        Debug.WriteLine($"Operation Cancelled");
                     }
                     catch (Exception ex)
                     {

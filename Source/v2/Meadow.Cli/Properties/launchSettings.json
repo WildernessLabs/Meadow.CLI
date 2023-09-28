@@ -41,7 +41,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM4"
+      "commandLineArgs": "config route COM7"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -74,6 +74,10 @@
     "File List verbose": {
       "commandName": "Project",
       "commandLineArgs": "file list --verbose"
+    },
+    "File Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete meadow.log"
     },
     "File Read": {
       "commandName": "Project",
@@ -109,7 +113,7 @@
     },
     "Firmware Write all": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write runtime esp"
+      "commandLineArgs": "firmware write"
     },
     "Firmware Write version": {
       "commandName": "Project",
@@ -170,6 +174,18 @@
     "Dfu Install 0.10": {
       "commandName": "Project",
       "commandLineArgs": "dfu install -v 0.10"
+    },
+    "App Deploy (project folder)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1"
+    },
+    "App Deploy (untrimmed output)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
+    },
+    "App run": {
+      "commandName": "Project",
+      "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
     }
   }
 }
