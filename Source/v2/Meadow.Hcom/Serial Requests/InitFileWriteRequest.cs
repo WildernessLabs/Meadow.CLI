@@ -83,9 +83,13 @@ internal class InitFileWriteRequest : Request
     public void SetParameters(
         string localFile,
         string meadowFileName,
-        int espAddress = 0,
+        uint fileCrc,
+        int espAddress,
+        byte[] espHash,
         RequestType requestType = RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER)
     {
+        if (espHash.Length != 32) throw new ArgumentException();
+
         // file write has additional header payload that's sent with the request, build it here
         _requestType = requestType;
 
@@ -97,13 +101,12 @@ internal class InitFileWriteRequest : Request
         MeadowFileName = meadowFileName;
 
         var nameBytes = Encoding.ASCII.GetBytes(meadowFileName);
-        var espHash = Encoding.ASCII.GetBytes("12345678901234567890123456789012");        // Must be 32 bytes
 
         Payload = new byte[4 + 4 + 4 + 32 + nameBytes.Length];
         Array.Copy(BitConverter.GetBytes((uint)source.Length), 0, Payload, 0, 4); // file size
-        Array.Copy(BitConverter.GetBytes((uint)source.Length), 0, Payload, 4, 4); // file crc
+        Array.Copy(BitConverter.GetBytes(fileCrc), 0, Payload, 4, 4); // file crc
         Array.Copy(BitConverter.GetBytes(espAddress), 0, Payload, 8, 4); // ESP flash address offset
-        Array.Copy(espHash, 0, Payload, 12, espHash.Length); // TODO: ESP hash (dev note: this appears to never be used or needed?)
+        Array.Copy(espHash, 0, Payload, 12, espHash.Length);
         Array.Copy(nameBytes, 0, Payload, 44, nameBytes.Length); // file name
     }
 }

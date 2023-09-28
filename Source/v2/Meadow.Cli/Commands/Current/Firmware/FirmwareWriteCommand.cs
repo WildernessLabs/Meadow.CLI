@@ -130,7 +130,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         // the connection passes messages back to us (info about actions happening on-device
         connection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(e.message);
+            if (e.message.Contains("% downloaded"))
+            {
+                // don't echo this, as we're already reporting % written
+            }
+            else
+            {
+                Logger.LogInformation(e.message);
+            }
         };
 
         var package = await GetSelectedPackage();
