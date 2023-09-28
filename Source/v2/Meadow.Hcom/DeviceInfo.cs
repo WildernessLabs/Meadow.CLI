@@ -12,28 +12,82 @@ namespace Meadow.Hcom
         }
 
         public string this[string propname] => Properties[propname];
+        public string Product => this["Product"];
+        public string Model => this["Model"];
+        public string ProcessorType => this["ProcessorType"];
+        public string CoprocessorType => this["CoprocessorType"];
         public string OsVersion => this["OSVersion"];
         public string CoprocessorOsVersion => this["CoprocessorVersion"];
-        public string RuntimeVersion => this["MonoVersion"];
-        public string Model => this["Model"];
+        public string ProcessorId => this["ProcessorId"];
         public string HardwareVersion => this["Hardware"];
         public string DeviceName => this["DeviceName"];
-        public string ProcessorType => this["ProcessorType"];
-        public string UniqueID => this["ProcessorId"];
+        public string RuntimeVersion => this["MonoVersion"];
         public string SerialNumber => this["SerialNo"];
-        public string CoprocessorType => this["CoprocessorType"];
         public string MacAddress => this["WiFiMAC"];
+        public string SoftAPMacAddress => this["SoftAPMac"];
+
+        /// <summary>
+        /// String representation of an unknown MAC address.
+        /// </summary>
+        private const string UNKNOWN_MAC_ADDRESS = "00:00:00:00:00:00";
 
         public override string ToString()
         {
-            var info = new StringBuilder();
+            var deviceInfo = new StringBuilder();
 
-            foreach (var prop in Properties)
+            if (Product.Contains(" by Wilderness Labs"))
             {
-                info.AppendLine($"{prop.Key}: {prop.Value}");
+                deviceInfo.AppendLine(Product);
+            }
+            else
+            {
+                deviceInfo.AppendLine($"{Product} by Wilderness Labs");
             }
 
-            return info.ToString();
+            deviceInfo.AppendLine("Board Information ");
+            deviceInfo.AppendLine($"    Model: {Model}");
+            deviceInfo.AppendLine($"    Hardware version: {HardwareVersion}");
+            deviceInfo.AppendLine($"    Device name: {DeviceName}");
+            deviceInfo.AppendLine();
+            deviceInfo.AppendLine($"Hardware Information ");
+            deviceInfo.AppendLine($"    Processor type: {ProcessorType}");
+            deviceInfo.AppendLine($"    ID: {ProcessorId}");
+            deviceInfo.AppendLine($"    Serial number: {SerialNumber}");
+            deviceInfo.AppendLine($"    Coprocessor type: {CoprocessorType}");
+
+            string macAddresses = string.Empty;
+            int macCount = 0;
+            if (!string.IsNullOrEmpty(MacAddress) && MacAddress != UNKNOWN_MAC_ADDRESS)
+            {
+                macCount++;
+                macAddresses += $"        WiFi: {MacAddress}{Environment.NewLine}";
+            }
+            if (!string.IsNullOrEmpty(SoftAPMacAddress) && SoftAPMacAddress != UNKNOWN_MAC_ADDRESS)
+            {
+                macCount++;
+                macAddresses += $"        AP: {SoftAPMacAddress}{Environment.NewLine}";
+            }
+            if (macCount > 0)
+            {
+                if (macCount > 1)
+                {
+                    deviceInfo.AppendLine("    MAC Addresses - " );
+                }
+                else
+                {
+                    deviceInfo.AppendLine("    MAC Address - " );
+                }
+                deviceInfo.AppendLine($"{macAddresses}");
+            }
+
+            deviceInfo.AppendLine();
+            deviceInfo.AppendLine($"Firmware Versions ");
+            deviceInfo.AppendLine($"    OS: {OsVersion}");
+            deviceInfo.AppendLine($"    Mono: {RuntimeVersion}");
+            deviceInfo.AppendLine($"    Coprocessor: {CoprocessorOsVersion}");
+            deviceInfo.AppendLine($"    Protocol: {Protocol.HCOM_PROTOCOL_HCOM_VERSION_NUMBER}");
+
+            return deviceInfo.ToString();
         }
     }
 }
