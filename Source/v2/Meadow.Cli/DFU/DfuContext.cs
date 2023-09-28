@@ -15,7 +15,7 @@ namespace MeadowCLI
         };
 
         // --------------------------- INSTANCE
-        public static DfuContext Current;
+        public static DfuContext? Current;
 
         public static void Init()
         {
@@ -25,25 +25,32 @@ namespace MeadowCLI
 
         public static void Dispose()
         {
-            Current._context.Dispose();
+            Current?._context?.Dispose();
         }
         // --------------------------- INSTANCE
 
-        private Context _context;
+        private Context? _context;
 
-        public List<DfuDevice> GetDevices()
+        public List<DfuDevice>? GetDevices()
         {
-            return _context.GetDfuDevices(validVendorIDs);
+            if (_context != null)
+                return _context.GetDfuDevices(validVendorIDs);
+            else
+                return null;
         }
 
         public bool HasCapability(Capabilities caps)
         {
-            return _context.HasCapability(caps);
+            if (_context != null)
+                return _context.HasCapability(caps);
+            else
+                return false;
         }
 
         public void BeginListeningForHotplugEvents()
         {
-            _context.BeginListeningForHotplugEvents();
+            if (_context != null)
+                _context.BeginListeningForHotplugEvents();
         }
 
     }
