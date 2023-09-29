@@ -14,7 +14,7 @@ public enum FirmwareType
     ESP
 }
 
-[Command("firmware write", Description = "Download a firmware package")]
+[Command("firmware write", Description = "Writes firmware files to a connected meadow device")]
 public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 {
     [CommandOption("version", 'v', IsRequired = false)]
@@ -68,6 +68,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu && Files.Contains(FirmwareType.OS))
         {
+            // get the device's serial number via DFU - we'll need it to find the device after it resets
+            DfuUtils.GetDeviceSerial
+
             // no connection is required here - in fact one won't exist
             // unless maybe we add a "DFUConnection"?
             await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader));
