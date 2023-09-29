@@ -886,11 +886,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _port.ReadTimeout = 60000;
         CommandTimeoutSeconds = 180;
         InfoMessages.Clear();
-        var infoCount = 0;
 
         try
         {
-            RaiseConnectionMessage("\nTransferring file to coprocessor...");
+            RaiseConnectionMessage($"Transferring {Path.GetFileName(localFileName)} to coprocessor...");
 
             // push the file to the device
             await WriteFile(localFileName, null,
