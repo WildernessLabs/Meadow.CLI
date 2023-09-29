@@ -1,5 +1,6 @@
-﻿using LibUsbDotNet.LibUsb;
+﻿//using LibUsbDotNet.LibUsb;
 using Meadow.Hcom;
+using Meadow.LibUsb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel;
@@ -12,71 +13,8 @@ namespace Meadow.CLI.Core.Internals.Dfu;
 public static class DfuUtils
 {
     private static int _osAddress = 0x08000000;
-    private static string _usbStmName = "STM32  BOOTLOADER";
-    private static int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
 
     public static string LastSerialNumber { get; private set; } = "";
-
-    public static bool CheckForValidDevice()
-    {
-        try
-        {
-            GetDeviceInBootloaderMode();
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    public static IUsbDevice GetDeviceInBootloaderMode()
-    {
-        var allDevices = GetDevicesInBootloaderMode();
-        if (allDevices.Count() > 1)
-        {
-            throw new Exception("More than one DFU device found, please connect only one and try again.");
-        }
-
-        var device = allDevices.SingleOrDefault();
-        if (device == null)
-        {
-            throw new Exception("Device not found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
-        }
-
-        return device;
-    }
-
-    public static IEnumerable<IUsbDevice> GetDevicesInBootloaderMode()
-    {
-        using (UsbContext context = new UsbContext())
-        {
-            var allDevices = context.List();
-            var ourDevices = allDevices.Where(d => d.Info.VendorId == _usbBootLoaderVenderID);
-            if (ourDevices.Count() < 1)
-            {
-                throw new Exception("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
-            }
-            return ourDevices;
-        }
-    }
-
-    public static string GetDeviceSerial(IUsbDevice device)
-    {
-        var serialNumber = string.Empty;
-
-        if (device != null)
-        {
-            device.Open();
-            if (device.IsOpen)
-            {
-                serialNumber = device.Info?.SerialNumber;
-                device.Close();
-            }
-        }
-
-        return serialNumber ?? string.Empty;
-    }
 
     public enum DfuFlashFormat
     {
@@ -126,28 +64,19 @@ public static class DfuUtils
         }
     }
 
-    public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+    public static async Task<bool> FlashFile(string fileName, ILibUsbDevice device, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
     {
         logger ??= NullLogger.Instance;
-        device ??= GetDeviceInBootloaderMode();
-
-        if (!File.Exists(fileName))
-        {
-            logger.LogError($"Unable to flash {fileName} - file or folder does not exist");
-            return false;
-        }
 
         if (!File.Exists(fileName))
         {
             logger.LogError($"Unable to find file '{fileName}'. Please specify valid --File or download the latest with: meadow download os");
             return false;
         }
-        else
-        {
-            logger.LogInformation($"Flashing OS with {fileName}");
-        }
 
-        LastSerialNumber = GetDeviceSerial(device);
+        logger.LogInformation($"Flashing OS with {fileName}");
+
+        LastSerialNumber = device.GetDeviceSerialNumber();
 
         var dfuUtilVersion = GetDfuUtilVersion();
         logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
