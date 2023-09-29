@@ -54,7 +54,23 @@ public class MeadowConnectionManager
         }
         else
         {
-            _currentConnection = new SerialConnection(route);
+            var retryCount = 0;
+
+        get_serial_connection:
+            try
+            {
+                _currentConnection = new SerialConnection(route);
+            }
+            catch
+            {
+                retryCount++;
+                if (retryCount > 10)
+                {
+                    throw new Exception($"Cannot find port {route}");
+                }
+                Thread.Sleep(500);
+                goto get_serial_connection;
+            }
         }
 
         return _currentConnection;
