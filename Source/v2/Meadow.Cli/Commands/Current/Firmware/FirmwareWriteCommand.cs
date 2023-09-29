@@ -139,6 +139,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 Logger.LogInformation(e.message);
             }
         };
+        connection.ConnectionMessage += (s, message) =>
+        {
+            Logger.LogInformation(message);
+        };
 
         var package = await GetSelectedPackage();
 
