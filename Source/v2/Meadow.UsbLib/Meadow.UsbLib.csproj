@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <TargetFrameworks>net6.0</TargetFrameworks>
+      <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Cli.Core\Meadow.Cli.Core.csproj" />
+  </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
+    </ItemGroup>
+
+</Project>

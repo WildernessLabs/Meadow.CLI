@@ -1,4 +1,4 @@
-﻿using LibUsbDotNet.LibUsb;
+﻿//using LibUsbDotNet.LibUsb;
 using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,71 +12,8 @@ namespace Meadow.CLI.Core.Internals.Dfu;
 public static class DfuUtils
 {
     private static int _osAddress = 0x08000000;
-    private static string _usbStmName = "STM32  BOOTLOADER";
-    private static int _usbBootLoaderVenderID = 1155; // Equivalent to _usbStmName but for the LibUsbDotNet 3.x
 
-    public static string LastSerialNumber { get; private set; } = "";
-
-    public static bool CheckForValidDevice()
-    {
-        try
-        {
-            GetDeviceInBootloaderMode();
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    public static IUsbDevice GetDeviceInBootloaderMode()
-    {
-        var allDevices = GetDevicesInBootloaderMode();
-        if (allDevices.Count() > 1)
-        {
-            throw new Exception("More than one DFU device found, please connect only one and try again.");
-        }
-
-        var device = allDevices.SingleOrDefault();
-        if (device == null)
-        {
-            throw new Exception("Device not found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
-        }
-
-        return device;
-    }
-
-    public static IEnumerable<IUsbDevice> GetDevicesInBootloaderMode()
-    {
-        using (UsbContext context = new UsbContext())
-        {
-            var allDevices = context.List();
-            var ourDevices = allDevices.Where(d => d.Info.VendorId == _usbBootLoaderVenderID);
-            if (ourDevices.Count() < 1)
-            {
-                throw new Exception("No Devices found. Connect a device in bootloader mode. If the device is in bootloader mode, please update the device driver. See instructions at https://wldrn.es/usbdriver");
-            }
-            return ourDevices;
-        }
-    }
-
-    public static string GetDeviceSerial(IUsbDevice device)
-    {
-        var serialNumber = string.Empty;
-
-        if (device != null)
-        {
-            device.Open();
-            if (device.IsOpen)
-            {
-                serialNumber = device.Info?.SerialNumber;
-                device.Close();
-            }
-        }
-
-        return serialNumber ?? string.Empty;
-    }
+    //    public static string LastSerialNumber { get; private set; } = "";
 
     public enum DfuFlashFormat
     {
@@ -126,33 +63,22 @@ public static class DfuUtils
         }
     }
 
-    public static async Task<bool> FlashFile(string fileName, IUsbDevice? device = null, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+    public static async Task<bool> FlashFile(string fileName, string dfuSerialNumber, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
     {
         logger ??= NullLogger.Instance;
-        device ??= GetDeviceInBootloaderMode();
-
-        if (!File.Exists(fileName))
-        {
-            logger.LogError($"Unable to flash {fileName} - file or folder does not exist");
-            return false;
-        }
 
         if (!File.Exists(fileName))
         {
             logger.LogError($"Unable to find file '{fileName}'. Please specify valid --File or download the latest with: meadow download os");
             return false;
         }
-        else
-        {
-            logger.LogInformation($"Flashing OS with {fileName}");
-        }
 
-        LastSerialNumber = GetDeviceSerial(device);
+        logger.LogInformation($"Flashing OS with {fileName}");
 
-        var dfuUtilVersion = GetDfuUtilVersion();
+        var dfuUtilVersion = new System.Version(GetDfuUtilVersion());
         logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
 
-        if (string.IsNullOrEmpty(dfuUtilVersion))
+        if (dfuUtilVersion == null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -164,24 +90,23 @@ public static class DfuUtils
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
+                logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util` or the equivalent for your Linux distribution");
             }
             return false;
         }
-        else if (dfuUtilVersion != "0.10")
+        else if (dfuUtilVersion.CompareTo(new System.Version("0.11")) < 0)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logger.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
+                logger.LogError("dfu-util update required. To update, run in administrator mode: `meadow install dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
+                logger.LogError("dfu-util update required. To update, run: `brew upgrade dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                if (dfuUtilVersion != "0.9")
-                    return false;
+                logger.LogError("dfu-util update required. To update , run: `apt upgrade dfu-util` or the equivalent for your Linux distribution");
             }
             else
             {
@@ -191,7 +116,7 @@ public static class DfuUtils
 
         try
         {
-            var args = $"-a 0 -S {LastSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
+            var args = $"-a 0 -S {dfuSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
 
             await RunDfuUtil(args, logger, format);
         }

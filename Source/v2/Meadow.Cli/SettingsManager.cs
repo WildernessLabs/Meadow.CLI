@@ -14,6 +14,7 @@ public class SettingsManager : ISettingsManager
     public static class PublicSettings
     {
         public const string Route = "route";
+        public const string LibUsb = "libusb";
     }
 
     private readonly string Path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WildernessLabs", "cli.settings");
@@ -91,16 +92,14 @@ public class SettingsManager : ISettingsManager
         File.WriteAllText(Path, json);
     }
 
-    public string? GetAppSetting(string name)
+    public string? GetAppSetting(string name, string? defaultValue = null)
     {
         if (ConfigurationManager.AppSettings.AllKeys.Contains(name))
         {
             return ConfigurationManager.AppSettings[name];
         }
-        else
-        {
-            throw new ArgumentException($"{name} setting not found.");
-        }
+
+        return defaultValue;
     }
 
     private Settings GetSettings()
