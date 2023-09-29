@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("mono disable", Description = "** Deprecated ** Use `runtime disable` instead. ")]
+[Command("mono disable", Description = "** Deprecated ** Use `runtime disable` instead ")]
 public class MonoDisableCommand : RuntimeDisableCommand
 {
     public MonoDisableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
