@@ -223,7 +223,7 @@ namespace Meadow.Hcom
                                         // When the F7 has finished sending the data it will send a
                                         // HCOM_HOST_REQUEST_UPLOAD_FILE_COMPLETED message. When it is received
                                         // we then close the open file and the process is completed.
-                                        var folder = Path.GetDirectoryName(_readFileInfo.LocalFileName);
+                                        var folder = Path.GetDirectoryName(_readFileInfo!.LocalFileName);
                                         if (!Directory.Exists(folder)) throw new DirectoryNotFoundException(folder);
 
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
@@ -276,7 +276,7 @@ namespace Meadow.Hcom
                                     }
                                     else
                                     {
-                                        Debug.WriteLine($"{response.GetType().Name} for:{response.RequestType}");
+                                        Debug.WriteLine($"{response?.GetType().Name} for:{response?.RequestType}");
                                         // try to match responses with the requests
                                     }
                                 }
