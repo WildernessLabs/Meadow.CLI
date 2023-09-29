@@ -890,6 +890,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         try
         {
+            RaiseConnectionMessage("\nTransferring file to coprocessor...");
+
             // push the file to the device
             await WriteFile(localFileName, null,
                 RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
@@ -897,25 +899,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 destinationAddress,
                 cancellationToken);
 
-            RaiseConnectionMessage("\nTransferring file to coprocessor...");
+
+            _lastRequestConcluded = null;
 
             // now wait for the STM32 to finish writing to the ESP32
-            return await WaitForResult(() =>
-            {
-                if (InfoMessages.Count != infoCount)
-                {
-                    infoCount = InfoMessages.Count;
-                    RaiseConnectionMessage(InfoMessages.Last());
-                }
-
-                if (_lastRequestConcluded != null)
-                {
-                    return true;
-                }
-
-                return false;
-            },
-            cancellationToken);
+            await WaitForConcluded(null, cancellationToken);
+            return true;
         }
         finally
         {
