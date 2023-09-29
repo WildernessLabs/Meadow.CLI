@@ -117,6 +117,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 }
                 await Task.Delay(500);
                 ports = await MeadowConnectionManager.GetSerialPorts();
+                newPort = ports.Except(initialPorts).FirstOrDefault();
             }
 
             // configure the route to that port for the user
@@ -138,7 +139,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 await ExecuteCommand(connection, connection.Device, cancellationToken);
             }
 
-            var deviceInfo = connection.Device.GetDeviceInfo(cancellationToken);
+            var deviceInfo = await connection.Device.GetDeviceInfo(cancellationToken);
 
             if (deviceInfo != null)
             {
