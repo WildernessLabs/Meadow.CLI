@@ -1,6 +1,9 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.Cli;
+using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
+using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -26,11 +29,15 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     public FirmwareType[]? Files { get; set; } = default!;
 
     private FileManager FileManager { get; }
+    private ISettingsManager Settings { get; }
 
-    public FirmwareWriteCommand(FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    private ILibUsbDevice? _libUsbDevice;
+
+    public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
         FileManager = fileManager;
+        Settings = settingsManager;
     }
 
     public override async ValueTask ExecuteAsync(IConsole console)
@@ -67,32 +74,109 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu && Files.Contains(FirmwareType.OS))
         {
+            // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
+            var initialPorts = await MeadowConnectionManager.GetSerialPorts();
+
             // get the device's serial number via DFU - we'll need it to find the device after it resets
+            try
+            {
+                _libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
+                return;
+            }
+
+            var serial = _libUsbDevice.GetDeviceSerialNumber();
 
             // no connection is required here - in fact one won't exist
             // unless maybe we add a "DFUConnection"?
-            await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader));
 
-            // TODO: if the user requested flashing more than the OS, we have to wait for a connection and then proceed with that
+            try
+            {
+                await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serial);
+            }
+            catch (Exception ex)
+            {
+                // TODO: scope this to the right exception type for Win 10 access violation thing
+                // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
+                Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
+            }
+
+            // now wait for a new serial port to appear
+            var ports = await MeadowConnectionManager.GetSerialPorts();
+            var retryCount = 0;
+
+            var newPort = ports.Except(initialPorts).FirstOrDefault();
+            while (newPort == null)
+            {
+                if (retryCount++ > 10)
+                {
+                    throw new Exception("New meadow device not found");
+                }
+                await Task.Delay(500);
+                ports = await MeadowConnectionManager.GetSerialPorts();
+            }
+
+            // configure the route to that port for the user
+            Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+            var connection = ConnectionManager.GetCurrentConnection();
+            if (connection == null)
+            {
+                Logger.LogError($"No connection path is defined");
+                return;
+            }
+
+            var cancellationToken = console.RegisterCancellationHandler();
+
             if (Files.Any(f => f != FirmwareType.OS))
             {
-                var connection = ConnectionManager.GetCurrentConnection();
-                if (connection == null)
-                {
-                    Logger.LogError($"No connection path is defined");
-                    return;
-                }
-
                 await connection.WaitForMeadowAttach();
 
-                var cancellationToken = console.RegisterCancellationHandler();
                 await ExecuteCommand(connection, connection.Device, cancellationToken);
             }
-            Logger.LogInformation($"Done.");
+
+            var deviceInfo = connection.Device.GetDeviceInfo(cancellationToken);
+
+            if (deviceInfo != null)
+            {
+                Logger.LogInformation($"Done.");
+                Logger.LogInformation(deviceInfo.ToString());
+            }
         }
         else
         {
             await base.ExecuteAsync(console);
+        }
+    }
+
+    private ILibUsbDevice GetLibUsbDeviceForCurrentEnvironment()
+    {
+        ILibUsbProvider provider;
+
+        // TODO: read the settings manager to decide which provider to use (default to non-classic)
+        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
+        if (setting == "classic")
+        {
+            provider = new ClassicLibUsbProvider();
+        }
+        else
+        {
+            provider = new LibUsbProvider();
+        }
+
+        var devices = provider.GetDevicesInBootloaderMode();
+
+        switch (devices.Count)
+        {
+            case 0:
+                throw new Exception("No device found in bootloader mode");
+            case 1:
+                return devices[0];
+            default:
+                throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
         }
     }
 
@@ -209,14 +293,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         // TODO: if we're an F7 device, we need to reset
     }
 
-    private async Task WriteOsWithDfu(string osFile)
+    private async Task WriteOsWithDfu(string osFile, string serialNumber)
     {
-        /*
         await DfuUtils.FlashFile(
             osFile,
+            serialNumber,
             logger: Logger,
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
-        */
     }
 }
 

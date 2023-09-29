@@ -1,6 +1,5 @@
 ﻿//using LibUsbDotNet.LibUsb;
 using Meadow.Hcom;
-using Meadow.LibUsb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel;
@@ -14,7 +13,7 @@ public static class DfuUtils
 {
     private static int _osAddress = 0x08000000;
 
-    public static string LastSerialNumber { get; private set; } = "";
+    //    public static string LastSerialNumber { get; private set; } = "";
 
     public enum DfuFlashFormat
     {
@@ -64,7 +63,7 @@ public static class DfuUtils
         }
     }
 
-    public static async Task<bool> FlashFile(string fileName, ILibUsbDevice device, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+    public static async Task<bool> FlashFile(string fileName, string dfuSerialNumber, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
     {
         logger ??= NullLogger.Instance;
 
@@ -76,12 +75,10 @@ public static class DfuUtils
 
         logger.LogInformation($"Flashing OS with {fileName}");
 
-        LastSerialNumber = device.GetDeviceSerialNumber();
-
-        var dfuUtilVersion = GetDfuUtilVersion();
+        var dfuUtilVersion = new System.Version(GetDfuUtilVersion());
         logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
 
-        if (string.IsNullOrEmpty(dfuUtilVersion))
+        if (dfuUtilVersion == null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -93,24 +90,23 @@ public static class DfuUtils
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util`");
+                logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util` or the equivalent for your Linux distribution");
             }
             return false;
         }
-        else if (dfuUtilVersion != "0.10")
+        else if (dfuUtilVersion.CompareTo(new System.Version("0.11")) < 0)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logger.LogError("dfu-util update required. To install, run in administrator mode: meadow install dfu-util");
+                logger.LogError("dfu-util update required. To update, run in administrator mode: `meadow install dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                logger.LogError("dfu-util update required. To install, run: brew upgrade dfu-util");
+                logger.LogError("dfu-util update required. To update, run: `brew upgrade dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                if (dfuUtilVersion != "0.9")
-                    return false;
+                logger.LogError("dfu-util update required. To update , run: `apt upgrade dfu-util` or the equivalent for your Linux distribution");
             }
             else
             {
@@ -120,7 +116,7 @@ public static class DfuUtils
 
         try
         {
-            var args = $"-a 0 -S {LastSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
+            var args = $"-a 0 -S {dfuSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
 
             await RunDfuUtil(args, logger, format);
         }

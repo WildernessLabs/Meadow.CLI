@@ -2,7 +2,7 @@
 
 namespace Meadow.LibUsb;
 
-public class UsbLibProvider : ILibUsbProvider
+public class LibUsbProvider : ILibUsbProvider
 {
     private const int _osAddress = 0x08000000;
     //    public const string UsbStmName = "STM32  BOOTLOADER";

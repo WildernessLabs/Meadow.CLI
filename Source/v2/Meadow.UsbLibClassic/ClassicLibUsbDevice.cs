@@ -3,7 +3,7 @@ using LibUsbDotNet.Main;
 
 namespace Meadow.LibUsb;
 
-public class ClassicUsbLibProvider : ILibUsbProvider
+public class ClassicLibUsbProvider : ILibUsbProvider
 {
     //    private const int _osAddress = 0x08000000;
     private const string UsbStmName = "STM32  BOOTLOADER";

@@ -17,7 +17,7 @@ namespace Meadow.HCom.Integration.Tests
             }
         }
 
-        public string? GetAppSetting(string name)
+        public string? GetAppSetting(string name, string? defaultValue = null)
         {
             throw new NotImplementedException();
         }
