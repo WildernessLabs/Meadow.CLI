@@ -99,9 +99,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             catch (Exception ex)
             {
+                Logger.LogError($"Exception type: {ex.GetType().Name}");
+
                 // TODO: scope this to the right exception type for Win 10 access violation thing
                 // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
                 Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
+
+                Logger.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
+                return;
             }
 
             // now wait for a new serial port to appear
