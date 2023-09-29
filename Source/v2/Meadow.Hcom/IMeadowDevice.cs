@@ -21,6 +21,7 @@
         Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
         Task UartTraceEnable(CancellationToken? cancellationToken = null);
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
-        Task EraseFlash(CancellationToken? cancellationToken = default);
+        Task EraseFlash(CancellationToken? cancellationToken = null);
+        Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
     }
 }

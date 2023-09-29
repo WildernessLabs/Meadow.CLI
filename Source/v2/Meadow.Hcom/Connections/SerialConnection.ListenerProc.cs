@@ -274,9 +274,13 @@ namespace Meadow.Hcom
                                     {
                                         FileWriteAccepted?.Invoke(this, EventArgs.Empty);
                                     }
+                                    else if (response is FileInitialBytesSerialResponse fib)
+                                    {
+                                        FileDataReceived?.Invoke(this, fib.Text);
+                                    }
                                     else
                                     {
-                                        Debug.WriteLine($"{response?.GetType().Name} for:{response?.RequestType}");
+                                        Debug.WriteLine($"{response?.GetType().Name} for: {response?.RequestType}");
                                         // try to match responses with the requests
                                     }
                                 }

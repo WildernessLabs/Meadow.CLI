@@ -139,5 +139,10 @@
         {
             await _connection.EraseFlash(cancellationToken);
         }
+
+        public async Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
+        {
+            return await _connection.ReadFileString(fileName, cancellationToken);
+        }
     }
 }

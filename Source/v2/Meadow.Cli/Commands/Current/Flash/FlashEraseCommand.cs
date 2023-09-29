@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("flash erase", Description = "Erases the device's flash storage")]
-public class FlashEraseCommand : BaseDeviceCommand<DeviceResetCommand>
+public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
 {
     public FlashEraseCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

@@ -161,4 +161,9 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

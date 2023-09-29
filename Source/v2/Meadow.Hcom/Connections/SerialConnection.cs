@@ -16,7 +16,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private event EventHandler<string> FileReadCompleted = delegate { };
     private event EventHandler FileWriteAccepted;
-
+    private event EventHandler<string> FileDataReceived;
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
 
     private SerialPort _port;
@@ -1069,6 +1069,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             FileReadCompleted -= OnFileReadCompleted;
             FileException -= OnFileError;
         }
+    }
+
+    public override async Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<FileInitialBytesRequest>();
+        command.MeadowFileName = fileName;
+
+        string? contents = null;
+
+        void OnFileDataReceived(object? sender, string data)
+        {
+            contents = data;
+        }
+
+        FileDataReceived += OnFileDataReceived;
+
+        _lastRequestConcluded = null;
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        return contents;
     }
 
     public override async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)

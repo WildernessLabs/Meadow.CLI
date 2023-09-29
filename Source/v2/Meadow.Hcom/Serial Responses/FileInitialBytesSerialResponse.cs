@@ -2,12 +2,13 @@
 
 namespace Meadow.Hcom;
 
-internal class RequestErrorTextResponse : SerialResponse
+internal class FileInitialBytesSerialResponse : SerialResponse
 {
     public string Text => Encoding.UTF8.GetString(_data, RESPONSE_PAYLOAD_OFFSET, PayloadLength);
 
-    internal RequestErrorTextResponse(byte[] data, int length)
+    internal FileInitialBytesSerialResponse(byte[] data, int length)
         : base(data, length)
     {
     }
 }
+

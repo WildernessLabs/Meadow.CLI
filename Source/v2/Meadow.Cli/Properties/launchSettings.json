@@ -194,6 +194,10 @@
     "Flash erase": {
       "commandName": "Project",
       "commandLineArgs": "flash erase"
+    },
+    "File initial": {
+      "commandName": "Project",
+      "commandLineArgs": "file initial meadow.log"
     }
   }
 }
