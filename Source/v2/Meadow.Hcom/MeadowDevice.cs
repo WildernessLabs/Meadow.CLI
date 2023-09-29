@@ -134,5 +134,10 @@
         {
             await _connection.DeleteFile(meadowFileName, cancellationToken);
         }
+
+        public async Task EraseFlash(CancellationToken? cancellationToken = null)
+        {
+            await _connection.EraseFlash(cancellationToken);
+        }
     }
 }

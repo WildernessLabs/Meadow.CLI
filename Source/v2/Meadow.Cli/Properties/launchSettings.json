@@ -190,6 +190,10 @@
     "App run": {
       "commandName": "Project",
       "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
+    },
+    "Flash erase": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erase"
     }
   }
 }

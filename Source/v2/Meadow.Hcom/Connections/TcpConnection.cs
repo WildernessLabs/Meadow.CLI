@@ -156,4 +156,9 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task EraseFlash(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

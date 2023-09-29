@@ -1082,4 +1082,21 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         await WaitForConcluded(null, cancellationToken);
     }
+
+    public override async Task EraseFlash(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<FlashEraseRequest>();
+
+        _lastRequestConcluded = null;
+
+        var lastTimeout = CommandTimeoutSeconds;
+
+        CommandTimeoutSeconds = 5 * 60;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        CommandTimeoutSeconds = lastTimeout;
+    }
 }

@@ -36,5 +36,7 @@
 
         Task UartTraceEnable(CancellationToken? cancellationToken = null);
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
+
+        Task EraseFlash(CancellationToken? cancellationToken = null);
     }
 }
