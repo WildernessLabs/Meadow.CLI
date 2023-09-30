@@ -71,11 +71,11 @@ namespace Meadow.Hcom
             {
                 if (macCount > 1)
                 {
-                    deviceInfo.AppendLine("    MAC Addresses - " );
+                    deviceInfo.AppendLine("    MAC Addresses - ");
                 }
                 else
                 {
-                    deviceInfo.AppendLine("    MAC Address - " );
+                    deviceInfo.AppendLine("    MAC Address - ");
                 }
                 deviceInfo.AppendLine($"{macAddresses}");
             }
@@ -83,7 +83,7 @@ namespace Meadow.Hcom
             deviceInfo.AppendLine();
             deviceInfo.AppendLine($"Firmware Versions ");
             deviceInfo.AppendLine($"    OS: {OsVersion}");
-            deviceInfo.AppendLine($"    Mono: {RuntimeVersion}");
+            deviceInfo.AppendLine($"    Runtime: {RuntimeVersion}");
             deviceInfo.AppendLine($"    Coprocessor: {CoprocessorOsVersion}");
             deviceInfo.AppendLine($"    Protocol: {Protocol.HCOM_PROTOCOL_HCOM_VERSION_NUMBER}");
 
