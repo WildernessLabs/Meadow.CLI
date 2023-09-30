@@ -489,10 +489,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> StdErr { get; } = new List<string>();
     private List<string> InfoMessages { get; } = new List<string>();
 
-    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started the runtime";
-    private const string RuntimeSucessfullyDisabledToken = "Runtime is disabled";
-    private const string RuntimeStateToken = "Runtime is";
-    private const string RuntimeIsEnabledToken = "Runtime is enabled";
+    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
+    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
+    private const string RuntimeStateToken = "Mono is";
+    private const string RuntimeIsEnabledToken = "Mono is enabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
