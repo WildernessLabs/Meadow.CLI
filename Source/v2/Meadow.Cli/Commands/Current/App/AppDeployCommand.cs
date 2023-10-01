@@ -20,81 +20,84 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
-            : Path;
-
-        // is the path a file?
-        FileInfo file;
-
-        var lastFile = string.Empty;
-
-        // in order to deploy, the runtime must be disabled
-        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
-        if (wasRuntimeEnabled)
+        if (CurrentConnection != null)
         {
-            Logger.LogInformation("Disabling runtime...");
+            string path = Path == null
+                ? AppDomain.CurrentDomain.BaseDirectory
+                : Path;
 
-            await connection.RuntimeDisable(cancellationToken);
-        }
+            // is the path a file?
+            FileInfo file;
 
-        connection.FileWriteProgress += (s, e) =>
-        {
-            var p = (e.completed / (double)e.total) * 100d;
+            var lastFile = string.Empty;
 
-            if (e.fileName != lastFile)
+            // in order to deploy, the runtime must be disabled
+            var wasRuntimeEnabled = await CurrentConnection.IsRuntimeEnabled();
+            if (wasRuntimeEnabled)
             {
-                Console.Write("\n");
-                lastFile = e.fileName;
+                Logger?.LogInformation("Disabling runtime...");
+
+                await CurrentConnection.RuntimeDisable(CancellationToken);
             }
 
-            // Console instead of Logger due to line breaking for progress bar
-            Console.Write($"Writing {e.fileName}: {p:0}%         \r");
-        };
-
-        if (!File.Exists(path))
-        {
-            // is it a valid directory?
-            if (!Directory.Exists(path))
+            CurrentConnection.FileWriteProgress += (s, e) =>
             {
-                Logger.LogError($"Invalid application path '{path}'");
-                return;
-            }
+                var p = (e.completed / (double)e.total) * 100d;
 
-            // does the directory have an App.dll in it?
-            file = new FileInfo(System.IO.Path.Combine(path, "App.dll"));
-            if (!file.Exists)
-            {
-                // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
-
-                if (candidates.Length == 0)
+                if (e.fileName != lastFile)
                 {
-                    Logger.LogError($"Cannot find a compiled application at '{path}'");
+                    Console?.Output.WriteAsync("\n");
+                    lastFile = e.fileName;
+                }
+
+                // Console instead of Logger due to line breaking for progress bar
+                Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%         \r");
+            };
+
+            if (!File.Exists(path))
+            {
+                // is it a valid directory?
+                if (!Directory.Exists(path))
+                {
+                    Logger?.LogError($"Invalid application path '{path}'");
                     return;
                 }
 
-                file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+                // does the directory have an App.dll in it?
+                file = new FileInfo(System.IO.Path.Combine(path, "App.dll"));
+                if (!file.Exists)
+                {
+                    // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
+                    var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+
+                    if (candidates.Length == 0)
+                    {
+                        Logger?.LogError($"Cannot find a compiled application at '{path}'");
+                        return;
+                    }
+
+                    file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+                }
             }
-        }
-        else
-        {
-            // TODO: only deploy if it's App.dll
-            file = new FileInfo(path);
-        }
+            else
+            {
+                // TODO: only deploy if it's App.dll
+                file = new FileInfo(path);
+            }
 
-        var targetDirectory = file.DirectoryName;
+            var targetDirectory = file.DirectoryName;
 
-        await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, cancellationToken);
+            await AppManager.DeployApplication(_packageManager, CurrentConnection, targetDirectory, true, false, Logger, CancellationToken);
 
-        if (wasRuntimeEnabled)
-        {
-            // restore runtime state
-            Logger.LogInformation("Enabling runtime...");
+            if (wasRuntimeEnabled)
+            {
+                // restore runtime state
+                Logger.LogInformation("Enabling runtime...");
 
-            await connection.RuntimeEnable(cancellationToken);
+                await CurrentConnection.RuntimeEnable(CancellationToken);
+            }
         }
     }
 }

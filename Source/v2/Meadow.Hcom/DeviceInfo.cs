@@ -60,12 +60,12 @@ namespace Meadow.Hcom
             if (!string.IsNullOrEmpty(MacAddress) && MacAddress != UNKNOWN_MAC_ADDRESS)
             {
                 macCount++;
-                macAddresses += $"        WiFi: {MacAddress}{Environment.NewLine}";
+                macAddresses += $"\tWiFi: {MacAddress}{Environment.NewLine}";
             }
             if (!string.IsNullOrEmpty(SoftAPMacAddress) && SoftAPMacAddress != UNKNOWN_MAC_ADDRESS)
             {
                 macCount++;
-                macAddresses += $"        AP: {SoftAPMacAddress}{Environment.NewLine}";
+                macAddresses += $"\tAP: {SoftAPMacAddress}{Environment.NewLine}";
             }
             if (macCount > 0)
             {

@@ -12,7 +12,7 @@ public class PortSelectCommand : BaseCommand<PortSelectCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (LoggerFactory != null)
         {

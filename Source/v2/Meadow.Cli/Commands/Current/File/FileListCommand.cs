@@ -15,71 +15,73 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger.LogInformation($"Getting file list...");
+        Logger?.LogInformation($"Getting file list...");
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        var files = await device.GetFileList(Verbose, cancellationToken);
+        if (CurrentConnection != null)
+        {
+            var files = await CurrentConnection.Device.GetFileList(Verbose, CancellationToken);
 
-        if (files == null || files.Length == 0)
-        {
-            Logger.LogInformation($"No files found");
-        }
-        else
-        {
-            if (Verbose)
+            if (files == null || files.Length == 0)
             {
-                var longestFileName = files.Select(x => x.Name.Length)
-                                                        .OrderByDescending(x => x)
-                                                        .FirstOrDefault();
-
-                var totalBytesUsed = 0L;
-                var totalBlocksUsed = 0L;
-
-                foreach (var file in files)
-                {
-                    totalBytesUsed += file.Size ?? 0;
-                    totalBlocksUsed += ((file.Size ?? 0) / FileSystemBlockSize) + 1;
-
-                    var line = $"{file.Name.PadRight(longestFileName)}";
-                    line = $"{line}\t{file.Crc:x8}";
-
-                    if (file.Size > 1000000)
-                    {
-                        line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
-                    }
-                    else if (file.Size > 1000)
-                    {
-                        line = $"{line}\t{file.Size / 1000,7:0} kB   ";
-                    }
-                    else
-                    {
-                        line = $"{line}\t{file.Size,7} bytes";
-                    }
-
-                    Logger.LogInformation(line);
-                }
-
-                Logger.LogInformation(
-                    $"\nSummary:\n" +
-                    $"\t{files.Length} files\n" +
-                    $"\t{totalBytesUsed / 1000000d:0.00}MB of file data\n" +
-                    $"\tSpanning {totalBlocksUsed} blocks\n" +
-                    $"\tConsuming {totalBlocksUsed * FileSystemBlockSize / 1000000d:0.00}MB on disk");
+                Logger?.LogInformation($"No files found");
             }
             else
             {
-                foreach (var file in files)
+                if (Verbose)
                 {
-                    Logger.LogInformation(file.Name);
-                }
+                    var longestFileName = files.Select(x => x.Name.Length)
+                                                            .OrderByDescending(x => x)
+                                                            .FirstOrDefault();
 
-                Logger.LogInformation(
-                    $"\nSummary:\n" +
-                    $"\t{files.Length} files");
+                    var totalBytesUsed = 0L;
+                    var totalBlocksUsed = 0L;
+
+                    foreach (var file in files)
+                    {
+                        totalBytesUsed += file.Size ?? 0;
+                        totalBlocksUsed += ((file.Size ?? 0) / FileSystemBlockSize) + 1;
+
+                        var line = $"{file.Name.PadRight(longestFileName)}";
+                        line = $"{line}\t{file.Crc:x8}";
+
+                        if (file.Size > 1000000)
+                        {
+                            line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
+                        }
+                        else if (file.Size > 1000)
+                        {
+                            line = $"{line}\t{file.Size / 1000,7:0} kB   ";
+                        }
+                        else
+                        {
+                            line = $"{line}\t{file.Size,7} bytes";
+                        }
+
+                        Logger?.LogInformation(line);
+                    }
+
+                    Logger?.LogInformation(
+                        $"\nSummary:\n" +
+                        $"\t{files.Length} files\n" +
+                        $"\t{totalBytesUsed / 1000000d:0.00}MB of file data\n" +
+                        $"\tSpanning {totalBlocksUsed} blocks\n" +
+                        $"\tConsuming {totalBlocksUsed * FileSystemBlockSize / 1000000d:0.00}MB on disk");
+                }
+                else
+                {
+                    foreach (var file in files)
+                    {
+                        Logger?.LogInformation(file.Name);
+                    }
+
+                    Logger?.LogInformation(
+                        $"\nSummary:\n" +
+                        $"\t{files.Length} files");
+                }
             }
         }
-
     }
 }

@@ -21,7 +21,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
     [CommandParameter(0, Name = "Version number to download", IsRequired = false)]
     public string? Version { get; set; } = default!;
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         await FileManager.Refresh();
 

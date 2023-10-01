@@ -12,16 +12,16 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(e.message);
+            Logger?.LogInformation(e.message);
         };
 
-        Logger.LogInformation("Disabling tracing...");
+        Logger?.LogInformation("Disabling tracing...");
 
-        await device.TraceDisable(cancellationToken);
+        await CurrentConnection.Device.TraceDisable(CancellationToken);
     }
 }
 

@@ -18,19 +18,19 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        Logger.LogInformation($"Getting file '{MeadowFile}' from device...");
+        Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
 
-        var success = await device.ReadFile(MeadowFile, LocalFile, cancellationToken);
+        var success = await CurrentConnection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
 
         if (success)
         {
-            Logger.LogInformation($"Success");
+            Logger?.LogInformation($"Success");
         }
         else
         {
-            Logger.LogInformation($"Failed to retrieve file");
+            Logger?.LogInformation($"Failed to retrieve file");
         }
     }
 }
