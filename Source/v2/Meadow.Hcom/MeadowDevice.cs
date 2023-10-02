@@ -144,5 +144,10 @@
         {
             return await _connection.ReadFileString(fileName, cancellationToken);
         }
+
+        public async Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
+        {
+            return await _connection.GetPublicKey(cancellationToken);
+        }
     }
 }

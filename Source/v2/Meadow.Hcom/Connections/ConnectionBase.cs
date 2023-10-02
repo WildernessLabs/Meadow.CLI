@@ -37,6 +37,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task UartTraceEnable(CancellationToken? cancellationToken = null);
     public abstract Task UartTraceDisable(CancellationToken? cancellationToken = null);
     public abstract Task EraseFlash(CancellationToken? cancellationToken = null);
+    public abstract Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
 
     public ConnectionBase()
     {

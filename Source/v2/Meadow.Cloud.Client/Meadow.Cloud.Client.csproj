@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
+        <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
+        <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+    </ItemGroup>
+</Project>

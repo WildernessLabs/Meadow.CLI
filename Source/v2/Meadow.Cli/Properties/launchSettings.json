@@ -198,6 +198,10 @@
     "File initial": {
       "commandName": "Project",
       "commandLineArgs": "file initial meadow.log"
+    },
+    "Device provision": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision"
     }
   }
 }

@@ -1121,4 +1121,31 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         CommandTimeoutSeconds = lastTimeout;
     }
+
+    public override async Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetPublicKeyRequest>();
+
+        string? contents = null;
+
+        void OnFileDataReceived(object? sender, string data)
+        {
+            contents = data;
+        }
+
+        FileDataReceived += OnFileDataReceived;
+
+        var lastTimeout = CommandTimeoutSeconds;
+
+        CommandTimeoutSeconds = 5 * 60;
+
+        _lastRequestConcluded = null;
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        CommandTimeoutSeconds = lastTimeout;
+
+        return contents;
+    }
 }

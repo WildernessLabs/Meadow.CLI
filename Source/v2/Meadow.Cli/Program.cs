@@ -2,6 +2,7 @@
 using Meadow.Cli;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Software;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
@@ -46,6 +47,20 @@ public class Program
         services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
+
+        if (File.Exists("appsettings.json"))
+        {
+            var config = new ConfigurationBuilder()
+                                   .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                                   .AddJsonFile("appsettings.json")
+                                   .Build();
+
+            services.AddScoped<IConfiguration>(_ => config);
+        }
+        else
+        {
+            services.AddScoped<IConfiguration>(_ => null);
+        }
 
         /*
         services.AddSingleton<MeadowDeviceManager>();

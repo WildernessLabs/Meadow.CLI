@@ -44,6 +44,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Meadow.Cli.Core\Meadow.Cli.Core.csproj" />
+	  <ProjectReference Include="..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
 	  <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
 	  <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
 	  <ProjectReference Include="..\Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj" />
@@ -55,6 +56,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="appsettings.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="lib\illink.dll">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

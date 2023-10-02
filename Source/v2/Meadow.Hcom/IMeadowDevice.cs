@@ -23,5 +23,6 @@
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
         Task EraseFlash(CancellationToken? cancellationToken = null);
         Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
+        Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
     }
 }

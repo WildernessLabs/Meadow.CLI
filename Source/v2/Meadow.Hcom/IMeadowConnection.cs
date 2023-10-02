@@ -39,5 +39,7 @@
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
 
         Task EraseFlash(CancellationToken? cancellationToken = null);
+
+        Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
     }
 }
