@@ -21,7 +21,17 @@ public abstract class BaseDeviceCommand<T> : ICommand
     public virtual async ValueTask ExecuteAsync(IConsole console)
     {
         var cancellationToken = console.RegisterCancellationHandler();
-        var c = ConnectionManager.GetCurrentConnection();
+
+        IMeadowConnection? c = null;
+        try
+        {
+            c = ConnectionManager.GetCurrentConnection();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Failed: {ex.Message}");
+            return;
+        }
 
         if (c != null)
         {

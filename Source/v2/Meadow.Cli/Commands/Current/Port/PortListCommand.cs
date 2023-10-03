@@ -1,8 +1,4 @@
-﻿using System;
-using CliFx.Attributes;
-using CliFx.Infrastructure;
-using Meadow.Hardware;
-using Meadow.Hcom;
+﻿using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -23,11 +19,15 @@ public class PortListCommand : BaseCommand<PortListCommand>
         if (Portlist.Count > 0)
         {
             var plural = Portlist.Count > 1 ? "s" : string.Empty;
-            Logger?.LogInformation($"Found the following device{plural} -");
+            Logger?.LogInformation($"Found the following device{plural}:");
             for (int i = 0; i < Portlist.Count; i++)
             {
-                Logger?.LogInformation($"{i + 1}: {Portlist[i]}");
+                Logger?.LogInformation($" {i + 1}: {Portlist[i]}");
             }
+        }
+        else
+        {
+            Logger?.LogInformation($" No attached devices found");
         }
     }
 }

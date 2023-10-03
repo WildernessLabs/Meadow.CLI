@@ -2,27 +2,27 @@
 
 | v1 | v2 | Legacy Implemented |
 |---|---|---|---|
-| list ports | port list | n |
+| list ports | port list | y |
 | n/a | port select | - |
 | listen | listen | - |
 | device info | device info | - |
 | n/a | device reset | - |
 | n/a | device clock | - |
-| use port | config route | n |
+| use port | config route | y |
 | mono enable | runtime enable | y |
 | mono disable | runtime disable | y |
-| mono state | runtime state | n |
+| mono state | runtime state | y |
 | file list | file list | - |
 | file delete | file delete | - |
 | n/a | file read | - |
 | file write | file write | - |
 | file initial | file initial | - |
 | n/a | firmware list | - |
-| download os | firmware download | n |
+| download os | firmware download | y |
 | n/a | firmware default | - |
 | n/a | firmware delete | - |
 | flash esp | firmware write esp | n |
-| flash os | firmware write os | n |
+| flash os | firmware write os | y |
 | mono flash | flash write runtime | n |
 | mono update rt | flash write runtime | n |
 | trace enable | trace enable | - |
@@ -32,16 +32,16 @@
 | uart trace | uart trace | - |
 | n/a | app build | - |
 | n/a | app trim | - |
-| install dfu-util | dfu install | n |
+| install dfu-util | dfu install | y |
 | app deploy | app deploy | - |
 | n/a | app run | - |
 | flash erase | flash erase | - |
 | debug | TODO |
 | device provision | device provision | - |
-| package create | cloud package create | n |
-| package list | cloud package list |
-| package publish | cloud package publish |
-| package upload | cloud package upload |
+| package create | cloud package create | - |
+| package list | cloud package list | - |
+| package publish | cloud package publish | - |
+| package upload | cloud package upload | - |
 | collection list | cloud collection list | - |
 | cloud login | cloud login | - |
 | cloud logout | cloud logout | - |

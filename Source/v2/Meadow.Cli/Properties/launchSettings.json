@@ -230,6 +230,30 @@
     "Cloud package publish": {
       "commandName": "Project",
       "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
+    },
+    "legacy list ports": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
+    },
+    "legacy use port": {
+      "commandName": "Project",
+      "commandLineArgs": "use port COM1"
+    },
+    "legacy mono state": {
+      "commandName": "Project",
+      "commandLineArgs": "mono state"
+    },
+    "legacy mono enable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono enable"
+    },
+    "legacy mono disable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono disable"
+    },
+    "legacy download os": {
+      "commandName": "Project",
+      "commandLineArgs": "download os"
     }
   }
 }
