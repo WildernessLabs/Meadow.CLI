@@ -1,51 +1,51 @@
 ﻿# Commands
 
-| v1 | v2 | Legacy |
+| v1 | v2 | Legacy Implemented |
 |---|---|---|---|
-| list ports | port list |  n |
+| list ports | port list | n |
 | n/a | port select | - |
-| listen | listen | |
-| device info | device info | |
-| n/a | device reset | |
-| n/a | device clock | |
-| use port | config route | 
-| mono enable | runtime enable | |
-| mono disable | runtime disable | |
-| mono state | runtime state | |
-| file list | file list |
-| file delete | file delete |
-| file read | file read |
-| file write | file write |
-| file initial | file initial |
-| n/a | firmware list |
-| download os | firmware download |
-| n/a | firmware default |
-| n/a | firmware delete |
-| flash esp | firmware write esp |
-| flash os | firmware write os |
-| mono flash | flash write runtime |
-| mono update rt | flash write runtime |
-| trace enable | trace enable |
-| trace disable | trace disable |
-| trace level | trace level |
+| listen | listen | - |
+| device info | device info | - |
+| n/a | device reset | - |
+| n/a | device clock | - |
+| use port | config route | n |
+| mono enable | runtime enable | y |
+| mono disable | runtime disable | y |
+| mono state | runtime state | n |
+| file list | file list | - |
+| file delete | file delete | - |
+| n/a | file read | - |
+| file write | file write | - |
+| file initial | file initial | - |
+| n/a | firmware list | - |
+| download os | firmware download | n |
+| n/a | firmware default | - |
+| n/a | firmware delete | - |
+| flash esp | firmware write esp | n |
+| flash os | firmware write os | n |
+| mono flash | flash write runtime | n |
+| mono update rt | flash write runtime | n |
+| trace enable | trace enable | - |
+| trace disable | trace disable | - |
+| trace level | trace level | - |
 | set developer | developer |
-| uart trace | uart trace |
-| n/a | app build |
-| n/a | app trim |
-| install dfu-util | dfu install |
-| app deploy | app deply |
-| n/a | app run |
-| flash erase | flash erase |
-| debug | TODO|
-| device provision | device provision |
-| package create | TODO |
+| uart trace | uart trace | - |
+| n/a | app build | - |
+| n/a | app trim | - |
+| install dfu-util | dfu install | n |
+| app deploy | app deploy | - |
+| n/a | app run | - |
+| flash erase | flash erase | - |
+| debug | TODO |
+| device provision | device provision | - |
+| package create | cloud package create | n |
 | package list | TODO |
 | package publish | TODO |
 | package upload | TODO |
-| collection list | cloud collection list |
-| cloud login | cloud login |
-| cloud logout | cloud logout |
-| cloud command publish | TODO |
+| collection list | cloud collection list | - |
+| cloud login | cloud login | - |
+| cloud logout | cloud logout | - |
+| cloud command publish | cloud command publish | - |
 
 
 

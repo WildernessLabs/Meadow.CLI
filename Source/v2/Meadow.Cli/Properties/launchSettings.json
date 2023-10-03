@@ -214,6 +214,10 @@
     "Cloud collection list": {
       "commandName": "Project",
       "commandLineArgs": "cloud collection list -o christacke6612"
+    },
+    "Cloud package create": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
     }
   }
 }

@@ -1,5 +1,10 @@
-﻿using Meadow.Software;
+﻿using GlobExpressions;
+using Meadow.Cloud;
+using Meadow.Software;
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using YamlDotNet.Serialization;
 
 namespace Meadow.Cli;
@@ -15,8 +20,59 @@ public partial class PackageManager : IPackageManager
         _fileManager = fileManager;
     }
 
-    public bool BuildApplication(string projectFilePath, string configuration = "Release")
+    private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
     {
+        var proc = new Process();
+        proc.StartInfo.FileName = "dotnet";
+        proc.StartInfo.Arguments = $"clean {projectFilePath} -c {configuration}";
+
+        proc.StartInfo.CreateNoWindow = true;
+        proc.StartInfo.ErrorDialog = false;
+        proc.StartInfo.RedirectStandardError = true;
+        proc.StartInfo.RedirectStandardOutput = true;
+        proc.StartInfo.UseShellExecute = false;
+
+        var success = true;
+
+        proc.ErrorDataReceived += (sendingProcess, errorLine) =>
+        {
+            // this gets called (with empty data) even on a successful build
+            Debug.WriteLine(errorLine.Data);
+        };
+        proc.OutputDataReceived += (sendingProcess, dataLine) =>
+        {
+            // look for "Build FAILED"
+            if (dataLine.Data != null)
+            {
+                Debug.WriteLine(dataLine.Data);
+                if (dataLine.Data.Contains("Build FAILED", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Debug.WriteLine("Build failed");
+                    success = false;
+                }
+            }
+            // TODO: look for "X Warning(s)" and "X Error(s)"?
+            // TODO: do we want to enable forwarding these messages for "verbose" output?
+        };
+
+        proc.Start();
+        proc.BeginErrorReadLine();
+        proc.BeginOutputReadLine();
+
+        proc.WaitForExit();
+        var exitCode = proc.ExitCode;
+        proc.Close();
+
+        return success;
+    }
+
+    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
+    {
+        if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
+        {
+            return false;
+        }
+
         var proc = new Process();
         proc.StartInfo.FileName = "dotnet";
         proc.StartInfo.Arguments = $"build {projectFilePath} -c {configuration}";
@@ -65,7 +121,7 @@ public partial class PackageManager : IPackageManager
         FileInfo applicationFilePath,
         bool includePdbs = false,
         IList<string>? noLink = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)
         {
@@ -106,6 +162,69 @@ public partial class PackageManager : IPackageManager
             null, // ILogger
             includePdbs,
             verbose: false);
+    }
+
+    public const string PackageMetadataFileName = "info.json";
+
+    public Task<string> AssemblePackage(
+        string contentSourceFolder,
+        string outputFolder,
+        string filter = "*",
+        bool overwrite = false,
+        CancellationToken? cancellationToken = null)
+    {
+        var di = new DirectoryInfo(outputFolder);
+        if (!di.Exists)
+        {
+            di.Create();
+        }
+
+        var mpakName = Path.Combine(outputFolder, $"{DateTime.UtcNow.ToString("yyyyMMddff")}.mpak");
+
+        if (File.Exists(mpakName))
+        {
+            if (!overwrite)
+            {
+                throw new Exception($"Output file '{Path.GetFileName(mpakName)}' already exists.");
+            }
+
+            File.Delete(mpakName);
+        }
+
+        var appFiles = Glob.Files(contentSourceFolder, filter, GlobOptions.CaseInsensitive).ToArray();
+
+        using var archive = ZipFile.Open(mpakName, ZipArchiveMode.Create);
+
+        foreach (var fPath in appFiles)
+        {
+            CreateEntry(archive, Path.Combine(contentSourceFolder, fPath), Path.Combine("app", Path.GetFileName(fPath)));
+        }
+
+        // write a metadata file info.json in the mpak
+        // TODO: we need to see what is necessary and meaningful here and pass it in via param (or the entire file via param?)
+        PackageInfo info = new PackageInfo()
+        {
+            Version = "1",
+            OsVersion = "1"
+        };
+
+        var infoJson = JsonSerializer.Serialize(info);
+        File.WriteAllText(PackageMetadataFileName, infoJson);
+        CreateEntry(archive, PackageMetadataFileName, Path.GetFileName(PackageMetadataFileName));
+
+        return Task.FromResult(mpakName);
+    }
+
+    private void CreateEntry(ZipArchive archive, string fromFile, string entryPath)
+    {
+        // Windows '\' Path separator character will be written to the zip which meadow os does not properly unpack
+        //  See: https://github.com/dotnet/runtime/issues/41914
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            entryPath = entryPath.Replace('\\', '/');
+        }
+
+        archive.CreateEntryFromFile(fromFile, entryPath);
     }
 
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
