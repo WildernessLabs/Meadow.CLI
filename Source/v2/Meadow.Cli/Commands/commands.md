@@ -37,13 +37,15 @@
 | n/a | app run |
 | flash erase | flash erase |
 | debug | TODO|
-| device provision | TODO |
+| device provision | device provision |
 | package create | TODO |
 | package list | TODO |
 | package publish | TODO |
 | package upload | TODO |
-| collection list | TODO |
-| cloud | TODO |
+| collection list | cloud collection list |
+| cloud login | cloud login |
+| cloud logout | cloud logout |
+| cloud command publish | TODO |
 
 
 

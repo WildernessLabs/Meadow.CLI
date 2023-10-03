@@ -91,7 +91,7 @@ public class IdentityManager
     /// Get access token through a token refresh
     /// </summary>
     /// <returns></returns>
-    public async Task<string> GetAccessToken(CancellationToken cancellationToken = default)
+    public async Task<string> GetAccessToken(CancellationToken? cancellationToken = null)
     {
         string refreshToken = string.Empty;
 
@@ -108,7 +108,7 @@ public class IdentityManager
         if (!string.IsNullOrEmpty(refreshToken))
         {
             var client = await GetOidcClient();
-            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
+            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken ?? CancellationToken.None);
             return result.AccessToken;
         }
         else
@@ -155,7 +155,7 @@ public class IdentityManager
         }
     }
 
-    private async Task<OidcClient> GetOidcClient()
+    private Task<OidcClient> GetOidcClient()
     {
         var options = new OidcClientOptions
         {
@@ -174,7 +174,7 @@ public class IdentityManager
             ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
         };
         IdentityModelEventSource.ShowPII = true;
-        return new OidcClient(options);
+        return Task.FromResult(new OidcClient(options));
     }
 
     public void DeleteCredential(string credentialName)

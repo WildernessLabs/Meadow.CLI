@@ -207,6 +207,10 @@
       "commandName": "Project",
       "commandLineArgs": "cloud login"
     },
+    "Cloud logout": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud logout"
+    },
     "Cloud collection list": {
       "commandName": "Project",
       "commandLineArgs": "cloud collection list -o christacke6612"
