@@ -19,6 +19,7 @@ public interface IPackageManager
     Task<string> AssemblePackage(
         string contentSourceFolder,
         string outputFolder,
+        string osVersion,
         string filter = "*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null);

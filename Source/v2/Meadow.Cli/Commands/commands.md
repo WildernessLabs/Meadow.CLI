@@ -39,9 +39,9 @@
 | debug | TODO |
 | device provision | device provision | - |
 | package create | cloud package create | n |
-| package list | TODO |
-| package publish | TODO |
-| package upload | TODO |
+| package list | cloud package list |
+| package publish | cloud package publish |
+| package upload | cloud package upload |
 | collection list | cloud collection list | - |
 | cloud login | cloud login | - |
 | cloud logout | cloud logout | - |

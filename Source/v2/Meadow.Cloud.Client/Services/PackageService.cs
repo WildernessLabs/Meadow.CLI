@@ -15,8 +15,12 @@ public class PackageService : CloudServiceBase
     {
     }
 
-    public async Task<Package> UploadPackage(string mpakPath, string orgId, string description, string host,
-        CancellationToken cancellationToken)
+    public async Task<Package> UploadPackage(
+        string mpakPath,
+        string orgId,
+        string description,
+        string host,
+        CancellationToken? cancellationToken = null)
     {
         if (!File.Exists(mpakPath))
         {
@@ -89,15 +93,19 @@ public class PackageService : CloudServiceBase
         return result;
     }
 
-    public async Task PublishPackage(string packageId, string collectionId, string metadata, string host,
-        CancellationToken cancellationToken)
+    public async Task PublishPackage(
+        string packageId,
+        string collectionId,
+        string metadata,
+        string host,
+        CancellationToken? cancellationToken = null)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
         var payload = new { metadata, collectionId };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         var response =
-            await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish", content, cancellationToken);
+            await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish", content, cancellationToken ?? CancellationToken.None);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -106,7 +114,7 @@ public class PackageService : CloudServiceBase
         }
     }
 
-    public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken cancellationToken)
+    public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken? cancellationToken = null)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 

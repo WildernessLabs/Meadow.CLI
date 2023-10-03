@@ -169,6 +169,7 @@ public partial class PackageManager : IPackageManager
     public Task<string> AssemblePackage(
         string contentSourceFolder,
         string outputFolder,
+        string osVersion,
         string filter = "*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null)
@@ -204,8 +205,8 @@ public partial class PackageManager : IPackageManager
         // TODO: we need to see what is necessary and meaningful here and pass it in via param (or the entire file via param?)
         PackageInfo info = new PackageInfo()
         {
-            Version = "1",
-            OsVersion = "1"
+            Version = "1.0",
+            OsVersion = osVersion
         };
 
         var infoJson = JsonSerializer.Serialize(info);

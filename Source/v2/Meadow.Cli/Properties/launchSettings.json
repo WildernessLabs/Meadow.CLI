@@ -218,6 +218,18 @@
     "Cloud package create": {
       "commandName": "Project",
       "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
+    },
+    "Cloud package upload": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package upload F:\\temp\\MeadowApplication1\\bin\\Release\\netstandard2.1\\mpak\\2023100330.mpak -o christacke6612"
+    },
+    "Cloud package list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package list -o christacke6612"
+    },
+    "Cloud package publish": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
     }
   }
 }

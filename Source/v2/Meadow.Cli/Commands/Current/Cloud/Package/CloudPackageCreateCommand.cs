@@ -2,6 +2,7 @@
 using Meadow.Cli;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
+using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -23,6 +24,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     public string Filter { get; init; } = "*";
 
     private IPackageManager _packageManager;
+    private FileManager _fileManager;
 
     public CloudPackageCreateCommand(
         IdentityManager identityManager,
@@ -30,10 +32,12 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         DeviceService deviceService,
         CollectionService collectionService,
         IPackageManager packageManager,
+        FileManager fileManager,
         ILoggerFactory? loggerFactory)
         : base(identityManager, userService, deviceService, collectionService, loggerFactory)
     {
         _packageManager = packageManager;
+        _fileManager = fileManager;
     }
 
     protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
@@ -50,7 +54,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
             return;
         }
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
+        var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
 
         if (candidates.Length == 0)
         {
@@ -58,16 +62,20 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
             return;
         }
 
+        var store = _fileManager.Firmware["Meadow F7"];
+        await store.Refresh();
+        var osVersion = store?.DefaultPackage?.Version ?? "unknown";
+
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();        // trim
         Logger?.LogInformation($"Trimming application...");
         await _packageManager.TrimApplication(file, cancellationToken: cancellationToken);
 
         // package
-        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
-        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
+        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PackageOutputDirectoryName);
+        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, Filter, true, cancellationToken);
+        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, cancellationToken);
 
         if (packagePath != null)
         {

@@ -33,8 +33,11 @@ public partial class PackageManager
                     if (store.DefaultPackage != null)
                     {
                         var defaultPackage = store.DefaultPackage;
+
                         if (defaultPackage.BclFolder != null)
+                        {
                             _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                        }
                     }
                 }
             }
