@@ -12,9 +12,9 @@ public abstract class CloudServiceBase
         _identityManager = identityManager;
     }
 
-    protected async Task<HttpClient> GetAuthenticatedHttpClient(CancellationToken cancellationToken = default)
+    protected async Task<HttpClient> GetAuthenticatedHttpClient(CancellationToken? cancellationToken = null)
     {
-        var authToken = await _identityManager.GetAccessToken(cancellationToken);
+        var authToken = await _identityManager.GetAccessToken(cancellationToken ?? CancellationToken.None);
         if (string.IsNullOrEmpty(authToken))
         {
             throw new MeadowCloudAuthException();

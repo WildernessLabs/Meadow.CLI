@@ -9,11 +9,11 @@ public class UserService : CloudServiceBase
     {
     }
 
-    public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken cancellationToken)
+    public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken? cancellationToken = null)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
-        var response = await httpClient.GetAsync($"{host}/api/users/me/orgs", cancellationToken);
+        var response = await httpClient.GetAsync($"{host}/api/users/me/orgs", cancellationToken ?? CancellationToken.None);
 
         if (response.IsSuccessStatusCode)
         {
@@ -26,7 +26,7 @@ public class UserService : CloudServiceBase
         }
     }
 
-    public async Task<User?> GetMe(string host, CancellationToken cancellationToken)
+    public async Task<User?> GetMe(string host, CancellationToken? cancellationToken = null)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 

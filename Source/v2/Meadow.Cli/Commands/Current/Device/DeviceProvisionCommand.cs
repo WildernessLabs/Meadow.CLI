@@ -2,7 +2,6 @@
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
 using Meadow.Hcom;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -10,38 +9,50 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("device provision", Description = "Registers and prepares connected device for use with Meadow Cloud")]
 public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 {
-    private IConfiguration? _config;
+    private DeviceService _deviceService;
+
+    public const string DefaultHost = "https://www.meadowcloud.co";
 
     [CommandOption("orgId", 'o', Description = "The target org for device registration", IsRequired = false)]
-    public string OrgId { get; set; }
-    [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
-    public string CollectionId { get; set; }
-    [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
-    public string Name { get; set; }
-    [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string Host { get; set; }
+    public string? OrgId { get; set; }
 
-    public DeviceProvisionCommand(IConfiguration? config, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
+    public string? CollectionId { get; set; }
+
+    [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
+    public string? Name { get; set; }
+
+    [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+    public string? Host { get; set; }
+
+    public DeviceProvisionCommand(DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
+        _deviceService = deviceService;
     }
 
     protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
     {
+        UserOrg org;
+
         try
         {
+            if (Host == null) Host = DefaultHost;
+
             var identityManager = new IdentityManager(Logger);
             var _userService = new UserService(identityManager);
+
+            Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
             if (!userOrgs.Any())
             {
-                Logger.LogInformation($"Please visit {_config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME]} to register your account.");
+                Logger?.LogInformation($"Please visit {Host} to register your account.");
                 return;
             }
             else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
             {
-                Logger.LogInformation($"Please specify the orgId for this device provisioning.");
+                Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
                 return;
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
@@ -49,39 +60,40 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
                 OrgId = userOrgs.First().Id;
             }
 
-            if (!userOrgs.Select(x => x.Id).Contains(OrgId))
+            org = userOrgs.FirstOrDefault(o => o.Id == OrgId || o.Name == OrgId);
+            if (org == null)
             {
-                Logger.LogInformation($"Invalid orgId: {OrgId}");
+                Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
                 return;
             }
         }
         catch (MeadowCloudAuthException)
         {
-            Logger.LogError($"You must be signed in to execute this command.");
-            Logger.LogError($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
+            Logger?.LogError($"You must be signed in to execute this command.");
+            Logger?.LogError($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
             return;
         }
 
-        Logger.LogInformation("Requesting device public key...");
+        var info = await device.GetDeviceInfo(cancellationToken);
+
+        Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await device.GetPublicKey(cancellationToken);
 
         var delim = "-----END PUBLIC KEY-----\n";
         publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
 
-
-        /*
-        var result = await _deviceService.AddDevice(OrgId, device.DeviceInfo.ProcessorId, publicKey, CollectionId, Name, Host);
+        Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
+        var result = await _deviceService.AddDevice(org.Id, info.ProcessorId, publicKey, CollectionId, Name, Host, cancellationToken);
 
         if (result.isSuccess)
         {
-            Logger.LogInformation("Device provisioned successfully");
+            Logger?.LogInformation("Device provisioned successfully");
         }
         else
         {
-            Logger.LogInformation(result.message);
+            Logger?.LogError($"Failed to provision device: {result.message}");
         }
-        */
 
         return;
     }

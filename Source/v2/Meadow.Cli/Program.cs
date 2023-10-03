@@ -1,6 +1,8 @@
 ﻿using CliFx;
 using Meadow.Cli;
 using Meadow.CLI.Commands.DeviceManagement;
+using Meadow.Cloud;
+using Meadow.Cloud.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +50,13 @@ public class Program
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
 
+        services.AddSingleton<UserService>();
+        services.AddSingleton<DeviceService>();
+        services.AddSingleton<CollectionService>();
+        services.AddSingleton<CommandService>();
+        services.AddSingleton<PackageService>();
+        services.AddSingleton<IdentityManager, IdentityManager>();
+
         if (File.Exists("appsettings.json"))
         {
             var config = new ConfigurationBuilder()
@@ -61,17 +70,6 @@ public class Program
         {
             services.AddScoped<IConfiguration>(_ => null);
         }
-
-        /*
-        services.AddSingleton<MeadowDeviceManager>();
-        services.AddSingleton<DownloadManager>();
-        services.AddSingleton<UserService>();
-        services.AddSingleton<PackageService>();
-        services.AddSingleton<CollectionService>();
-        services.AddSingleton<DeviceService>();
-        services.AddSingleton<PackageManager>();
-        services.AddSingleton<IdentityManager>();
-        */
 
         AddCommandsAsServices(services);
 

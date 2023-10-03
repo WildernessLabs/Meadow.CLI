@@ -59,7 +59,9 @@ internal class SerialResponse
             case ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_OKAY:
                 return new FileWriteInitOkSerialResponse(data, length);
             case ResponseType.HCOM_HOST_REQUEST_SEND_INITIAL_FILE_BYTES:
-                return new FileInitialBytesSerialResponse(data, length);
+                return new TextPayloadSerialResponse(data, length);
+            case ResponseType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE:
+                return new TextPayloadSerialResponse(data, length);
             default:
                 return new SerialResponse(data, length);
         }

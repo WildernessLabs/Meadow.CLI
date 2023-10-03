@@ -1,5 +1,4 @@
 ﻿using Meadow.Cloud.Identity;
-using Microsoft.VisualBasic;
 using System.Text.Json;
 
 namespace Meadow.Cloud;
@@ -10,7 +9,7 @@ public class CollectionService : CloudServiceBase
     {
     }
 
-    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken cancellationToken)
+    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken? cancellationToken)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 

@@ -274,7 +274,7 @@ namespace Meadow.Hcom
                                     {
                                         FileWriteAccepted?.Invoke(this, EventArgs.Empty);
                                     }
-                                    else if (response is FileInitialBytesSerialResponse fib)
+                                    else if (response is TextPayloadSerialResponse fib)
                                     {
                                         FileDataReceived?.Invoke(this, fib.Text);
                                     }

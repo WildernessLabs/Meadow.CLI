@@ -31,7 +31,7 @@ public class IdentityManager
     /// Kick off login
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> Login(string host, CancellationToken cancellationToken = default)
+    public async Task<bool> Login(string host, CancellationToken? cancellationToken = default)
     {
         try
         {
@@ -43,7 +43,7 @@ public class IdentityManager
                 http.Start();
 
                 // generated login url with PKCE
-                var state = await client.PrepareLoginAsync(cancellationToken: cancellationToken);
+                var state = await client.PrepareLoginAsync(cancellationToken: cancellationToken ?? CancellationToken.None);
 
                 OpenBrowser(state.StartUrl);
 
@@ -53,7 +53,7 @@ public class IdentityManager
                 context.Response.AddHeader("Location", host);
                 context.Response.Close();
 
-                var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
+                var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken ?? CancellationToken.None);
 
                 if (result.IsError)
                 {
