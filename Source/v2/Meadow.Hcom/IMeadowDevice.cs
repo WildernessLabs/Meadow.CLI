@@ -23,6 +23,6 @@ namespace Meadow.Hcom
         Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
         Task UartTraceEnable(CancellationToken? cancellationToken = null);
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
-        Task<IDisposable> StartDebuggingSession(int port, ILogger? logger, CancellationToken? cancellationToken);
+        Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     }
 }

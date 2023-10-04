@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.Hcom;
 
@@ -153,6 +154,16 @@ public class TcpConnection : ConnectionBase
     }
 
     public override Task UartTraceDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
     {
         throw new NotImplementedException();
     }

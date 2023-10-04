@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Data.Common;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.Hcom
 {
@@ -137,9 +138,9 @@ namespace Meadow.Hcom
             await _connection.DeleteFile(meadowFileName, cancellationToken);
         }
 
-        public Task<IDisposable>? StartDebuggingSession(int port, ILogger logger, CancellationToken? cancellationToken = null)
+        public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
         {
-            return null;
+            await _connection.StartDebugging(port, logger, cancellationToken);
         }
     }
 }

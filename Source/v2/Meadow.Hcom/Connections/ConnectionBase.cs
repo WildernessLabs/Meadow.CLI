@@ -1,4 +1,8 @@
-﻿namespace Meadow.Hcom;
+﻿using System.Data.Common;
+using System.Net;
+using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom;
 
 public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {
@@ -35,6 +39,8 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
     public abstract Task UartTraceEnable(CancellationToken? cancellationToken = null);
     public abstract Task UartTraceDisable(CancellationToken? cancellationToken = null);
+    public abstract Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
+    public abstract Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
 
     public ConnectionBase()
     {

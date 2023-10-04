@@ -1,8 +1,4 @@
-﻿
-using System.Net;
-using CliFx.Attributes;
-using LibUsbDotNet;
-using Meadow.Hcom;
+﻿using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -23,9 +19,14 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null && CurrentConnection.Device != null)
+        if (CurrentConnection != null)
         {
-            using (var server = await CurrentConnection.Device.StartDebuggingSession(Port, Logger, CancellationToken))
+            CurrentConnection.DeviceMessageReceived += (s, e) =>
+            {
+                Logger?.LogInformation(e.message);
+            };
+
+            using (var server = await CurrentConnection.StartDebuggingSession(Port, Logger, CancellationToken))
             {
                 if (Console != null)
                 {
