@@ -23,7 +23,5 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
         Logger?.LogInformation($"Logging out of Meadow.Cloud...");
 
         IdentityManager.Logout();
-
-        Logger?.LogInformation($"Done.");
     }
 }

@@ -70,6 +70,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             UseDfu = true;
         }
 
+        IMeadowConnection connection;
 
         if (UseDfu && Files.Contains(FirmwareType.OS))
         {
@@ -130,7 +131,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // configure the route to that port for the user
             Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
 
-            var connection = await GetCurrentConnection();
+            connection = await GetCurrentConnection();
 
             if (connection == null)
             {
@@ -148,23 +149,25 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 await WriteFiles(connection);
             }
-
-            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
-
-            if (deviceInfo != null)
-            {
-                Logger?.LogInformation($"Done.");
-                Logger?.LogInformation(deviceInfo.ToString());
-            }
         }
         else
         {
-            var connection = await GetCurrentConnection();
+            connection = await GetCurrentConnection();
             if (connection == null)
             {
                 return;
             }
             await WriteFiles(connection);
+        }
+
+        await connection.ResetDevice(CancellationToken);
+        await connection.WaitForMeadowAttach();
+
+        var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
+
+        if (deviceInfo != null)
+        {
+            Logger?.LogInformation(deviceInfo.ToString());
         }
     }
 
