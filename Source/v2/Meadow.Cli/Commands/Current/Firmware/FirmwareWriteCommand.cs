@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
@@ -39,7 +38,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Settings = settingsManager;
     }
 
-    public override async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand()
     {
         var package = await GetSelectedPackage();
 
@@ -137,13 +136,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var cancellationToken = console.RegisterCancellationHandler();
+            var cancellationToken = Console.RegisterCancellationHandler();
 
             if (Files.Any(f => f != FirmwareType.OS))
             {
                 await CurrentConnection.WaitForMeadowAttach();
 
-                await ExecuteCommand();
+                await WriteFiles();
             }
 
             var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(cancellationToken);
@@ -156,7 +155,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await base.ExecuteAsync(console);
+            await WriteFiles();
         }
     }
 
@@ -218,7 +217,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    private async ValueTask WriteFiles()
     {
         // the connection passes messages back to us (info about actions happening on-device
         CurrentConnection.DeviceMessageReceived += (s, e) =>

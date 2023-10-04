@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
@@ -49,7 +48,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         Settings = settingsManager;
     }
 
-    public override async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand()
     {
         var package = await GetSelectedPackage();
 
@@ -150,13 +149,13 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 return;
             }
 
-            var cancellationToken = console.RegisterCancellationHandler();
+            var cancellationToken = Console.RegisterCancellationHandler();
 
             if (Files.Any(f => f != FirmwareType.OS))
             {
                 await connection.WaitForMeadowAttach();
 
-                await ExecuteCommand();
+                await WriteFiles();
             }
 
             var deviceInfo = await connection.Device.GetDeviceInfo(cancellationToken);
@@ -169,7 +168,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         }
         else
         {
-            await base.ExecuteAsync(console);
+            await WriteFiles();
         }
     }
 
@@ -231,7 +230,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         return package;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    private async ValueTask WriteFiles()
     {
         if (CurrentConnection == null)
         {

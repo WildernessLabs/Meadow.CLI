@@ -18,13 +18,15 @@ public abstract class BaseCommand<T> : ICommand
     }
 
     protected abstract ValueTask ExecuteCommand();
+    protected virtual Task BeforeExecute() { return Task.CompletedTask; }
 
-    public virtual async ValueTask ExecuteAsync(IConsole console)
+    public async ValueTask ExecuteAsync(IConsole console)
     {
         try
         {
             SetConsole(console);
 
+            await BeforeExecute();
             await ExecuteCommand();
         }
         catch (Exception ex)
