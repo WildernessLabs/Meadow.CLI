@@ -137,16 +137,19 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var cancellationToken = Console.RegisterCancellationHandler();
-
             if (Files.Any(f => f != FirmwareType.OS))
             {
                 await CurrentConnection.WaitForMeadowAttach();
 
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 await WriteFiles();
             }
 
-            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(cancellationToken);
+            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
 
             if (deviceInfo != null)
             {
@@ -283,6 +286,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
         }
+
+        if (CancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         if (Files.Contains(FirmwareType.ESP))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
@@ -295,13 +304,18 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 };
 
             await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
+
+            if (CancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
         }
 
         Logger?.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {
-            await CurrentConnection.Device.RuntimeEnable();
+            await CurrentConnection.Device.RuntimeEnable(CancellationToken);
         }
 
         // TODO: if we're an F7 device, we need to reset

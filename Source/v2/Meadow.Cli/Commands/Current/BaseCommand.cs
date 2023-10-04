@@ -24,7 +24,8 @@ public abstract class BaseCommand<T> : ICommand
     {
         try
         {
-            SetConsole(console);
+            Console = console;
+            CancellationToken = Console.RegisterCancellationHandler();
 
             await BeforeExecute();
             await ExecuteCommand();
@@ -32,12 +33,17 @@ public abstract class BaseCommand<T> : ICommand
         catch (Exception ex)
         {
             Logger?.LogError(ex.Message);
+            return;
+        }
+
+        if (CancellationToken.IsCancellationRequested)
+        {
+            Logger?.LogInformation($"Cancelled.");
+        }
+        else
+        {
+            Logger?.LogInformation($"Done.");
         }
     }
 
-    protected void SetConsole(IConsole console)
-    {
-        Console = console;
-        CancellationToken = Console.RegisterCancellationHandler();
-    }
 }
