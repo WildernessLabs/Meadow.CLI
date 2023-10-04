@@ -2,7 +2,6 @@
 using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -84,7 +83,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex.Message);
+                Logger?.LogError(ex.Message);
                 return;
             }
 
@@ -99,13 +98,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Exception type: {ex.GetType().Name}");
+                Logger?.LogError($"Exception type: {ex.GetType().Name}");
 
                 // TODO: scope this to the right exception type for Win 10 access violation thing
                 // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
                 Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
 
-                Logger.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
+                Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
                 return;
             }
 
@@ -125,8 +124,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 newPort = ports.Except(initialPorts).FirstOrDefault();
             }
 
+            Logger?.LogInformation($"Meadow found at {newPort}");
+
             // configure the route to that port for the user
             Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+            await RefreshConnection();
 
             if (CurrentConnection == null)
             {

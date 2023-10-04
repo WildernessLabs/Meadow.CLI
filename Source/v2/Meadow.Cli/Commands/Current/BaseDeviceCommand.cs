@@ -14,10 +14,8 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         ConnectionManager = connectionManager;
     }
 
-    public override async ValueTask ExecuteAsync(IConsole console)
+    protected async Task RefreshConnection()
     {
-        SetConsole(console);
-
         CurrentConnection = ConnectionManager.GetCurrentConnection();
 
         if (CurrentConnection != null)
@@ -60,5 +58,12 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         {
             Logger?.LogError("Current Connnection Unavailable");
         }
+    }
+
+    public override async ValueTask ExecuteAsync(IConsole console)
+    {
+        SetConsole(console);
+
+        await RefreshConnection();
     }
 }
