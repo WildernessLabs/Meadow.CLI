@@ -17,7 +17,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private event EventHandler<string> FileReadCompleted = delegate { };
     private event EventHandler FileWriteAccepted;
-
+    private event EventHandler<string> FileDataReceived;
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
 
     private SerialPort _port;
@@ -1072,6 +1072,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
+    public override async Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<FileInitialBytesRequest>();
+        command.MeadowFileName = fileName;
+
+        string? contents = null;
+
+        void OnFileDataReceived(object? sender, string data)
+        {
+            contents = data;
+        }
+
+        FileDataReceived += OnFileDataReceived;
+
+        _lastRequestConcluded = null;
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        return contents;
+    }
+
     public override async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<FileDeleteRequest>();
@@ -1082,6 +1104,50 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         EnqueueRequest(command);
 
         await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task EraseFlash(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<FlashEraseRequest>();
+
+        _lastRequestConcluded = null;
+
+        var lastTimeout = CommandTimeoutSeconds;
+
+        CommandTimeoutSeconds = 5 * 60;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        CommandTimeoutSeconds = lastTimeout;
+    }
+
+    public override async Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<GetPublicKeyRequest>();
+
+        string? contents = null;
+
+        void OnFileDataReceived(object? sender, string data)
+        {
+            contents = data;
+        }
+
+        FileDataReceived += OnFileDataReceived;
+
+        var lastTimeout = CommandTimeoutSeconds;
+
+        CommandTimeoutSeconds = 5 * 60;
+
+        _lastRequestConcluded = null;
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+
+        CommandTimeoutSeconds = lastTimeout;
+
+        return contents;
     }
 
     public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
@@ -1102,7 +1168,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             return debuggingServer;
         }
         else
+        {
             throw new DeviceNotFoundException();
+        }
     }
 
     public override async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)

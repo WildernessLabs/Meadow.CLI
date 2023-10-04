@@ -10,7 +10,7 @@ public class InstallDfuCommand : DfuInstallCommand
     public InstallDfuCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(settingsManager, loggerFactory, "0.11")
     {
-        Logger.LogWarning($"Deprecated command.  Use `dfu install` instead");
+        Logger?.LogWarning($"Deprecated command.  Use `dfu install` instead");
     }
 }
 

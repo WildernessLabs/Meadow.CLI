@@ -11,6 +11,8 @@ public partial class PackageManager
     private const string IL_LINKER_DIR = "lib";
     public const string PostLinkDirectoryName = "postlink_bin";
     public const string PreLinkDirectoryName = "prelink_bin";
+    public const string PackageOutputDirectoryName = "mpak";
+
 
     private readonly List<string> dependencyMap = new();
 
@@ -31,8 +33,11 @@ public partial class PackageManager
                     if (store.DefaultPackage != null)
                     {
                         var defaultPackage = store.DefaultPackage;
+
                         if (defaultPackage.BclFolder != null)
+                        {
                             _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                        }
                     }
                 }
             }

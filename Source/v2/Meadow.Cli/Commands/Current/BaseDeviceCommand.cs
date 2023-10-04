@@ -1,5 +1,4 @@
-﻿using CliFx;
-using CliFx.Infrastructure;
+﻿using CliFx.Infrastructure;
 using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +16,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 
     public override async ValueTask ExecuteAsync(IConsole console)
     {
-        await SetConsole(console);
+        SetConsole(console);
 
         CurrentConnection = ConnectionManager.GetCurrentConnection();
 

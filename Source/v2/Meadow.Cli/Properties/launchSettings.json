@@ -190,6 +190,70 @@
     "App run": {
       "commandName": "Project",
       "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
+    },
+    "Flash erase": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erase"
+    },
+    "File initial": {
+      "commandName": "Project",
+      "commandLineArgs": "file initial meadow.log"
+    },
+    "Device provision": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision -o christacke6612"
+    },
+    "Cloud login": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud login"
+    },
+    "Cloud logout": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud logout"
+    },
+    "Cloud collection list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud collection list -o christacke6612"
+    },
+    "Cloud package create": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
+    },
+    "Cloud package upload": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package upload F:\\temp\\MeadowApplication1\\bin\\Release\\netstandard2.1\\mpak\\2023100330.mpak -o christacke6612"
+    },
+    "Cloud package list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package list -o christacke6612"
+    },
+    "Cloud package publish": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
+    },
+    "legacy list ports": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
+    },
+    "legacy use port": {
+      "commandName": "Project",
+      "commandLineArgs": "use port COM1"
+    },
+    "legacy mono state": {
+      "commandName": "Project",
+      "commandLineArgs": "mono state"
+    },
+    "legacy mono enable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono enable"
+    },
+    "legacy mono disable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono disable"
+    },
+    "legacy download os": {
+      "commandName": "Project",
+      "commandLineArgs": "download os"
     }
   }
 }

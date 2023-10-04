@@ -1,5 +1,4 @@
-﻿using System.Data.Common;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Meadow.Hcom
 {
@@ -136,6 +135,21 @@ namespace Meadow.Hcom
         public async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
         {
             await _connection.DeleteFile(meadowFileName, cancellationToken);
+        }
+
+        public async Task EraseFlash(CancellationToken? cancellationToken = null)
+        {
+            await _connection.EraseFlash(cancellationToken);
+        }
+
+        public async Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
+        {
+            return await _connection.ReadFileString(fileName, cancellationToken);
+        }
+
+        public async Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
+        {
+            return await _connection.GetPublicKey(cancellationToken);
         }
 
         public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)

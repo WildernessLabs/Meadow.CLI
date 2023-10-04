@@ -1,7 +1,10 @@
 ﻿using CliFx;
 using Meadow.Cli;
 using Meadow.CLI.Commands.DeviceManagement;
+using Meadow.Cloud;
+using Meadow.Cloud.Identity;
 using Meadow.Software;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
@@ -47,16 +50,26 @@ public class Program
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
 
-        /*
-        services.AddSingleton<MeadowDeviceManager>();
-        services.AddSingleton<DownloadManager>();
         services.AddSingleton<UserService>();
-        services.AddSingleton<PackageService>();
-        services.AddSingleton<CollectionService>();
         services.AddSingleton<DeviceService>();
-        services.AddSingleton<PackageManager>();
-        services.AddSingleton<IdentityManager>();
-        */
+        services.AddSingleton<CollectionService>();
+        services.AddSingleton<CommandService>();
+        services.AddSingleton<PackageService>();
+        services.AddSingleton<IdentityManager, IdentityManager>();
+
+        if (File.Exists("appsettings.json"))
+        {
+            var config = new ConfigurationBuilder()
+                                   .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                                   .AddJsonFile("appsettings.json")
+                                   .Build();
+
+            services.AddScoped<IConfiguration>(_ => config);
+        }
+        else
+        {
+            services.AddScoped<IConfiguration>(_ => null);
+        }
 
         AddCommandsAsServices(services);
 

@@ -1,6 +1,5 @@
 ﻿using CliFx;
 using CliFx.Infrastructure;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -34,7 +33,7 @@ public abstract class BaseCommand<T> : ICommand
         }
     }
 
-    protected async Task SetConsole(IConsole console)
+    protected void SetConsole(IConsole console)
     {
         Console = console;
         CancellationToken = Console.RegisterCancellationHandler();

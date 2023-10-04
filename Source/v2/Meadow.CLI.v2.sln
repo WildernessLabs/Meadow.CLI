@@ -21,11 +21,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager", "M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Unit.Tests", "Meadow.SoftwareManager.Unit.Tests\Meadow.SoftwareManager.Unit.Tests.csproj", "{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.UsbLib", "Meadow.UsbLib\Meadow.UsbLib.csproj", "{5B071B58-550C-492D-8A24-973D4183FAAF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLib", "Meadow.UsbLib\Meadow.UsbLib.csproj", "{5B071B58-550C-492D-8A24-973D4183FAAF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.UsbLibClassic", "Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj", "{42F3A4D2-CBF9-4DF3-8ADC-BF775101F34A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLibClassic", "Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj", "{42F3A4D2-CBF9-4DF3-8ADC-BF775101F34A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Cli.Core", "Meadow.Cli.Core\Meadow.Cli.Core.csproj", "{677B1C15-8936-4807-8A4F-4F5219BBDB7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cli.Core", "Meadow.Cli.Core\Meadow.Cli.Core.csproj", "{677B1C15-8936-4807-8A4F-4F5219BBDB7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Cloud.Client", "Meadow.Cloud.Client\Meadow.Cloud.Client.csproj", "{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +83,10 @@ Global
 		{677B1C15-8936-4807-8A4F-4F5219BBDB7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{677B1C15-8936-4807-8A4F-4F5219BBDB7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{677B1C15-8936-4807-8A4F-4F5219BBDB7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
