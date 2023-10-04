@@ -62,6 +62,8 @@ internal class SerialResponse
                 return new TextPayloadSerialResponse(data, length);
             case ResponseType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE:
                 return new TextPayloadSerialResponse(data, length);
+            case ResponseType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND:
+                return new FileDownloadFailedResponse(data, length);
             default:
                 return new SerialResponse(data, length);
         }

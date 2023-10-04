@@ -813,14 +813,17 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             InfoMessages.Clear();
 
+            _lastRequestConcluded = null;
+
             var status = await WriteFile(localFileName, "Meadow.OS.Runtime.bin",
                 RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_RUNTIME,
                 RequestType.HCOM_MDOW_REQUEST_MONO_UPDATE_FILE_END,
                 0,
                 cancellationToken);
 
-            RaiseConnectionMessage("\nErasing runtime flash blocks...");
 
+            /*
+            RaiseConnectionMessage("\nErasing runtime flash blocks...");
             status = await WaitForResult(() =>
             {
                 if (_lastRequestConcluded != null)
@@ -865,6 +868,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 return false;
             },
             cancellationToken);
+            */
+
+            await WaitForConcluded(null, cancellationToken);
 
             return status;
         }

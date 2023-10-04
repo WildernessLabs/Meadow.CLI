@@ -278,6 +278,10 @@ namespace Meadow.Hcom
                                     {
                                         FileDataReceived?.Invoke(this, fib.Text);
                                     }
+                                    else if (response is FileDownloadFailedResponse fdf)
+                                    {
+                                        RaiseFileWriteFailed();
+                                    }
                                     else
                                     {
                                         Debug.WriteLine($"{response?.GetType().Name} for: {response?.RequestType}");

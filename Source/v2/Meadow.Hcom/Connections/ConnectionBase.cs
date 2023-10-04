@@ -13,6 +13,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<Exception> ConnectionError = default!;
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
+    public event EventHandler FileWriteFailed;
 
     public abstract string Name { get; }
 
@@ -57,6 +58,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
         FileWriteProgress?.Invoke(this, (fileName, progress, total));
     }
 
+    protected void RaiseFileWriteFailed()
+    {
+        FileWriteFailed?.Invoke(this, EventArgs.Empty);
+    }
+
     protected void RaiseDeviceMessageReceived(string message, string? source)
     {
         DeviceMessageReceived?.Invoke(this, (message, source));
@@ -73,8 +79,6 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
         {
             if (disposing)
             {
-                //                    Close();
-                //                    _port.Dispose();
             }
 
             _isDisposed = true;

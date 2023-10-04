@@ -31,6 +31,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private ISettingsManager Settings { get; }
 
     private ILibUsbDevice? _libUsbDevice;
+    private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
@@ -253,6 +254,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             Logger?.LogInformation(message);
         };
+        connection.FileWriteFailed += (s, e) =>
+        {
+            _fileWriteError = true;
+        };
 
         var package = await GetSelectedPackage();
 
@@ -290,9 +295,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // get the path to the runtime file
             var rtpath = package.GetFullyQualifiedPath(package.Runtime);
 
-            // TODO: for serial, we must wait for the flash to complete
-
+        write_runtime:
             await connection.Device.WriteRuntime(rtpath, CancellationToken);
+            if (_fileWriteError)
+            {
+                _fileWriteError = false;
+                Logger?.LogInformation($"Error writing runtime.  Retrying.");
+                goto write_runtime;
+            }
         }
 
         if (CancellationToken.IsCancellationRequested)
