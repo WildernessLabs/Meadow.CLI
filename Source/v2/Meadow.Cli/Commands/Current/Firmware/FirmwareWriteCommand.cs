@@ -31,6 +31,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private ISettingsManager Settings { get; }
 
     private ILibUsbDevice? _libUsbDevice;
+    private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
@@ -70,6 +71,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             UseDfu = true;
         }
 
+        IMeadowConnection connection;
 
         if (UseDfu && Files.Contains(FirmwareType.OS))
         {
@@ -130,7 +132,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // configure the route to that port for the user
             Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
 
-            var connection = await GetCurrentConnection();
+            connection = await GetCurrentConnection();
 
             if (connection == null)
             {
@@ -148,23 +150,25 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 await WriteFiles(connection);
             }
-
-            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
-
-            if (deviceInfo != null)
-            {
-                Logger?.LogInformation($"Done.");
-                Logger?.LogInformation(deviceInfo.ToString());
-            }
         }
         else
         {
-            var connection = await GetCurrentConnection();
+            connection = await GetCurrentConnection();
             if (connection == null)
             {
                 return;
             }
             await WriteFiles(connection);
+        }
+
+        await connection.ResetDevice(CancellationToken);
+        await connection.WaitForMeadowAttach();
+
+        var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
+
+        if (deviceInfo != null)
+        {
+            Logger?.LogInformation(deviceInfo.ToString());
         }
     }
 
@@ -250,6 +254,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             Logger?.LogInformation(message);
         };
+        connection.FileWriteFailed += (s, e) =>
+        {
+            _fileWriteError = true;
+        };
 
         var package = await GetSelectedPackage();
 
@@ -287,9 +295,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // get the path to the runtime file
             var rtpath = package.GetFullyQualifiedPath(package.Runtime);
 
-            // TODO: for serial, we must wait for the flash to complete
-
+        write_runtime:
             await connection.Device.WriteRuntime(rtpath, CancellationToken);
+            if (_fileWriteError)
+            {
+                _fileWriteError = false;
+                Logger?.LogInformation($"Error writing runtime.  Retrying.");
+                goto write_runtime;
+            }
         }
 
         if (CancellationToken.IsCancellationRequested)

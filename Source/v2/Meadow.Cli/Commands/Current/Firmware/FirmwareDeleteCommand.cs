@@ -1,7 +1,5 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
-using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -29,7 +27,5 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
         await collection.DeletePackage(Version);
-
-        Logger?.LogInformation($"Done.");
     }
 }
