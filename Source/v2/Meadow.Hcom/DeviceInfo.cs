@@ -11,20 +11,27 @@ namespace Meadow.Hcom
             Properties = properties;
         }
 
-        public string this[string propname] => Properties[propname];
-        public string Product => this["Product"];
-        public string Model => this["Model"];
-        public string ProcessorType => this["ProcessorType"];
-        public string CoprocessorType => this["CoprocessorType"];
-        public string OsVersion => this["OSVersion"];
-        public string CoprocessorOsVersion => this["CoprocessorVersion"];
-        public string ProcessorId => this["ProcessorId"];
-        public string HardwareVersion => this["Hardware"];
-        public string DeviceName => this["DeviceName"];
-        public string RuntimeVersion => this["MonoVersion"];
-        public string SerialNumber => this["SerialNo"];
-        public string MacAddress => this["WiFiMAC"];
-        public string SoftAPMacAddress => this["SoftAPMac"];
+        public string? this[string propname]
+        {
+            get
+            {
+                return Properties.Keys.Contains(propname) ? Properties[propname] : null;
+            }
+        }
+
+        public string? Product => this["Product"];
+        public string? Model => this["Model"];
+        public string? ProcessorType => this["ProcessorType"];
+        public string? CoprocessorType => this["CoprocessorType"];
+        public string? OsVersion => this["OSVersion"];
+        public string? CoprocessorOsVersion => this["CoprocessorVersion"];
+        public string? ProcessorId => this["ProcessorId"];
+        public string? HardwareVersion => this["Hardware"];
+        public string? DeviceName => this["DeviceName"];
+        public string? RuntimeVersion => this["MonoVersion"];
+        public string? SerialNumber => this["SerialNo"];
+        public string? MacAddress => this["WiFiMAC"];
+        public string? SoftAPMacAddress => this["SoftAPMac"];
 
         /// <summary>
         /// String representation of an unknown MAC address.

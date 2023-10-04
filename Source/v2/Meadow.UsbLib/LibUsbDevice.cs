@@ -10,38 +10,36 @@ public class LibUsbProvider : ILibUsbProvider
 
     public List<ILibUsbDevice> GetDevicesInBootloaderMode()
     {
-        using UsbContext context = new UsbContext();
-
+        UsbContext context = new UsbContext();
         return context
             .List()
             .Where(d => d.Info.VendorId == UsbBootLoaderVendorID)
             .Select(d => new LibUsbDevice(d))
-            .Cast<ILibUsbDevice>()
-            .ToList();
-    }
-}
-
-public class LibUsbDevice : ILibUsbDevice
-{
-    private IUsbDevice _device;
-
-    public LibUsbDevice(IUsbDevice usbDevice)
-    {
-        _device = usbDevice;
+            .ToList<ILibUsbDevice>();
     }
 
-    public string GetDeviceSerialNumber()
+    public class LibUsbDevice : ILibUsbDevice
     {
-        var serialNumber = string.Empty;
+        private IUsbDevice _device;
 
-        _device.Open();
-        if (_device.IsOpen)
+        public LibUsbDevice(IUsbDevice usbDevice)
         {
-            serialNumber = _device.Info?.SerialNumber ?? string.Empty;
-            _device.Close();
+            _device = usbDevice;
         }
 
+        public string GetDeviceSerialNumber()
+        {
+            var serialNumber = string.Empty;
 
-        return serialNumber;
+            _device.Open();
+            if (_device.IsOpen)
+            {
+                serialNumber = _device.Info?.SerialNumber ?? string.Empty;
+                _device.Close();
+            }
+
+
+            return serialNumber;
+        }
     }
 }

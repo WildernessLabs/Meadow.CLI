@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
@@ -39,7 +38,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Settings = settingsManager;
     }
 
-    public override async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand()
     {
         var package = await GetSelectedPackage();
 
@@ -77,9 +76,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
             // get the device's serial number via DFU - we'll need it to find the device after it resets
+            ILibUsbDevice libUsbDevice;
             try
             {
-                _libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
             }
             catch (Exception ex)
             {
@@ -87,7 +87,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var serial = _libUsbDevice.GetDeviceSerialNumber();
+            var serial = libUsbDevice.GetDeviceSerialNumber();
 
             // no connection is required here - in fact one won't exist
             // unless maybe we add a "DFUConnection"?
@@ -137,16 +137,19 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var cancellationToken = console.RegisterCancellationHandler();
-
             if (Files.Any(f => f != FirmwareType.OS))
             {
                 await CurrentConnection.WaitForMeadowAttach();
 
-                await ExecuteCommand();
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                await WriteFiles();
             }
 
-            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(cancellationToken);
+            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
 
             if (deviceInfo != null)
             {
@@ -156,36 +159,42 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await base.ExecuteAsync(console);
+            await WriteFiles();
         }
     }
 
     private ILibUsbDevice GetLibUsbDeviceForCurrentEnvironment()
     {
-        ILibUsbProvider provider;
-
-        // TODO: read the settings manager to decide which provider to use (default to non-classic)
-        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
-        if (setting == "classic")
+        if (_libUsbDevice == null)
         {
-            provider = new ClassicLibUsbProvider();
-        }
-        else
-        {
-            provider = new LibUsbProvider();
+            ILibUsbProvider provider;
+
+            // TODO: read the settings manager to decide which provider to use (default to non-classic)
+            var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
+            if (setting == "classic")
+            {
+                provider = new ClassicLibUsbProvider();
+            }
+            else
+            {
+                provider = new LibUsbProvider();
+            }
+
+            var devices = provider.GetDevicesInBootloaderMode();
+
+            switch (devices.Count)
+            {
+                case 0:
+                    throw new Exception("No device found in bootloader mode");
+                case 1:
+                    _libUsbDevice = devices[0];
+                    break;
+                default:
+                    throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
+            }
         }
 
-        var devices = provider.GetDevicesInBootloaderMode();
-
-        switch (devices.Count)
-        {
-            case 0:
-                throw new Exception("No device found in bootloader mode");
-            case 1:
-                return devices[0];
-            default:
-                throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
-        }
+        return _libUsbDevice;
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
@@ -218,7 +227,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    private async ValueTask WriteFiles()
     {
         // the connection passes messages back to us (info about actions happening on-device
         CurrentConnection.DeviceMessageReceived += (s, e) =>
@@ -277,6 +286,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
         }
+
+        if (CancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         if (Files.Contains(FirmwareType.ESP))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
@@ -289,13 +304,18 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 };
 
             await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
+
+            if (CancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
         }
 
         Logger?.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {
-            await CurrentConnection.Device.RuntimeEnable();
+            await CurrentConnection.Device.RuntimeEnable(CancellationToken);
         }
 
         // TODO: if we're an F7 device, we need to reset

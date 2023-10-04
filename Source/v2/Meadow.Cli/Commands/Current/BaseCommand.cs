@@ -18,24 +18,32 @@ public abstract class BaseCommand<T> : ICommand
     }
 
     protected abstract ValueTask ExecuteCommand();
+    protected virtual Task BeforeExecute() { return Task.CompletedTask; }
 
-    public virtual async ValueTask ExecuteAsync(IConsole console)
+    public async ValueTask ExecuteAsync(IConsole console)
     {
         try
         {
-            SetConsole(console);
+            Console = console;
+            CancellationToken = Console.RegisterCancellationHandler();
 
+            await BeforeExecute();
             await ExecuteCommand();
         }
         catch (Exception ex)
         {
             Logger?.LogError(ex.Message);
+            return;
+        }
+
+        if (CancellationToken.IsCancellationRequested)
+        {
+            Logger?.LogInformation($"Cancelled.");
+        }
+        else
+        {
+            Logger?.LogInformation($"Done.");
         }
     }
 
-    protected void SetConsole(IConsole console)
-    {
-        Console = console;
-        CancellationToken = Console.RegisterCancellationHandler();
-    }
 }

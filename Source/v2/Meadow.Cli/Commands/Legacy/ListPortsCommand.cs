@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
@@ -14,9 +13,9 @@ public class ListPortsCommand : PortListCommand
         Logger?.LogWarning($"Deprecated command.  Use `port list` instead");
     }
 
-    public override ValueTask ExecuteAsync(IConsole console)
+    protected override ValueTask ExecuteCommand()
     {
-        return base.ExecuteAsync(console);
+        return base.ExecuteCommand();
     }
 }
 

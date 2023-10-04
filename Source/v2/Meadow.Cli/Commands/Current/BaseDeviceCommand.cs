@@ -1,5 +1,4 @@
-﻿using CliFx.Infrastructure;
-using Meadow.Hcom;
+﻿using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -41,7 +40,6 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
                 }
                 else
                 {
-                    await ExecuteCommand();
                     Logger?.LogInformation($"Done.");
                 }
             }
@@ -60,10 +58,8 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         }
     }
 
-    public override async ValueTask ExecuteAsync(IConsole console)
+    protected override async Task BeforeExecute()
     {
-        SetConsole(console);
-
         await RefreshConnection();
     }
 }
