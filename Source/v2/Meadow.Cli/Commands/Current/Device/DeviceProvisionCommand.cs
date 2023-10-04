@@ -1,7 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -31,7 +30,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         _deviceService = deviceService;
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         UserOrg org;
 
@@ -44,7 +43,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
             Logger?.LogInformation("Retrieving your user and organization information...");
 
-            var userOrgs = await _userService.GetUserOrgs(Host, cancellationToken).ConfigureAwait(false);
+            var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
             if (!userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {Host} to register your account.");
@@ -74,17 +73,17 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             return;
         }
 
-        var info = await device.GetDeviceInfo(cancellationToken);
+        var info = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
 
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
-        var publicKey = await device.GetPublicKey(cancellationToken);
+        var publicKey = await CurrentConnection.Device.GetPublicKey(CancellationToken);
 
         var delim = "-----END PUBLIC KEY-----\n";
         publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
-        var result = await _deviceService.AddDevice(org.Id, info.ProcessorId, publicKey, CollectionId, Name, Host, cancellationToken);
+        var result = await _deviceService.AddDevice(org.Id, info.ProcessorId, publicKey, CollectionId, Name, Host, CancellationToken);
 
         if (result.isSuccess)
         {

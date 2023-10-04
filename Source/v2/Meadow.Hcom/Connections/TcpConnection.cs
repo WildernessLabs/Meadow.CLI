@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Meadow.Hcom;
 
@@ -161,6 +162,10 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+    public override Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
 
     public override Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null)
     {
@@ -168,6 +173,11 @@ public class TcpConnection : ConnectionBase
     }
 
     public override Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
     {
         throw new NotImplementedException();
     }

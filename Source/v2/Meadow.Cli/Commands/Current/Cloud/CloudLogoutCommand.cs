@@ -18,7 +18,7 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         Logger?.LogInformation($"Logging out of Meadow.Cloud...");
 

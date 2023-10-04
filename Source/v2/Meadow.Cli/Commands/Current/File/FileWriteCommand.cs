@@ -25,46 +25,46 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
-            Logger.LogError(
+            Logger?.LogError(
                 $"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
 
             return;
         }
 
-        connection.FileWriteProgress += (s, e) =>
+        CurrentConnection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
 
             // Console instead of Logger due to line breaking for progress bar
-            Console.Write($"Writing {e.fileName}: {p:0}%     \r");
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
-        Logger.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
+        Logger?.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
 
         for (var i = 0; i < Files.Count; i++)
         {
             if (!File.Exists(Files[i]))
             {
-                Logger.LogError($"Cannot find file '{Files[i]}'. Skippping");
+                Logger?.LogError($"Cannot find file '{Files[i]}'. Skippping");
             }
             else
             {
                 var targetFileName = GetTargetFileName(i);
 
-                Logger.LogInformation(
+                Logger?.LogInformation(
                     $"Writing '{Files[i]}' as '{targetFileName}' to device");
 
                 try
                 {
-                    await device.WriteFile(Files[i], targetFileName, cancellationToken);
+                    await CurrentConnection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError($"Error writing file: {ex.Message}");
+                    Logger?.LogError($"Error writing file: {ex.Message}");
                 }
             }
         }

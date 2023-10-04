@@ -40,7 +40,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         _fileManager = fileManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (ProjectPath == null)
         {
@@ -49,7 +49,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
-        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, cancellationToken))
+        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
             return;
         }
@@ -68,14 +68,14 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();        // trim
         Logger?.LogInformation($"Trimming application...");
-        await _packageManager.TrimApplication(file, cancellationToken: cancellationToken);
+        await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
         var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PackageOutputDirectoryName);
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, cancellationToken);
+        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {

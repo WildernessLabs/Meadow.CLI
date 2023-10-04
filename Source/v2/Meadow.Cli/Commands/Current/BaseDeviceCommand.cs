@@ -1,74 +1,64 @@
-﻿using CliFx;
-using CliFx.Infrastructure;
+﻿using CliFx.Infrastructure;
 using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-public abstract class BaseDeviceCommand<T> : ICommand
+public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 {
-    protected ILogger<T> Logger { get; }
+    protected IMeadowConnection? CurrentConnection { get; private set; }
     protected MeadowConnectionManager ConnectionManager { get; }
 
-    public BaseDeviceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public BaseDeviceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory) : base(loggerFactory)
     {
-        Logger = loggerFactory.CreateLogger<T>();
         ConnectionManager = connectionManager;
     }
 
-    protected abstract ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken);
-
-    public virtual async ValueTask ExecuteAsync(IConsole console)
+    public override async ValueTask ExecuteAsync(IConsole console)
     {
-        var cancellationToken = console.RegisterCancellationHandler();
+        SetConsole(console);
 
-        IMeadowConnection? c = null;
-        try
-        {
-            c = ConnectionManager.GetCurrentConnection();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Failed: {ex.Message}");
-            return;
-        }
+        CurrentConnection = ConnectionManager.GetCurrentConnection();
 
-        if (c != null)
+        if (CurrentConnection != null)
         {
-            c.ConnectionError += (s, e) =>
+            CurrentConnection.ConnectionError += (s, e) =>
             {
-                Logger.LogError(e.Message);
+                Logger?.LogError(e.Message);
             };
 
             try
             {
-                await c.Attach(cancellationToken);
+                await CurrentConnection.Attach(CancellationToken);
 
-
-                if (cancellationToken.IsCancellationRequested)
+                if (CancellationToken.IsCancellationRequested)
                 {
-                    Logger.LogInformation($"Cancelled");
+                    Logger?.LogInformation($"Cancelled");
                     return;
                 }
 
-                if (c.Device == null)
+                if (CurrentConnection.Device == null)
                 {
-                    Logger.LogError("No device found");
+                    Logger?.LogError("No device found");
                 }
                 else
                 {
-                    await ExecuteCommand(c, c.Device, cancellationToken);
-                    Logger.LogInformation($"Done.");
+                    await ExecuteCommand();
+                    Logger?.LogInformation($"Done.");
                 }
             }
             catch (TimeoutException)
             {
-                Logger.LogError($"Timeout attempting to attach to device on {c.Name}");
+                Logger?.LogError($"Timeout attempting to attach to device on {CurrentConnection?.Name}");
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed: {ex.Message}");
+                Logger?.LogError($"Failed: {ex.Message}");
             }
+        }
+        else
+        {
+            Logger?.LogError("Current Connnection Unavailable");
         }
     }
 }

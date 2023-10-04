@@ -13,7 +13,7 @@ public class PortListCommand : BaseCommand<PortListCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         Portlist = await MeadowConnectionManager.GetSerialPorts();
         if (Portlist.Count > 0)

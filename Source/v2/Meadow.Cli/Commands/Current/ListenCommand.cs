@@ -17,11 +17,11 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
         if (connection == null)
         {
-            Logger.LogError($"No device connection configured.");
+            Logger?.LogError($"No device connection configured.");
             return;
         }
 
-        Logger.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
+        Logger?.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
 
         connection.DeviceMessageReceived += OnDeviceMessageReceived;
     }
@@ -30,21 +30,21 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
     {
         if (NoPrefix)
         {
-            Logger.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
         }
         else
         {
-            Logger.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
         }
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (!CancellationToken.IsCancellationRequested)
         {
             await Task.Delay(1000);
         }
 
-        Logger.LogInformation($"Cancelled.");
+        Logger?.LogInformation($"Cancelled.");
     }
 }

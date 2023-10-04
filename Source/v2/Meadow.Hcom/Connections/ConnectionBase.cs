@@ -1,4 +1,6 @@
-﻿namespace Meadow.Hcom;
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom;
 
 public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {
@@ -38,6 +40,8 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task UartTraceDisable(CancellationToken? cancellationToken = null);
     public abstract Task EraseFlash(CancellationToken? cancellationToken = null);
     public abstract Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
+    public abstract Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
+    public abstract Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
 
     public ConnectionBase()
     {

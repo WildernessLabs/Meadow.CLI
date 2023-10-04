@@ -44,7 +44,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
         CommandService = commandService;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (string.IsNullOrWhiteSpace(CollectionId) && (DeviceIds == null || DeviceIds.Length == 0))
         {
@@ -58,7 +58,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
         if (Host == null) Host = DefaultHost;
 
-        var token = await IdentityManager.GetAccessToken(cancellationToken);
+        var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))
         {
             throw new CommandException("You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
@@ -69,11 +69,11 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             Logger?.LogInformation($"Publishing '{CommandName}' command to Meadow.Cloud. Please wait...");
             if (!string.IsNullOrWhiteSpace(CollectionId))
             {
-                await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, cancellationToken);
+                await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }
             else if (DeviceIds.Any())
             {
-                await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, cancellationToken);
+                await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }
             else
             {

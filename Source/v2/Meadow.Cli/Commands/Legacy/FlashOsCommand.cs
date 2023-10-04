@@ -2,7 +2,6 @@
 using CliFx.Infrastructure;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -157,7 +156,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             {
                 await connection.WaitForMeadowAttach();
 
-                await ExecuteCommand(connection, connection.Device, cancellationToken);
+                await ExecuteCommand();
             }
 
             var deviceInfo = await connection.Device.GetDeviceInfo(cancellationToken);
@@ -232,10 +231,16 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         return package;
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
+        if (CurrentConnection == null)
+        {
+            Logger?.LogError("No current connection");
+            return;
+        }
+
         // the connection passes messages back to us (info about actions happening on-device
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
             if (e.message.Contains("% downloaded"))
             {
@@ -243,28 +248,28 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             }
             else
             {
-                Logger.LogInformation(e.message);
+                Logger?.LogInformation(e.message);
             }
         };
-        connection.ConnectionMessage += (s, message) =>
+        CurrentConnection.ConnectionMessage += (s, message) =>
         {
             Logger.LogInformation(message);
         };
 
         var package = await GetSelectedPackage();
 
-        var wasRuntimeEnabled = await device.IsRuntimeEnabled(cancellationToken);
+        var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
 
         if (wasRuntimeEnabled)
         {
-            Logger.LogInformation("Disabling device runtime...");
-            await device.RuntimeDisable();
+            Logger?.LogInformation("Disabling device runtime...");
+            await CurrentConnection.Device.RuntimeDisable();
         }
 
-        connection.FileWriteProgress += (s, e) =>
+        CurrentConnection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
-            Console.Write($"Writing {e.fileName}: {p:0}%     \r");
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
         if (Files.Contains(FirmwareType.OS))
@@ -289,7 +294,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             // TODO: for serial, we must wait for the flash to complete
 
-            await device.WriteRuntime(rtpath, cancellationToken);
+            await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
         }
         if (Files.Contains(FirmwareType.ESP))
         {
@@ -302,14 +307,14 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                         package.GetFullyQualifiedPath(package.CoprocPartitionTable),
                 };
 
-            await device.WriteCoprocessorFiles(fileList, cancellationToken);
+            await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
         }
 
         Logger.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {
-            await device.RuntimeEnable();
+            await CurrentConnection.Device.RuntimeEnable();
         }
 
         // TODO: if we're an F7 device, we need to reset

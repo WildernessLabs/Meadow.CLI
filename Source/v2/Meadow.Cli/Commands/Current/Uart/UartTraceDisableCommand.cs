@@ -12,15 +12,15 @@ public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(e.message);
+            Logger?.LogInformation(e.message);
         };
 
-        Logger.LogInformation("Setting UART to application use...");
+        Logger?.LogInformation("Setting UART to application use...");
 
-        await device.UartTraceDisable(cancellationToken);
+        await CurrentConnection.Device.UartTraceDisable(CancellationToken);
     }
 }

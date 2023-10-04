@@ -34,7 +34,7 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (Host == null) Host = DefaultHost;
 
@@ -42,7 +42,7 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
         {
             Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
-            await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, cancellationToken);
+            await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, CancellationToken);
             Logger?.LogInformation("Publish successful.");
         }
         catch (MeadowCloudException mex)

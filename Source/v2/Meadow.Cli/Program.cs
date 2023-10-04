@@ -100,15 +100,17 @@ public class Program
     {
         var assembly = System.Reflection.Assembly.GetEntryAssembly(); //.GetAssembly(typeof(Program));
         Trace.Assert(assembly != null);
-        var types = assembly.GetTypes();
+        var types = assembly?.GetTypes();
 
-        var commands = types.Where(
-                                x => x.IsAssignableTo(typeof(ICommand)))
+        var commands = types?.Where(x => x.IsAssignableTo(typeof(ICommand)))
                             .Where(x => !x.IsAbstract);
 
-        foreach (var command in commands)
+        if (commands != null)
         {
-            services.AddTransient(command);
+            foreach (var command in commands)
+            {
+                services.AddTransient(command);
+            }
         }
     }
 }

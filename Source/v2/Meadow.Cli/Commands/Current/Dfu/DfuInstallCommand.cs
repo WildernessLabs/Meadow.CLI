@@ -29,7 +29,7 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (Version == null)
         {
@@ -51,7 +51,7 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
         {
             if (IsAdministrator())
             {
-                await DfuUtils.InstallDfuUtil(FileManager.WildernessTempFolderPath, Version, cancellationToken ?? default);
+                await DfuUtils.InstallDfuUtil(FileManager.WildernessTempFolderPath, Version, CancellationToken);
             }
             else
             {

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -1147,5 +1148,48 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         CommandTimeoutSeconds = lastTimeout;
 
         return contents;
+    }
+
+    public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
+    {
+        if (Device != null)
+        {
+            logger?.LogDebug($"Start Debugging on port: {port}");
+            await Device.StartDebugging(port, logger, cancellationToken);
+
+            /* TODO logger?.LogDebug("Reinitialize the device");
+            await ReInitializeMeadow(cancellationToken); */
+
+            var endpoint = new IPEndPoint(IPAddress.Loopback, port);
+            var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+
+            logger?.LogDebug("Tell the Debugging Server to Start Listening");
+            await debuggingServer.StartListening(cancellationToken);
+            return debuggingServer;
+        }
+        else
+        {
+            throw new DeviceNotFoundException();
+        }
+    }
+
+    public override async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
+    {
+        var command = RequestBuilder.Build<StartDebuggingRequest>();
+
+        if (command != null)
+        {
+            InfoMessages.Clear();
+
+            _lastRequestConcluded = null;
+
+            EnqueueRequest(command);
+
+            await WaitForMeadowAttach(cancellationToken);
+        }
+        else
+        {
+            new Exception($"{typeof(StartDebuggingRequest)} command failed to build");
+        }
     }
 }

@@ -23,14 +23,14 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (Host == null) Host = DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, cancellationToken);
+        var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;
 
-        var collections = await CollectionService.GetOrgCollections(org.Id, Host, cancellationToken);
+        var collections = await CollectionService.GetOrgCollections(org.Id, Host, CancellationToken);
 
         if (collections == null || collections.Count == 0)
         {

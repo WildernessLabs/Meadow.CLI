@@ -15,27 +15,30 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        var fileList = await connection.GetFileList(false);
-        var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
-
-        if (!exists)
+        if (CurrentConnection != null)
         {
-            Logger.LogError($"File '{MeadowFile}' not found on device.");
-        }
-        else
-        {
-            var wasRuntimeEnabled = await device.IsRuntimeEnabled(cancellationToken);
+            var fileList = await CurrentConnection.GetFileList(false);
+            var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
 
-            if (wasRuntimeEnabled)
+            if (!exists)
             {
-                Logger.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
-                return;
+                Logger?.LogError($"File '{MeadowFile}' not found on device.");
             }
+            else
+            {
+                var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
 
-            Logger.LogInformation($"Deleting file '{MeadowFile}' from device...");
-            await device.DeleteFile(MeadowFile, cancellationToken);
+                if (wasRuntimeEnabled)
+                {
+                    Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
+                    return;
+                }
+
+                Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
+                await CurrentConnection.Device.DeleteFile(MeadowFile, CancellationToken);
+            }
         }
     }
 }

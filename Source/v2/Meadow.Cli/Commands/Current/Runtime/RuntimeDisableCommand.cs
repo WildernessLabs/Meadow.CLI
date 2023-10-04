@@ -10,15 +10,15 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
     public RuntimeDisableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger.LogInformation($"Disabling runtime...");
+        Logger?.LogInformation($"Disabling runtime...");
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        await device.RuntimeDisable(cancellationToken);
+        await CurrentConnection.Device.RuntimeDisable(CancellationToken);
 
-        var state = await device.IsRuntimeEnabled(cancellationToken);
+        var state = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
 
-        Logger.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+        Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
     }
 }

@@ -19,7 +19,7 @@ public class UsePortCommand : BaseCommand<UsePortCommand>
         _settingsManager = settingsManager;
     }
 
-    protected override ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override ValueTask ExecuteCommand()
     {
         _settingsManager.SaveSetting("route", Port);
         Logger?.LogInformation($"Using {Port}");

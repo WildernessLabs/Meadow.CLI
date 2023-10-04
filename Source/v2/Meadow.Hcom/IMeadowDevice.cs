@@ -1,4 +1,6 @@
-﻿namespace Meadow.Hcom
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom
 {
     public interface IMeadowDevice
     {
@@ -24,5 +26,6 @@
         Task EraseFlash(CancellationToken? cancellationToken = null);
         Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
         Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
+        Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     }
 }

@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -12,15 +11,15 @@ public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        Logger.LogInformation($"Erasing flash...");
+        Logger?.LogInformation($"Erasing flash...");
 
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(e.message);
+            Logger?.LogInformation(e.message);
         };
 
-        await device.EraseFlash(cancellationToken);
+        await CurrentConnection.Device.EraseFlash(CancellationToken);
     }
 }

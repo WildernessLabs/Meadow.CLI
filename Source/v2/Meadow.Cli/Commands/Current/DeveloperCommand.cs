@@ -18,20 +18,23 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        Logger.LogInformation($"Setting developer parameter {Parameter} to {Value}");
+        Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
 
-        connection.DeviceMessageReceived += (s, e) =>
+        if (CurrentConnection != null)
         {
-            Logger.LogInformation(e.message);
-        };
-        connection.ConnectionError += (s, e) =>
-        {
-            Logger.LogError(e.Message);
-        };
+            CurrentConnection.DeviceMessageReceived += (s, e) =>
+            {
+                Logger?.LogInformation(e.message);
+            };
+            CurrentConnection.ConnectionError += (s, e) =>
+            {
+                Logger?.LogError(e.Message);
+            };
 
-        await device.SetDeveloperParameter(Parameter, Value, cancellationToken);
+            await CurrentConnection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+        }
     }
 }
 

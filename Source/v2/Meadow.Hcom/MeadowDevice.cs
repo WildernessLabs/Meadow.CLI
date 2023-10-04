@@ -1,4 +1,6 @@
-﻿namespace Meadow.Hcom
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom
 {
     public partial class MeadowDevice : IMeadowDevice
     {
@@ -148,6 +150,11 @@
         public async Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
         {
             return await _connection.GetPublicKey(cancellationToken);
+        }
+
+        public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
+        {
+            await _connection.StartDebugging(port, logger, cancellationToken);
         }
     }
 }

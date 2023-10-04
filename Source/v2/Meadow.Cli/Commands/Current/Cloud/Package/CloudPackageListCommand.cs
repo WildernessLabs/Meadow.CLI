@@ -28,14 +28,14 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (Host == null) Host = DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, cancellationToken);
+        var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;
 
-        var packages = await _packageService.GetOrgPackages(org.Id, Host, cancellationToken);
+        var packages = await _packageService.GetOrgPackages(org.Id, Host, CancellationToken);
 
         if (packages == null || packages.Count == 0)
         {

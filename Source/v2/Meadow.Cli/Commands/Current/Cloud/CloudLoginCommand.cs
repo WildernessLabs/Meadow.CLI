@@ -23,17 +23,17 @@ public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (Host == null) Host = DefaultHost;
 
         Logger?.LogInformation($"Logging into {Host}...");
 
-        var loginResult = await IdentityManager.Login(Host, cancellationToken);
+        var loginResult = await IdentityManager.Login(Host, CancellationToken);
 
         if (loginResult)
         {
-            var user = await UserService.GetMe(Host, cancellationToken);
+            var user = await UserService.GetMe(Host, CancellationToken);
             Logger?.LogInformation(user != null
                 ? $"Signed in as {user.Email}"
                 : "There was a problem retrieving your account information.");

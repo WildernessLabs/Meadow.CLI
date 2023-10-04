@@ -34,7 +34,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (!File.Exists(MpakPath))
         {
@@ -43,7 +43,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         }
 
         if (Host == null) Host = DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, cancellationToken);
+        var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;
 
@@ -51,7 +51,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, cancellationToken);
+            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
             Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)
