@@ -76,9 +76,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
             // get the device's serial number via DFU - we'll need it to find the device after it resets
+            ILibUsbDevice libUsbDevice;
             try
             {
-                _libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
             }
             catch (Exception ex)
             {
@@ -86,7 +87,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var serial = _libUsbDevice.GetDeviceSerialNumber();
+            var serial = libUsbDevice.GetDeviceSerialNumber();
 
             // no connection is required here - in fact one won't exist
             // unless maybe we add a "DFUConnection"?
@@ -161,30 +162,36 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private ILibUsbDevice GetLibUsbDeviceForCurrentEnvironment()
     {
-        ILibUsbProvider provider;
-
-        // TODO: read the settings manager to decide which provider to use (default to non-classic)
-        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
-        if (setting == "classic")
+        if (_libUsbDevice == null)
         {
-            provider = new ClassicLibUsbProvider();
-        }
-        else
-        {
-            provider = new LibUsbProvider();
+            ILibUsbProvider provider;
+
+            // TODO: read the settings manager to decide which provider to use (default to non-classic)
+            var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
+            if (setting == "classic")
+            {
+                provider = new ClassicLibUsbProvider();
+            }
+            else
+            {
+                provider = new LibUsbProvider();
+            }
+
+            var devices = provider.GetDevicesInBootloaderMode();
+
+            switch (devices.Count)
+            {
+                case 0:
+                    throw new Exception("No device found in bootloader mode");
+                case 1:
+                    _libUsbDevice = devices[0];
+                    break;
+                default:
+                    throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
+            }
         }
 
-        var devices = provider.GetDevicesInBootloaderMode();
-
-        switch (devices.Count)
-        {
-            case 0:
-                throw new Exception("No device found in bootloader mode");
-            case 1:
-                return devices[0];
-            default:
-                throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
-        }
+        return _libUsbDevice;
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
