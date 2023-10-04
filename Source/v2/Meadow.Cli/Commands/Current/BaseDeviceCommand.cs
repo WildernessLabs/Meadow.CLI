@@ -5,7 +5,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 {
-    protected IMeadowConnection? CurrentConnection { get; private set; }
     protected MeadowConnectionManager ConnectionManager { get; }
 
     public BaseDeviceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory) : base(loggerFactory)
@@ -13,39 +12,37 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         ConnectionManager = connectionManager;
     }
 
-    protected async Task RefreshConnection()
+    protected async Task<IMeadowConnection?> GetCurrentConnection()
     {
-        CurrentConnection = ConnectionManager.GetCurrentConnection();
+        var connection = ConnectionManager.GetCurrentConnection();
 
-        if (CurrentConnection != null)
+        if (connection != null)
         {
-            CurrentConnection.ConnectionError += (s, e) =>
+            connection.ConnectionError += (s, e) =>
             {
                 Logger?.LogError(e.Message);
             };
 
             try
             {
-                await CurrentConnection.Attach(CancellationToken);
+                await connection.Attach(CancellationToken);
 
                 if (CancellationToken.IsCancellationRequested)
                 {
                     Logger?.LogInformation($"Cancelled");
-                    return;
+                    return null;
                 }
 
-                if (CurrentConnection.Device == null)
+                if (connection.Device == null)
                 {
                     Logger?.LogError("No device found");
                 }
-                else
-                {
-                    Logger?.LogInformation($"Done.");
-                }
+
+                return connection;
             }
             catch (TimeoutException)
             {
-                Logger?.LogError($"Timeout attempting to attach to device on {CurrentConnection?.Name}");
+                Logger?.LogError($"Timeout attempting to attach to device on {connection?.Name}");
             }
             catch (Exception ex)
             {
@@ -56,10 +53,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         {
             Logger?.LogError("Current Connnection Unavailable");
         }
-    }
 
-    protected override async Task BeforeExecute()
-    {
-        await RefreshConnection();
+        return null;
     }
 }

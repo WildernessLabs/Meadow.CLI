@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -14,13 +13,20 @@ public class UartTraceEnableCommand : BaseDeviceCommand<UartTraceEnableCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        CurrentConnection.DeviceMessageReceived += (s, e) =>
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        connection.DeviceMessageReceived += (s, e) =>
         {
             Logger?.LogInformation(e.message);
         };
 
         Logger?.LogInformation("Setting UART to output trace messages...");
 
-        await CurrentConnection.Device.UartTraceEnable(CancellationToken);
+        await connection.Device.UartTraceEnable(CancellationToken);
     }
 }

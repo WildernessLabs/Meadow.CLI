@@ -16,9 +16,16 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        Logger.LogInformation($"Reading file '{MeadowFile}' from device...\n");
+        var connection = await GetCurrentConnection();
 
-        var data = await CurrentConnection.Device.ReadFileString(MeadowFile, CancellationToken);
+        if (connection == null)
+        {
+            return;
+        }
+
+        Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
+
+        var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
 
         Logger.LogInformation(data);
     }

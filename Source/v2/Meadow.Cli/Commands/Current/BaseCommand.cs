@@ -18,7 +18,6 @@ public abstract class BaseCommand<T> : ICommand
     }
 
     protected abstract ValueTask ExecuteCommand();
-    protected virtual Task BeforeExecute() { return Task.CompletedTask; }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -27,7 +26,6 @@ public abstract class BaseCommand<T> : ICommand
             Console = console;
             CancellationToken = Console.RegisterCancellationHandler();
 
-            await BeforeExecute();
             await ExecuteCommand();
         }
         catch (Exception ex)

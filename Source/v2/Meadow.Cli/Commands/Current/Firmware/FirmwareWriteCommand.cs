@@ -1,6 +1,7 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -129,27 +130,26 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // configure the route to that port for the user
             Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
 
-            await RefreshConnection();
+            var connection = await GetCurrentConnection();
 
-            if (CurrentConnection == null)
+            if (connection == null)
             {
-                Logger?.LogError($"No connection path is defined");
                 return;
             }
 
             if (Files.Any(f => f != FirmwareType.OS))
             {
-                await CurrentConnection.WaitForMeadowAttach();
+                await connection.WaitForMeadowAttach();
 
                 if (CancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
 
-                await WriteFiles();
+                await WriteFiles(connection);
             }
 
-            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
+            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
 
             if (deviceInfo != null)
             {
@@ -159,7 +159,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await WriteFiles();
+            var connection = await GetCurrentConnection();
+            if (connection == null)
+            {
+                return;
+            }
+            await WriteFiles(connection);
         }
     }
 
@@ -227,10 +232,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async ValueTask WriteFiles()
+    private async ValueTask WriteFiles(IMeadowConnection connection)
     {
         // the connection passes messages back to us (info about actions happening on-device
-        CurrentConnection.DeviceMessageReceived += (s, e) =>
+        connection.DeviceMessageReceived += (s, e) =>
         {
             if (e.message.Contains("% downloaded"))
             {
@@ -241,22 +246,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 Logger?.LogInformation(e.message);
             }
         };
-        CurrentConnection.ConnectionMessage += (s, message) =>
+        connection.ConnectionMessage += (s, message) =>
         {
             Logger?.LogInformation(message);
         };
 
         var package = await GetSelectedPackage();
 
-        var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
+        var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
         if (wasRuntimeEnabled)
         {
             Logger?.LogInformation("Disabling device runtime...");
-            await CurrentConnection.Device.RuntimeDisable();
+            await connection.Device.RuntimeDisable();
         }
 
-        CurrentConnection.FileWriteProgress += (s, e) =>
+        connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
             Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
@@ -284,7 +289,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             // TODO: for serial, we must wait for the flash to complete
 
-            await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
+            await connection.Device.WriteRuntime(rtpath, CancellationToken);
         }
 
         if (CancellationToken.IsCancellationRequested)
@@ -303,7 +308,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                         package.GetFullyQualifiedPath(package.CoprocPartitionTable),
                 };
 
-            await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
+            await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
 
             if (CancellationToken.IsCancellationRequested)
             {
@@ -315,7 +320,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (wasRuntimeEnabled)
         {
-            await CurrentConnection.Device.RuntimeEnable(CancellationToken);
+            await connection.Device.RuntimeEnable(CancellationToken);
         }
 
         // TODO: if we're an F7 device, we need to reset

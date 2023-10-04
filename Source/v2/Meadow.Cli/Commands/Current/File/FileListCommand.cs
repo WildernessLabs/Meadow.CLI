@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -20,9 +19,16 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
         {
-            var files = await CurrentConnection.Device.GetFileList(Verbose, CancellationToken);
+            return;
+        }
+
+        if (connection != null)
+        {
+            var files = await connection.Device.GetFileList(Verbose, CancellationToken);
 
             if (files == null || files.Length == 0)
             {

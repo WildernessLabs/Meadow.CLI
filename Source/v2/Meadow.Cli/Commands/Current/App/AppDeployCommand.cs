@@ -1,7 +1,5 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -22,7 +20,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            Logger?.LogError($"No connection path is defined");
+            return;
+        }
+
+        if (connection != null)
         {
             string path = Path == null
                 ? AppDomain.CurrentDomain.BaseDirectory
@@ -34,15 +40,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             var lastFile = string.Empty;
 
             // in order to deploy, the runtime must be disabled
-            var wasRuntimeEnabled = await CurrentConnection.IsRuntimeEnabled();
+            var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
             if (wasRuntimeEnabled)
             {
                 Logger?.LogInformation("Disabling runtime...");
 
-                await CurrentConnection.RuntimeDisable(CancellationToken);
+                await connection.RuntimeDisable(CancellationToken);
             }
 
-            CurrentConnection.FileWriteProgress += (s, e) =>
+            connection.FileWriteProgress += (s, e) =>
             {
                 var p = (e.completed / (double)e.total) * 100d;
 
@@ -89,14 +95,14 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
             var targetDirectory = file.DirectoryName;
 
-            await AppManager.DeployApplication(_packageManager, CurrentConnection, targetDirectory, true, false, Logger, CancellationToken);
+            await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
 
             if (wasRuntimeEnabled)
             {
                 // restore runtime state
                 Logger.LogInformation("Enabling runtime...");
 
-                await CurrentConnection.RuntimeEnable(CancellationToken);
+                await connection.RuntimeEnable(CancellationToken);
             }
         }
     }

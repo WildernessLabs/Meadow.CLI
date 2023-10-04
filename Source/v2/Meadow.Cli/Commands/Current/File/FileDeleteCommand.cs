@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -17,9 +16,16 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
         {
-            var fileList = await CurrentConnection.GetFileList(false);
+            return;
+        }
+
+        if (connection != null)
+        {
+            var fileList = await connection.GetFileList(false);
             var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
 
             if (!exists)
@@ -28,7 +34,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             }
             else
             {
-                var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
+                var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
                 if (wasRuntimeEnabled)
                 {
@@ -37,7 +43,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 }
 
                 Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await CurrentConnection.Device.DeleteFile(MeadowFile, CancellationToken);
+                await connection.Device.DeleteFile(MeadowFile, CancellationToken);
             }
         }
     }
