@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -15,6 +14,13 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await CurrentConnection.Device.Reset();
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        await connection.Device.Reset();
     }
 }

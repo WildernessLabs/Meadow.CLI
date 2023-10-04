@@ -73,10 +73,18 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             return;
         }
 
-        var info = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            Logger?.LogError($"No connection path is defined");
+            return;
+        }
+
+        var info = await connection.Device.GetDeviceInfo(CancellationToken);
 
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
-        var publicKey = await CurrentConnection.Device.GetPublicKey(CancellationToken);
+        var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
         var delim = "-----END PUBLIC KEY-----\n";
         publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);

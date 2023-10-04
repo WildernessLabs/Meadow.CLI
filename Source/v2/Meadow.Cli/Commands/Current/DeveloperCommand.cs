@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -20,20 +19,27 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
         Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
 
-        if (CurrentConnection != null)
+        if (connection != null)
         {
-            CurrentConnection.DeviceMessageReceived += (s, e) =>
+            connection.DeviceMessageReceived += (s, e) =>
             {
                 Logger?.LogInformation(e.message);
             };
-            CurrentConnection.ConnectionError += (s, e) =>
+            connection.ConnectionError += (s, e) =>
             {
                 Logger?.LogError(e.Message);
             };
 
-            await CurrentConnection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+            await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
         }
     }
 }

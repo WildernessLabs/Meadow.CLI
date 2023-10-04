@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -17,7 +16,14 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        CurrentConnection.DeviceMessageReceived += (s, e) =>
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        connection.DeviceMessageReceived += (s, e) =>
         {
             Logger?.LogInformation(e.message);
         };
@@ -25,12 +31,12 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
         if (Level != null)
         {
             Logger?.LogInformation($"Setting trace level to {Level}...");
-            await CurrentConnection.Device.SetTraceLevel(Level.Value, CancellationToken);
+            await connection.Device.SetTraceLevel(Level.Value, CancellationToken);
         }
 
         Logger?.LogInformation("Enabling tracing...");
 
-        await CurrentConnection.Device.TraceEnable(CancellationToken);
+        await connection.Device.TraceEnable(CancellationToken);
     }
 }
 

@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -15,9 +14,16 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
         {
-            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(CancellationToken);
+            return;
+        }
+
+        if (connection != null)
+        {
+            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
             if (deviceInfo != null)
             {
                 Logger?.LogInformation(deviceInfo.ToString());

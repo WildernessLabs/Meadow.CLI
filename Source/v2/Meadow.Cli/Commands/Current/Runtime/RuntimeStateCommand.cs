@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -15,7 +14,14 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var state = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
         Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
     }

@@ -232,14 +232,15 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
     private async ValueTask WriteFiles()
     {
-        if (CurrentConnection == null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
         {
-            Logger?.LogError("No current connection");
             return;
         }
 
         // the connection passes messages back to us (info about actions happening on-device
-        CurrentConnection.DeviceMessageReceived += (s, e) =>
+        connection.DeviceMessageReceived += (s, e) =>
         {
             if (e.message.Contains("% downloaded"))
             {
@@ -250,22 +251,22 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 Logger?.LogInformation(e.message);
             }
         };
-        CurrentConnection.ConnectionMessage += (s, message) =>
+        connection.ConnectionMessage += (s, message) =>
         {
             Logger.LogInformation(message);
         };
 
         var package = await GetSelectedPackage();
 
-        var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
+        var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
         if (wasRuntimeEnabled)
         {
             Logger?.LogInformation("Disabling device runtime...");
-            await CurrentConnection.Device.RuntimeDisable();
+            await connection.Device.RuntimeDisable();
         }
 
-        CurrentConnection.FileWriteProgress += (s, e) =>
+        connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
             Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
@@ -293,7 +294,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             // TODO: for serial, we must wait for the flash to complete
 
-            await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
+            await connection.Device.WriteRuntime(rtpath, CancellationToken);
         }
         if (Files.Contains(FirmwareType.ESP))
         {
@@ -306,14 +307,14 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                         package.GetFullyQualifiedPath(package.CoprocPartitionTable),
                 };
 
-            await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
+            await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
         }
 
         Logger.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {
-            await CurrentConnection.Device.RuntimeEnable();
+            await connection.Device.RuntimeEnable();
         }
 
         // TODO: if we're an F7 device, we need to reset

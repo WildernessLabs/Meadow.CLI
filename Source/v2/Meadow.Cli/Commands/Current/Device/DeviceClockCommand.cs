@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -17,12 +16,19 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        if (connection != null)
         {
             if (Time == null)
             {
                 Logger?.LogInformation($"Getting device clock...");
-                var deviceTime = await CurrentConnection.Device.GetRtcTime(CancellationToken);
+                var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
                 Logger?.LogInformation($"{deviceTime.Value:s}Z");
             }
             else
@@ -30,12 +36,12 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
                 if (Time == "now")
                 {
                     Logger?.LogInformation($"Setting device clock...");
-                    await CurrentConnection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
+                    await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
                 }
                 else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
                 {
                     Logger?.LogInformation($"Setting device clock...");
-                    await CurrentConnection.Device.SetRtcTime(dto, CancellationToken);
+                    await connection.Device.SetRtcTime(dto, CancellationToken);
                 }
                 else
                 {

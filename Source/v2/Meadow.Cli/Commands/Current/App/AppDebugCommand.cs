@@ -19,14 +19,22 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
         {
-            CurrentConnection.DeviceMessageReceived += (s, e) =>
+            Logger?.LogError($"No connection path is defined");
+            return;
+        }
+
+        if (connection != null)
+        {
+            connection.DeviceMessageReceived += (s, e) =>
             {
                 Logger?.LogInformation(e.message);
             };
 
-            using (var server = await CurrentConnection.StartDebuggingSession(Port, Logger, CancellationToken))
+            using (var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken))
             {
                 if (Console != null)
                 {

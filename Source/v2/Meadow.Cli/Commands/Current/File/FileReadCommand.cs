@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -20,9 +19,16 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
         Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
 
-        var success = await CurrentConnection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
+        var success = await connection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
 
         if (success)
         {

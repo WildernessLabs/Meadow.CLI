@@ -28,7 +28,15 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (CurrentConnection != null)
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            Logger?.LogError($"No connection path is defined");
+            return;
+        }
+
+        if (connection != null)
         {
             string path = Path == null
                 ? AppDomain.CurrentDomain.BaseDirectory
@@ -43,12 +51,12 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             var lastFile = string.Empty;
 
             // in order to deploy, the runtime must be disabled
-            var wasRuntimeEnabled = await CurrentConnection.IsRuntimeEnabled();
+            var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
             if (wasRuntimeEnabled)
             {
                 Logger?.LogInformation("Disabling runtime...");
 
-                await CurrentConnection.RuntimeDisable(CancellationToken);
+                await connection.RuntimeDisable(CancellationToken);
             }
 
             if (!await BuildApplication(path, CancellationToken))
@@ -64,16 +72,16 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             // illink returns before all files are actually written.  That's not fun, but we must just wait a little while.
             await Task.Delay(1000);
 
-            if (!await DeployApplication(CurrentConnection, path, CancellationToken))
+            if (!await DeployApplication(connection, path, CancellationToken))
             {
                 return;
             }
 
             Logger?.LogInformation("Enabling the runtime...");
-            await CurrentConnection.RuntimeEnable(CancellationToken);
+            await connection.RuntimeEnable(CancellationToken);
 
             Logger?.LogInformation("Listening for messages from Meadow...\n");
-            CurrentConnection.DeviceMessageReceived += OnDeviceMessageReceived;
+            connection.DeviceMessageReceived += OnDeviceMessageReceived;
 
             while (!CancellationToken.IsCancellationRequested)
             {
