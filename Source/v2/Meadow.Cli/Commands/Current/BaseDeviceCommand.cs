@@ -40,7 +40,6 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
                 }
                 else
                 {
-                    await ExecuteCommand();
                     Logger?.LogInformation($"Done.");
                 }
             }
