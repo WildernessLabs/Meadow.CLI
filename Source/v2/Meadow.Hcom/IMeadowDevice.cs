@@ -1,4 +1,6 @@
-﻿namespace Meadow.Hcom
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom
 {
     public interface IMeadowDevice
     {
@@ -21,5 +23,6 @@
         Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
         Task UartTraceEnable(CancellationToken? cancellationToken = null);
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
+        Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     }
 }

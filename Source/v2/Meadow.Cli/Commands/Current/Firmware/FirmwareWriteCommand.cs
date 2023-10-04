@@ -46,7 +46,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (Files == null)
         {
-            Logger.LogInformation($"Writing all firmware for version '{package.Version}'...");
+            Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
 
             Files = new FirmwareType[]
                 {
@@ -58,7 +58,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (!Files.Contains(FirmwareType.OS) && UseDfu)
         {
-            Logger.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
+            Logger?.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
             return;
         }
 
@@ -128,10 +128,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // configure the route to that port for the user
             Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
 
-            var connection = ConnectionManager.GetCurrentConnection();
-            if (connection == null)
+            if (CurrentConnection == null)
             {
-                Logger.LogError($"No connection path is defined");
+                Logger?.LogError($"No connection path is defined");
                 return;
             }
 
@@ -139,17 +138,17 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (Files.Any(f => f != FirmwareType.OS))
             {
-                await connection.WaitForMeadowAttach();
+                await CurrentConnection.WaitForMeadowAttach();
 
-                await ExecuteCommand(connection, connection.Device, cancellationToken);
+                await ExecuteCommand();
             }
 
-            var deviceInfo = await connection.Device.GetDeviceInfo(cancellationToken);
+            var deviceInfo = await CurrentConnection.Device.GetDeviceInfo(cancellationToken);
 
             if (deviceInfo != null)
             {
-                Logger.LogInformation($"Done.");
-                Logger.LogInformation(deviceInfo.ToString());
+                Logger?.LogInformation($"Done.");
+                Logger?.LogInformation(deviceInfo.ToString());
             }
         }
         else
@@ -200,7 +199,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (existing == null)
             {
-                Logger.LogError($"Requested version '{Version}' not found.");
+                Logger?.LogError($"Requested version '{Version}' not found.");
                 return null;
             }
             package = existing;
@@ -216,10 +215,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         // the connection passes messages back to us (info about actions happening on-device
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
             if (e.message.Contains("% downloaded"))
             {
@@ -227,28 +226,28 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             else
             {
-                Logger.LogInformation(e.message);
+                Logger?.LogInformation(e.message);
             }
         };
-        connection.ConnectionMessage += (s, message) =>
+        CurrentConnection.ConnectionMessage += (s, message) =>
         {
-            Logger.LogInformation(message);
+            Logger?.LogInformation(message);
         };
 
         var package = await GetSelectedPackage();
 
-        var wasRuntimeEnabled = await device.IsRuntimeEnabled(cancellationToken);
+        var wasRuntimeEnabled = await CurrentConnection.Device.IsRuntimeEnabled(CancellationToken);
 
         if (wasRuntimeEnabled)
         {
-            Logger.LogInformation("Disabling device runtime...");
-            await device.RuntimeDisable();
+            Logger?.LogInformation("Disabling device runtime...");
+            await CurrentConnection.Device.RuntimeDisable();
         }
 
-        connection.FileWriteProgress += (s, e) =>
+        CurrentConnection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
-            Console.Write($"Writing {e.fileName}: {p:0}%     \r");
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
         if (Files.Contains(FirmwareType.OS))
@@ -259,25 +258,25 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             else
             {
-                Logger.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
+                Logger?.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
 
                 throw new NotSupportedException("OtA writes for the OS are not yet supported");
             }
         }
         if (Files.Contains(FirmwareType.Runtime))
         {
-            Logger.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
+            Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
             // get the path to the runtime file
             var rtpath = package.GetFullyQualifiedPath(package.Runtime);
 
             // TODO: for serial, we must wait for the flash to complete
 
-            await device.WriteRuntime(rtpath, cancellationToken);
+            await CurrentConnection.Device.WriteRuntime(rtpath, CancellationToken);
         }
         if (Files.Contains(FirmwareType.ESP))
         {
-            Logger.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
+            Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
             var fileList = new string[]
                 {
@@ -286,14 +285,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                         package.GetFullyQualifiedPath(package.CoprocPartitionTable),
                 };
 
-            await device.WriteCoprocessorFiles(fileList, cancellationToken);
+            await CurrentConnection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
         }
 
-        Logger.LogInformation($"{Environment.NewLine}");
+        Logger?.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {
-            await device.RuntimeEnable();
+            await CurrentConnection.Device.RuntimeEnable();
         }
 
         // TODO: if we're an F7 device, we need to reset

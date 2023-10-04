@@ -15,22 +15,22 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        connection.DeviceMessageReceived += (s, e) =>
+        CurrentConnection.DeviceMessageReceived += (s, e) =>
         {
-            Logger.LogInformation(e.message);
+            Logger?.LogInformation(e.message);
         };
 
         if (Level != null)
         {
-            Logger.LogInformation($"Setting trace level to {Level}...");
-            await device.SetTraceLevel(Level.Value, cancellationToken);
+            Logger?.LogInformation($"Setting trace level to {Level}...");
+            await CurrentConnection.Device.SetTraceLevel(Level.Value, CancellationToken);
         }
 
-        Logger.LogInformation("Enabling tracing...");
+        Logger?.LogInformation("Enabling tracing...");
 
-        await device.TraceEnable(cancellationToken);
+        await CurrentConnection.Device.TraceEnable(CancellationToken);
     }
 }
 

@@ -15,10 +15,14 @@
 
   <ItemGroup>
     <Folder Include="Http Requests\" />
+    <Folder Include="Debugging\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Meadow.Contracts\Source\Meadow.Contracts\Meadow.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Debugging\" />
+  </ItemGroup>
 </Project>

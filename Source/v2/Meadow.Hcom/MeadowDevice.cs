@@ -1,4 +1,7 @@
-﻿namespace Meadow.Hcom
+﻿using System.Data.Common;
+using Microsoft.Extensions.Logging;
+
+namespace Meadow.Hcom
 {
     public partial class MeadowDevice : IMeadowDevice
     {
@@ -133,6 +136,11 @@
         public async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
         {
             await _connection.DeleteFile(meadowFileName, cancellationToken);
+        }
+
+        public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
+        {
+            await _connection.StartDebugging(port, logger, cancellationToken);
         }
     }
 }

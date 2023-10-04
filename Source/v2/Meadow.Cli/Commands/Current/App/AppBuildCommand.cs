@@ -23,7 +23,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory

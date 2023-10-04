@@ -22,7 +22,7 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
         
     }
 
-    protected override async ValueTask ExecuteCommand(CancellationToken? cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
         if (List)
         {

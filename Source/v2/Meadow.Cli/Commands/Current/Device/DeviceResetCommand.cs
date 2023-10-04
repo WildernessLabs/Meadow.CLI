@@ -10,11 +10,11 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
     public DeviceResetCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger.LogInformation($"Resetting the device...");
+        Logger?.LogInformation($"Resetting the device...");
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        await device.Reset();
+        await CurrentConnection.Device.Reset();
     }
 }

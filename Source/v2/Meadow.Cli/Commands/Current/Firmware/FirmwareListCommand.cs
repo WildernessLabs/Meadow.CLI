@@ -8,24 +8,20 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware list", Description = "List locally available firmware")]
-public class FirmwareListCommand : ICommand
+public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 {
-    private readonly ISettingsManager _settingsManager;
-    private readonly ILogger<DeviceInfoCommand>? _logger;
-
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; set; }
 
     private FileManager FileManager { get; }
 
-    public FirmwareListCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+    public FirmwareListCommand(FileManager fileManager, ILoggerFactory? loggerFactory)
+        : base(loggerFactory)
     {
         FileManager = fileManager;
-        _settingsManager = settingsManager;
-        _logger = loggerFactory?.CreateLogger<DeviceInfoCommand>();
     }
 
-    public async ValueTask ExecuteAsync(IConsole console)
+    protected override async ValueTask ExecuteCommand()
     {
         await FileManager.Refresh();
 
@@ -41,21 +37,21 @@ public class FirmwareListCommand : ICommand
 
     private async Task DisplayVerboseResults(FileManager manager)
     {
-        _logger?.LogInformation($" (D== Default, OSB==OS without bootloader, RT==Runtime, CP==Coprocessor){Environment.NewLine}");
-        _logger?.LogInformation($"  D VERSION           OS  OSB  RT  CP  BCL");
+        Logger?.LogInformation($" (D== Default, OSB==OS without bootloader, RT==Runtime, CP==Coprocessor){Environment.NewLine}");
+        Logger?.LogInformation($"  D VERSION           OS  OSB  RT  CP  BCL");
 
-        _logger?.LogInformation($"------------------------------------------");
+        Logger?.LogInformation($"------------------------------------------");
 
         foreach (var name in manager.Firmware.CollectionNames)
         {
-            _logger?.LogInformation($" {name}");
+            Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
             foreach (var package in collection)
             {
                 if (package == collection.DefaultPackage)
                 {
-                    _logger?.LogInformation(
+                    Logger?.LogInformation(
                         $"  * {package.Version.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
@@ -66,7 +62,7 @@ public class FirmwareListCommand : ICommand
                 }
                 else
                 {
-                    _logger?.LogInformation(
+                    Logger?.LogInformation(
                         $"    {package.Version.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
@@ -80,7 +76,7 @@ public class FirmwareListCommand : ICommand
             var update = await collection.UpdateAvailable();
             if (update != null)
             {
-                _logger?.LogInformation($"{Environment.NewLine}  ! {update} IS AVAILABLE FOR DOWNLOAD");
+                Logger?.LogInformation($"{Environment.NewLine}  ! {update} IS AVAILABLE FOR DOWNLOAD");
             }
         }
     }
@@ -89,25 +85,25 @@ public class FirmwareListCommand : ICommand
     {
         foreach (var name in manager.Firmware.CollectionNames)
         {
-            _logger?.LogInformation($" {name}");
+            Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
             foreach (var package in collection)
             {
                 if (package == collection.DefaultPackage)
                 {
-                    _logger?.LogInformation($"  * {package.Version} (default)");
+                    Logger?.LogInformation($"  * {package.Version} (default)");
                 }
                 else
                 {
-                    _logger?.LogInformation($"    {package.Version}");
+                    Logger?.LogInformation($"    {package.Version}");
                 }
             }
 
             var update = await collection.UpdateAvailable();
             if (update != null)
             {
-                _logger?.LogInformation($"{Environment.NewLine}  ! {update} IS AVAILABLE FOR DOWNLOAD");
+                Logger?.LogInformation($"{Environment.NewLine}  ! {update} IS AVAILABLE FOR DOWNLOAD");
             }
         }
     }

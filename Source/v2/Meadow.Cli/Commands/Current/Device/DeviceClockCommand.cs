@@ -15,29 +15,32 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
     {
     }
 
-    protected override async ValueTask ExecuteCommand(IMeadowConnection connection, Hcom.IMeadowDevice device, CancellationToken cancellationToken)
+    protected override async ValueTask ExecuteCommand()
     {
-        if (Time == null)
+        if (CurrentConnection != null)
         {
-            Logger.LogInformation($"Getting device clock...");
-            var deviceTime = await device.GetRtcTime(cancellationToken);
-            Logger.LogInformation($"{deviceTime.Value:s}Z");
-        }
-        else
-        {
-            if (Time == "now")
+            if (Time == null)
             {
-                Logger.LogInformation($"Setting device clock...");
-                await device.SetRtcTime(DateTimeOffset.UtcNow, cancellationToken);
-            }
-            else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
-            {
-                Logger.LogInformation($"Setting device clock...");
-                await device.SetRtcTime(dto, cancellationToken);
+                Logger?.LogInformation($"Getting device clock...");
+                var deviceTime = await CurrentConnection.Device.GetRtcTime(CancellationToken);
+                Logger?.LogInformation($"{deviceTime.Value:s}Z");
             }
             else
             {
-                Logger.LogInformation($"Unable to parse '{Time}' to a valid time.");
+                if (Time == "now")
+                {
+                    Logger?.LogInformation($"Setting device clock...");
+                    await CurrentConnection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
+                }
+                else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
+                {
+                    Logger?.LogInformation($"Setting device clock...");
+                    await CurrentConnection.Device.SetRtcTime(dto, CancellationToken);
+                }
+                else
+                {
+                    Logger?.LogInformation($"Unable to parse '{Time}' to a valid time.");
+                }
             }
         }
     }
