@@ -8,14 +8,26 @@ public class LibUsbProvider : ILibUsbProvider
     //    public const string UsbStmName = "STM32  BOOTLOADER";
     private const int UsbBootLoaderVendorID = 1155;
 
+    internal static UsbContext _context;
+    internal static List<ILibUsbDevice>? _devices;
+    static LibUsbProvider()
+    {
+        // only ever create one of these - there's a bug in the LibUsbDotNet library and when this disposes, things go sideways
+        _context = new UsbContext();
+    }
+
     public List<ILibUsbDevice> GetDevicesInBootloaderMode()
     {
-        UsbContext context = new UsbContext();
-        return context
-            .List()
-            .Where(d => d.Info.VendorId == UsbBootLoaderVendorID)
-            .Select(d => new LibUsbDevice(d))
-            .ToList<ILibUsbDevice>();
+        if (_devices == null)
+        {
+            _devices = _context
+               .List()
+               .Where(d => d.Info.VendorId == UsbBootLoaderVendorID)
+               .Select(d => new LibUsbDevice(d))
+               .ToList<ILibUsbDevice>();
+        }
+
+        return _devices;
     }
 
     public class LibUsbDevice : ILibUsbDevice
