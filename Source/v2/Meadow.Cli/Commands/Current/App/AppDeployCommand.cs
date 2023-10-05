@@ -24,14 +24,13 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (connection == null)
         {
-            Logger?.LogError($"No connection path is defined");
             return;
         }
 
         if (connection != null)
         {
             string path = Path == null
-                ? AppDomain.CurrentDomain.BaseDirectory
+                ? Environment.CurrentDirectory
                 : Path;
 
             // is the path a file?

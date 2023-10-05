@@ -870,7 +870,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             cancellationToken);
             */
 
-            await WaitForConcluded(null, cancellationToken);
+            if (status)
+            {
+                await WaitForConcluded(null, cancellationToken);
+            }
 
             return status;
         }
@@ -899,11 +902,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             RaiseConnectionMessage($"Transferring {Path.GetFileName(localFileName)} to coprocessor...");
 
             // push the file to the device
-            await WriteFile(localFileName, null,
+            if (!await WriteFile(localFileName, null,
                 RequestType.HCOM_MDOW_REQUEST_START_ESP_FILE_TRANSFER,
                 RequestType.HCOM_MDOW_REQUEST_END_ESP_FILE_TRANSFER,
                 destinationAddress,
-                cancellationToken);
+                cancellationToken))
+            {
+                return false;
+            }
 
 
             _lastRequestConcluded = null;
@@ -954,6 +960,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var accepted = false;
         Exception? ex = null;
+        var needsRetry = false;
 
         void OnFileWriteAccepted(object? sender, EventArgs a)
         {
@@ -963,9 +970,16 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             ex = exception;
         }
+        void OnFileRetry(object? sender, EventArgs e)
+        {
+            needsRetry = true;
+        }
 
         FileWriteAccepted += OnFileWriteAccepted;
         FileException += OnFileError;
+        FileWriteFailed += OnFileRetry;
+
+        Debug.WriteLine($"Sending '{localFileName}'");
 
         EnqueueRequest(command);
 
@@ -984,7 +998,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // now send the file data
         // The maximum data bytes is max packet size - 2 bytes for the sequence number
         byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
-        int bytesRead;
         ushort sequenceNumber = 0;
 
         var progress = 0;
@@ -997,7 +1010,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var oldTimeout = _port.ReadTimeout;
         _port.ReadTimeout = 60000;
 
-        while (true)
+        while (true && !needsRetry)
         {
             if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
             {
@@ -1014,23 +1027,31 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 toRead = packet.Length - 2;
             }
             Array.Copy(fileBytes, progress, packet, 2, toRead);
+            _port.WriteTimeout = 1000;
             await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
             progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
             if (progress >= fileBytes.Length) break;
         }
-        _port.ReadTimeout = oldTimeout;
 
-        base.RaiseFileWriteProgress(fileName, expected, expected);
+        if (!needsRetry)
+        {
+            _port.ReadTimeout = oldTimeout;
 
-        // finish with an "end" message - not enqued because this is all a serial operation
-        var request = RequestBuilder.Build<EndFileWriteRequest>();
-        request.SetRequestType(endRequestType);
-        var p = request.Serialize();
-        await EncodeAndSendPacket(p, cancellationToken);
+            base.RaiseFileWriteProgress(fileName, expected, expected);
 
-        return true;
+            // finish with an "end" message - not enqued because this is all a serial operation
+            var request = RequestBuilder.Build<EndFileWriteRequest>();
+            request.SetRequestType(endRequestType);
+            var p = request.Serialize();
+            await EncodeAndSendPacket(p, cancellationToken);
+        }
 
+        FileWriteAccepted += OnFileWriteAccepted;
+        FileException += OnFileError;
+        FileWriteFailed += OnFileRetry;
+
+        return !needsRetry;
     }
 
     public override async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
