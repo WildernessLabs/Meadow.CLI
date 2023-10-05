@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -13,17 +12,10 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
     public ListenCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        var connection = connectionManager.GetCurrentConnection();
+    }
 
-        if (connection == null)
-        {
-            Logger?.LogError($"No device connection configured.");
-            return;
-        }
-
-        Logger?.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
-
-        connection.DeviceMessageReceived += OnDeviceMessageReceived;
+    private void Connection_ConnectionMessage(object? sender, string e)
+    {
     }
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
@@ -40,11 +32,21 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        var connection = await GetCurrentConnection();
+
+        if (connection == null)
+        {
+            return;
+        }
+
+        connection.DeviceMessageReceived += OnDeviceMessageReceived;
+        connection.ConnectionMessage += Connection_ConnectionMessage;
+
+        Logger?.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
+
         while (!CancellationToken.IsCancellationRequested)
         {
             await Task.Delay(1000);
         }
-
-        Logger?.LogInformation($"Cancelled.");
     }
 }

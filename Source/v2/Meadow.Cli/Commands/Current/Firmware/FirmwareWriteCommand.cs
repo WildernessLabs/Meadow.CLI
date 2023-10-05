@@ -296,10 +296,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var rtpath = package.GetFullyQualifiedPath(package.Runtime);
 
         write_runtime:
-            await connection.Device.WriteRuntime(rtpath, CancellationToken);
-            if (_fileWriteError)
+            if (!await connection.Device.WriteRuntime(rtpath, CancellationToken))
             {
-                _fileWriteError = false;
                 Logger?.LogInformation($"Error writing runtime.  Retrying.");
                 goto write_runtime;
             }

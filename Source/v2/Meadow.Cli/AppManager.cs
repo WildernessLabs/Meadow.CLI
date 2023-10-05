@@ -92,7 +92,13 @@ public static class AppManager
                 }
             }
 
-            await connection?.WriteFile(localFile.Key, null, cancellationToken);
+        send_file:
+
+            if (!await connection?.WriteFile(localFile.Key, null, cancellationToken))
+            {
+                logger.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                goto send_file;
+            }
         }
     }
 }

@@ -24,7 +24,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (connection == null)
         {
-            Logger?.LogError($"No connection path is defined");
             return;
         }
 
