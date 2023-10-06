@@ -62,6 +62,11 @@ public static class AppManager
             localFiles.Add(file, crc);
         }
 
+        if (localFiles.Count() == 0)
+        {
+            logger.LogInformation($"No new files to deploy");
+        }
+
         // get a list of files on-device, with CRCs
         var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
@@ -70,6 +75,11 @@ public static class AppManager
             .Select(f => Path.GetFileName(f.Name))
             .Except(localFiles.Keys
                 .Select(f => Path.GetFileName(f)));
+
+        if (removeFiles.Count() == 0)
+        {
+            logger.LogInformation($"No files to delete");
+        }
 
         // delete those files
         foreach (var file in removeFiles)
@@ -97,6 +107,7 @@ public static class AppManager
             if (!await connection?.WriteFile(localFile.Key, null, cancellationToken))
             {
                 logger.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                await Task.Delay(100);
                 goto send_file;
             }
         }
