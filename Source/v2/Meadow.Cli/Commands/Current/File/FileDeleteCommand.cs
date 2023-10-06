@@ -26,24 +26,37 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         if (connection != null)
         {
             var fileList = await connection.GetFileList(false);
-            var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
 
-            if (!exists)
+            if (MeadowFile == "all")
             {
-                Logger?.LogError($"File '{MeadowFile}' not found on device.");
+                foreach (var f in fileList)
+                {
+                    var p = Path.GetFileName(f.Name);
+                    Logger?.LogInformation($"Deleting file '{p}' from device...");
+                    await connection.Device.DeleteFile(p, CancellationToken);
+                }
             }
             else
             {
-                var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
+                var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
 
-                if (wasRuntimeEnabled)
+                if (!exists)
                 {
-                    Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
-                    return;
+                    Logger?.LogError($"File '{MeadowFile}' not found on device.");
                 }
+                else
+                {
+                    var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
-                Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await connection.Device.DeleteFile(MeadowFile, CancellationToken);
+                    if (wasRuntimeEnabled)
+                    {
+                        Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
+                        return;
+                    }
+
+                    Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
+                    await connection.Device.DeleteFile(MeadowFile, CancellationToken);
+                }
             }
         }
     }

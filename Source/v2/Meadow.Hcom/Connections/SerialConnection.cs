@@ -239,7 +239,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 // if this is a file write, we need to packetize for progress
 
                 var payload = command.Serialize();
-                await EncodeAndSendPacket(payload);
+                EncodeAndSendPacket(payload);
 
                 // TODO: re-queue on fail?
             }
@@ -282,12 +282,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _pendingCommands.Enqueue(command);
     }
 
-    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
+    private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
     {
-        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
+        EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
+    private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
         Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
@@ -360,7 +360,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // Send the data to Meadow
                 //                Debug.Write($"Sending {encodedToSend} bytes...");
-                await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                //await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                _port.Write(encodedBytes, 0, encodedToSend);
                 //                Debug.WriteLine($"sent");
             }
             catch (InvalidOperationException ioe)  // Port not opened
@@ -1027,8 +1028,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 toRead = packet.Length - 2;
             }
             Array.Copy(fileBytes, progress, packet, 2, toRead);
-            _port.WriteTimeout = 1000;
-            await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+            try
+            {
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+            }
+            catch (Exception)
+            {
+                break;
+            }
+
             progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
             if (progress >= fileBytes.Length) break;
@@ -1044,12 +1052,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             var request = RequestBuilder.Build<EndFileWriteRequest>();
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
-            await EncodeAndSendPacket(p, cancellationToken);
+            EncodeAndSendPacket(p, cancellationToken);
         }
 
-        FileWriteAccepted += OnFileWriteAccepted;
-        FileException += OnFileError;
-        FileWriteFailed += OnFileRetry;
+        FileWriteAccepted -= OnFileWriteAccepted;
+        FileException -= OnFileError;
+        FileWriteFailed -= OnFileRetry;
 
         return !needsRetry;
     }
