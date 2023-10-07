@@ -75,9 +75,6 @@ internal class F7FirmwareDownloadManager
 
         CreateFolder(destinationRoot, false);
 
-        //we'll write latest.txt regardless of version if it doesn't exist
-        SetDefaultVersion(destinationRoot, meta.Version);
-
         string local_path;
 
         if (string.IsNullOrWhiteSpace(version))

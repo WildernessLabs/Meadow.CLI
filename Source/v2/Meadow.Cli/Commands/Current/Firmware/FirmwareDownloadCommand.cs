@@ -27,8 +27,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
         // TODO: add switch and support for other platforms
         var collection = FileManager.Firmware["Meadow F7"];
 
+        bool explicitVersion;
+
         if (Version == null)
         {
+            explicitVersion = false;
             var latest = await collection.GetLatestAvailableVersion();
 
             if (latest == null)
@@ -42,6 +45,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
         }
         else
         {
+            explicitVersion = true;
             Logger?.LogInformation($"Checking for firmware package '{Version}'...");
         }
 
@@ -69,6 +73,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             else
             {
                 Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
+
+                if (explicitVersion)
+                {
+                    await collection.SetDefaultPackage(Version);
+                }
             }
         }
         catch (Exception ex)

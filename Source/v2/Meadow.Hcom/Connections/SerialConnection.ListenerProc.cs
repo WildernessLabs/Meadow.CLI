@@ -229,7 +229,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-                                        await EncodeAndSendPacket(uploadRequest.Serialize());
+                                        EncodeAndSendPacket(uploadRequest.Serialize());
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {
