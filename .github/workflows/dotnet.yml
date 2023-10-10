@@ -21,10 +21,31 @@ jobs:
     name: Build and Optionally Publish Meadow.CLI nuget
       
     steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
+    - name: Checkout Meadow.CLI
       uses: actions/checkout@v2
       with:
         path: main
+
+    - name: Checkout Meadow.Contracts side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Contracts
+        path: Meadow.Contracts
+        ref: main
+
+    - name: Checkout Meadow.Logging side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Logging
+        path: Meadow.Logging
+        ref: main
+
+    - name: Checkout Meadow.Units side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Units
+        path: Meadow.Units
+        ref: main
 
     - name: Setup .NET Core SDK 6.0.x & 7.0.x
       uses: actions/setup-dotnet@v1
@@ -87,16 +108,16 @@ jobs:
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
     - name: Restore V2 dependencies
-      run: dotnet restore main/Meadow.CLI/Source/v2/MeadowCLI.v2.sln /p:Configuration=Release
+      run: dotnet restore main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
     - name: Build V2 CLI
-      run: dotnet build main/Meadow.CLI/Source/v2/MeadowCLI.v2.sln /p:Configuration=Release
+      run: dotnet build main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
         name: Meadow.CLI.V2.nuget.${{ ENV.CLI_RELEASE_VERSION }}
-        path: 'main\Meadow.CLI\Source\v2\Meadow.Cli\bin\Release\*.nupkg'
+        path: 'main\Source\v2\Meadow.Cli\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
