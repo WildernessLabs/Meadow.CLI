@@ -21,10 +21,28 @@ jobs:
     name: Build and Optionally Publish Meadow.CLI nuget
       
     steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
+    - name: Checkout Meadow.CLI
       uses: actions/checkout@v2
       with:
         path: main
+
+    - name: Checkout Meadow.Contracts side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Contracts
+        path: Meadow.Contracts
+
+    - name: Checkout Meadow.Logging side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Logging
+        path: Meadow.Logging
+
+    - name: Checkout Meadow.Units side-by-side
+      uses: actions/checkout@v2
+      with:
+        repository: WildernessLabs/Meadow.Units
+        path: Meadow.Units
 
     - name: Setup .NET Core SDK 6.0.x & 7.0.x
       uses: actions/setup-dotnet@v1
