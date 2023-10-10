@@ -286,7 +286,6 @@ namespace Meadow.CLI.Core.Devices
                 {
 
                     using var cts = new CancellationTokenSource(DefaultTimeout);
-                    cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
                     var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
                     await Write(encodedBytes, encodedToSend, combinedCts.Token);
                 }
@@ -333,7 +332,7 @@ namespace Meadow.CLI.Core.Devices
             var message = string.Empty;
             var messageType = MeadowMessageType.ErrOutput;
 
-            void ResponseHandler(object s, MeadowMessageEventArgs e)
+            void ResponseHandler(object? s, MeadowMessageEventArgs e)
             {
 
                 var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;
