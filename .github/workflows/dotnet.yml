@@ -31,18 +31,21 @@ jobs:
       with:
         repository: WildernessLabs/Meadow.Contracts
         path: Meadow.Contracts
+        ref: main
 
     - name: Checkout Meadow.Logging side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/Meadow.Logging
         path: Meadow.Logging
+        ref: main
 
     - name: Checkout Meadow.Units side-by-side
       uses: actions/checkout@v2
       with:
         repository: WildernessLabs/Meadow.Units
         path: Meadow.Units
+        ref: main
 
     - name: Setup .NET Core SDK 6.0.x & 7.0.x
       uses: actions/setup-dotnet@v1
