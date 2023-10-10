@@ -1,7 +1,7 @@
 name: Meadow.CLI
 env:
-  CLI_RELEASE_VERSION: 1.3.4.0
-  IDE_TOOLS_RELEASE_VERSION: 1.3.4
+  CLI_RELEASE_VERSION: 1.3.5.0
+  IDE_TOOLS_RELEASE_VERSION: 1.3.5
   MEADOW_OS_VERSION: 1.3.4.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.5
@@ -85,6 +85,18 @@ jobs:
       with:
         name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION }}
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
+
+    - name: Restore V2 dependencies
+      run: dotnet restore main/Meadow.CLI/Source/v2/MeadowCLI.v2.sln /p:Configuration=Release
+
+    - name: Build V2 CLI
+      run: dotnet build main/Meadow.CLI/Source/v2/MeadowCLI.v2.sln /p:Configuration=Release
+
+    - name: Upload nuget Artifacts for internal testing
+      uses: actions/upload-artifact@v2
+      with:
+        name: Meadow.CLI.V2.nuget.${{ ENV.CLI_RELEASE_VERSION }}
+        path: 'main\Meadow.CLI\Source\v2\Meadow.Cli\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Publish Meadow.CLI Nuget publically
