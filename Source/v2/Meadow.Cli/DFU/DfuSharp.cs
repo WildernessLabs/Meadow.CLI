@@ -289,7 +289,7 @@ namespace DfuSharp
                 throw new Exception("Error opening device");
         }
 
-        public event UploadingEventHandler Uploading;
+        public event UploadingEventHandler? Uploading;
 
         protected virtual void OnUploading(UploadingEventArgs e)
         {
@@ -669,7 +669,7 @@ namespace DfuSharp
                 throw new Exception(string.Format("Error: {0} while trying to initialize libusb", ret));
 
             // instantiate our callback handler
-            //this._hotplugCallbackHandler = new HotplugCallback(HandleHotplugCallback);
+            this._hotplugCallbackHandler = new HotplugCallback(HandleHotplugCallback);
         }
 
         public void Dispose()
