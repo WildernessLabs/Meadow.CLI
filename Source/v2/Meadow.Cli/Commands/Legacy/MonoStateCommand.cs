@@ -9,6 +9,6 @@ public class MonoStateCommand : RuntimeStateCommand
     public MonoStateCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger.LogWarning($"Deprecated command.  Use `runtime state` instead");
+        Logger?.LogWarning($"Deprecated command.  Use `runtime state` instead");
     }
 }
