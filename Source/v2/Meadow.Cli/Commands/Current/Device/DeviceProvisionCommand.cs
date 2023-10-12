@@ -10,8 +10,6 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 {
     private DeviceService _deviceService;
 
-    public const string DefaultHost = "https://www.meadowcloud.co";
-
     [CommandOption("orgId", 'o', Description = "The target org for device registration", IsRequired = false)]
     public string? OrgId { get; set; }
 
@@ -36,7 +34,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         try
         {
-            if (Host == null) Host = DefaultHost;
+            if (Host == null) Host = BaseCloudCommand<DeviceProvisionCommand>.DefaultHost;
 
             var identityManager = new IdentityManager(Logger);
             var _userService = new UserService(identityManager);
