@@ -49,7 +49,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
-        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
+        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, Logger, CancellationToken))
         {
             return;
         }
@@ -75,7 +75,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, CancellationToken);
+        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, Logger, CancellationToken);
 
         if (packagePath != null)
         {

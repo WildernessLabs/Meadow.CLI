@@ -118,7 +118,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
-        await _packageManager.TrimApplication(file, false, null, cancellationToken);
+        await _packageManager.TrimApplication(file, false, null, Logger, cancellationToken);
 
         return true;
     }

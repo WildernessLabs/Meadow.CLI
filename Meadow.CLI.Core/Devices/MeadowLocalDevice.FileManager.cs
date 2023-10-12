@@ -548,6 +548,8 @@ namespace Meadow.CLI.Core.Devices
                 var buildOptionsFile = Path.Combine(Path.GetDirectoryName(applicationFilePath), "app.build.yaml");
                 if (File.Exists(buildOptionsFile))
                 {
+                    Logger.LogInformation($"'app.build.yaml' found!");
+
                     var yaml = File.ReadAllText(buildOptionsFile);
                     var deserializer = new DeserializerBuilder()
                         .IgnoreUnmatchedProperties()
