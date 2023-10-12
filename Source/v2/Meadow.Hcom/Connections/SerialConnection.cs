@@ -8,8 +8,6 @@ using System.Text;
 
 namespace Meadow.Hcom;
 
-public delegate void ConnectionStateChangedHandler(SerialConnection connection, ConnectionState oldState, ConnectionState newState);
-
 public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
@@ -18,12 +16,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private event EventHandler<string> FileReadCompleted = delegate { };
     private event EventHandler FileWriteAccepted;
     private event EventHandler<string> FileDataReceived;
-    public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
 
     private SerialPort _port;
     private ILogger? _logger;
     private bool _isDisposed;
-    private ConnectionState _state;
     private List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private Queue<IRequest> _pendingCommands = new Queue<IRequest>();
     private bool _maintainConnection;
@@ -131,19 +127,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         // TODO: stop maintaining connection?
-    }
-
-    public ConnectionState State
-    {
-        get => _state;
-        private set
-        {
-            if (value == State) return;
-
-            var old = _state;
-            _state = value;
-            ConnectionStateChanged?.Invoke(this, old, State);
-        }
     }
 
     private void Open()
@@ -293,12 +276,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         while (!_port.IsOpen)
         {
-            _state = ConnectionState.Disconnected;
+            State = ConnectionState.Disconnected;
             Thread.Sleep(100);
             // wait for the port to open
         }
 
-        _state = ConnectionState.Connected;
+        State = ConnectionState.Connected;
 
         try
         {

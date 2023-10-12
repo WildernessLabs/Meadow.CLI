@@ -134,7 +134,7 @@ namespace Meadow.Hcom
                                     var response = SerialResponse.Parse(decodedBuffer, decodedSize);
 
                                     Debug.WriteLine($"{response.RequestType}");
-                                    _state = ConnectionState.MeadowAttached;
+                                    State = ConnectionState.MeadowAttached;
 
                                     if (response != null)
                                     {
@@ -185,7 +185,7 @@ namespace Meadow.Hcom
 
                                         if (_reconnectInProgress)
                                         {
-                                            _state = ConnectionState.MeadowAttached;
+                                            State = ConnectionState.MeadowAttached;
                                             _reconnectInProgress = false;
                                         }
                                         else if (_textListComplete != null)
@@ -205,7 +205,7 @@ namespace Meadow.Hcom
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
                                         // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
-                                        _state = ConnectionState.Disconnected;
+                                        State = ConnectionState.Disconnected;
                                         _reconnectInProgress = true;
                                     }
                                     else if (response is FileReadInitOkResponse fri)
