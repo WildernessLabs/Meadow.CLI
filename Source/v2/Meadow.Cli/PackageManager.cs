@@ -1,6 +1,7 @@
 ﻿using GlobExpressions;
 using Meadow.Cloud;
 using Meadow.Software;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -66,7 +67,7 @@ public partial class PackageManager : IPackageManager
         return success;
     }
 
-    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
+    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, ILogger? logger = null, CancellationToken? cancellationToken = null)
     {
         if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
         {
@@ -121,6 +122,7 @@ public partial class PackageManager : IPackageManager
         FileInfo applicationFilePath,
         bool includePdbs = false,
         IList<string>? noLink = null,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)
@@ -128,13 +130,14 @@ public partial class PackageManager : IPackageManager
             throw new FileNotFoundException($"{applicationFilePath} not found");
         }
 
-        // does a meadow.build.yml file exist?
+        // does an app.build.yaml file exist?
         var buildOptionsFile = Path.Combine(
             applicationFilePath.DirectoryName ?? string.Empty,
             BuildOptionsFileName);
 
         if (File.Exists(buildOptionsFile))
         {
+            logger?.LogInformation($"'{BuildOptionsFileName}' is present");
             var yaml = File.ReadAllText(buildOptionsFile);
             var deserializer = new DeserializerBuilder()
                 .IgnoreUnmatchedProperties()
@@ -159,7 +162,7 @@ public partial class PackageManager : IPackageManager
             applicationFilePath,
             dependencies,
             noLink,
-            null, // ILogger
+            logger,
             includePdbs,
             verbose: false);
     }
@@ -172,6 +175,7 @@ public partial class PackageManager : IPackageManager
         string osVersion,
         string filter = "*",
         bool overwrite = false,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null)
     {
         var di = new DirectoryInfo(outputFolder);

@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cli;
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Cli;
 
 public interface IPackageManager
 {
@@ -8,12 +10,14 @@ public interface IPackageManager
         string projectFilePath,
         string configuration = "Release",
         bool clean = true,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 
     Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
         IList<string>? noLink = null,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 
     Task<string> AssemblePackage(
@@ -22,6 +26,7 @@ public interface IPackageManager
         string osVersion,
         string filter = "*",
         bool overwrite = false,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 
 }

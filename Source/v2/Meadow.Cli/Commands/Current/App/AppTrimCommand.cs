@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
@@ -59,6 +58,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
-        await _packageManager.TrimApplication(file, false, null, CancellationToken);
+        // TODO: support `nolink` command line args
+        await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken);
     }
 }

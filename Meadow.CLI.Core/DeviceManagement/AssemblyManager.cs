@@ -82,6 +82,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             if (noLink != null)
             {
                 no_link_args = string.Join(" ", noLink.Select(o => $"-p copy \"{o}\""));
+                logger?.LogInformation($"no-link args: '{no_link_args}'");
             }
 
             var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
@@ -107,7 +108,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     {
                         Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
                     }
-                    
+
                 }
 
                 string stdErrorReaderResult;
@@ -161,7 +162,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return dependencies;
         }
 
-        static (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
+        private static (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
         {
             static string? ResolvePath(string fileName, string path)
             {
@@ -189,7 +190,7 @@ namespace Meadow.CLI.Core.DeviceManagement
             return (references, resolved_path);
         }
 
-        static List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
+        private static List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
         {
             if (dependencyMap.Contains(references.Item2))
                 return dependencyMap;

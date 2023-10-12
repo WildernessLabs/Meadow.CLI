@@ -117,7 +117,11 @@ public partial class PackageManager
 
         var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
 
-        Debug.WriteLine("Trimming assemblies to reduce size (may take several seconds)...");
+        logger?.LogInformation("Trimming assemblies to reduce size (may take several seconds)...");
+        if (!string.IsNullOrWhiteSpace(no_link_args))
+        {
+            logger?.LogInformation($"no-link args:'{no_link_args}'");
+        }
 
         using (var process = new Process())
         {
