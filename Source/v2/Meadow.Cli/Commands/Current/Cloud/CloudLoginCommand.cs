@@ -8,8 +8,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud login", Description = "Log into the Meadow Service")]
 public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
 {
-    public const string DefaultHost = "https://www.meadowcloud.co";
-
     [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
     public string? Host { get; set; }
 
