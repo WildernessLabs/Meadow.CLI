@@ -27,6 +27,6 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
         var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
 
-        Logger.LogInformation(data);
+        Logger?.LogInformation(data);
     }
 }

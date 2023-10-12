@@ -60,7 +60,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
         if (Files == null)
         {
-            Logger.LogInformation($"Writing all firmware for version '{package.Version}'...");
+            Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
 
             Files = new FirmwareType[]
                 {
@@ -72,7 +72,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
         if (!Files.Contains(FirmwareType.OS) && UseDfu)
         {
-            Logger.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
+            Logger?.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
             return;
         }
 
@@ -98,7 +98,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex.Message);
+                Logger?.LogError(ex.Message);
                 return;
             }
 
@@ -113,13 +113,13 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Exception type: {ex.GetType().Name}");
+                Logger?.LogError($"Exception type: {ex.GetType().Name}");
 
                 // TODO: scope this to the right exception type for Win 10 access violation thing
                 // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
                 Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
 
-                Logger.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
+                Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
                 return;
             }
 
@@ -145,7 +145,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             var connection = ConnectionManager.GetCurrentConnection();
             if (connection == null)
             {
-                Logger.LogError($"No connection path is defined");
+                Logger?.LogError($"No connection path is defined");
                 return;
             }
 
@@ -162,8 +162,8 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             if (deviceInfo != null)
             {
-                Logger.LogInformation($"Done.");
-                Logger.LogInformation(deviceInfo.ToString());
+                Logger?.LogInformation($"Done.");
+                Logger?.LogInformation(deviceInfo.ToString());
             }
         }
         else
@@ -214,7 +214,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             if (existing == null)
             {
-                Logger.LogError($"Requested version '{Version}' not found.");
+                Logger?.LogError($"Requested version '{Version}' not found.");
                 return null;
             }
             package = existing;
@@ -253,7 +253,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         };
         connection.ConnectionMessage += (s, message) =>
         {
-            Logger.LogInformation(message);
+            Logger?.LogInformation(message);
         };
 
         var package = await GetSelectedPackage();
@@ -280,14 +280,14 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             }
             else
             {
-                Logger.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
+                Logger?.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
 
                 throw new NotSupportedException("OtA writes for the OS are not yet supported");
             }
         }
         if (Files.Contains(FirmwareType.Runtime))
         {
-            Logger.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
+            Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
             // get the path to the runtime file
             var rtpath = package.GetFullyQualifiedPath(package.Runtime);
@@ -298,7 +298,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
         }
         if (Files.Contains(FirmwareType.ESP))
         {
-            Logger.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
+            Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
             var fileList = new string[]
                 {
@@ -310,7 +310,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
         }
 
-        Logger.LogInformation($"{Environment.NewLine}");
+        Logger?.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {

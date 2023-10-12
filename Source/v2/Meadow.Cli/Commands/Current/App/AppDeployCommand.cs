@@ -94,12 +94,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
             var targetDirectory = file.DirectoryName;
 
-            await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
+            if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
+            {
+                await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
+            }
 
             if (wasRuntimeEnabled)
             {
                 // restore runtime state
-                Logger.LogInformation("Enabling runtime...");
+                Logger?.LogInformation("Enabling runtime...");
 
                 await connection.RuntimeEnable(CancellationToken);
             }
