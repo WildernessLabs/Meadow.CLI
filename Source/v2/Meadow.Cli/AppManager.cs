@@ -93,7 +93,7 @@ public static class AppManager
         {
             var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
-            if (existing != null)
+            if (existing != null && existing.Crc != null)
             {
                 if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
                 {
@@ -104,7 +104,7 @@ public static class AppManager
 
         send_file:
 
-            if (!await connection?.WriteFile(localFile.Key, null, cancellationToken))
+            if (connection != null && !await connection.WriteFile(localFile.Key, null, cancellationToken))
             {
                 logger.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
                 await Task.Delay(100);
