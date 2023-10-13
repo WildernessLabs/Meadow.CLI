@@ -3,11 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-public abstract class BaseTraceEnableCommand<T> : BaseDeviceCommand<T>
+public abstract class BaseTraceCommand<T> : BaseDeviceCommand<T>
 {
     protected IMeadowConnection? Connection { get; private set; }
 
-    public BaseTraceEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public BaseTraceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
     }

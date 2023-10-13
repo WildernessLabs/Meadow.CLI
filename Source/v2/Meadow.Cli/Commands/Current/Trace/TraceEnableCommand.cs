@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("trace enable", Description = "Enable trace logging on the Meadow")]
-public class TraceEnableCommand : BaseTraceEnableCommand<TraceEnableCommand>
+public class TraceEnableCommand : BaseTraceCommand<TraceEnableCommand>
 {
     [CommandOption("level", 'l', Description = "The desired trace level", IsRequired = false)]
     public int? Level { get; init; }
