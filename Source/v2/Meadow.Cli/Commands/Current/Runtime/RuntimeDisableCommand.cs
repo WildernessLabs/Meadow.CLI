@@ -21,10 +21,13 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
             return;
         }
 
-        await connection.Device.RuntimeDisable(CancellationToken);
+        if (connection.Device != null)
+        {
+            await connection.Device.RuntimeDisable(CancellationToken);
 
-        var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
+            var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
-        Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+            Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+        }
     }
 }
