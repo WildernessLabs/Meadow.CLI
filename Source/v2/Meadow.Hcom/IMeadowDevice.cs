@@ -27,5 +27,8 @@ namespace Meadow.Hcom
         Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
         Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
         Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
+        Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = default);
+
+        MeadowDataProcessor DataProcessor { get; }
     }
 }

@@ -6,6 +6,8 @@ namespace Meadow.Hcom
     {
         private IMeadowConnection _connection;
 
+        public MeadowDataProcessor DataProcessor => throw new NotImplementedException();
+
         internal MeadowDevice(IMeadowConnection connection)
         {
             _connection = connection;
@@ -155,6 +157,11 @@ namespace Meadow.Hcom
         public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
         {
             await _connection.StartDebugging(port, logger, cancellationToken);
+        }
+
+        public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }
