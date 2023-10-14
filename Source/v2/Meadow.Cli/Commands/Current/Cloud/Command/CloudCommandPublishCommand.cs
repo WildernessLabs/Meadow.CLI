@@ -11,7 +11,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
-    public string CommandName { get; set; }
+    public string? CommandName { get; set; }
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command")]
     public string? CollectionId { get; set; }
@@ -54,7 +54,8 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.", showHelp: true);
         }
 
-        if (Host == null) Host = DefaultHost;
+        if (Host == null)
+            Host = DefaultHost;
 
         var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))
@@ -64,20 +65,23 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
         try
         {
-            Logger?.LogInformation($"Publishing '{CommandName}' command to Meadow.Cloud. Please wait...");
-            if (!string.IsNullOrWhiteSpace(CollectionId))
+            if (!string.IsNullOrEmpty(CommandName))
             {
-                await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
+                Logger?.LogInformation($"Publishing '{CommandName}' command to Meadow.Cloud. Please wait...");
+                if (!string.IsNullOrWhiteSpace(CollectionId))
+                {
+                    await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
+                }
+                else if (DeviceIds != null && DeviceIds.Any())
+                {
+                    await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
+                }
+                else
+                {
+                    throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
+                }
+                Logger?.LogInformation("Publish command successful.");
             }
-            else if (DeviceIds.Any())
-            {
-                await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
-            }
-            else
-            {
-                throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
-            }
-            Logger?.LogInformation("Publish command successful.");
         }
         catch (MeadowCloudAuthException ex)
         {
