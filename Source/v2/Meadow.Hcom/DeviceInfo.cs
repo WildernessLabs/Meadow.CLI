@@ -42,13 +42,16 @@ namespace Meadow.Hcom
         {
             var deviceInfo = new StringBuilder();
 
-            if (Product.Contains(" by Wilderness Labs"))
+            if (Product != null)
             {
-                deviceInfo.AppendLine(Product);
-            }
-            else
-            {
-                deviceInfo.AppendLine($"{Product} by Wilderness Labs");
+                if (Product.Contains(" by Wilderness Labs"))
+                {
+                    deviceInfo.AppendLine(Product);
+                }
+                else
+                {
+                    deviceInfo.AppendLine($"{Product} by Wilderness Labs");
+                }
             }
 
             deviceInfo.AppendLine("Board Information ");
