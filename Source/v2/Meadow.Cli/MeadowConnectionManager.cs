@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -184,21 +185,32 @@ public class MeadowConnectionManager
 
             using var proc = Process.Start(psi);
             _ = proc?.WaitForExit(1000);
-            var output = proc?.StandardOutput.ReadToEnd();
+            var output = proc?.StandardOutput;
 
-            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                  .Where(x => x.Contains("Wilderness_Labs"))
-                  .Select(
-                      line =>
-                      {
-                          var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
-                          var target = parts[1];
-                          var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                          return port;
-                      }).ToArray();
+            if (output != null)
+            {
+                var outputText = output.ReadToEnd();
+                if (!string.IsNullOrEmpty(outputText))
+                {
+                    return outputText
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                          .Where(x => x.Contains("Wilderness_Labs"))
+                          .Select(
+                              line =>
+                              {
+                                  var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
+                                  var target = parts[1];
+                                  var port = Path.GetFullPath(Path.Combine(devicePath, target));
+                                  return port;
+                              }).ToArray();
+                }
+            }
+
+            return Array.Empty<string>();
         });
     }
 
+    [SupportedOSPlatform("windows")]
     public static IList<string> GetMeadowSerialPortsForWindows()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
@@ -225,29 +237,41 @@ public class MeadowConnectionManager
             // get the query results
             foreach (ManagementObject moResult in searcher.Get())
             {
-                // Try Caption and if not Name, they both seems to contain the COM port 
-                string portLongName = moResult["Caption"].ToString();
+                // Try Caption 1st, then Name, they both seem to contain the COM port 
+                var captionObject = moResult["Caption"];
+
+                var portLongName = captionObject?.ToString();
                 if (string.IsNullOrEmpty(portLongName))
-                    portLongName = moResult["Name"].ToString();
-                string pnpDeviceId = moResult["PNPDeviceID"].ToString();
+                {
+                    var nameObject = moResult["Name"];
+                    portLongName = nameObject?.ToString();
+                }
 
                 // we could collect and return a fair bit of other info from the query:
-
                 //string description = moResult["Description"].ToString();
                 //string service = moResult["Service"].ToString();
                 //string manufacturer = moResult["Manufacturer"].ToString();
 
-                var comIndex = portLongName.IndexOf("(COM") + 1;
-                var copyLength = portLongName.IndexOf(")") - comIndex;
-                var port = portLongName.Substring(comIndex, copyLength);
+                if (!string.IsNullOrEmpty(portLongName))
+                {
+                    var comIndex = portLongName.IndexOf("(COM") + 1;
+                    var copyLength = portLongName.IndexOf(")") - comIndex;
+                    var port = portLongName.Substring(comIndex, copyLength);
 
-                // the meadow serial is in the device id, after
-                // the characters: USB\VID_XXXX&PID_XXXX\
-                // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
-                var splits = pnpDeviceId.Split('\\');
-                var serialNumber = splits[2];
+                    var pnpDeviceObject = moResult["PNPDeviceID"];
+                    var pnpDeviceId = pnpDeviceObject?.ToString();
 
-                results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                    // the meadow serial is in the device id, after
+                    // the characters: USB\VID_XXXX&PID_XXXX\
+                    // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
+                    if (!string.IsNullOrEmpty(pnpDeviceId))
+                    {
+                        var splits = pnpDeviceId.Split('\\');
+                        var serialNumber = splits[2];
+                    }
+
+                    results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                }
             }
 
             return results.ToArray();
