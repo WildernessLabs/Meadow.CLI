@@ -21,22 +21,20 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection != null && connection.Device != null)
         {
-            return;
-        }
+            Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
 
-        Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
+            var success = await connection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
 
-        var success = await connection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
-
-        if (success)
-        {
-            Logger?.LogInformation($"Success");
-        }
-        else
-        {
-            Logger?.LogInformation($"Failed to retrieve file");
+            if (success)
+            {
+                Logger?.LogInformation($"Success");
+            }
+            else
+            {
+                Logger?.LogInformation($"Failed to retrieve file");
+            }
         }
     }
 }

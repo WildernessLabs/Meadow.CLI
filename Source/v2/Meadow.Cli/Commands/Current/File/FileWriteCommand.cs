@@ -11,7 +11,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
         'f',
         Description = "The file(s) to write to the Meadow Files System",
         IsRequired = true)]
-    public IList<string> Files { get; init; }
+    public IList<string> Files { get; init; } = Array.Empty<string>();
 
     [CommandOption(
         "targetFiles",
@@ -28,49 +28,53 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection != null)
         {
-            return;
-        }
-
-        if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
-        {
-            Logger?.LogError(
-                $"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
-
-            return;
-        }
-
-        connection.FileWriteProgress += (s, e) =>
-        {
-            var p = (e.completed / (double)e.total) * 100d;
-
-            // Console instead of Logger due to line breaking for progress bar
-            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
-        };
-
-        Logger?.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
-
-        for (var i = 0; i < Files.Count; i++)
-        {
-            if (!File.Exists(Files[i]))
+            if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
             {
-                Logger?.LogError($"Cannot find file '{Files[i]}'. Skippping");
+                Logger?.LogError(
+                    $"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
+
+                return;
             }
-            else
+
+            connection.FileWriteProgress += (s, e) =>
             {
-                var targetFileName = GetTargetFileName(i);
+                var p = (e.completed / (double)e.total) * 100d;
 
-                Logger?.LogInformation(
-                    $"Writing '{Files[i]}' as '{targetFileName}' to device");
+                // Console instead of Logger due to line breaking for progress bar
+                Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+            };
 
-                try
+            Logger?.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
+
+            for (var i = 0; i < Files.Count; i++)
+            {
+                if (!File.Exists(Files[i]))
                 {
-                    await connection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
+                    Logger?.LogError($"Cannot find file '{Files[i]}'. Skippping");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger?.LogError($"Error writing file: {ex.Message}");
+                    try
+                    {
+                        if (connection.Device != null)
+                        {
+                            var targetFileName = GetTargetFileName(i);
+
+                            Logger?.LogInformation($"Writing '{Files[i]}' as '{targetFileName}' to device");
+
+                            await connection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
+                        }
+                        else
+                        {
+                            Logger?.LogError($"No Device Found");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError($"Error writing file: {ex.Message}");
+                    }
                 }
             }
         }

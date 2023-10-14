@@ -21,12 +21,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
-        {
-            return;
-        }
-
-        if (connection != null)
+        if (connection != null && connection.Device != null)
         {
             var files = await connection.Device.GetFileList(Verbose, CancellationToken);
 
