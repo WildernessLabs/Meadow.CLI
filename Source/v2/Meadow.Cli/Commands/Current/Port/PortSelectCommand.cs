@@ -55,6 +55,9 @@ public class PortSelectCommand : BaseCommand<PortSelectCommand>
             Settings = new string[] { "route", selectedPort }
         };
 
-        await setCommand.ExecuteAsync(Console);
+        if (Console != null)
+        {
+            await setCommand.ExecuteAsync(Console);
+        }
     }
 }
