@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Meadow.Logging;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
 
@@ -40,7 +41,7 @@ public static class FirmwareManager
 
             if (json == null) return string.Empty;
 
-            return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty }).version;
+            return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty })!.version;
         }
     }
 
@@ -89,7 +90,7 @@ public static class FirmwareManager
                     list.Add(fi);
                 }
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
                 // work around for Issue #229 (bad json)
                 var index = json.IndexOf(']');
@@ -116,12 +117,10 @@ public static class FirmwareManager
         return list.ToArray();
     }
 
-    public static FirmwareUpdater GetFirmwareUpdater(IMeadowConnection connection)
+    public static FirmwareUpdater GetFirmwareUpdater(IMeadowConnection connection, ILogger? logger = null)
     {
-        return new FirmwareUpdater(connection);
+        return new FirmwareUpdater(connection, logger);
     }
-
-
 
     public static async Task PushApplicationToDevice(IMeadowConnection connection, DirectoryInfo appFolder, ILogger? logger = null)
     {
