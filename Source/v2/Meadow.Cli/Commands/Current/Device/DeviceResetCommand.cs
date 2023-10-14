@@ -21,6 +21,9 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
             return;
         }
 
-        await connection.Device.Reset();
+        if (connection.Device != null)
+        {
+            await connection.Device.Reset();
+        }
     }
 }
