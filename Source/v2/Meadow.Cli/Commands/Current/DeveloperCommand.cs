@@ -39,7 +39,10 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
                 Logger?.LogError(e.Message);
             };
 
-            await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+            if (connection.Device != null)
+            {
+                await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+            }
         }
     }
 }
