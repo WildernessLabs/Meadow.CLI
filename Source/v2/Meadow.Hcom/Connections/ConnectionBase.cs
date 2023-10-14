@@ -27,7 +27,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<Exception> ConnectionError = default!;
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
-    public event EventHandler FileWriteFailed;
+    public event EventHandler? FileWriteFailed;
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
 
     public abstract string Name { get; }

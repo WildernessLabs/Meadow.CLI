@@ -253,7 +253,10 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream.Dispose();
                                         _readFileInfo = null;
 
-                                        FileReadCompleted?.Invoke(this, fn);
+                                        if (!string.IsNullOrEmpty(fn))
+                                        {
+                                            FileReadCompleted?.Invoke(this, fn);
+                                        }
                                     }
                                     else if (response is FileReadInitFailedResponse frf)
                                     {
