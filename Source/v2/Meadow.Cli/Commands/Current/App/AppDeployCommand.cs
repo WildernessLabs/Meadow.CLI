@@ -97,9 +97,10 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
             {
                 await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
+                Console?.Output.WriteAsync("\n");
             }
 
-            if (wasRuntimeEnabled)
+            if (!wasRuntimeEnabled)
             {
                 // restore runtime state
                 Logger?.LogInformation("Enabling runtime...");
