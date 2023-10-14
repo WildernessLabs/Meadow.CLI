@@ -136,10 +136,18 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         }
 
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+        var directoryName = file.DirectoryName;
 
-        Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
+        Logger?.LogInformation($"Deploying app from {directoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName, true, false, Logger, CancellationToken);
+        if (!string.IsNullOrEmpty(directoryName) && Logger != null)
+        {
+            await AppManager.DeployApplication(_packageManager, connection, directoryName, true, false, Logger, CancellationToken);
+        }
+        else
+        {
+            Logger?.LogError($"Invalid DirectoryName");
+        }
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

@@ -100,7 +100,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 Console?.Output.WriteAsync("\n");
             }
 
-            if (!wasRuntimeEnabled)
+            if (wasRuntimeEnabled)
             {
                 // restore runtime state
                 Logger?.LogInformation("Enabling runtime...");

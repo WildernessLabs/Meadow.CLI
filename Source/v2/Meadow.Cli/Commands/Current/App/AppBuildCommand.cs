@@ -25,35 +25,38 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        string path = Path == null
+        await Task.Run(() =>
+        {
+            string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
             : Path;
 
-        // is the path a file?
-        if (!File.Exists(path))
-        {
-            // is it a valid directory?
-            if (!Directory.Exists(path))
+            // is the path a file?
+            if (!File.Exists(path))
             {
-                Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                // is it a valid directory?
+                if (!Directory.Exists(path))
+                {
+                    Logger?.LogError($"Invalid application path '{path}'");
+                    return;
+                }
             }
-        }
 
-        if (Configuration == null) Configuration = "Release";
+            if (Configuration == null) Configuration = "Release";
 
-        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
+            Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
-        // TODO: enable cancellation of this call
-        var success = _packageManager.BuildApplication(path, Configuration);
+            // TODO: enable cancellation of this call
+            var success = _packageManager.BuildApplication(path, Configuration);
 
-        if (!success)
-        {
-            Logger?.LogError($"Build failed!");
-        }
-        else
-        {
-            Logger?.LogError($"Build success.");
-        }
+            if (!success)
+            {
+                Logger?.LogError($"Build failed!");
+            }
+            else
+            {
+                Logger?.LogError($"Build success.");
+            }
+        });
     }
 }
