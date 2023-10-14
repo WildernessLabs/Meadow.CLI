@@ -9,7 +9,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadCommand>
 {
     [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = true)]
-    public string MpakPath { get; init; }
+    public string? MpakPath { get; init; }
 
     [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
     public string? OrgId { get; set; }
@@ -42,17 +42,29 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
             return;
         }
 
-        if (Host == null) Host = DefaultHost;
+        if (Host == null)
+            Host = DefaultHost;
+
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null) return;
+        if (org == null)
+            return;
+
+        if (string.IsNullOrEmpty(Description))
+        {
+            Logger?.LogError($"Invalid Description");
+            return;
+        }
 
         try
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
-            Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
+            if (!string.IsNullOrEmpty(org.Id))
+            {
+                var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
+                Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
+            }
         }
         catch (MeadowCloudException mex)
         {

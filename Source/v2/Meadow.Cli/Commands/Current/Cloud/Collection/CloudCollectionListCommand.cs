@@ -25,23 +25,27 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        if (Host == null)
+            Host = DefaultHost;
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null) return;
+        if (org == null)
+            return;
 
-        var collections = await CollectionService.GetOrgCollections(org.Id, Host, CancellationToken);
+        if (!string.IsNullOrEmpty(org.Id)) {
+            var collections = await CollectionService.GetOrgCollections(org.Id, Host, CancellationToken);
 
-        if (collections == null || collections.Count == 0)
-        {
-            Logger?.LogInformation("No collections found.");
-        }
-        else
-        {
-            Logger?.LogInformation("Collections:");
-            foreach (var collection in collections)
+            if (collections == null || collections.Count == 0)
             {
-                Logger?.LogInformation($" {collection.Id} | {collection.Name}");
+                Logger?.LogInformation("No collections found.");
+            }
+            else
+            {
+                Logger?.LogInformation("Collections:");
+                foreach (var collection in collections)
+                {
+                    Logger?.LogInformation($" {collection.Id} | {collection.Name}");
+                }
             }
         }
     }
