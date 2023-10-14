@@ -86,11 +86,14 @@ public class PackageService : CloudServiceBase
         {
             var content = File.ReadAllText(tempInfoJson);
             var packageInfo = JsonSerializer.Deserialize<PackageInfo>(content);
-            result = packageInfo.OsVersion;
+            if (packageInfo != null)
+            {
+                result = packageInfo.OsVersion;
+            }
             File.Delete(tempInfoJson);
         }
 
-        return result;
+        return result!;
     }
 
     public async Task PublishPackage(
