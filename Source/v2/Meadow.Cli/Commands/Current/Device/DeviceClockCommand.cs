@@ -23,7 +23,7 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
             return;
         }
 
-        if (connection != null)
+        if (connection != null && connection.Device != null)
         {
             if (Time == null)
             {

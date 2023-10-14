@@ -21,7 +21,7 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
             return;
         }
 
-        if (connection != null)
+        if (connection != null && connection.Device != null)
         {
             var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
             if (deviceInfo != null)

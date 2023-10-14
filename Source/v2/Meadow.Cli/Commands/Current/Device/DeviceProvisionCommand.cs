@@ -30,7 +30,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        UserOrg org;
+        UserOrg? org = null;
 
         try
         {
@@ -42,26 +42,32 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
-            if (!userOrgs.Any())
+            if (userOrgs != null)
             {
-                Logger?.LogInformation($"Please visit {Host} to register your account.");
-                return;
-            }
-            else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
-            {
-                Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
-                return;
-            }
-            else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
-            {
-                OrgId = userOrgs.First().Id;
-            }
+                if (!userOrgs.Any())
+                {
+                    Logger?.LogInformation($"Please visit {Host} to register your account.");
+                    return;
+                }
+                else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
+                {
+                    Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
+                    return;
+                }
+                else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
+                {
+                    OrgId = userOrgs.First().Id;
+                }
 
-            org = userOrgs.FirstOrDefault(o => o.Id == OrgId || o.Name == OrgId);
-            if (org == null)
-            {
-                Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
-                return;
+                if (!string.IsNullOrEmpty(OrgId))
+                {
+                    org = userOrgs.FirstOrDefault(o => o.Id == OrgId || o.Name == OrgId);
+                    if (org == null)
+                    {
+                        Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
+                        return;
+                    }
+                }
             }
         }
         catch (MeadowCloudAuthException)
@@ -79,25 +85,36 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             return;
         }
 
-        var info = await connection.Device.GetDeviceInfo(CancellationToken);
-
-        Logger?.LogInformation("Requesting device public key (this will take a minute)...");
-        var publicKey = await connection.Device.GetPublicKey(CancellationToken);
-
-        var delim = "-----END PUBLIC KEY-----\n";
-        publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
-
-
-        Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
-        var result = await _deviceService.AddDevice(org.Id, info.ProcessorId, publicKey, CollectionId, Name, Host, CancellationToken);
-
-        if (result.isSuccess)
+        if (connection.Device != null)
         {
-            Logger?.LogInformation("Device provisioned successfully");
-        }
-        else
-        {
-            Logger?.LogError($"Failed to provision device: {result.message}");
+            var info = await connection.Device.GetDeviceInfo(CancellationToken);
+
+            Logger?.LogInformation("Requesting device public key (this will take a minute)...");
+            var publicKey = await connection.Device.GetPublicKey(CancellationToken);
+
+            var delim = "-----END PUBLIC KEY-----\n";
+            publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+
+            if (org != null
+                && info != null
+                && !string.IsNullOrEmpty(info.ProcessorId))
+            {
+                Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
+
+                if (!string.IsNullOrEmpty(org.Id))
+                {
+                    var result = await _deviceService.AddDevice(org.Id, info.ProcessorId, publicKey, CollectionId, Name, Host, CancellationToken);
+
+                    if (result.isSuccess)
+                    {
+                        Logger?.LogInformation("Device provisioned successfully");
+                    }
+                    else
+                    {
+                        Logger?.LogError($"Failed to provision device: {result.message}");
+                    }
+                }
+            }
         }
 
         return;
