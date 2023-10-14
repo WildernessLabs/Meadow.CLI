@@ -68,7 +68,8 @@ public class Program
         }
         else
         {
-            services.AddScoped<IConfiguration>(_ => null);
+            // Have an empty Configuration instead.
+            services.AddScoped<IConfiguration>(_ => new ConfigurationBuilder().Build());
         }
 
         AddCommandsAsServices(services);
@@ -79,7 +80,7 @@ public class Program
         {
             await new CliApplicationBuilder()
                 .AddCommandsFromThisAssembly()
-                .UseTypeActivator(serviceProvider.GetService)
+                .UseTypeActivator(serviceProvider.GetService!)
                 .SetExecutableName("meadow")
                 .Build()
                 .RunAsync();
