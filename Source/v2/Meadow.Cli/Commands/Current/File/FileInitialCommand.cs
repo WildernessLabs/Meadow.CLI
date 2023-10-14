@@ -18,15 +18,16 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection != null)
         {
-            return;
+            Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
+
+            if (connection.Device != null)
+            {
+                var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
+
+                Logger?.LogInformation(data);
+            }
         }
-
-        Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
-
-        var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
-
-        Logger?.LogInformation(data);
     }
 }
