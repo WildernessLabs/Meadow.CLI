@@ -20,13 +20,16 @@ public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
             return;
         }
 
-        Logger?.LogInformation($"Erasing flash...");
-
         connection.DeviceMessageReceived += (s, e) =>
         {
             Logger?.LogInformation(e.message);
         };
 
-        await connection.Device.EraseFlash(CancellationToken);
+        if (connection.Device != null)
+        {
+            Logger?.LogInformation($"Erasing flash...");
+
+            await connection.Device.EraseFlash(CancellationToken);
+        }
     }
 }
