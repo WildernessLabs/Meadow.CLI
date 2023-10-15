@@ -2,6 +2,10 @@
 {
     public class DeviceNotFoundException : Exception
     {
-        internal DeviceNotFoundException() : base() { }
+        public DeviceNotFoundException(string? message = null, Exception? innerException = null)
+            : base(message ?? "No device found on this connection.", innerException)
+        {
+
+        }
     }
 }
