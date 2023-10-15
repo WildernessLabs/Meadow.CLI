@@ -14,16 +14,16 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogInformation($"Getting file list...");
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection != null && connection.Device != null)
+        if (Connection != null && Connection.Device != null)
         {
-            var files = await connection.Device.GetFileList(Verbose, CancellationToken);
+            Logger?.LogInformation($"Getting file list...");
+            var files = await Connection.Device.GetFileList(Verbose, CancellationToken);
 
             if (files == null || files.Length == 0)
             {

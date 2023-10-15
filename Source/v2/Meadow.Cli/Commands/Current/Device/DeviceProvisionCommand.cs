@@ -30,6 +30,8 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        await base.ExecuteCommand();
+
         UserOrg? org = null;
 
         try
@@ -77,20 +79,12 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             return;
         }
 
-        var connection = await GetCurrentConnection();
-
-        if (connection == null)
+        if (Connection != null && Connection.Device != null)
         {
-            Logger?.LogError($"No connection path is defined");
-            return;
-        }
-
-        if (connection.Device != null)
-        {
-            var info = await connection.Device.GetDeviceInfo(CancellationToken);
+            var info = await Connection.Device.GetDeviceInfo(CancellationToken);
 
             Logger?.LogInformation("Requesting device public key (this will take a minute)...");
-            var publicKey = await connection.Device.GetPublicKey(CancellationToken);
+            var publicKey = await Connection.Device.GetPublicKey(CancellationToken);
 
             var delim = "-----END PUBLIC KEY-----\n";
             publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);

@@ -16,11 +16,11 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection != null)
+        if (Connection != null)
         {
-            var fileList = await connection.GetFileList(false);
+            var fileList = await Connection.GetFileList(false);
 
             if (MeadowFile == "all")
             {
@@ -28,12 +28,12 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 {
                     foreach (var f in fileList)
                     {
-                        if (connection.Device != null)
+                        if (Connection.Device != null)
                         {
                             var p = Path.GetFileName(f.Name);
 
                             Logger?.LogInformation($"Deleting file '{p}' from device...");
-                            await connection.Device.DeleteFile(p, CancellationToken);
+                            await Connection.Device.DeleteFile(p, CancellationToken);
                         }
                         else
                         {
@@ -52,9 +52,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 }
                 else
                 {
-                    if (connection.Device != null)
+                    if (Connection.Device != null)
                     {
-                        var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
+                        var wasRuntimeEnabled = await Connection.Device.IsRuntimeEnabled(CancellationToken);
 
                         if (wasRuntimeEnabled)
                         {
@@ -63,11 +63,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                         }
 
                         Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                        await connection.Device.DeleteFile(MeadowFile, CancellationToken);
-                    }
-                    else
-                    {
-                        Logger?.LogError($"No Device Found.");
+                        await Connection.Device.DeleteFile(MeadowFile, CancellationToken);
                     }
                 }
             }
