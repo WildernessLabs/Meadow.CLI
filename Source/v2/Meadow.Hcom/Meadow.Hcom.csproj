@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Http Requests\" />
     <Folder Include="Debugging\" />
+    <Folder Include="HttpRequests\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,5 +24,6 @@
 
   <ItemGroup>
     <None Remove="Debugging\" />
+    <None Remove="HttpRequests\" />
   </ItemGroup>
 </Project>
