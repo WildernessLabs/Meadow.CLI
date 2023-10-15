@@ -20,14 +20,9 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
-        {
-            return;
-        }
-
-        if (connection != null)
+        if (Connection != null)
         {
             string path = Path == null
                 ? Environment.CurrentDirectory
@@ -39,15 +34,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             var lastFile = string.Empty;
 
             // in order to deploy, the runtime must be disabled
-            var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
+            var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
             if (wasRuntimeEnabled)
             {
                 Logger?.LogInformation("Disabling runtime...");
 
-                await connection.RuntimeDisable(CancellationToken);
+                await Connection.RuntimeDisable(CancellationToken);
             }
 
-            connection.FileWriteProgress += (s, e) =>
+            Connection.FileWriteProgress += (s, e) =>
             {
                 var p = (e.completed / (double)e.total) * 100d;
 
@@ -96,7 +91,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
             if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
             {
-                await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
+                await AppManager.DeployApplication(_packageManager, Connection, targetDirectory, true, false, Logger, CancellationToken);
                 Console?.Output.WriteAsync("\n");
             }
 
@@ -105,7 +100,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 // restore runtime state
                 Logger?.LogInformation("Enabling runtime...");
 
-                await connection.RuntimeEnable(CancellationToken);
+                await Connection.RuntimeEnable(CancellationToken);
             }
         }
     }

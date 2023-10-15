@@ -13,23 +13,16 @@ public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null)
         {
-            return;
-        }
+            if (Connection.Device != null)
+            {
+                Logger?.LogInformation($"Erasing flash...");
 
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
-
-        if (connection.Device != null)
-        {
-            Logger?.LogInformation($"Erasing flash...");
-
-            await connection.Device.EraseFlash(CancellationToken);
+                await Connection.Device.EraseFlash(CancellationToken);
+            }
         }
     }
 }

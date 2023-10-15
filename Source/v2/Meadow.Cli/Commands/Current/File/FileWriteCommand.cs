@@ -26,9 +26,9 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection != null)
+        if (Connection != null)
         {
             if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
             {
@@ -38,7 +38,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
                 return;
             }
 
-            connection.FileWriteProgress += (s, e) =>
+            Connection.FileWriteProgress += (s, e) =>
             {
                 var p = (e.completed / (double)e.total) * 100d;
 
@@ -58,17 +58,13 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
                 {
                     try
                     {
-                        if (connection.Device != null)
+                        if (Connection.Device != null)
                         {
                             var targetFileName = GetTargetFileName(i);
 
                             Logger?.LogInformation($"Writing '{Files[i]}' as '{targetFileName}' to device");
 
-                            await connection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
-                        }
-                        else
-                        {
-                            Logger?.LogError($"No Device Found");
+                            await Connection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
                         }
                     }
                     catch (Exception ex)

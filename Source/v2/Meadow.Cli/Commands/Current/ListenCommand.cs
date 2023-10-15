@@ -32,21 +32,19 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null)
         {
-            return;
-        }
+            Connection.DeviceMessageReceived += OnDeviceMessageReceived;
+            Connection.ConnectionMessage += Connection_ConnectionMessage;
 
-        connection.DeviceMessageReceived += OnDeviceMessageReceived;
-        connection.ConnectionMessage += Connection_ConnectionMessage;
+            Logger?.LogInformation($"Listening for Meadow Console output on '{Connection.Name}'. Press Ctrl+C to exit...");
 
-        Logger?.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
-
-        while (!CancellationToken.IsCancellationRequested)
-        {
-            await Task.Delay(1000);
+            while (!CancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000);
+            }
         }
     }
 }
