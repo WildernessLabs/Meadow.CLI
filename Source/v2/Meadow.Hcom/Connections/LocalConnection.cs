@@ -17,7 +17,7 @@ public class LocalConnection : ConnectionBase
     public override Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
         Device = new MeadowDevice(this);
-        return Task.FromResult(Device);
+        return Task.FromResult<IMeadowDevice?>(Device);
     }
 
     public override Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
@@ -44,21 +44,21 @@ public class LocalConnection : ConnectionBase
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                info.Add("DeviceName", File.ReadAllText("/etc/hostname").Trim());
+                info.Add("DeviceName", Environment.MachineName);
                 info.Add("SerialNo", File.ReadAllText("/var/lib/dbus/machine-id").Trim());
-
-                // ssh-agent sh -c 'ssh-add; ssh-add -L'
             }
 
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
+                info.Add("DeviceName", Environment.MachineName);
+
                 var mac_id = ExecuteBashCommandLine("ioreg -l | grep IOPlatformSerialNumber | sed 's/.*= //' | sed 's/\\\"//g'");
-                info.Add("SerialNo", mac_id);
+                info.Add("SerialNo", mac_id.Trim());
             }
             _deviceInfo = new DeviceInfo(info);
         }
 
-        return Task.FromResult(_deviceInfo);
+        return Task.FromResult< DeviceInfo?>(_deviceInfo);
     }
 
     private string ExecuteBashCommandLine(string command)
@@ -105,6 +105,12 @@ public class LocalConnection : ConnectionBase
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             throw new PlatformNotSupportedException();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            // ssh-agent sh -c 'ssh-add; ssh-add -L'
+            var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
+            return Task.FromResult(pubkey);
         }
         else
         {
