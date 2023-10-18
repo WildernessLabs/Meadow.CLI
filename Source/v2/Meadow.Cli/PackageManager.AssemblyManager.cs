@@ -119,7 +119,8 @@ public partial class PackageManager
                 var no_link_args = string.Empty;
                 if (noLink != null)
                 {
-                    no_link_args = string.Join(" ", noLink.Select(o => $"-p copy \"{o}\""));
+                    // no-link options want just the assembly name (i.e. no ".dll" extension)
+                    no_link_args = string.Join(" ", noLink.Select(o => $"-p copy \"{o.Replace(".dll", string.Empty)}\""));
                 }
 
                 var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
