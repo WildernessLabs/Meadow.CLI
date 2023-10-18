@@ -9,18 +9,16 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
     public DeviceResetCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogInformation($"Resetting the device...");
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null && Connection.Device != null)
         {
-            return;
+            Logger?.LogInformation($"Resetting the device...");
+            await Connection.Device.Reset();
         }
-
-        await connection.Device.Reset();
     }
 }

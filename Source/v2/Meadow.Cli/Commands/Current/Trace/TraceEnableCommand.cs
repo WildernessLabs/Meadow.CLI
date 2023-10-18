@@ -1,10 +1,11 @@
-﻿using CliFx.Attributes;
+﻿using System.Reflection.Emit;
+using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("trace enable", Description = "Enable trace logging on the Meadow")]
-public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
+public class TraceEnableCommand : BaseTraceCommand<TraceEnableCommand>
 {
     [CommandOption("level", 'l', Description = "The desired trace level", IsRequired = false)]
     public int? Level { get; init; }
@@ -16,27 +17,26 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null)
         {
-            return;
+            if (Connection.Device != null)
+            {
+                if (Level != null)
+                {
+                    Logger?.LogInformation($"Setting trace level to {Level}...");
+                    await Connection.Device.SetTraceLevel(Level.Value, CancellationToken);
+                }
+
+                Logger?.LogInformation("Enabling tracing...");
+
+                await Connection.Device.TraceEnable(CancellationToken);
+            }
+            else
+            {
+                Logger?.LogError("Trace Error: No Device found...");
+            }
         }
-
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
-
-        if (Level != null)
-        {
-            Logger?.LogInformation($"Setting trace level to {Level}...");
-            await connection.Device.SetTraceLevel(Level.Value, CancellationToken);
-        }
-
-        Logger?.LogInformation("Enabling tracing...");
-
-        await connection.Device.TraceEnable(CancellationToken);
     }
 }
-

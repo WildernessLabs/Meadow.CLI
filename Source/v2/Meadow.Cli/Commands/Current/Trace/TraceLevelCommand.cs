@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("trace level", Description = "Sets the trace logging level on the Meadow")]
-public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
+public class TraceLevelCommand : BaseTraceCommand<TraceLevelCommand>
 {
     [CommandParameter(0, Name = "Level", IsRequired = true)]
     public int Level { get; set; }
@@ -16,31 +16,24 @@ public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null && Connection.Device != null)
         {
-            return;
-        }
+            if (Level <= 0)
+            {
+                Logger?.LogInformation("Disabling tracing...");
 
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
+                await Connection.Device.TraceDisable(CancellationToken);
+            }
+            else
+            {
+                Logger?.LogInformation($"Setting trace level to {Level}...");
+                await Connection.Device.SetTraceLevel(Level, CancellationToken);
 
-        if (Level <= 0)
-        {
-            Logger?.LogInformation("Disabling tracing...");
-
-            await connection.Device.SetTraceLevel(Level, CancellationToken);
-        }
-        else
-        {
-            Logger?.LogInformation($"Setting trace level to {Level}...");
-            await connection.Device.SetTraceLevel(Level, CancellationToken);
-
-            Logger?.LogInformation("Enabling tracing...");
-            await connection.Device.TraceEnable(CancellationToken);
+                Logger?.LogInformation("Enabling tracing...");
+                await Connection.Device.TraceEnable(CancellationToken);
+            }
         }
     }
 }

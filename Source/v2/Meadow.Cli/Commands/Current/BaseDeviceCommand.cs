@@ -6,10 +6,16 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 {
     protected MeadowConnectionManager ConnectionManager { get; }
+    public IMeadowConnection? Connection { get; private set; }
 
     public BaseDeviceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory) : base(loggerFactory)
     {
         ConnectionManager = connectionManager;
+    }
+
+    protected override async ValueTask ExecuteCommand()
+    {
+        Connection = await GetCurrentConnection();
     }
 
     protected async Task<IMeadowConnection?> GetCurrentConnection()
@@ -21,6 +27,16 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
             connection.ConnectionError += (s, e) =>
             {
                 Logger?.LogError(e.Message);
+            };
+
+            connection.ConnectionMessage += (s, message) =>
+            {
+                Logger?.LogInformation(message);
+            };
+
+            connection.DeviceMessageReceived += (s, e) =>
+            {
+                Logger?.LogInformation(e.message);
             };
 
             try
@@ -51,7 +67,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         }
         else
         {
-            Logger?.LogError("Current Connnection Unavailable");
+            Logger?.LogError("Current Connnection Unavailable"); // No connection path is defined ??
         }
 
         return null;

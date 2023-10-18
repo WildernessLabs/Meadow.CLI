@@ -191,8 +191,8 @@ public static class DfuUtils
                 process.Start();
 
                 var reader = process.StandardOutput;
-                string output = reader.ReadLine();
-                if (output.StartsWith("dfu-util"))
+                var output = reader.ReadLine();
+                if (output != null && output.StartsWith("dfu-util"))
                 {
                     var split = output.Split(new char[] { ' ' });
                     if (split.Length == 2)

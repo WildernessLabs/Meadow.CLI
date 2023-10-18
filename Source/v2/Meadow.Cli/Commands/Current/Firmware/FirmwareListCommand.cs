@@ -52,7 +52,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
                 if (package == collection.DefaultPackage)
                 {
                     Logger?.LogInformation(
-                        $"  * {package.Version.PadRight(18)} " +
+                        $"  * {package.Version?.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +
@@ -63,7 +63,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
                 else
                 {
                     Logger?.LogInformation(
-                        $"    {package.Version.PadRight(18)} " +
+                        $"    {package.Version?.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +

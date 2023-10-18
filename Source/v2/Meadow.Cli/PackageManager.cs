@@ -144,11 +144,11 @@ public partial class PackageManager : IPackageManager
                 .Build();
             var opts = deserializer.Deserialize<BuildOptions>(yaml);
 
-            if (opts.Deploy.NoLink != null && opts.Deploy.NoLink.Count > 0)
+            if (opts.Deploy?.NoLink != null && opts.Deploy?.NoLink.Count > 0)
             {
                 noLink = opts.Deploy.NoLink;
             }
-            if (opts.Deploy.IncludePDBs != null)
+            if (opts.Deploy?.IncludePDBs != null)
             {
                 includePdbs = opts.Deploy.IncludePDBs.Value;
             }
