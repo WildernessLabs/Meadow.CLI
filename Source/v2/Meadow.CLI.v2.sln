@@ -1,13 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Hcom", "Meadow.Hcom\Meadow.Hcom.csproj", "{6C2FA084-701B-4A28-8775-BF18B84E366B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom", "Meadow.HCom\Meadow.HCom.csproj", "{6C2FA084-701B-4A28-8775-BF18B84E366B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom.Integration.Tests", "Meadow.HCom.Integration.Tests\Meadow.HCom.Integration.Tests.csproj", "{9EAF2357-2AB3-45BB-822B-B9B4629E651E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cli", "Meadow.Cli\Meadow.Cli.csproj", "{1BD32521-158C-478A-AEE7-0EE52BF3571F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI", "Meadow.CLI\Meadow.CLI.csproj", "{1BD32521-158C-478A-AEE7-0EE52BF3571F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Contracts", "..\..\..\Meadow.Contracts\Source\Meadow.Contracts\Meadow.Contracts.csproj", "{62D2092A-5A19-47AC-9B81-A8F5D9D7BD47}"
 EndProject
@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLib", "Meadow.Usb
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLibClassic", "Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj", "{42F3A4D2-CBF9-4DF3-8ADC-BF775101F34A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cli.Core", "Meadow.Cli.Core\Meadow.Cli.Core.csproj", "{677B1C15-8936-4807-8A4F-4F5219BBDB7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI.Core", "Meadow.CLI.Core\Meadow.CLI.Core.csproj", "{677B1C15-8936-4807-8A4F-4F5219BBDB7C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Cloud.Client", "Meadow.Cloud.Client\Meadow.Cloud.Client.csproj", "{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}"
 EndProject
