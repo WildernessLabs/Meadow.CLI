@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("uart trace disable", Description = "Disables trace log output to UART")]
-public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand>
+public class UartTraceDisableCommand : BaseTraceCommand<UartTraceDisableCommand>
 {
     public UartTraceDisableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
@@ -13,20 +13,11 @@ public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null)
-        {
-            return;
-        }
-
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
+        await base.ExecuteCommand();
 
         Logger?.LogInformation("Setting UART to application use...");
 
-        await connection.Device.UartTraceDisable(CancellationToken);
+        if (Connection != null && Connection.Device != null)
+            await Connection.Device.UartTraceDisable(CancellationToken);
     }
 }

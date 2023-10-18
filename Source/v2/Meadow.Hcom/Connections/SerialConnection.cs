@@ -8,22 +8,18 @@ using System.Text;
 
 namespace Meadow.Hcom;
 
-public delegate void ConnectionStateChangedHandler(SerialConnection connection, ConnectionState oldState, ConnectionState newState);
-
 public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
 
-    private event EventHandler<string> FileReadCompleted = delegate { };
-    private event EventHandler FileWriteAccepted;
-    private event EventHandler<string> FileDataReceived;
-    public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
+    private event EventHandler<string>? FileReadCompleted = delegate { };
+    private event EventHandler? FileWriteAccepted;
+    private event EventHandler<string>? FileDataReceived;
 
     private SerialPort _port;
     private ILogger? _logger;
     private bool _isDisposed;
-    private ConnectionState _state;
     private List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private Queue<IRequest> _pendingCommands = new Queue<IRequest>();
     private bool _maintainConnection;
@@ -133,19 +129,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // TODO: stop maintaining connection?
     }
 
-    public ConnectionState State
-    {
-        get => _state;
-        private set
-        {
-            if (value == State) return;
-
-            var old = _state;
-            _state = value;
-            ConnectionStateChanged?.Invoke(this, old, State);
-        }
-    }
-
     private void Open()
     {
         if (!_port.IsOpen)
@@ -228,24 +211,30 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private async void CommandManager()
     {
-        while (!_isDisposed)
+        await Task.Run(() =>
         {
-            while (_pendingCommands.Count > 0)
+            while (!_isDisposed)
             {
-                Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
+                while (_pendingCommands.Count > 0)
+                {
+                    Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
 
-                var command = _pendingCommands.Dequeue() as Request;
+                    var command = _pendingCommands.Dequeue() as Request;
 
-                // if this is a file write, we need to packetize for progress
+                    // if this is a file write, we need to packetize for progress
 
-                var payload = command.Serialize();
-                EncodeAndSendPacket(payload);
+                    if (command != null)
+                    {
+                        var payload = command.Serialize();
+                        EncodeAndSendPacket(payload);
+                    }
 
-                // TODO: re-queue on fail?
+                    // TODO: re-queue on fail?
+                }
+
+                Thread.Sleep(1000);
             }
-
-            Thread.Sleep(1000);
-        }
+        });
     }
 
     private class ReadFileInfo
@@ -293,12 +282,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         while (!_port.IsOpen)
         {
-            _state = ConnectionState.Disconnected;
+            State = ConnectionState.Disconnected;
             Thread.Sleep(100);
             // wait for the port to open
         }
 
-        _state = ConnectionState.Connected;
+        State = ConnectionState.Connected;
 
         try
         {
@@ -441,7 +430,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // any others that were queued along the usb serial pipe line.
         if (packetLength == 1)
         {
-            //_logger.LogTrace("Throwing out 0x00 from buffer");
+            //_logger?.LogTrace("Throwing out 0x00 from buffer");
             return false;
         }
 
@@ -1182,7 +1171,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         CommandTimeoutSeconds = lastTimeout;
 
-        return contents;
+        return contents!;
     }
 
     public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
@@ -1196,7 +1185,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             await ReInitializeMeadow(cancellationToken); */
 
             var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-            var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+            var debuggingServer = new DebuggingServer(Device, endpoint, logger!);
 
             logger?.LogDebug("Tell the Debugging Server to Start Listening");
             await debuggingServer.StartListening(cancellationToken);

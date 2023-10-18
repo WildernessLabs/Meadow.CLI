@@ -16,19 +16,14 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
-        {
-            return;
-        }
-
-        if (connection != null)
+        if (Connection != null && Connection.Device != null)
         {
             if (Time == null)
             {
                 Logger?.LogInformation($"Getting device clock...");
-                var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
+                var deviceTime = await Connection.Device.GetRtcTime(CancellationToken);
                 Logger?.LogInformation($"{deviceTime.Value:s}Z");
             }
             else
@@ -36,12 +31,12 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
                 if (Time == "now")
                 {
                     Logger?.LogInformation($"Setting device clock...");
-                    await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
+                    await Connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
                 }
                 else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
                 {
                     Logger?.LogInformation($"Setting device clock...");
-                    await connection.Device.SetRtcTime(dto, CancellationToken);
+                    await Connection.Device.SetRtcTime(dto, CancellationToken);
                 }
                 else
                 {

@@ -21,72 +21,70 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await FileManager.Refresh();
+        await base.ExecuteCommand();
 
-        // for now we only support F7
-        // TODO: add switch and support for other platforms
-        var collection = FileManager.Firmware["Meadow F7"];
-
-        bool explicitVersion;
-
-        if (Version == null)
+        if (Collection != null)
         {
-            explicitVersion = false;
-            var latest = await collection.GetLatestAvailableVersion();
+            bool explicitVersion;
 
-            if (latest == null)
+            if (Version == null)
             {
-                Logger?.LogError($"Unable to get latest version information.");
-                return;
-            }
+                explicitVersion = false;
+                var latest = await Collection.GetLatestAvailableVersion();
 
-            Logger?.LogInformation($"Latest available version is '{latest}'...");
-            Version = latest;
-        }
-        else
-        {
-            explicitVersion = true;
-            Logger?.LogInformation($"Checking for firmware package '{Version}'...");
-        }
+                if (latest == null)
+                {
+                    Logger?.LogError($"Unable to get latest version information.");
+                    return;
+                }
 
-        var isAvailable = await collection.IsVersionAvailableForDownload(Version);
-
-        if (!isAvailable)
-        {
-            Logger?.LogError($"Requested package version '{Version}' is not available.");
-            return;
-        }
-
-        Logger?.LogInformation($"Downloading firmware package '{Version}'...");
-
-
-        try
-        {
-            collection.DownloadProgress += OnDownloadProgress;
-
-            var result = await collection.RetrievePackage(Version, Force);
-
-            if (!result)
-            {
-                Logger?.LogError($"Unable to download package '{Version}'.");
+                Logger?.LogInformation($"Latest available version is '{latest}'...");
+                Version = latest;
             }
             else
             {
-                Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
+                explicitVersion = true;
+                Logger?.LogInformation($"Checking for firmware package '{Version}'...");
+            }
 
-                if (explicitVersion)
+            var isAvailable = await Collection.IsVersionAvailableForDownload(Version);
+
+            if (!isAvailable)
+            {
+                Logger?.LogError($"Requested package version '{Version}' is not available.");
+                return;
+            }
+
+            Logger?.LogInformation($"Downloading firmware package '{Version}'...");
+
+            try
+            {
+                Collection.DownloadProgress += OnDownloadProgress;
+
+                var result = await Collection.RetrievePackage(Version, Force);
+
+                if (!result)
                 {
-                    await collection.SetDefaultPackage(Version);
+                    Logger?.LogError($"Unable to download package '{Version}'.");
+                }
+                else
+                {
+                    Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
+
+                    if (explicitVersion)
+                    {
+                        await Collection.SetDefaultPackage(Version);
+                    }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+            catch (Exception ex)
+            {
+                Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+            }
         }
     }
 
-    private long _lastProgress = 0;
+    // TODO private long _lastProgress = 0;
 
     private void OnDownloadProgress(object? sender, long e)
     {

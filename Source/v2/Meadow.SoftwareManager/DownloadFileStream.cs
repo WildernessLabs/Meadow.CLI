@@ -6,7 +6,7 @@ namespace Meadow.Software;
 
 internal class DownloadFileStream : Stream, IDisposable
 {
-    public event EventHandler<long> DownloadProgress;
+    public event EventHandler<long>? DownloadProgress;
 
     private readonly Stream _stream;
 

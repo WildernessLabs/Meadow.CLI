@@ -14,7 +14,7 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
     public string? OrgId { get; set; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string Host { get; set; }
+    public string? Host { get; set; }
 
     public CloudPackageListCommand(
         IdentityManager identityManager,
@@ -30,23 +30,29 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        if (Host == null)
+            Host = DefaultHost;
+
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null) return;
+        if (org == null)
+            return;
 
-        var packages = await _packageService.GetOrgPackages(org.Id, Host, CancellationToken);
+        if (!string.IsNullOrEmpty(org.Id))
+        {
+            var packages = await _packageService.GetOrgPackages(org.Id, Host, CancellationToken);
 
-        if (packages == null || packages.Count == 0)
-        {
-            Logger?.LogInformation("No packages found.");
-        }
-        else
-        {
-            Logger?.LogInformation("packages:");
-            foreach (var package in packages)
+            if (packages == null || packages.Count == 0)
             {
-                Logger?.LogInformation($" {package.Id} | {package.Name}");
+                Logger?.LogInformation("No packages found.");
+            }
+            else
+            {
+                Logger?.LogInformation("packages:");
+                foreach (var package in packages)
+                {
+                    Logger?.LogInformation($" {package.Id} | {package.Name}");
+                }
             }
         }
     }

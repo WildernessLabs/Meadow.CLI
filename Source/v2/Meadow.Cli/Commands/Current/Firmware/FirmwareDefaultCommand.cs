@@ -18,23 +18,22 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await FileManager.Refresh();
+        await base.ExecuteCommand();
 
-        // for now we only support F7
-        // TODO: add switch and support for other platforms
-        var collection = FileManager.Firmware["Meadow F7"];
-
-        if (Version == null)
+        if (Collection != null)
         {
-            Logger?.LogInformation($"Default firmware is '{collection.DefaultPackage.Version}'.");
-        }
-        else
-        {
-            var existing = collection.FirstOrDefault(p => p.Version == Version);
+            if (Version == null)
+            {
+                Logger?.LogInformation($"Default firmware is '{Collection.DefaultPackage?.Version}'.");
+            }
+            else
+            {
+                var existing = Collection.FirstOrDefault(p => p.Version == Version);
 
-            Logger?.LogInformation($"Setting default firmware to '{Version}'...");
+                Logger?.LogInformation($"Setting default firmware to '{Version}'...");
 
-            await collection.SetDefaultPackage(Version);
+                await Collection.SetDefaultPackage(Version);
+            }
         }
     }
 }

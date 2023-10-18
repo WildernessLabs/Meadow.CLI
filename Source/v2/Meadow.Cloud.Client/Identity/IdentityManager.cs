@@ -141,7 +141,15 @@ public class IdentityManager
             using (var libSecret = new LibSecret("WildernessLabs", credentialName))
             {
                 //Username & Password delimited with a space. String split, and returned as a tuple.
-                return libSecret.GetSecret().Split(' ') switch { var a => (a[0], a[1]) };
+                var secret = libSecret.GetSecret();
+                if (!string.IsNullOrEmpty(secret))
+                {
+                    return secret.Split(' ') switch { var a => (a[0], a[1]) };
+                }
+                else
+                {
+                    return (string.Empty, string.Empty);
+                }
             }
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

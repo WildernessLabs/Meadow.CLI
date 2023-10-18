@@ -19,28 +19,15 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null)
         {
-            return;
-        }
-
-        Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
-
-        if (connection != null)
-        {
-            connection.DeviceMessageReceived += (s, e) =>
+            if (Connection.Device != null)
             {
-                Logger?.LogInformation(e.message);
-            };
-            connection.ConnectionError += (s, e) =>
-            {
-                Logger?.LogError(e.Message);
-            };
-
-            await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+                Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
+                await Connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+            }
         }
     }
 }
-

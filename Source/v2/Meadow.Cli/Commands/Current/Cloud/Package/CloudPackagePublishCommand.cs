@@ -11,16 +11,16 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
     private PackageService _packageService;
 
     [CommandParameter(0, Name = "PackageID", Description = "ID of the package to publish", IsRequired = true)]
-    public string PackageId { get; init; }
+    public string? PackageId { get; init; }
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing", IsRequired = true)]
-    public string CollectionId { get; set; }
+    public string? CollectionId { get; set; }
 
     [CommandOption("metadata", 'm', Description = "Pass through metadata", IsRequired = false)]
-    public string Metadata { get; set; }
+    public string? Metadata { get; set; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string Host { get; set; }
+    public string? Host { get; set; }
 
     public CloudPackagePublishCommand(
         IdentityManager identityManager,
@@ -36,14 +36,20 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        if (Host == null)
+            Host = DefaultHost;
 
         try
         {
-            Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
+            if (!string.IsNullOrEmpty(PackageId)
+                && !string.IsNullOrEmpty(CollectionId)
+                && !string.IsNullOrEmpty(Metadata))
+            {
+                Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
-            await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, CancellationToken);
-            Logger?.LogInformation("Publish successful.");
+                await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, CancellationToken);
+                Logger?.LogInformation("Publish successful.");
+            }
         }
         catch (MeadowCloudException mex)
         {

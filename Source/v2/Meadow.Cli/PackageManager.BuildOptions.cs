@@ -4,11 +4,11 @@ public partial class PackageManager
 {
     private record BuildOptions
     {
-        public DeployOptions Deploy { get; set; }
+        public DeployOptions? Deploy { get; set; }
 
         public record DeployOptions
         {
-            public List<string> NoLink { get; set; }
+            public List<string>? NoLink { get; set; }
             public bool? IncludePDBs { get; set; }
         }
     }

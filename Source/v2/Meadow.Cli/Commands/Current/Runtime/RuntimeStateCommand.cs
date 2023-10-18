@@ -14,15 +14,16 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        await base.ExecuteCommand();
 
-        if (connection == null)
+        if (Connection != null)
         {
-            return;
+            if (Connection.Device != null)
+            {
+                var state = await Connection.Device.IsRuntimeEnabled(CancellationToken);
+
+                Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+            }
         }
-
-        var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
-
-        Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
     }
 }
