@@ -9,7 +9,6 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
     public RuntimeStateCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogInformation($"Querying runtime state...");
     }
 
     protected override async ValueTask ExecuteCommand()
@@ -20,6 +19,8 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
         {
             if (Connection.Device != null)
             {
+                Logger?.LogInformation($"Querying runtime state...");
+
                 var state = await Connection.Device.IsRuntimeEnabled(CancellationToken);
 
                 Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
