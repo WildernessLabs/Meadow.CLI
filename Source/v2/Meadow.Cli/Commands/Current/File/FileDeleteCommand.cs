@@ -58,8 +58,8 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
                         if (wasRuntimeEnabled)
                         {
-                            Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
-                            return;
+                            Logger?.LogInformation("Disabling device runtime...");
+                            await Connection.Device.RuntimeDisable();
                         }
 
                         Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");

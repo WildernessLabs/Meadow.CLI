@@ -46,6 +46,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
             // in order to deploy, the runtime must be disabled
             var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
+
             if (wasRuntimeEnabled)
             {
                 Logger?.LogInformation("Disabling runtime...");
