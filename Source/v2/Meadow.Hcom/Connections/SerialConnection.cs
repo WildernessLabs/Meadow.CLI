@@ -12,6 +12,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
+    private const int DefaultTimeout = 5000;
 
     private event EventHandler<string>? FileReadCompleted = delegate { };
     private event EventHandler? FileWriteAccepted;
@@ -42,7 +43,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         State = ConnectionState.Disconnected;
         _logger = logger;
         _port = new SerialPort(port);
-        _port.ReadTimeout = _port.WriteTimeout = 5000;
+        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
         new Task(
             () => _ = ListenerProc(),
@@ -86,24 +87,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         while (_maintainConnection)
         {
-            if (!_port.IsOpen)
-            {
-                try
-                {
-                    Debug.WriteLine("Opening COM port...");
-                    _port.Open();
-                    Debug.WriteLine("Opened COM port");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"{ex.Message}");
-                    Thread.Sleep(1000);
-                }
-            }
-            else
-            {
-                Thread.Sleep(1000);
-            }
+            Open(true);
         }
     }
 
@@ -129,27 +113,54 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // TODO: stop maintaining connection?
     }
 
-    private void Open()
+    private void Open(bool inLoop = false)
     {
         if (!_port.IsOpen)
         {
             try
             {
+                Debug.WriteLine("Opening COM port...");
                 _port.Open();
             }
-            catch (FileNotFoundException)
+            catch (UnauthorizedAccessException ex)
             {
-                throw new Exception($"Serial port '{_port.PortName}' not found");
+                // Handle unauthorized access (e.g., port in use by another application)
+                throw new Exception($"Serial port '{_port.PortName}' is in use by another application.", ex.InnerException);
+            }
+            catch (IOException ex)
+            {
+                // Handle I/O errors
+                throw new Exception($"An I/O error occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
+            }
+            catch (TimeoutException ex)
+            {
+                // Handle timeout
+                throw new Exception($"Timeout occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
             }
         }
+        else if (inLoop)
+        {
+            Thread.Sleep(1000);
+        }
+
         State = ConnectionState.Connected;
+
+        Debug.WriteLine("Opened COM port");
     }
 
     private void Close()
     {
         if (_port.IsOpen)
         {
-            _port.Close();
+            try
+            {
+                _port.Close();
+            }
+            catch (IOException ex)
+            {
+                // Handle I/O errors
+                throw new Exception($"An I/O error occurred when attempting to close the serial port '{_port.PortName}'.", ex.InnerException);
+            }
         }
 
         State = ConnectionState.Disconnected;

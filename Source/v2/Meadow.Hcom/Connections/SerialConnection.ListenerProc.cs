@@ -30,17 +30,7 @@ namespace Meadow.Hcom
 
                 await Task.Delay(500);
 
-                if (!_port.IsOpen)
-                {
-                    try
-                    {
-                        Open();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Unable to open port: {ex.Message}");
-                    }
-                }
+                Open();
             }
 
             throw new TimeoutException();
@@ -204,7 +194,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
-                                        // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
+                                        // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED/TextConcludedResponse to know it's back
                                         State = ConnectionState.Disconnected;
                                         _reconnectInProgress = true;
                                     }
