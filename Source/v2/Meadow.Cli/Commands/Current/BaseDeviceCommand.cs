@@ -34,7 +34,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
                 Logger?.LogInformation(message);
             };
 
-            // the connection passes messages back to us (info about actions happening on-device
+            // the connection passes messages back to us (info about actions happening on-device)
             connection.DeviceMessageReceived += (s, e) =>
             {
                 if (e.message.Contains("% downloaded"))

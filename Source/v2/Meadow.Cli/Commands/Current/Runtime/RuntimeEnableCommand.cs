@@ -19,13 +19,16 @@ public class RuntimeEnableCommand : BaseDeviceCommand<RuntimeEnableCommand>
         {
             if (Connection.Device != null)
             {
-                Logger?.LogInformation($"Enabling runtime...");
+                try
+                {
+                    Logger?.LogInformation($"Enabling runtime...");
 
-                await Connection.Device.RuntimeEnable(CancellationToken);
-
-                var state = await Connection.Device.IsRuntimeEnabled(CancellationToken);
-
-                Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+                    await Connection.Device.RuntimeEnable(CancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, $"Failed to enable runtime.");
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace Meadow.Hcom;
 
@@ -492,9 +493,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> InfoMessages { get; } = new List<string>();
 
     private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
-    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
     private const string RuntimeStateToken = "Mono is";
     private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string RuntimeIsDisabledToken = "Mono is disabled";
+    private const string RuntimeHasBeenToken = "Mono has been";
+    private const string RuntimeHasBeenEnabledToken = "Mono has been enabled";
+    private const string RuntimeHasBeenDisabledToken = "Mono has been disabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
@@ -611,19 +615,26 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
+        return await WaitForInformationResponse(RuntimeStateToken, RuntimeIsEnabledToken, cancellationToken);
+    }
+
+    private async Task<bool> WaitForInformationResponse(string textToContain, string textToVerify, CancellationToken? cancellationToken)
+    {
         // wait for an information response
         var timeout = CommandTimeoutSeconds * 2;
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (timeout <= 0) throw new TimeoutException();
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return false;
+            if (timeout <= 0)
+                throw new TimeoutException();
 
             if (InfoMessages.Count > 0)
             {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(textToContain));
                 if (m != null)
                 {
-                    return m == RuntimeIsEnabledToken;
+                    return m == textToVerify;
                 }
             }
 
@@ -642,7 +653,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenEnabledToken, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -655,7 +666,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenDisabledToken, cancellationToken);
     }
 
     public override async Task TraceEnable(CancellationToken? cancellationToken = null)
