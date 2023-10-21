@@ -240,19 +240,6 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
     {
         if (Connection != null)
         {
-            // the connection passes messages back to us (info about actions happening on-device
-            /* TODO Don't think this is needed as it's in the base class now Connection.DeviceMessageReceived += (s, e) =>
-            {
-                if (e.message.Contains("% downloaded"))
-                {
-                    // don't echo this, as we're already reporting % written
-                }
-                else
-                {
-                    Logger?.LogInformation(e.message);
-                }
-            };*/
-
             var package = await GetSelectedPackage();
 
             if (Connection.Device != null

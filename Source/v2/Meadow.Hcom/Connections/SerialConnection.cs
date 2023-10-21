@@ -5,6 +5,7 @@ using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace Meadow.Hcom;
 
@@ -12,6 +13,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
+    private const int DefaultTimeout = 5000;
 
     private event EventHandler<string>? FileReadCompleted = delegate { };
     private event EventHandler? FileWriteAccepted;
@@ -42,7 +44,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         State = ConnectionState.Disconnected;
         _logger = logger;
         _port = new SerialPort(port);
-        _port.ReadTimeout = _port.WriteTimeout = 5000;
+        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
         new Task(
             () => _ = ListenerProc(),
@@ -86,24 +88,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         while (_maintainConnection)
         {
-            if (!_port.IsOpen)
-            {
-                try
-                {
-                    Debug.WriteLine("Opening COM port...");
-                    _port.Open();
-                    Debug.WriteLine("Opened COM port");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"{ex.Message}");
-                    Thread.Sleep(1000);
-                }
-            }
-            else
-            {
-                Thread.Sleep(1000);
-            }
+            Open(true);
         }
     }
 
@@ -129,27 +114,54 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // TODO: stop maintaining connection?
     }
 
-    private void Open()
+    private void Open(bool inLoop = false)
     {
         if (!_port.IsOpen)
         {
             try
             {
+                Debug.WriteLine("Opening COM port...");
                 _port.Open();
             }
-            catch (FileNotFoundException)
+            catch (UnauthorizedAccessException ex)
             {
-                throw new Exception($"Serial port '{_port.PortName}' not found");
+                // Handle unauthorized access (e.g., port in use by another application)
+                throw new Exception($"Serial port '{_port.PortName}' is in use by another application.", ex.InnerException);
+            }
+            catch (IOException ex)
+            {
+                // Handle I/O errors
+                throw new Exception($"An I/O error occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
+            }
+            catch (TimeoutException ex)
+            {
+                // Handle timeout
+                throw new Exception($"Timeout occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
             }
         }
+        else if (inLoop)
+        {
+            Thread.Sleep(1000);
+        }
+
         State = ConnectionState.Connected;
+
+        Debug.WriteLine("Opened COM port");
     }
 
     private void Close()
     {
         if (_port.IsOpen)
         {
-            _port.Close();
+            try
+            {
+                _port.Close();
+            }
+            catch (IOException ex)
+            {
+                // Handle I/O errors
+                throw new Exception($"An I/O error occurred when attempting to close the serial port '{_port.PortName}'.", ex.InnerException);
+            }
         }
 
         State = ConnectionState.Disconnected;
@@ -481,9 +493,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> InfoMessages { get; } = new List<string>();
 
     private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
-    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
     private const string RuntimeStateToken = "Mono is";
     private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string RuntimeIsDisabledToken = "Mono is disabled";
+    private const string RuntimeHasBeenToken = "Mono has been";
+    private const string RuntimeHasBeenEnabledToken = "Mono has been enabled";
+    private const string RuntimeHasBeenDisabledToken = "Mono has been disabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
@@ -600,19 +615,26 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
+        return await WaitForInformationResponse(RuntimeStateToken, RuntimeIsEnabledToken, cancellationToken);
+    }
+
+    private async Task<bool> WaitForInformationResponse(string textToContain, string textToVerify, CancellationToken? cancellationToken)
+    {
         // wait for an information response
         var timeout = CommandTimeoutSeconds * 2;
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (timeout <= 0) throw new TimeoutException();
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return false;
+            if (timeout <= 0)
+                throw new TimeoutException();
 
             if (InfoMessages.Count > 0)
             {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(textToContain));
                 if (m != null)
                 {
-                    return m == RuntimeIsEnabledToken;
+                    return m == textToVerify;
                 }
             }
 
@@ -631,7 +653,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenEnabledToken, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -644,7 +666,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenDisabledToken, cancellationToken);
     }
 
     public override async Task TraceEnable(CancellationToken? cancellationToken = null)
