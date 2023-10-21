@@ -42,8 +42,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
-
         if (Connection != null)
         {
             var package = await GetSelectedPackage();
