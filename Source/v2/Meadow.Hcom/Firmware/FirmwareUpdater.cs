@@ -1,5 +1,4 @@
-﻿using Meadow.Logging;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace Meadow.Hcom;

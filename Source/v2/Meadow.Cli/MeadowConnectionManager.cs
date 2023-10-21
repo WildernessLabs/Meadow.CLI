@@ -35,42 +35,49 @@ public class MeadowConnectionManager
         if (_currentConnection != null) return _currentConnection;
 
         // try to determine what the route is
-        string? uri = null;
-        if (route.StartsWith("http"))
+        if (route == "local")
         {
-            uri = route;
-        }
-        else if (IPAddress.TryParse(route, out var ipAddress))
-        {
-            uri = $"http://{route}:5000";
-        }
-        else if (IPEndPoint.TryParse(route, out var endpoint))
-        {
-            uri = $"http://{route}";
-        }
-
-        if (uri != null)
-        {
-            _currentConnection = new TcpConnection(uri);
+            _currentConnection = new LocalConnection();
         }
         else
         {
-            var retryCount = 0;
-
-        get_serial_connection:
-            try
+            string? uri = null;
+            if (route.StartsWith("http"))
             {
-                _currentConnection = new SerialConnection(route);
+                uri = route;
             }
-            catch
+            else if (IPAddress.TryParse(route, out var ipAddress))
             {
-                retryCount++;
-                if (retryCount > 10)
+                uri = $"http://{route}:5000";
+            }
+            else if (IPEndPoint.TryParse(route, out var endpoint))
+            {
+                uri = $"http://{route}";
+            }
+
+            if (uri != null)
+            {
+                _currentConnection = new TcpConnection(uri);
+            }
+            else
+            {
+                var retryCount = 0;
+
+            get_serial_connection:
+                try
                 {
-                    throw new Exception($"Cannot find port {route}");
+                    _currentConnection = new SerialConnection(route);
                 }
-                Thread.Sleep(500);
-                goto get_serial_connection;
+                catch
+                {
+                    retryCount++;
+                    if (retryCount > 10)
+                    {
+                        throw new Exception($"Cannot find port {route}");
+                    }
+                    Thread.Sleep(500);
+                    goto get_serial_connection;
+                }
             }
         }
 
