@@ -54,6 +54,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         await base.ExecuteCommand();
 
+
         if (Connection != null)
         {
             // illink returns before all files are actually written.  That's not fun, but we must just wait a little while.
@@ -98,7 +99,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
         // TODO: enable cancellation of this call
-        return Task.FromResult(_packageManager.BuildApplication(path, Configuration));
+        return Task.FromResult(_packageManager.BuildApplication(path, Configuration, logger: Logger));
     }
 
     private async Task<bool> TrimApplication(string path, CancellationToken cancellationToken)
