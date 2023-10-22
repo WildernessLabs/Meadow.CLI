@@ -28,44 +28,48 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        string path = Path == null
+            ? Environment.CurrentDirectory
+            : Path;
+
+        if (!Directory.Exists(path))
+        {
+            Logger?.LogError($"Target directory '{path}' not found.");
+            return;
+        }
+
+        var lastFile = string.Empty;
+
+        if (!await BuildApplication(path, CancellationToken))
+        {
+            Logger?.LogError("Build failed.");
+            return;
+        }
+
+        if (!await TrimApplication(path, CancellationToken))
+        {
+            Logger?.LogError("Trimming failed.");
+            return;
+        }
+
         await base.ExecuteCommand();
 
         if (Connection != null)
         {
-            string path = Path == null
-                ? Environment.CurrentDirectory
-                : Path;
-
-            if (!Directory.Exists(path))
-            {
-                Logger?.LogError($"Target directory '{path}' not found.");
-                return;
-            }
-
-            var lastFile = string.Empty;
+            // illink returns before all files are actually written.  That's not fun, but we must just wait a little while.
+            // disabling the runtime provides us that time
 
             // in order to deploy, the runtime must be disabled
             var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
 
-            if (wasRuntimeEnabled)
+            Logger?.LogInformation("Disabling runtime...");
+
+            await Connection.RuntimeDisable(CancellationToken);
+
+            if(Connection is SerialConnection s)
             {
-                Logger?.LogInformation("Disabling runtime...");
-
-                await Connection.RuntimeDisable(CancellationToken);
+                s.CommandTimeoutSeconds = 30;
             }
-
-            if (!await BuildApplication(path, CancellationToken))
-            {
-                return;
-            }
-
-            if (!await TrimApplication(path, CancellationToken))
-            {
-                return;
-            }
-
-            // illink returns before all files are actually written.  That's not fun, but we must just wait a little while.
-            await Task.Delay(1000);
 
             if (!await DeployApplication(Connection, path, CancellationToken))
             {
