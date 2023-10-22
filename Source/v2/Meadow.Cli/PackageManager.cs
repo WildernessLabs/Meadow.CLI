@@ -99,6 +99,7 @@ public partial class PackageManager : IPackageManager
                 Debug.WriteLine(dataLine.Data);
                 if (dataLine.Data.Contains("Build FAILED", StringComparison.InvariantCultureIgnoreCase))
                 {
+                    logger?.LogError(dataLine.Data);
                     Debug.WriteLine("Build failed");
                     success = false;
                 }

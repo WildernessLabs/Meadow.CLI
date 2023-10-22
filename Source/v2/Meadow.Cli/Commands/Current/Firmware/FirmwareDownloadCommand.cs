@@ -71,7 +71,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
                 {
                     Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
 
-                    if (explicitVersion)
+                    if (!explicitVersion)
                     {
                         await Collection.SetDefaultPackage(Version);
                     }
