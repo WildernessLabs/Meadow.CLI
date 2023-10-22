@@ -166,7 +166,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            await WriteFiles(Connection);
+            await WriteFiles(connection);
         }
 
         await connection.ResetDevice(CancellationToken);
