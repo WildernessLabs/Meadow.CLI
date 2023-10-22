@@ -33,7 +33,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         if (Connection != null)
         {
             string path = Path == null
-                ? AppDomain.CurrentDomain.BaseDirectory
+                ? Environment.CurrentDirectory
                 : Path;
 
             if (!Directory.Exists(path))

@@ -44,7 +44,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     {
         if (ProjectPath == null)
         {
-            ProjectPath = AppDomain.CurrentDomain.BaseDirectory;
+            ProjectPath = Environment.CurrentDirectory;
         }
 
         // build
