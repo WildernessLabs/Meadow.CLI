@@ -1,7 +1,5 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
 using Meadow.Cli;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -28,7 +26,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         await Task.Run(() =>
         {
             string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
+            ? Environment.CurrentDirectory
             : Path;
 
             // is the path a file?

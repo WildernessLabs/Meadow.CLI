@@ -24,7 +24,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     protected override async ValueTask ExecuteCommand()
     {
         string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
+            ? Environment.CurrentDirectory
             : Path;
 
         // is the path a file?
