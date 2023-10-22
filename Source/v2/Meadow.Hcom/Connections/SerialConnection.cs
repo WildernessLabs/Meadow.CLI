@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Meadow.Hardware;
+using Microsoft.Extensions.Logging;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -19,7 +20,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private event EventHandler? FileWriteAccepted;
     private event EventHandler<string>? FileDataReceived;
 
-    private SerialPort _port;
+    private SerialPort _port = default!;
     private ILogger? _logger;
     private bool _isDisposed;
     private List<IConnectionListener> _listeners = new List<IConnectionListener>();
@@ -43,8 +44,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         Name = port;
         State = ConnectionState.Disconnected;
         _logger = logger;
-        _port = new SerialPort(port);
-        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
+
+        CreatePort();
 
         new Task(
             () => _ = ListenerProc(),
@@ -57,6 +58,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             Name = "HCOM Sender"
         }
         .Start();
+    }
+
+    private void CreatePort()
+    {
+        _port = new SerialPort(Name);
+        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
+        _port.Open();
     }
 
     private bool MaintainConnection
@@ -618,6 +626,27 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return await WaitForInformationResponse(RuntimeStateToken, RuntimeIsEnabledToken, cancellationToken);
     }
 
+    private async Task<bool> WaitForInformationResponse(string[] textToWaitOn, CancellationToken? cancellationToken)
+    {
+        // wait for an information response
+        var timeout = CommandTimeoutSeconds * 2;
+        while (timeout-- > 0)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return false;
+            if (timeout <= 0)
+                throw new TimeoutException();
+
+            foreach (var t in textToWaitOn)
+            {
+                if (InfoMessages.Any(m => m.Contains(t))) return true;
+            }
+
+            await Task.Delay(500);
+        }
+        return false;
+    }
+
     private async Task<bool> WaitForInformationResponse(string textToContain, string textToVerify, CancellationToken? cancellationToken)
     {
         // wait for an information response
@@ -653,7 +682,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenEnabledToken, cancellationToken);
+        // if the runtime and OS mismatch, we get "Mono disabled" otehrwise we get "Mono is disabled". Yay!
+        await WaitForInformationResponse(new string[] { "Mono disabled", RuntimeHasBeenEnabledToken }, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -666,7 +696,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForInformationResponse(RuntimeHasBeenToken, RuntimeHasBeenDisabledToken, cancellationToken);
+        // if the runtime and OS mismatch, we get "Mono disabled" otehrwise we get "Mono is disabled". Yay!
+        await WaitForInformationResponse(new string[] { "Mono disabled", RuntimeIsDisabledToken }, cancellationToken);
     }
 
     public override async Task TraceEnable(CancellationToken? cancellationToken = null)

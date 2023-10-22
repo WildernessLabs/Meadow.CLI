@@ -305,6 +305,20 @@ namespace Meadow.Hcom
                         //this blocks the thread abort exception when the console app closes
                         Debug.WriteLine($"listen abort");
                     }
+                    catch (ObjectDisposedException)
+                    {
+                        // On Mac the port gets disposed when the Meadow is reset
+                        await Task.Delay(1000);
+                        CreatePort();
+
+                        // make sure it's been re-opened
+                        while(!_port.IsOpen)
+                        {
+                            _port.Open();
+                            await Task.Delay(250);
+                            // TODO: add a timeout here
+                        }
+                    }
                     catch (InvalidOperationException)
                     {
                         // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
