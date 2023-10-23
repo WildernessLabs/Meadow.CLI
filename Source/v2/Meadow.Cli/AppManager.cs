@@ -102,14 +102,31 @@ public static class AppManager
                 }
             }
 
-        send_file:
+            bool success;
 
-            if (connection != null && !await connection.WriteFile(localFile.Key, null, cancellationToken))
+            do
             {
-                logger.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
-                await Task.Delay(100);
-                goto send_file;
-            }
+                try
+                {
+                    if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
+                    {
+                        logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                        await Task.Delay(100);
+                        success = false;
+                    }
+                    else
+                    {
+                        success = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}' ({ex.Message}).  Retrying.");
+                    await Task.Delay(100);
+                    success = false;
+                }
+
+            } while (!success);
         }
     }
 }
