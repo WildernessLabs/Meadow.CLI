@@ -67,9 +67,9 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
             await Connection.RuntimeDisable(CancellationToken);
 
-            if(Connection is SerialConnection s)
+            if (Connection is SerialConnection s)
             {
-                s.CommandTimeoutSeconds = 30;
+                s.CommandTimeoutSeconds = 60;
             }
 
             if (!await DeployApplication(Connection, path, CancellationToken))
