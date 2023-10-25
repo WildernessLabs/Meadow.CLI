@@ -21,7 +21,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
     public string? Name { get; set; }
 
-    [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+    [CommandOption("host", 'e', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
     public DeviceProvisionCommand(DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -85,9 +85,21 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
-        var delim = "-----END PUBLIC KEY-----\n";
-        publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+        var delimList = new string[]
+        {
+            "-----END PUBLIC KEY-----",
+            "-----END RSA PUBLIC KEY-----"
+        };
 
+        foreach (var delim in delimList)
+        {
+            var i = publicKey.IndexOf(delim);
+            if (i >= 0)
+            {
+                publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+                break;
+            }
+        }
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
 

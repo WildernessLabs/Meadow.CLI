@@ -39,7 +39,7 @@ public class LocalConnection : ConnectionBase
                 }
                 using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography\"))
                 {
-                    info.Add("SerialNo", (key?.GetValue("MachineGuid")?.ToString() ?? "Unknown").Trim());
+                    info.Add("SerialNo", (key?.GetValue("MachineGuid")?.ToString() ?? "Unknown").Trim().ToUpper());
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
