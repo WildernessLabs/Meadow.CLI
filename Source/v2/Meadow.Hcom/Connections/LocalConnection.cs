@@ -58,7 +58,7 @@ public class LocalConnection : ConnectionBase
             _deviceInfo = new DeviceInfo(info);
         }
 
-        return Task.FromResult< DeviceInfo?>(_deviceInfo);
+        return Task.FromResult<DeviceInfo?>(_deviceInfo);
     }
 
     private string ExecuteBashCommandLine(string command)
@@ -79,8 +79,27 @@ public class LocalConnection : ConnectionBase
         return process?.StandardOutput.ReadToEnd() ?? string.Empty;
     }
 
+    private string ExecuteWindowsCommandLine(string command, string args)
+    {
+        var psi = new ProcessStartInfo()
+        {
+            FileName = command,
+            Arguments = args,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(psi);
+
+        process?.WaitForExit();
+
+        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
+    }
+
     public override Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
     {
+        // DEV NOTE: this *must* be in PEM format: i.e. -----BEGIN RSA PUBLIC KEY----- ... -----END RSA PUBLIC KEY---- 
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -98,13 +117,27 @@ public class LocalConnection : ConnectionBase
                     throw new Exception("Public key not found");
                 }
 
-                return Task.FromResult(File.ReadAllText(pkFile));
+                var pkFileContent = File.ReadAllText(pkFile);
+                if (!pkFileContent.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
+                {
+                    // need to convert
+                    pkFileContent = ExecuteWindowsCommandLine("ssh-keygen", $"-e -m pem -f {pkFile}");
+                }
+
+                return Task.FromResult(pkFileContent);
             }
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            // ssh-agent sh -c 'ssh-add; ssh-add -L'
-            throw new PlatformNotSupportedException();
+            // this will generate a PEM output *assuming* the key has already been created
+            var keygenOutput = ExecuteBashCommandLine("ssh-keygen -f id_rsa -e -m pem");
+            if (!keygenOutput.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
+            {
+                // probably no key generated
+                throw new Exception("Unable to retrieve a public key.  Please run 'ssh-keygen -t rsa'");
+            }
+
+            return Task.FromResult(keygenOutput);
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
