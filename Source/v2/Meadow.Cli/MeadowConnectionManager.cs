@@ -1,7 +1,9 @@
 ﻿using Meadow.Cli;
 using Meadow.Hcom;
+using Meadow.LibUsb;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -293,5 +295,33 @@ public class MeadowConnectionManager
 
             return ports;
         }
+    }
+
+    public static async Task<string> GetPortFromSerialNumber(string serialNumber)
+    {
+
+        var retryCount = 0;
+
+        string? newPort = null;
+
+        // now wait for the serial port with the passed in serialNumber to appear
+        while (newPort == null)
+        {
+            var ports = await GetSerialPorts();
+            newPort = ports.Where(s => s.Contains(serialNumber)).FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(newPort))
+            {
+                break;
+            }
+
+            if (retryCount++ > 12)
+            {
+                throw new Exception("New meadow device not found");
+            }
+            await Task.Delay(500);
+        }
+
+        return newPort;
     }
 }
