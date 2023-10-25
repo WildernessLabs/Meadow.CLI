@@ -75,7 +75,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         IMeadowConnection? connection;
 
-        if (UseDfu && Files != null && Files.Contains(FirmwareType.OS) && package != null)
+        if (UseDfu && Files != null && package != null)
         {
             // get the device's serial number via DFU - we'll need it to find the device after it resets
             try
@@ -113,7 +113,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                     try
                     {
-                        if (package != null && package.OSWithBootloader != null)
+                        if (package != null && package.OSWithBootloader != null && Files.Contains(FirmwareType.OS))
                         {
                             await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serialNumber);
                         }
@@ -158,7 +158,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                                     continue;
                                 }
 
-                                await WriteFiles(connection);
+                                await WriteFiles(package, connection);
                             }
                         }
                         catch (Exception ex)
@@ -240,14 +240,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async ValueTask WriteFiles(IMeadowConnection connection)
+    private async ValueTask WriteFiles(FirmwarePackage? package, IMeadowConnection connection)
     {
         connection.FileWriteFailed += (s, e) =>
         {
+            Logger?.LogError($"WriteFiles FAILED!!");
             // TODO _fileWriteError = true;
         };
-
-        var package = await GetSelectedPackage();
 
         if (Files != null
             && connection.Device != null
