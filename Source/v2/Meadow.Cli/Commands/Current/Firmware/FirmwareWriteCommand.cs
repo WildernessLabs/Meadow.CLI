@@ -30,7 +30,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
 
-    private ILibUsbDevice? _libUsbDevice;
+    private ILibUsbDevice[]? _libUsbDevices;
     // TODO private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -77,14 +77,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu && Files != null && Files.Contains(FirmwareType.OS) && package != null)
         {
-            // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
-            var initialPorts = await MeadowConnectionManager.GetSerialPorts();
-
             // get the device's serial number via DFU - we'll need it to find the device after it resets
-            ILibUsbDevice libUsbDevice;
             try
             {
-                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+                GetLibUsbDevicesInBootloaderModeForCurrentEnvironment();
             }
             catch (Exception ex)
             {
@@ -92,129 +88,126 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var serial = libUsbDevice.GetDeviceSerialNumber();
-
-            // no connection is required here - in fact one won't exist
-            // unless maybe we add a "DFUConnection"?
-
-            try
+            if (_libUsbDevices != null)
             {
-                if (package != null && package.OSWithBootloader != null)
+                if (_libUsbDevices.Length > 1)
                 {
-                    await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serial);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError($"Exception type: {ex.GetType().Name}");
-
-                // TODO: scope this to the right exception type for Win 10 access violation thing
-                // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
-                Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
-
-                Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
-                return;
-            }
-
-            // now wait for a new serial port to appear
-            var ports = await MeadowConnectionManager.GetSerialPorts();
-            var retryCount = 0;
-
-            var newPort = ports.Except(initialPorts).FirstOrDefault();
-            while (newPort == null)
-            {
-                if (retryCount++ > 10)
-                {
-                    throw new Exception("New meadow device not found");
-                }
-                await Task.Delay(500);
-                ports = await MeadowConnectionManager.GetSerialPorts();
-                newPort = ports.Except(initialPorts).FirstOrDefault();
-            }
-
-            Logger?.LogInformation($"Meadow found at {newPort}");
-
-            // configure the route to that port for the user
-            Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
-            // get the connection associated with that route
-            connection = await GetCurrentConnection();
-
-            if (connection == null)
-            {
-                return;
-            }
-
-            if (Files.Any(f => f != FirmwareType.OS))
-            {
-                await connection.WaitForMeadowAttach();
-
-                if (CancellationToken.IsCancellationRequested)
-                {
-                    return;
+                    await Console!.Output.WriteLineAsync($"Found {_libUsbDevices.Length} devices in bootloader mode.{Environment.NewLine}Would you like to flash them all (Y/N)?");
+                    var yesOrNo = await Console!.Input.ReadLineAsync();
+                    if (!string.IsNullOrEmpty(yesOrNo))
+                    {
+                        if (yesOrNo.ToLower() == "n")
+                        {
+                            Logger?.LogInformation("User elected not to proceed.");
+                            return;
+                        }
+                    }
                 }
 
-                await WriteFiles(connection);
-            }
-        }
-        else
-        {
-            connection = await GetCurrentConnection();
+                foreach (var libUsbDevice in _libUsbDevices)
+                {
+                    var serialNumber = libUsbDevice.GetDeviceSerialNumber();
 
-            if (connection == null)
-            {
-                return;
-            }
+                    // no connection is required here - in fact one won't exist
+                    // unless maybe we add a "DFUConnection"?
 
-            await WriteFiles(connection);
-        }
+                    try
+                    {
+                        if (package != null && package.OSWithBootloader != null)
+                        {
+                            await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serialNumber);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError($"Exception type: {ex.GetType().Name}");
 
-        await connection.ResetDevice(CancellationToken);
-        await connection.WaitForMeadowAttach();
+                        // TODO: scope this to the right exception type for Win 10 access violation thing
+                        // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
+                        Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
 
-        if (connection.Device != null)
-        {
-            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
+                        Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
+                        continue;
+                    }
 
-            if (deviceInfo != null)
-            {
-                Logger?.LogInformation(deviceInfo.ToString());
+                    var newPort = await MeadowConnectionManager.GetPortFromSerialNumber(serialNumber);
+
+                    if (!string.IsNullOrEmpty(newPort))
+                    {
+                        Logger?.LogInformation($"Meadow found at {newPort}");
+
+                        // configure the route to that port for the user
+                        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+                        // get the connection associated with that route
+                        connection = await GetCurrentConnection();
+
+                        if (connection == null)
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            if (Files.Any(f => f != FirmwareType.OS))
+                            {
+                                await connection.WaitForMeadowAttach();
+
+                                if (CancellationToken.IsCancellationRequested)
+                                {
+                                    continue;
+                                }
+
+                                await WriteFiles(connection);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the exception but move onto the next device
+                            Logger?.LogError($"{Environment.NewLine}Exception type: {ex.GetType().Name}", ex);
+                        }
+                        finally
+                        {
+                            // Needed to avoid double messages
+                            DetachMessageHandlers(connection);
+                        }
+                    }
+
+                }
             }
         }
     }
 
-    private ILibUsbDevice GetLibUsbDeviceForCurrentEnvironment()
+    private void GetLibUsbDevicesInBootloaderModeForCurrentEnvironment()
     {
-        if (_libUsbDevice == null)
+        // Clear it out each
+        if (_libUsbDevices != null && _libUsbDevices.Length > 0)
         {
-            ILibUsbProvider provider;
-
-            // TODO: read the settings manager to decide which provider to use (default to non-classic)
-            var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
-            if (setting == "classic")
-            {
-                provider = new ClassicLibUsbProvider();
-            }
-            else
-            {
-                provider = new LibUsbProvider();
-            }
-
-            var devices = provider.GetDevicesInBootloaderMode();
-
-            switch (devices.Count)
-            {
-                case 0:
-                    throw new Exception("No device found in bootloader mode");
-                case 1:
-                    _libUsbDevice = devices[0];
-                    break;
-                default:
-                    throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
-            }
+            _libUsbDevices = Array.Empty<ILibUsbDevice>();
         }
 
-        return _libUsbDevice;
+        ILibUsbProvider provider;
+
+        // TODO: read the settings manager to decide which provider to use (default to non-classic)
+        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
+        if (setting == "classic")
+        {
+            provider = new ClassicLibUsbProvider();
+        }
+        else
+        {
+            provider = new LibUsbProvider();
+        }
+
+        var devices = provider.GetDevicesInBootloaderMode();
+
+        switch (devices.Count)
+        {
+            case 0:
+                throw new Exception("No devices found in bootloader mode.");
+        }
+
+        _libUsbDevices = devices.ToArray();
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
@@ -359,4 +352,3 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
     }
 }
-
