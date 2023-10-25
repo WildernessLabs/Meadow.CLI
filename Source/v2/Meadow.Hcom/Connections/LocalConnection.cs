@@ -143,6 +143,11 @@ public class LocalConnection : ConnectionBase
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
+            if (!pubkey.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
+            {
+                var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_rsa.pub");
+                pubkey = ExecuteBashCommandLine($"ssh-keygen -f {path} -e -m pem");
+            }
             return Task.FromResult(pubkey);
         }
         else
