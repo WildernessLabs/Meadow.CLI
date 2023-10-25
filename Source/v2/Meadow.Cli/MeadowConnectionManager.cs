@@ -213,7 +213,7 @@ public class MeadowConnectionManager
                                   var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
                                   var target = parts[1];
                                   var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                                  int serialNumberIndex = line.IndexOf("ttyUSB") + 6;
+                                  int serialNumberIndex = line.IndexOf("ttyACM") + 6;
                                   var serialNumber = line.Substring(serialNumberIndex);
 
                                   return new MeadowSerialPort { Name = port, SerialNumber = serialNumber };
