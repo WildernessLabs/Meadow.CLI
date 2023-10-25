@@ -8,10 +8,10 @@
 	  <Company>Wilderness Labs, Inc</Company>
 	  <ToolCommandName>meadow</ToolCommandName>
 	  <PackageId>WildernessLabs.Meadow.CLI</PackageId>
-	  <Authors>Wilderness Labs, Inc</Authors>
+	  <Authors>Chris Tacke, Peter Moody, Adrian Stevens, Brian Kim, Pete Garafano, Dominique Louis</Authors>
 	  <Company>Wilderness Labs, Inc</Company>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <PackageVersion>2.0.0.0-alpha</PackageVersion>
+	  <PackageVersion>2.0.0-alpha.1</PackageVersion>
 	  <Platforms>AnyCPU</Platforms>
 	  <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
 	  <PackageIcon>icon.png</PackageIcon>
@@ -24,8 +24,10 @@
 	  <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
 	  <AssemblyName>meadow</AssemblyName>
 	  <LangVersion>latest</LangVersion>
-	  <Copyright>Copyright 2020-2022 Wilderness Labs</Copyright>
+	  <Copyright>Copyright 2020-2023 Wilderness Labs</Copyright>
 	  <Nullable>enable</Nullable>
+	  <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -79,4 +81,7 @@
 	  </None>
 	</ItemGroup>
 
+	<ItemGroup>
+	    <None Include="..\..\..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 </Project>
