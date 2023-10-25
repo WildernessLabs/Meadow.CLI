@@ -33,7 +33,7 @@ public class PortSelectCommand : BaseCommand<PortSelectCommand>
                         {
                             if (deviceSelected > 0 && deviceSelected <= portListCommand.Portlist?.Count)
                             {
-                                await CallConfigCommand(portListCommand.Portlist[deviceSelected - 1]);
+                                await CallConfigCommand(portListCommand.Portlist[deviceSelected - 1].Name!);
                             }
                         }
                     }
@@ -41,7 +41,7 @@ public class PortSelectCommand : BaseCommand<PortSelectCommand>
                     {
                         // Only 1 device attached, let's auto select it
                         if (portListCommand.Portlist != null)
-                            await CallConfigCommand(portListCommand.Portlist[0]);
+                            await CallConfigCommand(portListCommand.Portlist[0].Name!);
                     }
                 }
             }

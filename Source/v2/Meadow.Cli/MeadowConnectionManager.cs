@@ -86,7 +86,7 @@ public class MeadowConnectionManager
         return _currentConnection;
     }
 
-    public static async Task<IList<string>> GetSerialPorts()
+    public static async Task<IList<MeadowSerialPort>> GetSerialPorts()
     {
         try
         {
@@ -117,14 +117,14 @@ public class MeadowConnectionManager
         }
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForOsx()
+    public static async Task<IList<MeadowSerialPort>> GetMeadowSerialPortsForOsx()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
             throw new PlatformNotSupportedException("This method is only supported on macOS");
 
         return await Task.Run(() =>
         {
-            var ports = new List<string>();
+            var ports = new List<MeadowSerialPort>();
 
             var psi = new ProcessStartInfo
             {
@@ -166,8 +166,10 @@ public class MeadowConnectionManager
                     int startIndex = line.IndexOf("/");
                     int endIndex = line.IndexOf("\"", startIndex + 1);
                     var port = line.Substring(startIndex, endIndex - startIndex);
+                    int serialNumberIndex = line.IndexOf("tty.usbmodem") + 12;
+                    var serialNumber = line.Substring(serialNumberIndex, endIndex - serialNumberIndex);
 
-                    ports.Add(port);
+                    ports.Add(new MeadowSerialPort { Name = port, SerialNumber = serialNumber });
                     foundMeadow = false;
                 }
             }
@@ -176,7 +178,7 @@ public class MeadowConnectionManager
         });
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForLinux()
+    public static async Task<IList<MeadowSerialPort>> GetMeadowSerialPortsForLinux()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
             throw new PlatformNotSupportedException("This method is only supported on Linux");
@@ -201,6 +203,7 @@ public class MeadowConnectionManager
                 var outputText = output.ReadToEnd();
                 if (!string.IsNullOrEmpty(outputText))
                 {
+
                     return outputText
                     .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                           .Where(x => x.Contains("Wilderness_Labs"))
@@ -210,17 +213,20 @@ public class MeadowConnectionManager
                                   var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
                                   var target = parts[1];
                                   var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                                  return port;
+                                  int serialNumberIndex = line.IndexOf("ttyUSB") + 6;
+                                  var serialNumber = line.Substring(serialNumberIndex);
+
+                                  return new MeadowSerialPort { Name = port, SerialNumber = serialNumber };
                               }).ToArray();
                 }
             }
 
-            return Array.Empty<string>();
+            return Array.Empty<MeadowSerialPort>();
         });
     }
 
     [SupportedOSPlatform("windows")]
-    public static IList<string> GetMeadowSerialPortsForWindows()
+    public static IList<MeadowSerialPort> GetMeadowSerialPortsForWindows()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
             throw new PlatformNotSupportedException("This method is only supported on Windows");
@@ -238,7 +244,7 @@ public class MeadowConnectionManager
             // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
             string query = @$"SELECT Name, Caption, PNPDeviceID FROM Win32_PnPEntity WHERE PNPClass = 'Ports' AND PNPDeviceID like '{escapedPrefix}%'";
 
-            List<string> results = new();
+            List<MeadowSerialPort> results = new();
 
             // build the searcher for the query
             using ManagementObjectSearcher searcher = new(wmiScope, query);
@@ -273,13 +279,14 @@ public class MeadowConnectionManager
                     // the meadow serial is in the device id, after
                     // the characters: USB\VID_XXXX&PID_XXXX\
                     // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
+                    string? serialNumber = string.Empty;
                     if (!string.IsNullOrEmpty(pnpDeviceId))
                     {
                         var splits = pnpDeviceId.Split('\\');
-                        var serialNumber = splits[2];
+                        serialNumber = splits[2];
                     }
 
-                    results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
+                    results.Add(new MeadowSerialPort { Name = port, SerialNumber = serialNumber });
                 }
             }
 
@@ -293,13 +300,18 @@ public class MeadowConnectionManager
             //hack to skip COM1
             ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
 
-            return ports;
+            List<MeadowSerialPort> results = new();
+            foreach (var port in ports)
+            {
+                results.Add(new MeadowSerialPort { Name = port, SerialNumber = string.Empty });
+            }
+
+            return results;
         }
     }
 
     public static async Task<string> GetPortFromSerialNumber(string serialNumber)
     {
-
         var retryCount = 0;
 
         string? newPort = null;
@@ -308,20 +320,33 @@ public class MeadowConnectionManager
         while (newPort == null)
         {
             var ports = await GetSerialPorts();
-            newPort = ports.Where(s => s.Contains(serialNumber)).FirstOrDefault();
 
-            if (!string.IsNullOrEmpty(newPort))
+            if (ports != null)
             {
-                break;
+                foreach (var meadowSerialPort in ports)
+                {
+                    if (meadowSerialPort.SerialNumber != null && meadowSerialPort.SerialNumber.Contains(serialNumber))
+                    {
+                        newPort = meadowSerialPort.Name;
+                        break;
+                    }
+                }
+
+                if (retryCount++ > 12)
+                {
+                    throw new Exception("Meadow device not found");
+                }
             }
 
-            if (retryCount++ > 12)
-            {
-                throw new Exception("New meadow device not found");
-            }
             await Task.Delay(500);
         }
 
         return newPort;
     }
+}
+
+public class MeadowSerialPort
+{
+    public string? Name { get; set; }
+    public string? SerialNumber { get; set; }
 }
