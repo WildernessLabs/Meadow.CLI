@@ -26,7 +26,23 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
         }
         else
         {
-            Logger?.LogInformation($"{Constants.ColourConsoleText(Constants.ConsoleColourBlue, e.source!)}> {e.message.TrimEnd('\n', '\r')}");
+            string textColour; 
+            switch (e.source)
+            {
+                case "stdout":
+                    textColour = StringExtensions.ConsoleColourBlue;
+                    break;
+                case "info":
+                    textColour = StringExtensions.ConsoleColourGreen;
+                    break;
+                case "stderr":
+                    textColour = StringExtensions.ConsoleColourRed;
+                    break;
+                default:
+                    textColour = StringExtensions.ConsoleColourReset;
+                    break;
+            }
+            Logger?.LogInformation($"{e.source?.ColourConsoleText(textColour)}> {e.message.TrimEnd('\n', '\r')}");
         }
     }
 
