@@ -79,6 +79,10 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         {
             // don't echo this, as we're already reporting % written
         }
+        else if(e.source != null && e.source.Contains("stdout"))
+        {
+            // don't echo this, as we're already reporting it higher up
+        }
         else
         {
             Logger?.LogInformation(e.message);

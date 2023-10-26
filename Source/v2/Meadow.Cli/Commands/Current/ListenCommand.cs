@@ -26,7 +26,7 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
         }
         else
         {
-            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{Constants.ColourConsoleText(Constants.ConsoleColourBlue, e.source!)}> {e.message.TrimEnd('\n', '\r')}");
         }
     }
 
