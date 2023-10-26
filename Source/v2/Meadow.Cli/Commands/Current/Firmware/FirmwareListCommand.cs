@@ -10,9 +10,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("firmware list", Description = "List locally available firmware")]
 public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 {
-    [CommandOption("verbose", 'v', IsRequired = false)]
-    public bool Verbose { get; set; }
-
     private FileManager FileManager { get; }
 
     public FirmwareListCommand(FileManager fileManager, ILoggerFactory? loggerFactory)
