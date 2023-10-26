@@ -1030,7 +1030,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         if (!await WaitForResult(
                 () =>
                 {
-                    if (ex != null) throw ex;
+                    if (ex != null)
+                        throw ex;
                     return accepted;
                 },
                 cancellationToken))
