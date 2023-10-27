@@ -13,7 +13,7 @@ public abstract class BaseCommand<T> : ICommand
     protected IConsole? Console { get; private set; }
     protected CancellationToken CancellationToken { get; private set; }
 
-    [CommandOption("verbose", 'v', IsRequired = false)]
+    [CommandOption("verbose", IsRequired = false)]
     public bool Verbose { get; set; }
 
     public BaseCommand(ILoggerFactory? loggerFactory)
