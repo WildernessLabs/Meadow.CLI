@@ -39,6 +39,10 @@ public class MeadowConnectionManager
         {
             _currentConnection = new LocalConnection();
         }
+        if (route == "simulator")
+        {
+            _currentConnection = new SimulatorConnection();
+        }
         else
         {
             string? uri = null;
