@@ -1,4 +1,5 @@
-﻿using CliFx.Attributes;
+﻿using System.Collections.Concurrent;
+using CliFx.Attributes;
 using Meadow.Cli;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
@@ -30,6 +31,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
 
+    private const string FileWriteComplete = "Firmware Write Complete!";
     private ILibUsbDevice[]? _libUsbDevices;
     // TODO private bool _fileWriteError = false;
 
@@ -104,6 +106,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     }
                 }
 
+                var flashStatus = new ConcurrentDictionary<string, string>();
+
                 foreach (var libUsbDevice in _libUsbDevices)
                 {
                     var serialNumber = libUsbDevice.GetDeviceSerialNumber();
@@ -115,11 +119,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     {
                         if (package != null && package.OSWithBootloader != null && Files.Contains(FirmwareType.OS))
                         {
+                            flashStatus[serialNumber] = "WritingOS";
                             await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serialNumber);
                         }
                     }
                     catch (Exception ex)
                     {
+                        flashStatus[serialNumber] = ex.Message;
                         Logger?.LogError($"Exception type: {ex.GetType().Name}");
 
                         // TODO: scope this to the right exception type for Win 10 access violation thing
@@ -142,14 +148,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                         // get the connection associated with that route
                         connection = await GetCurrentConnection();
 
-                        if (connection == null)
-                        {
-                            continue;
-                        }
-
                         try
                         {
-                            if (Files.Any(f => f != FirmwareType.OS))
+                            if (connection != null && Files.Any(f => f != FirmwareType.OS))
                             {
                                 await connection.WaitForMeadowAttach();
 
@@ -158,21 +159,37 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                                     continue;
                                 }
 
+                                flashStatus[serialNumber] = "WriteFiles";
                                 await WriteFiles(package, connection);
                             }
                         }
                         catch (Exception ex)
                         {
+                            flashStatus[serialNumber] = ex.Message;
                             // Log the exception but move onto the next device
                             Logger?.LogError($"{Environment.NewLine}Exception type: {ex.GetType().Name}", ex);
+
+                            continue;
                         }
                         finally
                         {
                             // Needed to avoid double messages
                             DetachMessageHandlers(connection);
                         }
+
+                        flashStatus[serialNumber] = FileWriteComplete;
                     }
 
+                }
+
+                Logger?.LogInformation($"{Environment.NewLine}Firmware Write Status:");
+                foreach (var item in flashStatus)
+                {
+                    var textColour = StringExtensions.ConsoleColourRed;
+                    if (item.Value.Contains(FileWriteComplete)) {
+                        textColour = StringExtensions.ConsoleColourGreen;
+                    }
+                    Logger?.LogInformation($"Serial Number: {item.Key} - {item.Value}".ColourConsoleText(textColour));
                 }
             }
         }
