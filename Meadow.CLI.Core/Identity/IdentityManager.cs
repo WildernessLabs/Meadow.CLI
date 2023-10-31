@@ -1,30 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using CredentialManagement;
+﻿using CredentialManagement;
 using IdentityModel.Client;
 using IdentityModel.OidcClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Logging;
-using static System.Net.WebRequestMethods;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.Identity
 {
+
     public class IdentityManager
     {
         public readonly string WlRefreshCredentialName = "WL:Identity:Refresh";
-        readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
-        readonly string redirectUri = "http://localhost:8877/";
-        readonly string clientId = "0oa3axsuyupb7J6E15d6";
+        private readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
+        private readonly string redirectUri = "http://localhost:8877/";
+        private readonly string clientId = "0oa3axsuyupb7J6E15d6";
         private readonly ILogger _logger;
         private IConfiguration _config;
-        
+
         public IdentityManager(IConfiguration config, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger("IdentityManager");
@@ -43,7 +41,7 @@ namespace Meadow.CLI.Core.Identity
                 {
                     host = _config[Constants.MEADOW_CLOUD_HOST_CONFIG_NAME];
                 }
-                
+
                 var client = await GetOidcClient();
 
                 using (var http = new HttpListener())

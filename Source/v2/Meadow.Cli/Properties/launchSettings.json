@@ -1,0 +1,263 @@
+{
+  "profiles": {
+    "Meadow.Cli": {
+      "commandName": "Project"
+    },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
+    "Version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
+    "Port List": {
+      "commandName": "Project",
+      "commandLineArgs": "port list"
+    },
+    "Port Select": {
+      "commandName": "Project",
+      "commandLineArgs": "port select"
+    },
+    "Listen": {
+      "commandName": "Project",
+      "commandLineArgs": "listen"
+    },
+    "Listen (no prefix)": {
+      "commandName": "Project",
+      "commandLineArgs": "listen -n"
+    },
+    "Device Info": {
+      "commandName": "Project",
+      "commandLineArgs": "device info"
+    },
+    "Device Reset": {
+      "commandName": "Project",
+      "commandLineArgs": "device reset"
+    },
+    "Device Clock Read": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock"
+    },
+    "Device Clock Set": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock now"
+    },
+    "Config: Set Route Serial": {
+      "commandName": "Project",
+      "commandLineArgs": "config route COM7"
+    },
+    "Config: Set Route TCP": {
+      "commandName": "Project",
+      "commandLineArgs": "config route 172.26.8.20"
+    },
+    "Config: List": {
+      "commandName": "Project",
+      "commandLineArgs": "config --list"
+    },
+    "Config: Help": {
+      "commandName": "Project",
+      "commandLineArgs": "config --help"
+    },
+    "Runtime Enable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime enable"
+    },
+    "Runtime Disable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime disable"
+    },
+    "Runtime State": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime state"
+    },
+    "File List": {
+      "commandName": "Project",
+      "commandLineArgs": "file list"
+    },
+    "File List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "file list --verbose"
+    },
+    "File Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete meadow.log"
+    },
+    "File Read": {
+      "commandName": "Project",
+      "commandLineArgs": "file read test.txt \"f:\\temp\\test2.txt\""
+    },
+    "File Write": {
+      "commandName": "Project",
+      "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
+    },
+    "Firmware List": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list"
+    },
+    "Firmware List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list --verbose"
+    },
+    "Firmware Download latest": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download"
+    },
+    "Firmware Download version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download -v 1.0.2.0 --force"
+    },
+    "Firmware Default get": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware default"
+    },
+    "Firmware Default set": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware default 1.3.4.0"
+    },
+    "Firmware Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware delete 1.2.0.1"
+    },
+    "Firmware Write all": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write"
+    },
+    "Firmware Write version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write -v 1.2.0.1"
+    },
+    "Firmware Write runtime": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write runtime"
+    },
+    "Firmware Write esp": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write esp"
+    },
+    "Firmware Write os DFU": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write os -v 1.2.0.1"
+    },
+    "Trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace enable"
+    },
+    "Trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace disable"
+    },
+    "Trace level": {
+      "commandName": "Project",
+      "commandLineArgs": "trace level 2"
+    },
+    "Developer": {
+      "commandName": "Project",
+      "commandLineArgs": "developer -p 2 -v 20"
+    },
+    "Uart trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace enable"
+    },
+    "Uart trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace disable"
+    },
+    "App Build": {
+      "commandName": "Project",
+      "commandLineArgs": "app build F:\\temp\\MeadowApplication1"
+    },
+    "App Build Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "app build F:\\temp\\MeadowApplication1 -c Debug"
+    },
+    "App Trim": {
+      "commandName": "Project",
+      "commandLineArgs": "app trim F:\\temp\\MeadowApplication1"
+    },
+    "Dfu Install": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install"
+    },
+    "Dfu Install 0.10": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install -v 0.10"
+    },
+    "App Deploy (project folder)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1"
+    },
+    "App Deploy (untrimmed output)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
+    },
+    "App run": {
+      "commandName": "Project",
+      "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
+    },
+    "Flash erase": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erase"
+    },
+    "File initial": {
+      "commandName": "Project",
+      "commandLineArgs": "file initial meadow.log"
+    },
+    "Device provision": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision -o christacke6612"
+    },
+    "Cloud login": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud login"
+    },
+    "Cloud logout": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud logout"
+    },
+    "Cloud collection list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud collection list -o christacke6612"
+    },
+    "Cloud package create": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
+    },
+    "Cloud package upload": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package upload F:\\temp\\MeadowApplication1\\bin\\Release\\netstandard2.1\\mpak\\2023100330.mpak -o christacke6612"
+    },
+    "Cloud package list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package list -o christacke6612"
+    },
+    "Cloud package publish": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
+    },
+    "legacy list ports": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
+    },
+    "legacy use port": {
+      "commandName": "Project",
+      "commandLineArgs": "use port COM1"
+    },
+    "legacy mono state": {
+      "commandName": "Project",
+      "commandLineArgs": "mono state"
+    },
+    "legacy mono enable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono enable"
+    },
+    "legacy mono disable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono disable"
+    },
+    "legacy download os": {
+      "commandName": "Project",
+      "commandLineArgs": "download os"
+    }
+  }
+}

@@ -26,7 +26,7 @@
     },
     "FileDelete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete -f"
+      "commandLineArgs": "file delete -f dns.conf"
     },
     "FileList": {
       "commandName": "Project",
@@ -34,7 +34,7 @@
     },
     "FileWrite": {
       "commandName": "Project",
-      "commandLineArgs": "file write -f App.exe"
+      "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
     },
     "FlashErase": {
       "commandName": "Project",
@@ -46,7 +46,7 @@
     },
     "FlashOS": {
       "commandName": "Project",
-      "commandLineArgs": "flash os"
+      "commandLineArgs": "flash os -d -k"
     },
     "Help": {
       "commandName": "Project",
@@ -106,7 +106,7 @@
     },
     "UsePort": {
       "commandName": "Project",
-      "commandLineArgs": "use port COM16"
+      "commandLineArgs": "use port COM7"
     },
     "Version": {
       "commandName": "Project",

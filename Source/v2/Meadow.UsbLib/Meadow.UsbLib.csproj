@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <TargetFrameworks>net6.0</TargetFrameworks>
+      <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
+  </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
+    </ItemGroup>
+
+</Project>

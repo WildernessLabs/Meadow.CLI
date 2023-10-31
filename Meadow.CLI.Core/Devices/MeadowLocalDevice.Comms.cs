@@ -14,10 +14,10 @@ namespace Meadow.CLI.Core.Devices
     public partial class MeadowLocalDevice
     {
         private const int PROGESS_INCREMENTS = 5;
-        uint _packetCrc32;
+        private uint _packetCrc32;
         private readonly SemaphoreSlim _comPortSemaphore = new SemaphoreSlim(1, 1);
-        bool reUploadSkippedFiles = false;
-        byte reUploadCounter = 0;
+        private bool reUploadSkippedFiles = false;
+        private byte reUploadCounter = 0;
 
         public async Task SendTheEntireFile(FileCommand command,
                                             bool lastInSeries,
@@ -173,7 +173,7 @@ namespace Meadow.CLI.Core.Devices
 
             if (intProgress > nextProgress)
             {
-                if (!InMeadowCLI) // In separate call as used for progress delimiter
+                if (!InMeadowCLI || Debugger.IsAttached) // In separate call as used for progress delimiter
                 {
                     Logger?.LogInformation("=");
                 }
@@ -286,7 +286,6 @@ namespace Meadow.CLI.Core.Devices
                 {
 
                     using var cts = new CancellationTokenSource(DefaultTimeout);
-                    cts.Token.Register(() => throw new TimeoutException("Timeout while writing to serial port"));
                     var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
                     await Write(encodedBytes, encodedToSend, combinedCts.Token);
                 }
@@ -333,7 +332,7 @@ namespace Meadow.CLI.Core.Devices
             var message = string.Empty;
             var messageType = MeadowMessageType.ErrOutput;
 
-            void ResponseHandler(object s, MeadowMessageEventArgs e)
+            void ResponseHandler(object? s, MeadowMessageEventArgs e)
             {
 
                 var msg = string.IsNullOrWhiteSpace(e.Message) ? "[empty]" : e.Message;

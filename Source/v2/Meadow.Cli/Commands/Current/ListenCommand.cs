@@ -1,0 +1,68 @@
+﻿using CliFx.Attributes;
+using Microsoft.Extensions.Logging;
+
+namespace Meadow.CLI.Commands.DeviceManagement;
+
+[Command("listen", Description = "Listen for console output from Meadow")]
+public class ListenCommand : BaseDeviceCommand<ListenCommand>
+{
+    [CommandOption("no-prefix", 'n', IsRequired = false, Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed")]
+    public bool NoPrefix { get; set; }
+
+    public ListenCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        : base(connectionManager, loggerFactory)
+    {
+    }
+
+    private void Connection_ConnectionMessage(object? sender, string e)
+    {
+    }
+
+    private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
+    {
+        string textColour;
+        switch (e.source)
+        {
+            case "stdout":
+                textColour = StringExtensions.ConsoleColourBlue;
+                break;
+            case "info":
+                textColour = StringExtensions.ConsoleColourGreen;
+                break;
+            case "stderr":
+                textColour = StringExtensions.ConsoleColourRed;
+                break;
+            default:
+                textColour = StringExtensions.ConsoleColourReset;
+                break;
+        }
+
+        if (NoPrefix)
+        {
+            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r').ColourConsoleText(textColour)}");
+        }
+        else
+        {
+
+            Logger?.LogInformation($"{e.source?.ColourConsoleText(textColour)}> {e.message.TrimEnd('\n', '\r')}");
+        }
+    }
+
+    protected override async ValueTask ExecuteCommand()
+    {
+        await base.ExecuteCommand();
+
+        if (Connection != null)
+        {
+            Connection.DeviceMessageReceived += OnDeviceMessageReceived;
+            Connection.ConnectionMessage += Connection_ConnectionMessage;
+
+            Logger?.LogInformation($"Listening for Meadow Console output on '{Connection.Name}'. Press Ctrl+C to exit...");
+
+            while (!CancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000);
+            }
+        }
+    }
+}
