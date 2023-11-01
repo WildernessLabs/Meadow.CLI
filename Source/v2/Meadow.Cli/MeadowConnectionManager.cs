@@ -1,4 +1,4 @@
-﻿using Meadow.Cli;
+﻿using Meadow.CLI;
 using Meadow.Hcom;
 using Meadow.LibUsb;
 using System.Diagnostics;

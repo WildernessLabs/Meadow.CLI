@@ -1,4 +1,4 @@
-﻿using Meadow.Cli;
+﻿using Meadow.CLI;
 
 namespace Meadow.HCom.Integration.Tests
 {

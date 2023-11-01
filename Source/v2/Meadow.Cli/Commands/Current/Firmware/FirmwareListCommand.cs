@@ -1,7 +1,7 @@
 ﻿using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
