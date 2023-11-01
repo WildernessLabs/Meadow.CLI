@@ -2,7 +2,7 @@
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public static class AppManager
 {

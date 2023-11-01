@@ -1,5 +1,5 @@
 ﻿using CliFx;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
