@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
 using CliFx.Infrastructure;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.Software;
