@@ -24,16 +24,16 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
         switch (e.source)
         {
             case "stdout":
-                textColour = StringExtensions.ConsoleColourBlue;
+                textColour = ExtensionMethods.ConsoleColourBlue;
                 break;
             case "info":
-                textColour = StringExtensions.ConsoleColourGreen;
+                textColour = ExtensionMethods.ConsoleColourGreen;
                 break;
             case "stderr":
-                textColour = StringExtensions.ConsoleColourRed;
+                textColour = ExtensionMethods.ConsoleColourRed;
                 break;
             default:
-                textColour = StringExtensions.ConsoleColourReset;
+                textColour = ExtensionMethods.ConsoleColourReset;
                 break;
         }
 
