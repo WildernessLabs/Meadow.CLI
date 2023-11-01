@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.LibUsb;
@@ -185,9 +185,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 Logger?.LogInformation($"{Environment.NewLine}Firmware Write Status:");
                 foreach (var item in flashStatus)
                 {
-                    var textColour = StringExtensions.ConsoleColourRed;
+                    var textColour = ExtensionMethods.ConsoleColourRed;
                     if (item.Value.Contains(FileWriteComplete)) {
-                        textColour = StringExtensions.ConsoleColourGreen;
+                        textColour = ExtensionMethods.ConsoleColourGreen;
                     }
                     Logger?.LogInformation($"Serial Number: {item.Key} - {item.Value}".ColourConsoleText(textColour));
                 }
