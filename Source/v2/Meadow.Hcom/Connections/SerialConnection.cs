@@ -231,7 +231,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private async void CommandManager()
     {
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             while (!_isDisposed)
             {
@@ -246,7 +246,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                     if (command != null)
                     {
                         var payload = command.Serialize();
-                        EncodeAndSendPacket(payload);
+                        await EncodeAndSendPacket(payload);
                     }
 
                     // TODO: re-queue on fail?
@@ -291,119 +291,119 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _pendingCommands.Enqueue(command);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = default)
     {
-        EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
+        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = default)
     {
-        Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
-
-        while (!_port.IsOpen)
+        if (messageBytes != null)
         {
-            State = ConnectionState.Disconnected;
-            Thread.Sleep(100);
-            // wait for the port to open
-        }
+            Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
-        State = ConnectionState.Connected;
+            while (!_port.IsOpen)
+            {
+                State = ConnectionState.Disconnected;
+                Thread.Sleep(100);
+                // wait for the port to open
+            }
 
-        try
-        {
-            int encodedToSend;
-            byte[] encodedBytes;
+            State = ConnectionState.Connected;
 
-            // For file download this is a LOT of messages
-            // _uiSupport.WriteDebugLine($"Sending packet with {messageSize} bytes");
-
-            // For testing calculate the crc including the sequence number
-            //_packetCrc32 = NuttxCrc.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
             try
             {
-                // The encoded size using COBS is just a bit more than the original size adding 1 byte
-                // every 254 bytes plus 1 and need room for beginning and ending delimiters.
-                var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
-                encodedBytes = new byte[l + 2];
+                int encodedToSend;
+                byte[] encodedBytes;
 
-                // Skip over first byte so it can be a start delimiter
-                encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
+                // For file download this is a LOT of messages
+                // _uiSupport.WriteDebugLine($"Sending packet with {messageSize} bytes");
 
-                // DEBUG TESTING
-                if (encodedToSend == -1)
+                // For testing calculate the crc including the sequence number
+                //_packetCrc32 = NuttxCrc.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
+                try
                 {
-                    _logger?.LogError($"Error - encodedToSend == -1");
-                    return;
+                    // The encoded size using COBS is just a bit more than the original size adding 1 byte
+                    // every 254 bytes plus 1 and need room for beginning and ending delimiters.
+                    var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
+                    encodedBytes = new byte[l + 2];
+
+                    // Skip over first byte so it can be a start delimiter
+                    encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
+
+                    // DEBUG TESTING
+                    if (encodedToSend == -1)
+                    {
+                        _logger?.LogError($"Error - encodedToSend == -1");
+                        return;
+                    }
+
+                    if (_port == null)
+                    {
+                        _logger?.LogError($"Error - SerialPort == null");
+                        throw new Exception("Port is null");
+                    }
+                }
+                catch (Exception except)
+                {
+                    string msg = string.Format("Send setup Exception: {0}", except);
+                    _logger?.LogError(msg);
+                    throw;
                 }
 
-                if (_port == null)
+                // Add delimiters to packet boundaries
+                try
                 {
-                    _logger?.LogError($"Error - SerialPort == null");
-                    throw new Exception("Port is null");
+                    encodedBytes[0] = 0;                // Start delimiter
+                    encodedToSend++;
+                    encodedBytes[encodedToSend] = 0;    // End delimiter
+                    encodedToSend++;
+                }
+                catch (Exception encodedBytesEx)
+                {
+                    // This should drop the connection and retry
+                    Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
+                    Thread.Sleep(500);    // Place for break point
+                    throw;
+                }
+
+                try
+                {
+                    // Send the data to Meadow
+                    await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken.HasValue ? cancellationToken.Value : default);
+                }
+                catch (InvalidOperationException ioe)  // Port not opened
+                {
+                    string msg = string.Format("Write but port not opened. Exception: {0}", ioe);
+                    _logger?.LogError(msg);
+                    throw;
+                }
+                catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
+                {
+                    string msg = string.Format("Write buffer, offset and count don't line up. Exception: {0}", aore);
+                    _logger?.LogError(msg);
+                    throw;
+                }
+                catch (ArgumentException ae)  // offset plus count > buffer length
+                {
+                    string msg = string.Format($"Write offset plus count > buffer length. Exception: {0}", ae);
+                    _logger?.LogError(msg);
+                    throw;
+                }
+                catch (TimeoutException te) // Took too long to send
+                {
+                    string msg = string.Format("Write took too long to send. Exception: {0}", te);
+                    _logger?.LogError(msg);
+                    throw;
                 }
             }
             catch (Exception except)
             {
-                string msg = string.Format("Send setup Exception: {0}", except);
-                _logger?.LogError(msg);
-                throw;
-            }
-
-            // Add delimiters to packet boundaries
-            try
-            {
-                encodedBytes[0] = 0;                // Start delimiter
-                encodedToSend++;
-                encodedBytes[encodedToSend] = 0;    // End delimiter
-                encodedToSend++;
-            }
-            catch (Exception encodedBytesEx)
-            {
+                // DID YOU RESTART MEADOW?
                 // This should drop the connection and retry
-                Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
-                Thread.Sleep(500);    // Place for break point
+                _logger?.LogError($"EncodeAndSendPacket threw: {except}");
                 throw;
             }
-
-            try
-            {
-                // Send the data to Meadow
-                //                Debug.Write($"Sending {encodedToSend} bytes...");
-                //await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
-                _port.Write(encodedBytes, 0, encodedToSend);
-                //                Debug.WriteLine($"sent");
-            }
-            catch (InvalidOperationException ioe)  // Port not opened
-            {
-                string msg = string.Format("Write but port not opened. Exception: {0}", ioe);
-                _logger?.LogError(msg);
-                throw;
-            }
-            catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
-            {
-                string msg = string.Format("Write buffer, offset and count don't line up. Exception: {0}", aore);
-                _logger?.LogError(msg);
-                throw;
-            }
-            catch (ArgumentException ae)  // offset plus count > buffer length
-            {
-                string msg = string.Format($"Write offset plus count > buffer length. Exception: {0}", ae);
-                _logger?.LogError(msg);
-                throw;
-            }
-            catch (TimeoutException te) // Took too long to send
-            {
-                string msg = string.Format("Write took too long to send. Exception: {0}", te);
-                _logger?.LogError(msg);
-                throw;
-            }
-        }
-        catch (Exception except)
-        {
-            // DID YOU RESTART MEADOW?
-            // This should drop the connection and retry
-            _logger?.LogError($"EncodeAndSendPacket threw: {except}");
-            throw;
         }
     }
 
@@ -1073,7 +1073,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             Array.Copy(fileBytes, progress, packet, 2, toRead);
             try
             {
-                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+                await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
             }
             catch (Exception)
             {
@@ -1095,7 +1095,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             var request = RequestBuilder.Build<EndFileWriteRequest>();
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
-            EncodeAndSendPacket(p, cancellationToken);
+            await EncodeAndSendPacket(p, cancellationToken);
         }
 
         FileWriteAccepted -= OnFileWriteAccepted;
