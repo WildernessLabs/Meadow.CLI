@@ -29,4 +29,7 @@ public interface IPackageManager
         ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 
+    IEnumerable<string>? TrimmedDependencies { get; set; }
+
+    bool Trimmed { get; set; }
 }
