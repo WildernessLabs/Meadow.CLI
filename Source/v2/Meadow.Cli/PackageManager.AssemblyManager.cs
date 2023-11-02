@@ -46,6 +46,9 @@ public partial class PackageManager
         }
     }
 
+    public IEnumerable<string>? TrimmedDependencies { get; set; }
+    public bool Trimmed { get; set; } = false;
+
     public async Task<IEnumerable<string>?> TrimDependencies(FileInfo file, List<string> dependencies, IList<string>? noLink, ILogger? logger, bool includePdbs, bool verbose = false, string? linkerOptions = null)
     {
         var directoryName = file.DirectoryName;

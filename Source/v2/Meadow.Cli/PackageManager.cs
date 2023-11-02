@@ -131,6 +131,8 @@ public partial class PackageManager : IPackageManager
             throw new FileNotFoundException($"{applicationFilePath} not found");
         }
 
+        Trimmed = false;
+
         // does an app.build.yaml file exist?
         var buildOptionsFile = Path.Combine(
             applicationFilePath.DirectoryName ?? string.Empty,
@@ -159,13 +161,15 @@ public partial class PackageManager : IPackageManager
             .Where(x => x.Contains("App.") == false)
             .ToList();
 
-        await TrimDependencies(
+        TrimmedDependencies = await TrimDependencies(
             applicationFilePath,
             dependencies,
             noLink,
             logger,
             includePdbs,
             verbose: false);
+
+        Trimmed = true;
     }
 
     public const string PackageMetadataFileName = "info.json";
