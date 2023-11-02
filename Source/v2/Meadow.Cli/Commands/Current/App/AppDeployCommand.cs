@@ -83,9 +83,23 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
                 };
                 await trimApplicationCommand.ExecuteAsync(Console!);
 
+                // Get out spinner ready
+                var spinnerCancellationTokenSource = new CancellationTokenSource();
+                var consoleSpinner = new ConsoleSpinner(Console!);
+                Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
+
+                var localFiles = await AppManager.GenerateDeployList(_packageManager, Connection, targetDirectory, true, false, Logger, CancellationToken);
+                Console?.Output.WriteAsync("\n");
+
+                // Cancel the spinner as soon as EraseFlash finishes
+                spinnerCancellationTokenSource.Cancel();
+
+                // Let's start spinning
+                await consoleSpinnerTask;
+
                 Connection.FileWriteProgress += Connection_FileWriteProgress;
 
-                await AppManager.DeployApplication(_packageManager, Connection, targetDirectory, true, false, Logger, CancellationToken);
+                await AppManager.DeployApplication(Connection, localFiles, Logger, CancellationToken);
                 Console?.Output.WriteAsync("\n");
 
                 Connection.FileWriteProgress -= Connection_FileWriteProgress;
