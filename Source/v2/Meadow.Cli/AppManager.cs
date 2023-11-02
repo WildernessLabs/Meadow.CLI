@@ -1,4 +1,5 @@
-﻿using Meadow.Hcom;
+﻿using System.Drawing;
+using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -47,19 +48,23 @@ public static class AppManager
         {
             // TODO: add any other filtering capability here
 
-            if (!includePdbs && IsPdb(file)) continue;
-            if (!includeXmlDocs && IsXmlDoc(file)) continue;
+            if (!includePdbs && IsPdb(file))
+                continue;
+            if (!includeXmlDocs && IsXmlDoc(file))
+                continue;
 
-            // read the file data so we can generate a CRC
-            using FileStream fs = File.Open(file, FileMode.Open);
-            var len = (int)fs.Length;
-            var bytes = new byte[len];
+            //Populate out LocalFile Dictionary with this entry
+            await AddToLocalFiles(localFiles, file, cancellationToken);
+        }
 
-            await fs.ReadAsync(bytes, 0, len, cancellationToken);
+        if (File.Exists(Path.Combine(localBinaryDirectory, "app.config.json")))
+        {
+            await AddToLocalFiles(localFiles, Path.Combine(localBinaryDirectory, "app.config.json"), cancellationToken);
+        }
 
-            var crc = CrcTools.Crc32part(bytes, len, 0);
-
-            localFiles.Add(file, crc);
+        if (File.Exists(Path.Combine(localBinaryDirectory, "meadow.config.yaml")))
+        {
+            await AddToLocalFiles(localFiles, Path.Combine(localBinaryDirectory, "meadow.config.yaml"), cancellationToken);
         }
 
         if (localFiles.Count() == 0)
@@ -128,5 +133,19 @@ public static class AppManager
 
             } while (!success);
         }
+    }
+
+    private static async Task AddToLocalFiles(Dictionary<string, uint> localFiles, string file, CancellationToken cancellationToken)
+    {
+        // read the file data so we can generate a CRC
+        using FileStream fs = File.Open(file, FileMode.Open);
+        var len = (int)fs.Length;
+        var bytes = new byte[len];
+
+        await fs.ReadAsync(bytes, 0, len, cancellationToken);
+
+        var crc = CrcTools.Crc32part(bytes, len, 0);
+
+        localFiles.Add(file, crc);
     }
 }
