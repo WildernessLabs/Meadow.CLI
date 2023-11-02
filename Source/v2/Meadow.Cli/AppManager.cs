@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Threading;
 using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -27,8 +28,7 @@ public static class AppManager
         return false;
     }
 
-    public static async Task DeployApplication(
-        IPackageManager packageManager,
+    public static async Task<Dictionary<string, uint>> GenerateDeployList(IPackageManager packageManager,
         IMeadowConnection connection,
         string localBinaryDirectory,
         bool includePdbs,
@@ -37,6 +37,8 @@ public static class AppManager
         CancellationToken cancellationToken)
     {
         // TODO: add sub-folder support when HCOM supports it
+
+        logger.LogInformation("Generating the list of files to deploy...");
 
         var localFiles = new Dictionary<string, uint>();
 
@@ -47,21 +49,44 @@ public static class AppManager
             "wifi.config.yaml",
         };
 
+        string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
+        string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
+
         // get a list of files to send
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
 
-        logger.LogInformation("Generating the list of files to deploy...");
-        foreach (var file in dependencies)
+        if (packageManager.Trimmed && packageManager.TrimmedDependencies != null)
         {
-            // TODO: add any other filtering capability here
+            var trimmedDependencies = packageManager.TrimmedDependencies.Where(x => x.Contains("App.") == false)
+                        .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
+                        .ToList();
 
-            if (!includePdbs && IsPdb(file))
-                continue;
-            if (!includeXmlDocs && IsXmlDoc(file))
-                continue;
+            //crawl trimmed dependencies
+            foreach (var file in trimmedDependencies)
+            {
+                if (!includePdbs && IsPdb(file))
+                    continue;
+                if (!includeXmlDocs && IsXmlDoc(file))
+                    continue;
 
-            //Populate out LocalFile Dictionary with this entry
-            await AddToLocalFiles(localFiles, file, cancellationToken);
+                await AddToLocalFiles(localFiles, file, cancellationToken);
+            }
+        }
+        else
+        {
+            foreach (var file in dependencies)
+            {
+                // TODO: add any other filtering capability here
+
+                if (!includePdbs && IsPdb(file))
+                    continue;
+                if (!includeXmlDocs && IsXmlDoc(file))
+                    continue;
+
+                //Populate out LocalFile Dictionary with this entry
+                await AddToLocalFiles(localFiles, file, cancellationToken);
+            }
         }
 
         foreach (var item in additionFilesList)
@@ -99,20 +124,31 @@ public static class AppManager
             await connection.DeleteFile(file, cancellationToken);
         }
 
+        foreach (var deviceFile in deviceFiles)
+        {
+            var exists = localFiles.FirstOrDefault(l => Path.GetFileName(deviceFile.Name) == Path.GetFileName(l.Key));
+            if (deviceFile.Crc != null)
+            {
+                if (uint.Parse(deviceFile.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == exists.Value)
+                {
+                    // exists and has a matching CRC, skip it
+                    localFiles.Remove(exists.Key);
+                }
+            }
+        }
+
+        return localFiles;
+    }
+
+    public static async Task DeployApplication(
+        IMeadowConnection connection,
+        Dictionary<string, uint> localFiles,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
-            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
-
-            if (existing != null && existing.Crc != null)
-            {
-                if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
-                {
-                    // exists and has a matching CRC, skip it
-                    continue;
-                }
-            }
-
             bool success;
 
             do
