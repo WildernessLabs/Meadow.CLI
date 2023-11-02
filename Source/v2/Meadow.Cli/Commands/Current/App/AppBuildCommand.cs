@@ -23,7 +23,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             string path = Path == null
             ? Environment.CurrentDirectory
@@ -40,12 +40,24 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
                 }
             }
 
-            if (Configuration == null) Configuration = "Release";
+            if (Configuration == null)
+                Configuration = "Release";
 
-            Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
+            Logger?.LogInformation($"Building {Configuration} configuration of {path} (this may take a few seconds)...");
+
+            // Get out spinner ready
+            var spinnerCancellationTokenSource = new CancellationTokenSource();
+            var consoleSpinner = new ConsoleSpinner(Console!);
+            Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
 
             // TODO: enable cancellation of this call
-            var success = _packageManager.BuildApplication(path, Configuration);
+            var success = await Task.FromResult(_packageManager.BuildApplication(path, Configuration));
+
+            // Cancel the spinner as soon as EraseFlash finishes
+            spinnerCancellationTokenSource.Cancel();
+
+            // Let's start spinning
+            await consoleSpinnerTask;
 
             if (!success)
             {
