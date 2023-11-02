@@ -40,6 +40,13 @@ public static class AppManager
 
         var localFiles = new Dictionary<string, uint>();
 
+        var additionFilesList = new string[]
+        {
+            "app.config.json",
+            "meadow.config.yaml",
+            "wifi.config.yaml",
+        };
+
         // get a list of files to send
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
 
@@ -57,14 +64,13 @@ public static class AppManager
             await AddToLocalFiles(localFiles, file, cancellationToken);
         }
 
-        if (File.Exists(Path.Combine(localBinaryDirectory, "app.config.json")))
+        foreach (var item in additionFilesList)
         {
-            await AddToLocalFiles(localFiles, Path.Combine(localBinaryDirectory, "app.config.json"), cancellationToken);
-        }
-
-        if (File.Exists(Path.Combine(localBinaryDirectory, "meadow.config.yaml")))
-        {
-            await AddToLocalFiles(localFiles, Path.Combine(localBinaryDirectory, "meadow.config.yaml"), cancellationToken);
+            var file = Path.Combine(localBinaryDirectory, item);
+            if (File.Exists(file))
+            {
+                await AddToLocalFiles(localFiles, file, cancellationToken);
+            }
         }
 
         if (localFiles.Count() == 0)
@@ -146,6 +152,7 @@ public static class AppManager
 
         var crc = CrcTools.Crc32part(bytes, len, 0);
 
-        localFiles.Add(file, crc);
+        if (!localFiles.ContainsKey(file))
+            localFiles.Add(file, crc);
     }
 }
