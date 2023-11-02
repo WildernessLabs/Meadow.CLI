@@ -1,4 +1,5 @@
-﻿using CliFx.Attributes;
+﻿using System.Threading;
+using CliFx.Attributes;
 using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
@@ -55,10 +56,18 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             file = new FileInfo(path);
         }
 
-        // if no configuration was provided, find the most recently built
-        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
+        // Get out spinner ready
+        var spinnerCancellationTokenSource = new CancellationTokenSource();
+        var consoleSpinner = new ConsoleSpinner(Console!);
+        Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
 
         // TODO: support `nolink` command line args
         await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken);
+
+        // Cancel the spinner as soon as EraseFlash finishes
+        spinnerCancellationTokenSource.Cancel();
+
+        // Let's start spinning
+        await consoleSpinnerTask;
     }
 }
