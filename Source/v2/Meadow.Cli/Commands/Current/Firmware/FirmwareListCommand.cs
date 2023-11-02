@@ -1,4 +1,5 @@
-﻿using CliFx;
+﻿using System.Linq;
+using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Meadow.CLI;
@@ -42,9 +43,9 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
         foreach (var name in manager.Firmware.CollectionNames)
         {
             Logger?.LogInformation($" {name}");
-            var collection = manager.Firmware[name];
+            var collection = manager.Firmware[name.ToString()];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(s=> s.Version))
             {
                 if (package == collection.DefaultPackage)
                 {
@@ -83,9 +84,9 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
         foreach (var name in manager.Firmware.CollectionNames)
         {
             Logger?.LogInformation($" {name}");
-            var collection = manager.Firmware[name];
+            var collection = manager.Firmware[name.ToString()];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(s => s.Version))
             {
                 if (package == collection.DefaultPackage)
                 {
