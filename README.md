@@ -9,7 +9,17 @@ The CLI tool supports DFU flashing for `nuttx.bin` and `nuttx_user.bin`. When th
 
 The CLI tool also supports device and file management including file transfers, flash partitioning, and MCU reset.
 
-To run Meadow.CLI on Windows, run meadow.exe from the command prompt. On Mac and Windows, call **mono meadow.exe**.
+To install the latest Meadow.CLI release, run the .NET tool install command to get the latest package from NuGet.
+
+```console
+dotnet tool install WildernessLabs.Meadow.CLI --global
+```
+
+For the latest getting started instructions with Meadow and Meadow.CLI, check out the [Meadow guides](https://developer.wildernesslabs.co/Meadow/Getting_Started/Deploying_Meadow/) in the Wilderness Labs documentations. Additionally, there are instructions there for updating an existing Meadow.CLI install.
+
+If you want to develop or build a Meadow.CLI directly, or install a pre-release version, follow the [instructions to install a pre-release Meadow.CLI](https://github.com/WildernessLabs/Meadow.CLI/blob/develop/README.md#install-a-downloaded-pre-release-version).
+
+Once installed, run the Meadow.CLI from a command line with `meadow`.
 
 ## Options
 
