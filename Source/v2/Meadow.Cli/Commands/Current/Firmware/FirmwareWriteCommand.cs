@@ -2,6 +2,7 @@
 using CliFx.Attributes;
 using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Cloud;
 using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
@@ -28,11 +29,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandParameter(0, Name = "Files to write", IsRequired = false)]
     public FirmwareType[]? Files { get; set; } = default!;
 
+    [CommandOption("file", 'f', IsRequired = false, Description = "Path to OS, Runtime or ESP file")]
+    public string? Path { get; set; } = default!;
+
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
 
     private const string FileWriteComplete = "Firmware Write Complete!";
     private ILibUsbDevice[]? _libUsbDevices;
+    private IMeadowConnection? connection;
+
     // TODO private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -68,27 +74,30 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
 
-        if (package != null && package.OsWithoutBootloader == null
+        if ((Files != null && Files.Contains(FirmwareType.OS)) && (package != null && package.OsWithoutBootloader == null
             || !deviceSupportsOta
-            || UseDfu)
+            || UseDfu))
         {
             UseDfu = true;
         }
 
-        IMeadowConnection? connection;
-
-        if (UseDfu && Files != null && package != null)
+        if (Files != null && package != null)
         {
             // get the device's serial number via DFU - we'll need it to find the device after it resets
             try
             {
-                GetLibUsbDevicesInBootloaderModeForCurrentEnvironment();
+                if (UseDfu)
+                {
+                    GetLibUsbDevicesInBootloaderModeForCurrentEnvironment();
+                }
             }
             catch (Exception ex)
             {
                 Logger?.LogError(ex.Message);
                 return;
             }
+
+            var flashStatus = new ConcurrentDictionary<string, string>();
 
             if (_libUsbDevices != null)
             {
@@ -105,8 +114,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                         }
                     }
                 }
-
-                var flashStatus = new ConcurrentDictionary<string, string>();
 
                 foreach (var libUsbDevice in _libUsbDevices)
                 {
@@ -145,37 +152,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                         // configure the route to that port for the user
                         Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
 
-                        // get the connection associated with that route
-                        connection = await GetCurrentConnection();
-
-                        try
-                        {
-                            if (connection != null && Files.Any(f => f != FirmwareType.OS))
-                            {
-                                await connection.WaitForMeadowAttach();
-
-                                if (CancellationToken.IsCancellationRequested)
-                                {
-                                    continue;
-                                }
-
-                                flashStatus[serialNumber] = "WriteFiles";
-                                await WriteFiles(package, connection);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            flashStatus[serialNumber] = ex.Message;
-                            // Log the exception but move onto the next device
-                            Logger?.LogError($"{Environment.NewLine}Exception type: {ex.GetType().Name}", ex);
-
-                            continue;
-                        }
-                        finally
-                        {
-                            // Needed to avoid double messages
-                            DetachMessageHandlers(connection);
-                        }
+                        await WriteNonOSToDevice(Files, package, flashStatus);
 
                         flashStatus[serialNumber] = FileWriteComplete;
                     }
@@ -192,6 +169,49 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     Logger?.LogInformation($"Serial Number: {item.Key} - {item.Value}".ColourConsoleText(textColour));
                 }
             }
+            else
+            {
+                await WriteNonOSToDevice(Files, package, flashStatus);
+
+                if (connection != null)
+                    flashStatus[connection.Name] = FileWriteComplete;
+            }
+        }
+    }
+
+    private async Task WriteNonOSToDevice(FirmwareType[] files, FirmwarePackage? package, ConcurrentDictionary<string, string> flashStatus)
+    {
+        // get the connection associated with that route
+        connection = await GetCurrentConnection();
+
+        try
+        {
+            if (connection != null && files.Any(f => f != FirmwareType.OS))
+            {
+                await connection.WaitForMeadowAttach();
+
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                flashStatus[connection.Name] = "WriteFiles";
+                await WriteFiles(package, connection);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (connection != null)
+                flashStatus[connection.Name] = ex.Message;
+            // Log the exception but move onto the next device
+            Logger?.LogError($"{Environment.NewLine}Exception type: {ex.GetType().Name}", ex);
+
+            return;
+        }
+        finally
+        {
+            // Needed to avoid double messages
+            DetachMessageHandlers(connection);
         }
     }
 
@@ -299,10 +319,20 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (Files.Contains(FirmwareType.Runtime))
             {
-                Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
+                string? runtime;
+                if (!string.IsNullOrEmpty(Path))
+                {
+                    Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {Path}...");
+                    runtime = Path;
+                }
+                else
+                {
+                    Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
-                // get the path to the runtime file
-                var runtime = package.Runtime;
+                    // get the path to the runtime file
+                    runtime = package.Runtime;
+                }
+
                 if (string.IsNullOrEmpty(runtime))
                     runtime = string.Empty;
                 var rtpath = package.GetFullyQualifiedPath(runtime);
