@@ -24,5 +24,101 @@ namespace Meadow.CLI
                 return string.Empty;
             }
         }
+
+        public static string ColourConsoleTextBlack(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourBlack + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextCyan(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourCyan + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextBlue(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourBlue + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextGreen(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourGreen + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextMagenta(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourMagenta + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextRed(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourRed + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextWhite(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourWhite + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string ColourConsoleTextYellow(this string textToColour)
+        {
+            if (!string.IsNullOrEmpty(textToColour))
+            {
+                return ConsoleColourYellow + textToColour + ConsoleColourReset;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
     }
 }
