@@ -90,7 +90,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             {
                 if (package == collection.DefaultPackage)
                 {
-                    Logger?.LogInformation($"  * {package.Version} (default)");
+                    Logger?.LogInformation($"  * {package.Version} (default)".ColourConsoleText(ExtensionMethods.ConsoleColourGreen));
                 }
                 else
                 {
