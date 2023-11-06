@@ -49,14 +49,14 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             {
                 if (package == collection.DefaultPackage)
                 {
-                    Logger?.LogInformation(
-                        $"  * {package.Version?.PadRight(18)} " +
+                    var detailedInformation = $"  * {package.Version?.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +
                         $"{(package.CoprocApplication != null ? "X   " : "    ")}" +
-                        $"{(package.BclFolder != null ? "X   " : "    ")}"
-                        );
+                        $"{(package.BclFolder != null ? "X   " : "    ")}" +
+                        " (default)";
+                    Logger?.LogInformation(detailedInformation.ColourConsoleTextGreen());
                 }
                 else
                 {
@@ -66,7 +66,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +
                         $"{(package.CoprocApplication != null ? "X   " : "    ")}" +
-                        $"{(package.BclFolder != null ? "X   " : "    ")}"
+                        $"{(package.BclFolder != null ? "X   " : "    ")}" 
                         );
                 }
             }
