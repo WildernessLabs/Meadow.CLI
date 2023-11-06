@@ -70,7 +70,7 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
-        internal async Task<string?> DownloadMeadowOSVersionFile(string? version)
+        internal async Task<string?> DownloadMeadowOSVersionFile(string? version, CancellationToken cancellationToken)
         {
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
@@ -88,7 +88,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
+                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl), cancellationToken);
             }
             catch
             {
@@ -118,17 +118,39 @@ namespace Meadow.CLI.Core
             return true;
         }
 
+        static bool IsPassingThroughDefaultGateway()
+        {
+            NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+            foreach (NetworkInterface networkInterface in networkInterfaces)
+            {
+                if (networkInterface.OperationalStatus == OperationalStatus.Up)
+                {
+                    GatewayIPAddressInformationCollection gateways = networkInterface.GetIPProperties().GatewayAddresses;
+
+                    if (gateways.Count > 0)
+                    {
+                        // If any network interface has a gateway, you are likely passing through a gateway.
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
         //ToDo rename this method - DownloadOSAsync?
-        public async Task DownloadOsBinaries(string? version = null, bool force = false)
+        public async Task DownloadOsBinaries(string? version = null, bool force = false, CancellationToken cancellationToken = default)
         {
             // Check if there is an active internet connection
-            if (!NetworkInterface.GetIsNetworkAvailable())
+            if (!NetworkInterface.GetIsNetworkAvailable() && IsPassingThroughDefaultGateway())
             {
                 _logger.LogError($"No internet connection! Cannot download Meadow OS version {version}. Please retry once an internet connection is available.{Environment.NewLine}");
                 return;
             }
 
-            var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
+            var versionCheckFilePath = await DownloadMeadowOSVersionFile(version, cancellationToken);
 
             if (versionCheckFilePath == null)
             {
@@ -319,7 +341,7 @@ namespace Meadow.CLI.Core
 
                 downloadFileName = Path.GetTempFileName();
 
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
                 using (var downloadFileStream = new DownloadFileStream(stream, _logger))
                 {
                     _logger.LogDebug($"Copying downloaded file to temp file {downloadFileName}");
