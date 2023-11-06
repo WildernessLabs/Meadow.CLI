@@ -51,7 +51,7 @@ namespace Meadow.CLI.Commands.App
             try
             {
                 // make sure we have the same locally because we will do linking/trimming against that runtime
-                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion);
+                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion, cancellationToken: cancellationToken);
             }
             catch
             {   //OS binaries failed to download
