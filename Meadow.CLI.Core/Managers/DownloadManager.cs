@@ -341,7 +341,7 @@ namespace Meadow.CLI.Core
 
                 downloadFileName = Path.GetTempFileName();
 
-                using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var downloadFileStream = new DownloadFileStream(stream, _logger))
                 {
                     _logger.LogDebug($"Copying downloaded file to temp file {downloadFileName}");
