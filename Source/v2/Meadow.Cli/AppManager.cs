@@ -30,19 +30,34 @@ public static class AppManager
         IPackageManager packageManager,
         IMeadowConnection connection,
         string localBinaryDirectory,
+        DeviceInfo? deviceInfo,
         bool includePdbs,
         bool includeXmlDocs,
-        ILogger logger,
+        ILogger? logger,
         CancellationToken cancellationToken)
     {
         // TODO: add sub-folder support when HCOM supports it
 
+        logger?.LogInformation($"Deploying application from {localBinaryDirectory}");
+
+        string? runtimePath;
+
+        if (deviceInfo == null || deviceInfo.RuntimeVersion == null)
+        {
+            runtimePath = packageManager.MeadowAssembliesPath;
+        }
+        else
+        {
+            runtimePath = packageManager.GetMeadowAssemblyPathForVersion(deviceInfo.RuntimeVersion);
+        }
+        logger?.LogInformation($"Using runtime files at {runtimePath}");
+
         var localFiles = new Dictionary<string, uint>();
 
-        // get a list of files to send
-        var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
+        // get a list of files to send - start with the dependencies
+        var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")), runtimePath);
 
-        logger.LogInformation("Generating the list of files to deploy...");
+        logger?.LogInformation("Generating the list of files to deploy...");
         foreach (var file in dependencies)
         {
             // TODO: add any other filtering capability here
@@ -50,8 +65,13 @@ public static class AppManager
             if (!includePdbs && IsPdb(file)) continue;
             if (!includeXmlDocs && IsXmlDoc(file)) continue;
 
+            // use the file in the bin folder if it exists, otherwise go to the dependency folder (dependency may have been trimmed)
+            var trimmed = Path.Combine(localBinaryDirectory, Path.GetFileName(file));
+
+            var fileToUse = File.Exists(trimmed) ? trimmed : file;
+
             // read the file data so we can generate a CRC
-            using FileStream fs = File.Open(file, FileMode.Open);
+            using FileStream fs = File.Open(fileToUse, FileMode.Open);
             var len = (int)fs.Length;
             var bytes = new byte[len];
 
@@ -59,12 +79,12 @@ public static class AppManager
 
             var crc = CrcTools.Crc32part(bytes, len, 0);
 
-            localFiles.Add(file, crc);
+            localFiles.Add(fileToUse, crc);
         }
 
         if (localFiles.Count() == 0)
         {
-            logger.LogInformation($"No new files to deploy");
+            logger?.LogInformation($"No new files to deploy");
         }
 
         // get a list of files on-device, with CRCs
@@ -78,13 +98,13 @@ public static class AppManager
 
         if (removeFiles.Count() == 0)
         {
-            logger.LogInformation($"No files to delete");
+            logger?.LogInformation($"No files to delete");
         }
 
         // delete those files
         foreach (var file in removeFiles)
         {
-            logger.LogInformation($"Deleting file '{file}'...");
+            logger?.LogInformation($"Deleting file '{file}'...");
             await connection.DeleteFile(file, cancellationToken);
         }
 
@@ -95,7 +115,10 @@ public static class AppManager
 
             if (existing != null && existing.Crc != null)
             {
-                if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
+                var remoteCrc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
+                var localCrc = localFile.Value;
+
+                if (remoteCrc == localCrc)
                 {
                     // exists and has a matching CRC, skip it
                     continue;
@@ -110,7 +133,7 @@ public static class AppManager
                 {
                     if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
                     {
-                        logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                        logger?.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
                         await Task.Delay(100);
                         success = false;
                     }
@@ -121,7 +144,7 @@ public static class AppManager
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}' ({ex.Message}).  Retrying.");
+                    logger?.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}' ({ex.Message}).  Retrying.");
                     await Task.Delay(100);
                     success = false;
                 }

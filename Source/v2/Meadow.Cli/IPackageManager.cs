@@ -4,7 +4,10 @@ namespace Meadow.Cli;
 
 public interface IPackageManager
 {
-    List<string> GetDependencies(FileInfo file);
+    string? MeadowAssembliesPath { get; }
+    string? GetMeadowAssemblyPathForVersion(string runtimeVersion);
+
+    List<string> GetDependencies(FileInfo file, string? bclFolder = null);
 
     bool BuildApplication(
         string projectFilePath,

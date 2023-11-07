@@ -629,6 +629,7 @@ namespace Meadow.CLI.Core.Devices
                     {
                         return;
                     }
+                    if (!File.Exists(file)) return;
 
                     using FileStream fs = File.Open(file, FileMode.Open);
                     var len = (int)fs.Length;

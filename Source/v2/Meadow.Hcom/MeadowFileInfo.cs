@@ -4,6 +4,11 @@
     public long? Size { get; private set; }
     public string? Crc { get; private set; }
 
+    public override string ToString()
+    {
+        return $"{Path.GetFileName(Name)} [0x{Crc:8x}]";
+    }
+
     public static MeadowFileInfo? Parse(string info)
     {
         MeadowFileInfo? mfi = null;

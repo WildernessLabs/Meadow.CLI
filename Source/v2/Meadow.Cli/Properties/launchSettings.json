@@ -45,7 +45,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM7"
+      "commandLineArgs": "config route COM13"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -185,7 +185,7 @@
     },
     "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app deploy C:\\repos\\wilderness\\Meadow.TestSuite\\src\\Validation\\loopback\\DiscreteLoopback"
     },
     "App Deploy (untrimmed output)": {
       "commandName": "Project",

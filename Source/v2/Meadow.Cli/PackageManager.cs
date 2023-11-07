@@ -250,14 +250,29 @@ public partial class PackageManager : IPackageManager
             {
                 var shortname = System.IO.Path.GetFileName(dir);
 
-                if (shortname == PackageManager.PostLinkDirectoryName || shortname == PackageManager.PreLinkDirectoryName)
+                if (shortname == PackageManager.PreLinkDirectoryName)
                 {
+
                     continue;
                 }
 
                 var file = Directory.GetFiles(dir).FirstOrDefault(f => string.Compare(Path.GetFileName(f), appName, true) == 0);
                 if (file != null)
                 {
+                    // we've found the target app (typically App.dll)
+                    // next look for a post-link folder
+                    /*
+                                        var postlink = Path.Combine(dir, PackageManager.PostLinkDirectoryName);
+                                        if (Directory.Exists(postlink))
+                                        {
+                                            // does the postlink have the target file?
+                                            var testPath = Path.Combine(postlink, appName);
+                                            if (File.Exists(testPath))
+                                            {
+                                                fileList.Add(new FileInfo(file)
+                                            }
+                                        }
+                    */
                     fileList.Add(new FileInfo(file));
                 }
 

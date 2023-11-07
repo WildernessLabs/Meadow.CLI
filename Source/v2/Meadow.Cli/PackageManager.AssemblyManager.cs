@@ -18,7 +18,7 @@ public partial class PackageManager
 
     private string? _meadowAssembliesPath;
 
-    private string? MeadowAssembliesPath
+    public string? MeadowAssembliesPath
     {
         get
         {
@@ -44,6 +44,22 @@ public partial class PackageManager
 
             return _meadowAssembliesPath;
         }
+    }
+
+    public string? GetMeadowAssemblyPathForVersion(string runtimeVersion)
+    {
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var store = _fileManager.Firmware["Meadow F7"];
+        if (store == null) return null;
+
+        store.Refresh();
+
+        var existing = store.FirstOrDefault(p => p.Version == runtimeVersion);
+
+        if (existing == null || existing.BclFolder == null) return null;
+
+        return Path.Combine(existing.GetFullyQualifiedPath(existing.BclFolder));
     }
 
     public async Task<IEnumerable<string>?> TrimDependencies(FileInfo file, List<string> dependencies, IList<string>? noLink, ILogger? logger, bool includePdbs, bool verbose = false, string? linkerOptions = null)
@@ -184,16 +200,16 @@ public partial class PackageManager
         }
     }
 
-    public List<string> GetDependencies(FileInfo file)
+    public List<string> GetDependencies(FileInfo file, string? bclFolder = null)
     {
         dependencyMap.Clear();
 
         var directoryName = file.DirectoryName;
         if (!string.IsNullOrEmpty(directoryName))
         {
-            var refs = GetAssemblyNameReferences(file.Name, directoryName);
+            var refs = GetAssemblyNameReferences(file.Name, directoryName, bclFolder);
 
-            var dependencies = GetDependencies(refs, dependencyMap, directoryName);
+            var dependencies = GetDependencies(refs, dependencyMap, directoryName, bclFolder);
 
             return dependencies;
         }
@@ -203,7 +219,7 @@ public partial class PackageManager
         }
     }
 
-    private (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
+    private (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path, string? bclFolder = null)
     {
         static string? ResolvePath(string fileName, string path)
         {
@@ -217,9 +233,11 @@ public partial class PackageManager
         }
 
         //ToDo - is it ever correct to fall back to the root path without a version?
-        if (!string.IsNullOrEmpty(MeadowAssembliesPath))
+        if (bclFolder == null) bclFolder = MeadowAssembliesPath;
+
+        if (!string.IsNullOrEmpty(bclFolder))
         {
-            string? resolved_path = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);
+            string? resolved_path = ResolvePath(fileName, bclFolder) ?? ResolvePath(fileName, path);
 
             if (resolved_path is null)
             {
@@ -228,7 +246,7 @@ public partial class PackageManager
 
             Collection<AssemblyNameReference> references;
 
-            using (var definition = Mono.Cecil.AssemblyDefinition.ReadAssembly(resolved_path))
+            using (var definition = AssemblyDefinition.ReadAssembly(resolved_path))
             {
                 references = definition.MainModule.AssemblyReferences;
             }
@@ -240,7 +258,7 @@ public partial class PackageManager
         }
     }
 
-    private List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
+    private List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath, string? bclFolder = null)
     {
         if (references.Item2 == null || dependencyMap.Contains(references.Item2))
             return dependencyMap;
@@ -251,12 +269,12 @@ public partial class PackageManager
         {
             foreach (var ar in references.Item1)
             {
-                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath, bclFolder);
 
                 if (namedRefs.Item1 == null)
                     continue;
 
-                GetDependencies(namedRefs, dependencyMap, folderPath);
+                GetDependencies(namedRefs, dependencyMap, folderPath, bclFolder);
             }
         }
 

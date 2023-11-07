@@ -138,11 +138,14 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
         var directoryName = file.DirectoryName;
 
+        // get the runtime version on the target device, it might not match our default runtime locally
+        var info = await connection.GetDeviceInfo(CancellationToken);
+
         Logger?.LogInformation($"Deploying app from {directoryName}...");
 
-        if (!string.IsNullOrEmpty(directoryName) && Logger != null)
+        if (!string.IsNullOrEmpty(directoryName))
         {
-            await AppManager.DeployApplication(_packageManager, connection, directoryName, true, false, Logger, CancellationToken);
+            await AppManager.DeployApplication(_packageManager, connection, directoryName, info, true, false, Logger, CancellationToken);
         }
         else
         {
@@ -156,7 +159,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)
     {
-        var p = (e.completed / (double)e.total) * 100d;
+        var p = e.completed / (double)e.total * 100d;
 
         if (e.fileName != _lastFile)
         {

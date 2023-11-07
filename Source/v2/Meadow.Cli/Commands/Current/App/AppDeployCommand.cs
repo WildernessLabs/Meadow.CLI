@@ -45,7 +45,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
             Connection.FileWriteProgress += (s, e) =>
             {
-                var p = (e.completed / (double)e.total) * 100d;
+                var p = e.completed / (double)e.total * 100d;
 
                 if (e.fileName != lastFile)
                 {
@@ -88,11 +88,14 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 file = new FileInfo(path);
             }
 
+            // get the runtime version on the target device, it might not match our default runtime locally
+            var info = await Connection.GetDeviceInfo(CancellationToken);
+
             var targetDirectory = file.DirectoryName;
 
             if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
             {
-                await AppManager.DeployApplication(_packageManager, Connection, targetDirectory, true, false, Logger, CancellationToken);
+                await AppManager.DeployApplication(_packageManager, Connection, targetDirectory, info, true, false, Logger, CancellationToken);
                 Console?.Output.WriteAsync("\n");
             }
 
