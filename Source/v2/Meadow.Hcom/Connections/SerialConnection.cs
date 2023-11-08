@@ -1048,8 +1048,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var expected = fileBytes.Length;
 
         var fileName = Path.GetFileName(localFileName);
+        var directoryName = Path.GetDirectoryName(localFileName).Split(Path.DirectorySeparatorChar);
+        var displayedFileName = Path.Combine(directoryName[directoryName.Length - 1], fileName);
 
-        base.RaiseFileWriteProgress(fileName, progress, expected);
+        base.RaiseFileWriteProgress(displayedFileName, progress, expected);
 
         var oldTimeout = _port.ReadTimeout;
         _port.ReadTimeout = 60000;
@@ -1081,7 +1083,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             }
 
             progress += toRead;
-            base.RaiseFileWriteProgress(fileName, progress, expected);
+            base.RaiseFileWriteProgress(displayedFileName, progress, expected);
             if (progress >= fileBytes.Length) break;
         }
 
@@ -1089,7 +1091,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             _port.ReadTimeout = oldTimeout;
 
-            base.RaiseFileWriteProgress(fileName, expected, expected);
+            base.RaiseFileWriteProgress(displayedFileName, expected, expected);
 
             // finish with an "end" message - not enqued because this is all a serial operation
             var request = RequestBuilder.Build<EndFileWriteRequest>();
