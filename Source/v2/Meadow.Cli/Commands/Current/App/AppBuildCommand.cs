@@ -45,7 +45,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
             Logger?.LogInformation($"Building {Configuration} configuration of {path} (this may take a few seconds)...");
 
-            // Get out spinner ready
+            // Get our spinner ready
             var spinnerCancellationTokenSource = new CancellationTokenSource();
             var consoleSpinner = new ConsoleSpinner(Console!);
             Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
@@ -53,7 +53,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             // TODO: enable cancellation of this call
             var success = await Task.FromResult(_packageManager.BuildApplication(path, Configuration));
 
-            // Cancel the spinner as soon as EraseFlash finishes
+            // Cancel the spinner as soon as BuildApplication finishes
             spinnerCancellationTokenSource.Cancel();
 
             // Let's start spinning

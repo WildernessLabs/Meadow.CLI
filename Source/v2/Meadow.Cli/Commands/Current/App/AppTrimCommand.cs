@@ -56,7 +56,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             file = new FileInfo(path);
         }
 
-        // Get out spinner ready
+        // Get our spinner ready
         var spinnerCancellationTokenSource = new CancellationTokenSource();
         var consoleSpinner = new ConsoleSpinner(Console!);
         Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
@@ -64,7 +64,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         // TODO: support `nolink` command line args
         await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken);
 
-        // Cancel the spinner as soon as EraseFlash finishes
+        // Cancel the spinner as soon as TrimApplication finishes
         spinnerCancellationTokenSource.Cancel();
 
         // Let's start spinning
