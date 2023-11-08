@@ -605,7 +605,8 @@ namespace Meadow.CLI.Core.Devices
 
                 var binaries = Directory.EnumerateFiles(directoryName, "*.*", SearchOption.TopDirectoryOnly)
                                        .Where(s => new FileInfo(s).Extension != ".dll")
-                                       .Where(s => new FileInfo(s).Extension != ".pdb");
+                                       .Where(s => new FileInfo(s).Extension != ".pdb")
+                                       .Where(s => !s.Contains(".DS_Store"));
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
                 var files = new Dictionary<string, uint>();

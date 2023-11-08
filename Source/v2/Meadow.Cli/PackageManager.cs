@@ -157,17 +157,24 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var dependencies = GetDependencies(applicationFilePath)
-            .Where(x => x.Contains("App.") == false)
+        AssemblyDependencies = GetDependencies(applicationFilePath)
             .ToList();
 
-        TrimmedDependencies = await TrimDependencies(
+        try
+        {
+            TrimmedDependencies = await TrimDependencies(
             applicationFilePath,
-            dependencies,
+            AssemblyDependencies,
             noLink,
             logger,
             includePdbs,
             verbose: false);
+        }
+        catch (Exception)
+        {
+            logger?.LogError($"Trimming FAILED. Falling back to untrimmed dependencies");
+            Trimmed = false;
+        }
 
         Trimmed = true;
     }
