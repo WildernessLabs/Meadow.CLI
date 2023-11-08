@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using Mono.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 
 namespace Meadow.CLI;
@@ -46,6 +47,7 @@ public partial class PackageManager
         }
     }
 
+    public List<string>? AssemblyDependencies { get; set; }
     public IEnumerable<string>? TrimmedDependencies { get; set; }
     public bool Trimmed { get; set; } = false;
 
@@ -169,7 +171,7 @@ public partial class PackageManager
                     process.WaitForExit(60000);
                     if (process.ExitCode != 0)
                     {
-                        Debug.WriteLine($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+                        logger?.LogDebug($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
                         throw new Exception("Trimming failed");
                     }
                 }

@@ -8,6 +8,9 @@ namespace Meadow.CLI;
 
 public static class AppManager
 {
+    static string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
+    static string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
+
     private static bool MatchingDllExists(string file)
     {
         var root = Path.GetFileNameWithoutExtension(file);
@@ -42,22 +45,23 @@ public static class AppManager
 
         var localFiles = new Dictionary<string, uint>();
 
-        var additionFilesList = new string[]
+        var auxiliary = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                                       .Where(s => new FileInfo(s).Extension != ".dll")
+                                       .Where(s => new FileInfo(s).Extension != ".pdb")
+                                       .Where(s => !s.Contains(".DS_Store"));
+
+        foreach (var item in auxiliary)
         {
-            "app.config.json",
-            "meadow.config.yaml",
-            "wifi.config.yaml",
-        };
-
-        string[] dllLinkIngoreList = { "System.Threading.Tasks.Extensions.dll" };//, "Microsoft.Extensions.Primitives.dll" };
-        string[] pdbLinkIngoreList = { "System.Threading.Tasks.Extensions.pdb" };//, "Microsoft.Extensions.Primitives.pdb" };
-
-        // get a list of files to send
-        var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
+            var file = Path.Combine(localBinaryDirectory, item);
+            if (File.Exists(file))
+            {
+                await AddToLocalFiles(localFiles, file, includePdbs, includeXmlDocs, cancellationToken);
+            }
+        }
 
         if (packageManager.Trimmed && packageManager.TrimmedDependencies != null)
         {
-            var trimmedDependencies = packageManager.TrimmedDependencies.Where(x => x.Contains("App.") == false)
+            var trimmedDependencies = packageManager.TrimmedDependencies
                         .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
                         .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
                         .ToList();
@@ -65,36 +69,47 @@ public static class AppManager
             //crawl trimmed dependencies
             foreach (var file in trimmedDependencies)
             {
-                if (!includePdbs && IsPdb(file))
-                    continue;
-                if (!includeXmlDocs && IsXmlDoc(file))
-                    continue;
+                await AddToLocalFiles(localFiles, file, includePdbs, includeXmlDocs, cancellationToken);
+            }
 
-                await AddToLocalFiles(localFiles, file, cancellationToken);
+            // Add the Dlls from the TrimmingIgnorelist
+            for (int i = 0; i < dllLinkIngoreList.Length; i++)
+            {
+                //add the files from the dll link ignore list
+                if (packageManager.AssemblyDependencies!.Exists(f => f.Contains(dllLinkIngoreList[i])))
+                {
+                    var dllfound = packageManager.AssemblyDependencies!.FirstOrDefault(f => f.Contains(dllLinkIngoreList[i]));
+                    if (!string.IsNullOrEmpty(dllfound))
+                    {
+                        await AddToLocalFiles(localFiles, dllfound, includePdbs, includeXmlDocs, cancellationToken);
+                    }
+                }
+            }
+
+            if (includePdbs)
+            {
+                for (int i = 0; i < pdbLinkIngoreList.Length; i++)
+                {
+                    //add the files from the pdb link ignore list
+                    if (packageManager.AssemblyDependencies!.Exists(f => f.Contains(pdbLinkIngoreList[i])))
+                    {
+                        var pdbFound = packageManager.AssemblyDependencies!.FirstOrDefault(f => f.Contains(pdbLinkIngoreList[i]));
+                        if (!string.IsNullOrEmpty(pdbFound))
+                        {
+                            await AddToLocalFiles(localFiles, pdbFound, includePdbs, includeXmlDocs, cancellationToken);
+                        }
+                    }
+                }
             }
         }
         else
         {
-            foreach (var file in dependencies)
+            foreach (var file in packageManager.AssemblyDependencies!)
             {
                 // TODO: add any other filtering capability here
 
-                if (!includePdbs && IsPdb(file))
-                    continue;
-                if (!includeXmlDocs && IsXmlDoc(file))
-                    continue;
-
                 //Populate out LocalFile Dictionary with this entry
-                await AddToLocalFiles(localFiles, file, cancellationToken);
-            }
-        }
-
-        foreach (var item in additionFilesList)
-        {
-            var file = Path.Combine(localBinaryDirectory, item);
-            if (File.Exists(file))
-            {
-                await AddToLocalFiles(localFiles, file, cancellationToken);
+                await AddToLocalFiles(localFiles, file, includePdbs, includeXmlDocs, cancellationToken);
             }
         }
 
@@ -103,6 +118,17 @@ public static class AppManager
             logger.LogInformation($"No new files to deploy");
         }
 
+        logger.LogInformation("Done.");
+
+        return localFiles;
+    }
+
+    public static async Task DeployApplication(
+        IMeadowConnection connection,
+        Dictionary<string, uint> localFiles,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
         // get a list of files on-device, with CRCs
         var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
@@ -124,31 +150,24 @@ public static class AppManager
             await connection.DeleteFile(file, cancellationToken);
         }
 
-        foreach (var deviceFile in deviceFiles)
-        {
-            var exists = localFiles.FirstOrDefault(l => Path.GetFileName(deviceFile.Name) == Path.GetFileName(l.Key));
-            if (deviceFile.Crc != null)
-            {
-                if (uint.Parse(deviceFile.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == exists.Value)
-                {
-                    // exists and has a matching CRC, skip it
-                    localFiles.Remove(exists.Key);
-                }
-            }
-        }
-
-        return localFiles;
-    }
-
-    public static async Task DeployApplication(
-        IMeadowConnection connection,
-        Dictionary<string, uint> localFiles,
-        ILogger logger,
-        CancellationToken cancellationToken)
-    {
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
+            // does the file name and CRC match?
+            var filename = Path.GetFileName(localFile.Key);
+
+            if (!File.Exists(localFile.Key))
+            {
+                logger.LogInformation($"{filename} not found" + Environment.NewLine);
+                continue;
+            }
+
+            if (deviceFiles.Any(d => Path.GetFileName(d.Name) == filename && !string.IsNullOrEmpty(d.Crc) && uint.Parse(d.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value))
+            {
+                logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
+                continue;
+            }            
+
             bool success;
 
             do
@@ -177,8 +196,13 @@ public static class AppManager
         }
     }
 
-    private static async Task AddToLocalFiles(Dictionary<string, uint> localFiles, string file, CancellationToken cancellationToken)
+    private static async Task AddToLocalFiles(Dictionary<string, uint> localFiles, string file, bool includePdbs, bool includeXmlDocs, CancellationToken cancellationToken)
     {
+        if (!includePdbs && IsPdb(file))
+            return;
+        if (!includeXmlDocs && IsXmlDoc(file))
+            return;
+
         // read the file data so we can generate a CRC
         using FileStream fs = File.Open(file, FileMode.Open);
         var len = (int)fs.Length;
