@@ -47,24 +47,35 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
 
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null)
+        if (org == null || string.IsNullOrEmpty(org.Id))
+        {
+            Logger?.LogError($"Invalid Org");
             return;
+        }
 
         if (string.IsNullOrEmpty(Description))
         {
-            Logger?.LogError($"Invalid Description");
-            return;
+            Description = string.Empty;
         }
 
         try
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            if (!string.IsNullOrEmpty(org.Id))
-            {
-                var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
-                Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
-            }
+            // Get our spinner ready
+            var spinnerCancellationTokenSource = new CancellationTokenSource();
+            var consoleSpinner = new ConsoleSpinner(Console!);
+            Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
+
+            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
+
+            // Cancel the spinner as soon as UploadPackage finishes
+            spinnerCancellationTokenSource.Cancel();
+
+            // Let's start spinning
+            await consoleSpinnerTask;
+
+            Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)
         {
