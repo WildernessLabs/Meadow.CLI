@@ -2,7 +2,6 @@
 using Mono.Cecil;
 using Mono.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 
 namespace Meadow.CLI;
@@ -19,7 +18,7 @@ public partial class PackageManager
 
     private string? _meadowAssembliesPath;
 
-    private string? MeadowAssembliesPath
+    public string? MeadowAssembliesPath
     {
         get
         {
@@ -31,14 +30,26 @@ public partial class PackageManager
                 if (store != null)
                 {
                     store.Refresh();
-                    if (store.DefaultPackage != null)
-                    {
-                        var defaultPackage = store.DefaultPackage;
 
-                        if (defaultPackage.BclFolder != null)
+                    if (RuntimeVersion == null)
+                    {
+                        if (store.DefaultPackage != null)
                         {
-                            _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                            var defaultPackage = store.DefaultPackage;
+
+                            if (defaultPackage.BclFolder != null)
+                            {
+                                _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                            }
                         }
+                    }
+                    else
+                    {
+                        var existing = store.FirstOrDefault(p => p.Version == RuntimeVersion);
+
+                        if (existing == null || existing.BclFolder == null) return null;
+
+                        return Path.Combine(existing.GetFullyQualifiedPath(existing.BclFolder));
                     }
                 }
             }
@@ -48,8 +59,11 @@ public partial class PackageManager
     }
 
     public List<string>? AssemblyDependencies { get; set; }
+
     public IEnumerable<string>? TrimmedDependencies { get; set; }
     public bool Trimmed { get; set; } = false;
+
+    public string? RuntimeVersion { get; set; }
 
     public async Task<IEnumerable<string>?> TrimDependencies(FileInfo file, List<string> dependencies, IList<string>? noLink, ILogger? logger, bool includePdbs, bool verbose = false, string? linkerOptions = null)
     {
@@ -221,7 +235,6 @@ public partial class PackageManager
             return File.Exists(attempted_path) ? attempted_path : null;
         }
 
-        //ToDo - is it ever correct to fall back to the root path without a version?
         if (!string.IsNullOrEmpty(MeadowAssembliesPath))
         {
             string? resolved_path = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);

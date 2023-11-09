@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -77,9 +76,9 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
 
             if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
             {
-                var trimApplicationCommand = new AppTrimCommand(_packageManager, LoggerFactory!)
+                var trimApplicationCommand = new AppTrimCommand(_packageManager, ConnectionManager, LoggerFactory!)
                 {
-                    Path = path
+                    Path = path,
                 };
                 await trimApplicationCommand.ExecuteAsync(Console!);
 

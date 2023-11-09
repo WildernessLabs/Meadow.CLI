@@ -36,12 +36,12 @@ public static class AppManager
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
-        ILogger logger,
+        ILogger? logger,
         CancellationToken cancellationToken)
     {
         // TODO: add sub-folder support when HCOM supports it
 
-        logger.LogInformation("Generating the list of files to deploy...");
+        logger?.LogInformation($"Generating the list of files to deploy from {localBinaryDirectory}...");
 
         var localFiles = new Dictionary<string, uint>();
 
@@ -115,10 +115,10 @@ public static class AppManager
 
         if (localFiles.Count() == 0)
         {
-            logger.LogInformation($"No new files to deploy");
+            logger?.LogInformation($"No new files to deploy");
         }
 
-        logger.LogInformation("Done.");
+        logger?.LogInformation("Done.");
 
         return localFiles;
     }
