@@ -1,5 +1,7 @@
-﻿using Meadow.Cloud;
+﻿using System.Configuration;
+using Meadow.Cloud;
 using Meadow.Cloud.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -35,7 +37,21 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         {
             Logger?.LogInformation("Retrieving your user and organization information...");
 
+            // Get our spinner ready
+            var spinnerCancellationTokenSource = new CancellationTokenSource();
+            var consoleSpinner = new ConsoleSpinner(Console!);
+            Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
+
             var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
+
+            // Cancel the spinner as soon as GetUserOrgs finishes
+            spinnerCancellationTokenSource.Cancel();
+
+            // Let's start spinning
+            await consoleSpinnerTask;
+
+            Logger?.LogInformation("Done.");
+
             if (!userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {host} to register your account.");
@@ -46,7 +62,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
             {
-                orgNameOrId = userOrgs.First().Id;
+                org = userOrgs.First();
             }
             else
             {
