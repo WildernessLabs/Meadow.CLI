@@ -6,24 +6,23 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
-public class AppTrimCommand : BaseCommand<AppTrimCommand>
+public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
 {
-    private IPackageManager _packageManager;
-
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
     public string? Configuration { get; set; }
 
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
-        : base(loggerFactory)
+    public AppTrimCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        : base(packageManager, connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
+        await base.ExecuteCommand();
+
         string path = Path == null
             ? Environment.CurrentDirectory
             : Path;
@@ -54,6 +53,19 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         else
         {
             file = new FileInfo(path);
+        }
+
+        // Find RuntimeVersion
+        if (Connection != null)
+        {
+            var info = await Connection.GetDeviceInfo(CancellationToken);
+
+            _packageManager.RuntimeVersion = info?.RuntimeVersion;
+
+            Logger?.LogInformation($"Using runtime files from {_packageManager.MeadowAssembliesPath}");
+
+            // Avoid double reporting.
+            DetachMessageHandlers(Connection);
         }
 
         // Get our spinner ready
