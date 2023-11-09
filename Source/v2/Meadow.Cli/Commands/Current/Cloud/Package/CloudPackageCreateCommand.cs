@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud package create", Description = "Create a Meadow Package (MPAK)")]
+[Command("cloud package create", Description = "Builds, trims and creates a Meadow Package (MPAK)")]
 public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
