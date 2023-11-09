@@ -10,7 +10,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud package upload", Description = "Upload a Meadow Package (MPAK) to Meadow.Cloud")]
 public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadCommand>
 {
-    [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = true)]
+    [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = false)]
     public string? MpakPath { get; set; }
 
     [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
