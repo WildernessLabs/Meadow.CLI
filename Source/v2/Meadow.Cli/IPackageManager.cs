@@ -30,7 +30,10 @@ public interface IPackageManager
         CancellationToken? cancellationToken = null);
 
     List<string>? AssemblyDependencies { get; set; }
-    IEnumerable<string>? TrimmedDependencies { get; set; }
 
+    IEnumerable<string>? TrimmedDependencies { get; set; }
     bool Trimmed { get; set; }
+
+    string? RuntimeVersion { get; set; }
+    string? MeadowAssembliesPath { get; }
 }
