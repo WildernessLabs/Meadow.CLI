@@ -37,20 +37,8 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         {
             Logger?.LogInformation("Retrieving your user and organization information...");
 
-            // Get our spinner ready
-            var spinnerCancellationTokenSource = new CancellationTokenSource();
-            var consoleSpinner = new ConsoleSpinner(Console!);
-            Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
-
-            var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
-
-            // Cancel the spinner as soon as GetUserOrgs finishes
-            spinnerCancellationTokenSource.Cancel();
-
-            // Let's start spinning
-            await consoleSpinnerTask;
-
-            Logger?.LogInformation("Done.");
+            var userOrgs = await UserService.GetUserOrgs(host, cancellationToken)
+                .WithSpinner(Console!, 250);
 
             if (!userOrgs.Any())
             {
