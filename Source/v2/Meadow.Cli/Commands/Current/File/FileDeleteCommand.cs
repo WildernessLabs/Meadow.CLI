@@ -1,4 +1,6 @@
-﻿using CliFx.Attributes;
+﻿using System;
+using System.Diagnostics.Metrics;
+using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -57,7 +59,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                                 {
                                     var p = Path.GetFileName(f.Name);
 
-                                    Logger?.LogInformation($"Deleting file '{p}' from device...");
+                                    Console?.Output.WriteAsync($"Deleting file '{p}' from device...         \r");
                                     await Connection.Device.DeleteFile(p, CancellationToken);
                                 }
                                 else
@@ -84,7 +86,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                     {
                         if (Connection.Device != null)
                         {
-                            Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
+                            Console?.Output.WriteAsync($"Deleting file '{MeadowFile}' from device...         \r");
                             await Connection.Device.DeleteFile(MeadowFile, CancellationToken);
                         }
                     }
