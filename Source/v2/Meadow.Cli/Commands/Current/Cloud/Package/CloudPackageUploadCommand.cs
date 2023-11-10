@@ -87,18 +87,8 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            // Get our spinner ready
-            var spinnerCancellationTokenSource = new CancellationTokenSource();
-            var consoleSpinner = new ConsoleSpinner(Console!);
-            Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
-
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
-
-            // Cancel the spinner as soon as UploadPackage finishes
-            spinnerCancellationTokenSource.Cancel();
-
-            // Let's start spinning
-            await consoleSpinnerTask;
+            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken)
+                .WithSpinner(Console!, 250);
 
             Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }

@@ -82,19 +82,9 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
                 };
                 await trimApplicationCommand.ExecuteAsync(Console!);
 
-                // Get our spinner ready
-                var spinnerCancellationTokenSource = new CancellationTokenSource();
-                var consoleSpinner = new ConsoleSpinner(Console!);
-                Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
-
-                var localFiles = await AppManager.GenerateDeployList(_packageManager, Connection, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken);
+                var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken)
+                    .WithSpinner(Console!, 250);
                 Console?.Output.WriteAsync("\n");
-
-                // Cancel the spinner as soon as GenerateDeployList finishes
-                spinnerCancellationTokenSource.Cancel();
-
-                // Let's start spinning
-                await consoleSpinnerTask;
 
                 Connection.FileWriteProgress += Connection_FileWriteProgress;
 
