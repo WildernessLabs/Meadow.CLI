@@ -163,12 +163,12 @@ public partial class PackageManager : IPackageManager
         try
         {
             TrimmedDependencies = await TrimDependencies(
-            applicationFilePath,
-            AssemblyDependencies,
-            noLink,
-            logger,
-            includePdbs,
-            verbose: false);
+                applicationFilePath,
+                AssemblyDependencies,
+                noLink,
+                logger,
+                includePdbs,
+                verbose: false);
         }
         catch (Exception)
         {

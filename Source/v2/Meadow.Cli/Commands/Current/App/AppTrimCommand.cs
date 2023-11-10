@@ -68,18 +68,8 @@ public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
             DetachMessageHandlers(Connection);
         }
 
-        // Get our spinner ready
-        var spinnerCancellationTokenSource = new CancellationTokenSource();
-        var consoleSpinner = new ConsoleSpinner(Console!);
-        Task consoleSpinnerTask = consoleSpinner.Turn(250, spinnerCancellationTokenSource.Token);
-
         // TODO: support `nolink` command line args
-        await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken);
-
-        // Cancel the spinner as soon as TrimApplication finishes
-        spinnerCancellationTokenSource.Cancel();
-
-        // Let's start spinning
-        await consoleSpinnerTask;
+        await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken)
+            .WithSpinner(Console!, 250);
     }
 }
