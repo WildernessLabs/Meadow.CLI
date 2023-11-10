@@ -32,7 +32,6 @@ public static class AppManager
     }
 
     public static async Task<Dictionary<string, uint>> GenerateDeployList(IPackageManager packageManager,
-        IMeadowConnection connection,
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
@@ -66,7 +65,7 @@ public static class AppManager
                         .Where(x => pdbLinkIngoreList.Any(f => x.Contains(f)) == false)
                         .ToList();
 
-            //crawl trimmed dependencies
+            // Crawl trimmed dependencies
             foreach (var file in trimmedDependencies)
             {
                 await AddToLocalFiles(localFiles, file, includePdbs, includeXmlDocs, cancellationToken);
@@ -153,20 +152,29 @@ public static class AppManager
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
-            // does the file name and CRC match?
-            var filename = Path.GetFileName(localFile.Key);
-
             if (!File.Exists(localFile.Key))
             {
-                logger.LogInformation($"{filename} not found" + Environment.NewLine);
+                logger.LogInformation($"{localFile.Key} not found" + Environment.NewLine);
                 continue;
             }
 
-            if (deviceFiles.Any(d => Path.GetFileName(d.Name) == filename && !string.IsNullOrEmpty(d.Crc) && uint.Parse(d.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value))
+            var filename = Path.GetFileName(localFile.Key);
+
+            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == filename);
+
+            if (existing != null && existing.Crc != null)
             {
-                logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
-                continue;
-            }            
+                var remoteCrc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
+                var localCrc = localFile.Value;
+
+                // do the file name and CRC match?
+                if (remoteCrc == localCrc)
+                {
+                    // exists and has a matching CRC, skip it
+                    logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
+                    continue;
+                }
+            }
 
             bool success;
 

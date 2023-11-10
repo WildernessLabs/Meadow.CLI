@@ -49,7 +49,7 @@ public partial class PackageManager
 
                         if (existing == null || existing.BclFolder == null) return null;
 
-                        return Path.Combine(existing.GetFullyQualifiedPath(existing.BclFolder));
+                        _meadowAssembliesPath = existing.GetFullyQualifiedPath(existing.BclFolder);
                     }
                 }
             }
@@ -210,7 +210,7 @@ public partial class PackageManager
         var directoryName = file.DirectoryName;
         if (!string.IsNullOrEmpty(directoryName))
         {
-            var refs = GetAssemblyNameReferences(file.Name, directoryName);
+            var refs = GetAssemblyReferences(file.Name, directoryName);
 
             var dependencies = GetDependencies(refs, dependencyMap, directoryName);
 
@@ -222,35 +222,45 @@ public partial class PackageManager
         }
     }
 
-    private (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
+    private (Collection<AssemblyNameReference>? References, string? ResolvedPath) GetAssemblyReferences(string fileName, string path)
     {
         static string? ResolvePath(string fileName, string path)
         {
-            string attempted_path = Path.Combine(path, fileName);
-            if (Path.GetExtension(fileName) != ".exe" &&
-                Path.GetExtension(fileName) != ".dll")
+            string attemptedPath = Path.Combine(path, fileName);
+            if (Path.GetExtension(fileName) != ".exe"
+                && Path.GetExtension(fileName) != ".dll")
             {
-                attempted_path += ".dll";
+                attemptedPath += ".dll";
             }
-            return File.Exists(attempted_path) ? attempted_path : null;
+            return File.Exists(attemptedPath) ? attemptedPath : null;
         }
 
         if (!string.IsNullOrEmpty(MeadowAssembliesPath))
         {
-            string? resolved_path = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);
+            string? resolvedPath = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);
 
-            if (resolved_path is null)
+            if (resolvedPath is null)
             {
                 return (null, null);
             }
 
             Collection<AssemblyNameReference> references;
 
-            using (var definition = Mono.Cecil.AssemblyDefinition.ReadAssembly(resolved_path))
+            try
             {
-                references = definition.MainModule.AssemblyReferences;
+                using (var definition = Mono.Cecil.AssemblyDefinition.ReadAssembly(resolvedPath))
+                {
+                    references = definition.MainModule.AssemblyReferences;
+                }
             }
-            return (references, resolved_path);
+            catch (Exception ex)
+            {
+                // Handle or log the exception appropriately
+                Console.WriteLine($"Error reading assembly: {ex.Message}");
+                return (null, null);
+            }
+
+            return (references, resolvedPath);
         }
         else
         {
@@ -258,20 +268,20 @@ public partial class PackageManager
         }
     }
 
-    private List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
+    private List<string> GetDependencies((Collection<AssemblyNameReference>? References, string? ResolvedPath) references, List<string> dependencyMap, string folderPath)
     {
-        if (references.Item2 == null || dependencyMap.Contains(references.Item2))
+        if (references.ResolvedPath == null || dependencyMap.Contains(references.ResolvedPath))
             return dependencyMap;
 
-        dependencyMap.Add(references.Item2);
+        dependencyMap.Add(references.ResolvedPath);
 
-        if (references.Item1 != null)
+        if (references.References != null)
         {
-            foreach (var ar in references.Item1)
+            foreach (var ar in references.References)
             {
-                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+                var namedRefs = GetAssemblyReferences(ar.Name, folderPath);
 
-                if (namedRefs.Item1 == null)
+                if (namedRefs.References == null)
                     continue;
 
                 GetDependencies(namedRefs, dependencyMap, folderPath);
