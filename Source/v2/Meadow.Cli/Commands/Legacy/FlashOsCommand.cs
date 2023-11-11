@@ -259,7 +259,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 Connection.FileWriteProgress += (s, e) =>
                 {
                     var p = (e.completed / (double)e.total) * 100d;
-                    Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+                    Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
                 };
 
 
