@@ -2,7 +2,7 @@
 
 namespace Meadow.CLI
 {
-    public static class TaskExtensions
+    public static class UITaskExtensions
     {
         public static async Task WithSpinner(this Task task, IConsole console, int delay = 100, CancellationToken cancellationToken = default)
         {
