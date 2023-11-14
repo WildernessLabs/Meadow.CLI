@@ -167,7 +167,7 @@ public partial class PackageManager
                         stdOutReaderResult = await stdOutReader.ReadToEndAsync();
                         if (verbose)
                         {
-                            Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
+                            logger?.LogInformation("StandardOutput Contains: " + stdOutReaderResult);
                         }
 
                     }
@@ -178,7 +178,7 @@ public partial class PackageManager
                         stdErrorReaderResult = await stdErrorReader.ReadToEndAsync();
                         if (!string.IsNullOrEmpty(stdErrorReaderResult))
                         {
-                            Console.WriteLine("StandardError Contains: " + stdErrorReaderResult);
+                            logger?.LogInformation("StandardError Contains: " + stdErrorReaderResult);
                         }
                     }
 
@@ -248,10 +248,11 @@ public partial class PackageManager
 
             try
             {
-                using (var definition = Mono.Cecil.AssemblyDefinition.ReadAssembly(resolvedPath))
+                using (var definition = AssemblyDefinition.ReadAssembly(resolvedPath))
                 {
                     references = definition.MainModule.AssemblyReferences;
                 }
+                return (references, resolvedPath);
             }
             catch (Exception ex)
             {
@@ -259,8 +260,6 @@ public partial class PackageManager
                 Console.WriteLine($"Error reading assembly: {ex.Message}");
                 return (null, null);
             }
-
-            return (references, resolvedPath);
         }
         else
         {
