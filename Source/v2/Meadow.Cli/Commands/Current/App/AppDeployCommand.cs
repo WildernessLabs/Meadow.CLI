@@ -83,7 +83,7 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
                 await trimApplicationCommand.ExecuteAsync(Console!);
 
                 var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken)
-                    .WithSpinner(Console!, 250);
+                    .WithSpinner(Console!);
                 Console?.Output.WriteAsync("\n");
 
                 Connection.FileWriteProgress += Connection_FileWriteProgress;

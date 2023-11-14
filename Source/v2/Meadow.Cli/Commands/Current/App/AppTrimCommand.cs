@@ -70,6 +70,6 @@ public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
 
         // TODO: support `nolink` command line args
         await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken)
-            .WithSpinner(Console!, 250);
+            .WithSpinner(Console!);
     }
 }
