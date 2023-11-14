@@ -20,7 +20,8 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
         if (Connection != null && Connection.Device != null)
         {
             Logger?.LogInformation($"Getting file list...");
-            var files = await Connection.Device.GetFileList(Verbose, CancellationToken);
+            var files = await Connection.Device.GetFileList(Verbose, CancellationToken)
+                .WithSpinner(Console!);
 
             if (files == null || files.Length == 0)
             {
@@ -28,6 +29,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             }
             else
             {
+                files = files.OrderBy(t => t.Name).ToArray();
                 if (Verbose)
                 {
                     var longestFileName = files.Select(x => x.Name.Length)
