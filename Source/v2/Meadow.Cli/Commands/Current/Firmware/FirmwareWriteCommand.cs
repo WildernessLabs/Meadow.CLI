@@ -375,21 +375,27 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor file {coProcessorFilePath}...");
 
-                string[]? fileList;
+                string[]? fileList = Array.Empty<string>();
                 if (coProcessorFilePath != null
                     && package.CoprocBootloader != null
                     && package.CoprocPartitionTable != null)
                 {
-                    fileList = new string[]
+                    if (!string.IsNullOrEmpty(Path))
+                    {
+                        fileList = new string[]
                         {
-                        package.GetFullyQualifiedPath(coProcessorFilePath),
-                        package.GetFullyQualifiedPath(package.CoprocBootloader),
-                        package.GetFullyQualifiedPath(package.CoprocPartitionTable),
+                            package.GetFullyQualifiedPath(coProcessorFilePath),
                         };
-                }
-                else
-                {
-                    fileList = Array.Empty<string>();
+                    }
+                    else
+                    {
+                        fileList = new string[]
+                        {
+                            package.GetFullyQualifiedPath(coProcessorFilePath),
+                            package.GetFullyQualifiedPath(package.CoprocBootloader),
+                            package.GetFullyQualifiedPath(package.CoprocPartitionTable),
+                        };
+                    }
                 }
 
                 await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
