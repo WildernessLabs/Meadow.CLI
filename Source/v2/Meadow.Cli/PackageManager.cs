@@ -176,7 +176,7 @@ public partial class PackageManager : IPackageManager
             Trimmed = false;
         }
 
-        Trimmed = true;
+        Trimmed = false;
     }
 
     public const string PackageMetadataFileName = "info.json";
