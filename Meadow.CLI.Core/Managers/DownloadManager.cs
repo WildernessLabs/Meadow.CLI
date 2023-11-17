@@ -118,33 +118,25 @@ namespace Meadow.CLI.Core
             return true;
         }
 
-        static bool IsPassingThroughDefaultGateway()
-        {
-            NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-
-            foreach (NetworkInterface networkInterface in networkInterfaces)
-            {
-                if (networkInterface.OperationalStatus == OperationalStatus.Up)
-                {
-                    GatewayIPAddressInformationCollection gateways = networkInterface.GetIPProperties().GatewayAddresses;
-
-                    if (gateways.Count > 0)
-                    {
-                        // If any network interface has a gateway, you are likely passing through a gateway.
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-
         //ToDo rename this method - DownloadOSAsync?
         public async Task DownloadOsBinaries(string? version = null, bool force = false, CancellationToken cancellationToken = default)
         {
+            string local_path;
+            if (!string.IsNullOrEmpty(version))
+            {
+                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
+
+                if (!force
+                    && Directory.Exists(local_path)
+                    && Directory.EnumerateFiles(local_path).Any())
+                {
+                    _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
+                    return;
+                }
+            }
+
             // Check if there is an active internet connection
-            if (!NetworkInterface.GetIsNetworkAvailable() && IsPassingThroughDefaultGateway())
+            if (!NetworkInterface.GetIsNetworkAvailable())
             {
                 _logger.LogError($"No internet connection! Cannot download Meadow OS version {version}. Please retry once an internet connection is available.{Environment.NewLine}");
                 return;
@@ -171,19 +163,14 @@ namespace Meadow.CLI.Core
             //we'll write latest.txt regardless of version if it doesn't exist
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
 
-            string local_path;
-
             if (string.IsNullOrWhiteSpace(version))
             {
-                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
                 version = release.Version;
             }
-            else
-            {
-                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
-            }
 
-            if (CreateFolder(local_path, force) == false)
+            local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
+
+            if (!CreateFolder(local_path, force) && Directory.EnumerateFiles(local_path).Any())
             {
                 _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
                 return;
