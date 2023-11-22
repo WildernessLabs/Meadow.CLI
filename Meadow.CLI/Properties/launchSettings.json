@@ -2,7 +2,7 @@
   "profiles": {
     "AppDeploy": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy -f /Users/briankim/gh/OtaSample/bin/Debug/netstandard2.1/App.dll"
+      "commandLineArgs": "app deploy -f H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\bin\\Debug\\netstandard2.1\\App.dll -s COM18"
     },
     "CloudLogin": {
       "commandName": "Project",
@@ -78,7 +78,7 @@
     },
     "Package Create": {
       "commandName": "Project",
-      "commandLineArgs": "package create -p /Users/briankim/gh/OtaSample/OtaSample.csproj -v 1.2.0.1" 
+      "commandLineArgs": "package create -p /Users/briankim/gh/OtaSample/OtaSample.csproj -v 1.2.0.1"
     },
     "Package List": {
       "commandName": "Project",
