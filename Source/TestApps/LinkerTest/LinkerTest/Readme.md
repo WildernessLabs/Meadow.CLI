@@ -31,3 +31,11 @@ Microsoft.Extensions.Configuration.Abstractions
 Microsoft.Extensions.Configuration.FileExtensions
 Microsoft.Extensions.Configuration.Primitives
 
+
+Adding a reference to Meadow.CLI.Core also impacts the linking behavior of the above libraries and causes three libraries to be linked out completely
+
+Microsoft.Bcl.AsyncInterfaces
+System.Buffers
+System.Threading.Tasks.Extensions
+
+
