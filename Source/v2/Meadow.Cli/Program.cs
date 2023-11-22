@@ -69,26 +69,30 @@ public class Program
 
         AddCommandsAsServices(services);
 
-        var serviceProvider = services.BuildServiceProvider();
 
-        try
+        using (var serviceProvider = services.BuildServiceProvider())
         {
-            await new CliApplicationBuilder()
-                .AddCommandsFromThisAssembly()
-                .UseTypeActivator(serviceProvider.GetService!)
-                .SetExecutableName("meadow")
-                .Build()
-                .RunAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Operation failed: {ex.Message}");
+            //var serviceProvider = services.BuildServiceProvider();
+
+            try
+            {
+                await new CliApplicationBuilder()
+                    .AddCommandsFromThisAssembly()
+                    .UseTypeActivator(serviceProvider.GetService!)
+                    .SetExecutableName("meadow")
+                    .Build()
+                    .RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Operation failed: {ex.Message}");
+                return -1;
 #if DEBUG
-            throw; //debug spew for debug builds
+                throw; //debug spew for debug builds
 #endif
+            }
         }
 
-        Environment.Exit(0);
         return 0;
     }
 
