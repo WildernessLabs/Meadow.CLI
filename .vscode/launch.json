@@ -5,6 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Meadow.CLI v2 Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Source/v2/Meadow.CLI/bin/Debug/meadow",
+            "args": ["app deploy", "/Users/Dominique/Development/WL/Meadow.Core.Samples/Source/Meadow.Core.Samples/Blinky/BlinkyCS/bin/Release/netstandard2.1/App.dll"],
+            "cwd": "${workspaceFolder}/Source/v2/Meadow.CLI",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "TestApp",
             "type": "coreclr",
             "request": "launch",
