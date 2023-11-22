@@ -143,6 +143,7 @@ public class MeadowLinker
                 logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
             }
 
+            /*
             string stdErrorReaderResult;
             using (StreamReader stdErrorReader = process.StandardError)
             {
@@ -151,14 +152,16 @@ public class MeadowLinker
                 {
                     logger?.Log(LogLevel.Debug, "StandardError Contains: " + stdErrorReaderResult);
                 }
-            }
+            }*/
 
-            process.WaitForExit(60000);
+            await process.WaitForExitAsync();
+
             if (process.ExitCode != 0)
             {
                 logger?.Log(LogLevel.Debug, $"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
                 throw new Exception("Trimming failed");
             }
+
         }
     }
 
