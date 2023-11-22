@@ -370,7 +370,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 try
                 {
                     // Send the data to Meadow
-                    await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken.HasValue ? cancellationToken.Value : default);
+                    if (_port.IsOpen){
+                        await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken.HasValue ? cancellationToken.Value : default);
+                    }
+                    else {
+                        _logger?.LogError("Port is closed!");
+                    }
                 }
                 catch (InvalidOperationException ioe)  // Port not opened
                 {

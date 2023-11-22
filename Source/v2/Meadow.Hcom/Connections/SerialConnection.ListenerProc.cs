@@ -55,7 +55,13 @@ namespace Meadow.Hcom
                     read:
                         try
                         {
-                            receivedLength = await _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
+                            if (_port.IsOpen)
+                            {
+                                receivedLength = await _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
+                            }
+                            else {
+                                Debug.WriteLine("Port is closed!");
+                            }
                         }
                         catch (OperationCanceledException)
                         {
