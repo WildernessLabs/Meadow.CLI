@@ -651,9 +651,8 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 var dependencies = AssemblyManager.GetDependencies(fileName, directoryName, osVersion)
-                    .Where(x => x.Contains("App.") == false)
-                    // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .ToList();
+                                    .Except(new string[] { "App.dll", "App.exe" })
+                                    .ToList();
 
                 var trimmedDependencies = await AssemblyManager.TrimDependencies(fileName, directoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
 
