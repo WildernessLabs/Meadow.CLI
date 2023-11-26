@@ -31,13 +31,18 @@ public static class AppManager
         return false;
     }
 
-    public static async Task<Dictionary<string, uint>> GenerateDeployList(IPackageManager packageManager,
+    public static async Task<Dictionary<string, uint>?> GenerateDeployList(IPackageManager packageManager,
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
         ILogger? logger,
         CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+
         // TODO: add sub-folder support when HCOM supports it
 
         logger?.LogInformation($"Generating the list of files to deploy from {localBinaryDirectory}...");
@@ -68,6 +73,10 @@ public static class AppManager
             // Crawl trimmed dependencies
             foreach (var file in trimmedDependencies)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
                 await AddToLocalFiles(localFiles, file, includePdbs, includeXmlDocs, cancellationToken);
             }
 
@@ -105,6 +114,11 @@ public static class AppManager
         {
             foreach (var file in packageManager.AssemblyDependencies!)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 // TODO: add any other filtering capability here
 
                 //Populate out LocalFile Dictionary with this entry
@@ -112,7 +126,7 @@ public static class AppManager
             }
         }
 
-        if (localFiles.Count() == 0)
+        if (localFiles?.Count() == 0)
         {
             logger?.LogInformation($"No new files to deploy");
         }
@@ -125,9 +139,14 @@ public static class AppManager
     public static async Task DeployApplication(
         IMeadowConnection connection,
         Dictionary<string, uint> localFiles,
-        ILogger logger,
+        ILogger? logger,
         CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         // get a list of files on-device, with CRCs
         var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
@@ -139,22 +158,31 @@ public static class AppManager
 
         if (removeFiles.Count() == 0)
         {
-            logger.LogInformation($"No files to delete");
+            logger?.LogInformation($"No files to delete");
         }
 
         // delete those files
         foreach (var file in removeFiles)
         {
-            logger.LogInformation($"Deleting file '{file}'...");
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            logger?.LogInformation($"Deleting file '{file}'...");
             await connection.DeleteFile(file, cancellationToken);
         }
 
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             if (!File.Exists(localFile.Key))
             {
-                logger.LogInformation($"{localFile.Key} not found" + Environment.NewLine);
+                logger?.LogInformation($"{localFile.Key} not found" + Environment.NewLine);
                 continue;
             }
 
@@ -171,7 +199,7 @@ public static class AppManager
                 if (remoteCrc == localCrc)
                 {
                     // exists and has a matching CRC, skip it
-                    logger.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
+                    logger?.LogInformation($"Skipping file (hash match): {filename}" + Environment.NewLine);
                     continue;
                 }
             }
@@ -184,7 +212,7 @@ public static class AppManager
                 {
                     if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
                     {
-                        logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                        logger?.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
                         await Task.Delay(100);
                         success = false;
                     }
@@ -195,7 +223,7 @@ public static class AppManager
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}' ({ex.Message}).  Retrying.");
+                    logger?.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}' ({ex.Message}).  Retrying.");
                     await Task.Delay(100);
                     success = false;
                 }
