@@ -86,12 +86,15 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
                     .WithSpinner(Console!, 250);
                 Console?.Output.WriteAsync("\n");
 
-                Connection.FileWriteProgress += Connection_FileWriteProgress;
+                if (localFiles != null && localFiles.Count > 0)
+                {
+                    Connection.FileWriteProgress += Connection_FileWriteProgress;
 
-                await AppManager.DeployApplication(Connection, localFiles, Logger, CancellationToken);
-                Console?.Output.WriteAsync("\n");
+                    await AppManager.DeployApplication(Connection, localFiles, Logger, CancellationToken);
+                    Console?.Output.WriteAsync("\n");
 
-                Connection.FileWriteProgress -= Connection_FileWriteProgress;
+                    Connection.FileWriteProgress -= Connection_FileWriteProgress;
+                }
             }
 
             if (wasRuntimeEnabled)
