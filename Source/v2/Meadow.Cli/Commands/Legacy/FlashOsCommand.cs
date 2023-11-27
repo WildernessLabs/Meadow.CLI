@@ -259,6 +259,8 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 Connection.FileWriteProgress += (s, e) =>
                 {
                     var p = (e.completed / (double)e.total) * 100d;
+
+                    // Console instead of Logger due to line breaking for progress bar
                     Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
                 };
 

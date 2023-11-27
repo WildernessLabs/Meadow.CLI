@@ -303,14 +303,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             connection.FileWriteProgress += (s, e) =>
             {
                 var p = (e.completed / (double)e.total) * 100d;
-                if (p == 100.0)
-                {
-                    Console?.Output.WriteAsync($"{Environment.NewLine}");
-                }
-                else
-                {
-                    Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
-                }
+
+                // Console instead of Logger due to line breaking for progress bar
+                Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
             };
 
             if (Files.Contains(FirmwareType.OS))
