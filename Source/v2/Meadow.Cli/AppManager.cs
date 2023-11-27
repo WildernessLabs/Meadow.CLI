@@ -38,7 +38,9 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-        if (cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested
+            || string.IsNullOrWhiteSpace(packageManager.MeadowAssembliesPath)
+            || !Directory.Exists(packageManager.MeadowAssembliesPath))
         {
             return null;
         }
@@ -230,6 +232,9 @@ public static class AppManager
 
             } while (!success);
         }
+
+        // Delay to receive last successful write message.
+        await Task.Delay(330);
     }
 
     private static async Task AddToLocalFiles(Dictionary<string, uint> localFiles, string file, bool includePdbs, bool includeXmlDocs, CancellationToken cancellationToken)

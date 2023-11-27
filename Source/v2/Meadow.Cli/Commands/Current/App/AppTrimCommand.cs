@@ -62,10 +62,19 @@ public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
 
             _packageManager.RuntimeVersion = info?.RuntimeVersion;
 
-            Logger?.LogInformation($"Using runtime files from {_packageManager.MeadowAssembliesPath}");
+            if (!string.IsNullOrWhiteSpace(_packageManager.MeadowAssembliesPath) && Directory.Exists(_packageManager.MeadowAssembliesPath))
+            {
+                Logger?.LogInformation($"Using runtime files from {_packageManager.MeadowAssembliesPath}");
 
-            // Avoid double reporting.
-            DetachMessageHandlers(Connection);
+                // Avoid double reporting.
+                DetachMessageHandlers(Connection);
+            }
+            else
+            {
+                Logger?.LogError($"Meadow Assemblies Path: '{_packageManager.MeadowAssembliesPath}' does NOT exist for Runtime: '{_packageManager.RuntimeVersion}'.");
+                return;
+            }
+
         }
 
         // TODO: support `nolink` command line args
