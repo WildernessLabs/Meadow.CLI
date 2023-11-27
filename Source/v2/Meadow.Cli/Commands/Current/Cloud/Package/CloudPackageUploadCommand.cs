@@ -88,7 +88,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
             var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken)
-                .WithSpinner(Console!, 250);
+                .WithSpinner(Console!);
 
             Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
