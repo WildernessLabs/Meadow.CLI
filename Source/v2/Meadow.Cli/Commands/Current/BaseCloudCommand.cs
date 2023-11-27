@@ -38,7 +38,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await UserService.GetUserOrgs(host, cancellationToken)
-                .WithSpinner(Console!, 250);
+                .WithSpinner(Console!);
 
             if (!userOrgs.Any())
             {

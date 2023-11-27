@@ -47,7 +47,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
             // TODO: enable cancellation of this call
             var success = await Task.FromResult(_packageManager.BuildApplication(path, Configuration))
-                .WithSpinner(Console!, 250);
+                .WithSpinner(Console!);
 
             if (!success)
             {
