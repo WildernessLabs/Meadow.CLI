@@ -55,6 +55,12 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                         {
                             foreach (var f in fileList)
                             {
+                                // If we've cancelled bail
+                                if (CancellationToken.IsCancellationRequested)
+                                {
+                                    return;
+                                }
+
                                 if (Connection.Device != null)
                                 {
                                     var p = Path.GetFileName(f.Name);

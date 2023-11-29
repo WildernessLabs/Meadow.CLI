@@ -212,6 +212,12 @@ public static class AppManager
             {
                 try
                 {
+                    // If we've cancelled bail
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
                     {
                         logger?.LogWarning($"Error sending '{Path.GetFileName(localFile.Key)}'.  Retrying.");
