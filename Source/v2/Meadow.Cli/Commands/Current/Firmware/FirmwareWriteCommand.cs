@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading;
 using CliFx.Attributes;
 using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
@@ -342,6 +343,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 var rtpath = package.GetFullyQualifiedPath(runtime);
 
             write_runtime:
+                // If we've cancelled bail
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 if (!await connection.Device.WriteRuntime(rtpath, CancellationToken))
                 {
                     Logger?.LogInformation($"Error writing runtime.  Retrying.");

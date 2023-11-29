@@ -292,6 +292,12 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                         var rtpath = package.GetFullyQualifiedPath(runtime);
 
                     write_runtime:
+                        // If we've cancelled bail
+                        if (CancellationToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
                         if (!await Connection.Device.WriteRuntime(rtpath, CancellationToken))
                         {
                             Logger?.LogInformation($"Error writing runtime.  Retrying.");
