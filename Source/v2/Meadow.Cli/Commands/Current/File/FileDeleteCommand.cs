@@ -1,4 +1,6 @@
-﻿using CliFx.Attributes;
+﻿using System;
+using System.Diagnostics.Metrics;
+using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -20,51 +22,84 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (Connection != null)
         {
-            var fileList = await Connection.GetFileList(false);
+            // in order to delete, the runtime must be disabled
+            var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
 
-            if (MeadowFile == "all")
+            if (wasRuntimeEnabled)
             {
-                if (fileList != null)
-                {
-                    foreach (var f in fileList)
-                    {
-                        if (Connection.Device != null)
-                        {
-                            var p = Path.GetFileName(f.Name);
+                Logger?.LogInformation("Disabling runtime...");
 
-                            Logger?.LogInformation($"Deleting file '{p}' from device...");
-                            await Connection.Device.DeleteFile(p, CancellationToken);
+                await Connection.RuntimeDisable(CancellationToken);
+            }
+
+            try
+            {
+                var fileList = await Connection.GetFileList(false);
+
+                if (MeadowFile == "all")
+                {
+                    if (Console != null)
+                    {
+                        Logger?.LogInformation($"{Environment.NewLine}Are you sure you want to delete ALL files from this device (Y/N)?");
+
+                        var reply = await Console.Input.ReadLineAsync();
+                        if ((!string.IsNullOrEmpty(reply) && reply.ToLower() != "y") || string.IsNullOrEmpty(reply))
+                        {
+                            return;
+                        }
+                    }
+
+                    if (fileList != null)
+                    {
+                        if (fileList.Length > 0)
+                        {
+                            foreach (var f in fileList)
+                            {
+                                if (Connection.Device != null)
+                                {
+                                    var p = Path.GetFileName(f.Name);
+
+                                    Console?.Output.WriteAsync($"Deleting file '{p}' from device...         \r");
+                                    await Connection.Device.DeleteFile(p, CancellationToken);
+                                }
+                                else
+                                {
+                                    Logger?.LogError($"No Device Found.");
+                                }
+                            }
                         }
                         else
                         {
-                            Logger?.LogError($"No Device Found.");
+                            Logger?.LogInformation($"No files to delete.");
+                        }
+                    }
+                }
+                else
+                {
+                    var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
+
+                    if (!exists)
+                    {
+                        Logger?.LogError($"File '{MeadowFile}' not found on device.");
+                    }
+                    else
+                    {
+                        if (Connection.Device != null)
+                        {
+                            Console?.Output.WriteAsync($"Deleting file '{MeadowFile}' from device...         \r");
+                            await Connection.Device.DeleteFile(MeadowFile, CancellationToken);
                         }
                     }
                 }
             }
-            else
+            finally
             {
-                var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
-
-                if (!exists)
+                if (wasRuntimeEnabled)
                 {
-                    Logger?.LogError($"File '{MeadowFile}' not found on device.");
-                }
-                else
-                {
-                    if (Connection.Device != null)
-                    {
-                        var wasRuntimeEnabled = await Connection.Device.IsRuntimeEnabled(CancellationToken);
+                    // restore runtime state
+                    Logger?.LogInformation("Enabling runtime...");
 
-                        if (wasRuntimeEnabled)
-                        {
-                            Logger?.LogInformation("Disabling device runtime...");
-                            await Connection.Device.RuntimeDisable();
-                        }
-
-                        Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                        await Connection.Device.DeleteFile(MeadowFile, CancellationToken);
-                    }
+                    await Connection.RuntimeEnable(CancellationToken);
                 }
             }
         }

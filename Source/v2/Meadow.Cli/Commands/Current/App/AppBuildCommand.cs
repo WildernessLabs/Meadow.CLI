@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -23,7 +23,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await Task.Run(() =>
+        await Task.Run(async () =>
         {
             string path = Path == null
             ? Environment.CurrentDirectory
@@ -40,12 +40,14 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
                 }
             }
 
-            if (Configuration == null) Configuration = "Release";
+            if (Configuration == null)
+                Configuration = "Release";
 
-            Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
+            Logger?.LogInformation($"Building {Configuration} configuration of {path} (this may take a few seconds)...");
 
             // TODO: enable cancellation of this call
-            var success = _packageManager.BuildApplication(path, Configuration);
+            var success = await Task.FromResult(_packageManager.BuildApplication(path, Configuration))
+                .WithSpinner(Console!, 250);
 
             if (!success)
             {

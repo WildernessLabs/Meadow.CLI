@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using YamlDotNet.Serialization;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public partial class PackageManager : IPackageManager
 {
@@ -131,6 +131,8 @@ public partial class PackageManager : IPackageManager
             throw new FileNotFoundException($"{applicationFilePath} not found");
         }
 
+        Trimmed = false;
+
         // does an app.build.yaml file exist?
         var buildOptionsFile = Path.Combine(
             applicationFilePath.DirectoryName ?? string.Empty,
@@ -155,17 +157,26 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var dependencies = GetDependencies(applicationFilePath)
-            .Where(x => x.Contains("App.") == false)
+        AssemblyDependencies = GetDependencies(applicationFilePath)
             .ToList();
 
-        await TrimDependencies(
-            applicationFilePath,
-            dependencies,
-            noLink,
-            logger,
-            includePdbs,
-            verbose: false);
+        try
+        {
+            TrimmedDependencies = await TrimDependencies(
+                applicationFilePath,
+                AssemblyDependencies,
+                noLink,
+                logger,
+                includePdbs,
+                verbose: false);
+        }
+        catch (Exception)
+        {
+            logger?.LogError($"Trimming FAILED. Falling back to untrimmed dependencies");
+            Trimmed = false;
+        }
+
+        Trimmed = false;
     }
 
     public const string PackageMetadataFileName = "info.json";

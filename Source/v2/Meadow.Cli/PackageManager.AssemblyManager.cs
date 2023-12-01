@@ -4,7 +4,7 @@ using Mono.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public partial class PackageManager
 {
@@ -18,7 +18,7 @@ public partial class PackageManager
 
     private string? _meadowAssembliesPath;
 
-    private string? MeadowAssembliesPath
+    public string? MeadowAssembliesPath
     {
         get
         {
@@ -30,14 +30,26 @@ public partial class PackageManager
                 if (store != null)
                 {
                     store.Refresh();
-                    if (store.DefaultPackage != null)
-                    {
-                        var defaultPackage = store.DefaultPackage;
 
-                        if (defaultPackage.BclFolder != null)
+                    if (RuntimeVersion == null)
+                    {
+                        if (store.DefaultPackage != null)
                         {
-                            _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                            var defaultPackage = store.DefaultPackage;
+
+                            if (defaultPackage.BclFolder != null)
+                            {
+                                _meadowAssembliesPath = defaultPackage.GetFullyQualifiedPath(defaultPackage.BclFolder);
+                            }
                         }
+                    }
+                    else
+                    {
+                        var existing = store.FirstOrDefault(p => p.Version == RuntimeVersion);
+
+                        if (existing == null || existing.BclFolder == null) return null;
+
+                        _meadowAssembliesPath = existing.GetFullyQualifiedPath(existing.BclFolder);
                     }
                 }
             }
@@ -45,6 +57,13 @@ public partial class PackageManager
             return _meadowAssembliesPath;
         }
     }
+
+    public List<string>? AssemblyDependencies { get; set; }
+
+    public IEnumerable<string>? TrimmedDependencies { get; set; }
+    public bool Trimmed { get; set; } = false;
+
+    public string? RuntimeVersion { get; set; }
 
     public async Task<IEnumerable<string>?> TrimDependencies(FileInfo file, List<string> dependencies, IList<string>? noLink, ILogger? logger, bool includePdbs, bool verbose = false, string? linkerOptions = null)
     {
@@ -125,7 +144,7 @@ public partial class PackageManager
 
                 var monolinker_args = $"\"{illinker_path}\" -x \"{descriptor_path}\" {no_link_args}  --skip-unresolved --deterministic --keep-facades true --ignore-descriptors true -b true -c link -o \"{postlink_dir}\" -r \"{prelink_app}\" -a \"{prelink_os}\" -d \"{prelink_dir}\"";
 
-                logger?.LogInformation("Trimming assemblies to reduce size (may take several seconds)...");
+                logger?.LogInformation($"Trimming assemblies associated with {fileName} to reduce upload size (this may take a few seconds)...");
                 if (!string.IsNullOrWhiteSpace(no_link_args))
                 {
                     logger?.LogInformation($"no-link args:'{no_link_args}'");
@@ -148,7 +167,7 @@ public partial class PackageManager
                         stdOutReaderResult = await stdOutReader.ReadToEndAsync();
                         if (verbose)
                         {
-                            Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
+                            logger?.LogInformation("StandardOutput Contains: " + stdOutReaderResult);
                         }
 
                     }
@@ -159,14 +178,14 @@ public partial class PackageManager
                         stdErrorReaderResult = await stdErrorReader.ReadToEndAsync();
                         if (!string.IsNullOrEmpty(stdErrorReaderResult))
                         {
-                            Console.WriteLine("StandardError Contains: " + stdErrorReaderResult);
+                            logger?.LogInformation("StandardError Contains: " + stdErrorReaderResult);
                         }
                     }
 
                     process.WaitForExit(60000);
                     if (process.ExitCode != 0)
                     {
-                        Debug.WriteLine($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+                        logger?.LogDebug($"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
                         throw new Exception("Trimming failed");
                     }
                 }
@@ -191,7 +210,7 @@ public partial class PackageManager
         var directoryName = file.DirectoryName;
         if (!string.IsNullOrEmpty(directoryName))
         {
-            var refs = GetAssemblyNameReferences(file.Name, directoryName);
+            var refs = GetAssemblyReferences(file.Name, directoryName);
 
             var dependencies = GetDependencies(refs, dependencyMap, directoryName);
 
@@ -203,36 +222,44 @@ public partial class PackageManager
         }
     }
 
-    private (Collection<AssemblyNameReference>?, string?) GetAssemblyNameReferences(string fileName, string path)
+    private (Collection<AssemblyNameReference>? References, string? ResolvedPath) GetAssemblyReferences(string fileName, string path)
     {
         static string? ResolvePath(string fileName, string path)
         {
-            string attempted_path = Path.Combine(path, fileName);
-            if (Path.GetExtension(fileName) != ".exe" &&
-                Path.GetExtension(fileName) != ".dll")
+            string attemptedPath = Path.Combine(path, fileName);
+            if (Path.GetExtension(fileName) != ".exe"
+                && Path.GetExtension(fileName) != ".dll")
             {
-                attempted_path += ".dll";
+                attemptedPath += ".dll";
             }
-            return File.Exists(attempted_path) ? attempted_path : null;
+            return File.Exists(attemptedPath) ? attemptedPath : null;
         }
 
-        //ToDo - is it ever correct to fall back to the root path without a version?
         if (!string.IsNullOrEmpty(MeadowAssembliesPath))
         {
-            string? resolved_path = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);
+            string? resolvedPath = ResolvePath(fileName, MeadowAssembliesPath) ?? ResolvePath(fileName, path);
 
-            if (resolved_path is null)
+            if (resolvedPath is null)
             {
                 return (null, null);
             }
 
             Collection<AssemblyNameReference> references;
 
-            using (var definition = Mono.Cecil.AssemblyDefinition.ReadAssembly(resolved_path))
+            try
             {
-                references = definition.MainModule.AssemblyReferences;
+                using (var definition = AssemblyDefinition.ReadAssembly(resolvedPath))
+                {
+                    references = definition.MainModule.AssemblyReferences;
+                }
+                return (references, resolvedPath);
             }
-            return (references, resolved_path);
+            catch (Exception ex)
+            {
+                // Handle or log the exception appropriately
+                Console.WriteLine($"Error reading assembly: {ex.Message}");
+                return (null, null);
+            }
         }
         else
         {
@@ -240,20 +267,20 @@ public partial class PackageManager
         }
     }
 
-    private List<string> GetDependencies((Collection<AssemblyNameReference>?, string?) references, List<string> dependencyMap, string folderPath)
+    private List<string> GetDependencies((Collection<AssemblyNameReference>? References, string? ResolvedPath) references, List<string> dependencyMap, string folderPath)
     {
-        if (references.Item2 == null || dependencyMap.Contains(references.Item2))
+        if (references.ResolvedPath == null || dependencyMap.Contains(references.ResolvedPath))
             return dependencyMap;
 
-        dependencyMap.Add(references.Item2);
+        dependencyMap.Add(references.ResolvedPath);
 
-        if (references.Item1 != null)
+        if (references.References != null)
         {
-            foreach (var ar in references.Item1)
+            foreach (var ar in references.References)
             {
-                var namedRefs = GetAssemblyNameReferences(ar.Name, folderPath);
+                var namedRefs = GetAssemblyReferences(ar.Name, folderPath);
 
-                if (namedRefs.Item1 == null)
+                if (namedRefs.References == null)
                     continue;
 
                 GetDependencies(namedRefs, dependencyMap, folderPath);

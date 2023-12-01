@@ -70,7 +70,7 @@ namespace Meadow.CLI.Core
             _logger = logger;
         }
 
-        internal async Task<string?> DownloadMeadowOSVersionFile(string? version)
+        internal async Task<string?> DownloadMeadowOSVersionFile(string? version, CancellationToken cancellationToken)
         {
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
@@ -88,7 +88,7 @@ namespace Meadow.CLI.Core
 
             try
             {
-                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
+                versionCheckFile = await DownloadFile(new Uri(versionCheckUrl), cancellationToken);
             }
             catch
             {
@@ -119,8 +119,22 @@ namespace Meadow.CLI.Core
         }
 
         //ToDo rename this method - DownloadOSAsync?
-        public async Task DownloadOsBinaries(string? version = null, bool force = false)
+        public async Task DownloadOsBinaries(string? version = null, bool force = false, CancellationToken cancellationToken = default)
         {
+            string local_path;
+            if (!string.IsNullOrEmpty(version))
+            {
+                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
+
+                if (!force
+                    && Directory.Exists(local_path)
+                    && Directory.EnumerateFiles(local_path).Any())
+                {
+                    _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
+                    return;
+                }
+            }
+
             // Check if there is an active internet connection
             if (!NetworkInterface.GetIsNetworkAvailable())
             {
@@ -128,7 +142,7 @@ namespace Meadow.CLI.Core
                 return;
             }
 
-            var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
+            var versionCheckFilePath = await DownloadMeadowOSVersionFile(version, cancellationToken);
 
             if (versionCheckFilePath == null)
             {
@@ -149,19 +163,14 @@ namespace Meadow.CLI.Core
             //we'll write latest.txt regardless of version if it doesn't exist
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
 
-            string local_path;
-
             if (string.IsNullOrWhiteSpace(version))
             {
-                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, release.Version);
                 version = release.Version;
             }
-            else
-            {
-                local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
-            }
 
-            if (CreateFolder(local_path, force) == false)
+            local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
+
+            if (!CreateFolder(local_path, force) && Directory.EnumerateFiles(local_path).Any())
             {
                 _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
                 return;

@@ -8,9 +8,6 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
-    [CommandOption("verbose", 'v', IsRequired = false)]
-    public bool Verbose { get; set; }
-
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {

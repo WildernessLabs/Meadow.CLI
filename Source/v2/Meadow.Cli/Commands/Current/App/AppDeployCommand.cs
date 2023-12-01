@@ -1,21 +1,19 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
-public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
+public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
 {
-    private IPackageManager _packageManager;
+    private string lastFile = string.Empty;
 
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
     public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(connectionManager, loggerFactory)
+        : base(packageManager, connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
@@ -31,7 +29,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             // is the path a file?
             FileInfo file;
 
-            var lastFile = string.Empty;
+            lastFile = string.Empty;
 
             // in order to deploy, the runtime must be disabled
             var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
@@ -42,20 +40,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
                 await Connection.RuntimeDisable(CancellationToken);
             }
-
-            Connection.FileWriteProgress += (s, e) =>
-            {
-                var p = (e.completed / (double)e.total) * 100d;
-
-                if (e.fileName != lastFile)
-                {
-                    Console?.Output.WriteAsync("\n");
-                    lastFile = e.fileName;
-                }
-
-                // Console instead of Logger due to line breaking for progress bar
-                Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%         \r");
-            };
 
             if (!File.Exists(path))
             {
@@ -71,7 +55,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 if (!file.Exists)
                 {
                     // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                    var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+                    var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
                     if (candidates.Length == 0)
                     {
@@ -92,8 +76,22 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
             if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
             {
-                await AppManager.DeployApplication(_packageManager, Connection, targetDirectory, true, false, Logger, CancellationToken);
+                var trimApplicationCommand = new AppTrimCommand(_packageManager, ConnectionManager, LoggerFactory!)
+                {
+                    Path = path,
+                };
+                await trimApplicationCommand.ExecuteAsync(Console!);
+
+                var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken)
+                    .WithSpinner(Console!, 250);
                 Console?.Output.WriteAsync("\n");
+
+                Connection.FileWriteProgress += Connection_FileWriteProgress;
+
+                await AppManager.DeployApplication(Connection, localFiles, Logger, CancellationToken);
+                Console?.Output.WriteAsync("\n");
+
+                Connection.FileWriteProgress -= Connection_FileWriteProgress;
             }
 
             if (wasRuntimeEnabled)
@@ -104,5 +102,19 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 await Connection.RuntimeEnable(CancellationToken);
             }
         }
+    }
+
+    private void Connection_FileWriteProgress(object? sender, (string fileName, long completed, long total) e)
+    {
+        var p = (e.completed / (double)e.total) * 100d;
+
+        if (e.fileName != lastFile)
+        {
+            Console?.Output.WriteAsync("\n");
+            lastFile = e.fileName;
+        }
+
+        // Console instead of Logger due to line breaking for progress bar
+        Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%         \r");
     }
 }

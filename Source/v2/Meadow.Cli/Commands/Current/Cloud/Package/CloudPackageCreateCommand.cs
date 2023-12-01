@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
 using Meadow.Software;
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud package create", Description = "Create a Meadow Package (MPAK)")]
+[Command("cloud package create", Description = "Builds, trims and creates a Meadow Package (MPAK)")]
 public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
@@ -54,7 +54,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
             return;
         }
 
-        var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
 
         if (candidates.Length == 0)
         {
@@ -71,8 +71,8 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
-        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PackageOutputDirectoryName);
-        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Cli.PackageManager.PostLinkDirectoryName);
+        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
+        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
         var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, Logger, CancellationToken);

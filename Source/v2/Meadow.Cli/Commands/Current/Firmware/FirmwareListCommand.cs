@@ -1,7 +1,8 @@
-﻿using CliFx;
+﻿using System.Linq;
+using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,9 +11,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("firmware list", Description = "List locally available firmware")]
 public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 {
-    [CommandOption("verbose", 'v', IsRequired = false)]
-    public bool Verbose { get; set; }
-
     private FileManager FileManager { get; }
 
     public FirmwareListCommand(FileManager fileManager, ILoggerFactory? loggerFactory)
@@ -45,20 +43,20 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
         foreach (var name in manager.Firmware.CollectionNames)
         {
             Logger?.LogInformation($" {name}");
-            var collection = manager.Firmware[name];
+            var collection = manager.Firmware[name.ToString()];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(s=> s.Version))
             {
                 if (package == collection.DefaultPackage)
                 {
-                    Logger?.LogInformation(
-                        $"  * {package.Version?.PadRight(18)} " +
+                    var detailedInformation = $"  * {package.Version?.PadRight(18)} " +
                         $"{(package.OSWithBootloader != null ? "X   " : "     ")}" +
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +
                         $"{(package.CoprocApplication != null ? "X   " : "    ")}" +
-                        $"{(package.BclFolder != null ? "X   " : "    ")}"
-                        );
+                        $"{(package.BclFolder != null ? "X   " : "    ")}" +
+                        " (default)";
+                    Logger?.LogInformation(detailedInformation.ColourConsoleTextGreen());
                 }
                 else
                 {
@@ -68,7 +66,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
                         $"{(package.OsWithoutBootloader != null ? " X   " : "     ")}" +
                         $"{(package.Runtime != null ? "X   " : "    ")}" +
                         $"{(package.CoprocApplication != null ? "X   " : "    ")}" +
-                        $"{(package.BclFolder != null ? "X   " : "    ")}"
+                        $"{(package.BclFolder != null ? "X   " : "    ")}" 
                         );
                 }
             }
@@ -86,13 +84,13 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
         foreach (var name in manager.Firmware.CollectionNames)
         {
             Logger?.LogInformation($" {name}");
-            var collection = manager.Firmware[name];
+            var collection = manager.Firmware[name.ToString()];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(s => s.Version))
             {
                 if (package == collection.DefaultPackage)
                 {
-                    Logger?.LogInformation($"  * {package.Version} (default)");
+                    Logger?.LogInformation($"  * {package.Version} (default)".ColourConsoleTextGreen());
                 }
                 else
                 {

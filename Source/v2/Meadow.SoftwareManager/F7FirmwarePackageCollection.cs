@@ -92,6 +92,9 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
     public Task SetDefaultPackage(string version)
     {
+        // Refresh the list, in case we've just downloaded it.
+        Refresh();
+
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
         if (existing == null)

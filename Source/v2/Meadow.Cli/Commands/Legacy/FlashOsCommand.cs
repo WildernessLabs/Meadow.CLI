@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
 using Meadow.Software;
@@ -148,25 +148,28 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                     }
 
                     // configure the route to that port for the user
-                    Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
-                    var cancellationToken = Console?.RegisterCancellationHandler();
-
-                    if (Files.Any(f => f != FirmwareType.OS))
+                    if (newPort != null)
                     {
-                        await Connection.WaitForMeadowAttach();
+                        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort.Name!);
 
-                        await WriteFiles();
-                    }
+                        var cancellationToken = Console?.RegisterCancellationHandler();
 
-                    if (Connection.Device != null)
-                    {
-                        var deviceInfo = await Connection.Device.GetDeviceInfo(cancellationToken);
-
-                        if (deviceInfo != null)
+                        if (Files.Any(f => f != FirmwareType.OS))
                         {
-                            Logger?.LogInformation($"Done.");
-                            Logger?.LogInformation(deviceInfo.ToString());
+                            await Connection.WaitForMeadowAttach();
+
+                            await WriteFiles();
+                        }
+
+                        if (Connection.Device != null)
+                        {
+                            var deviceInfo = await Connection.Device.GetDeviceInfo(cancellationToken);
+
+                            if (deviceInfo != null)
+                            {
+                                Logger?.LogInformation($"Done.");
+                                Logger?.LogInformation(deviceInfo.ToString());
+                            }
                         }
                     }
                 }
@@ -256,7 +259,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 Connection.FileWriteProgress += (s, e) =>
                 {
                     var p = (e.completed / (double)e.total) * 100d;
-                    Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+                    Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
                 };
 
 

@@ -1,6 +1,8 @@
-﻿using CliFx.Attributes;
-using Meadow.Cli;
+﻿using System.Collections.Concurrent;
+using CliFx.Attributes;
+using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Cloud;
 using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
@@ -27,10 +29,19 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandParameter(0, Name = "Files to write", IsRequired = false)]
     public FirmwareType[]? Files { get; set; } = default!;
 
+    [CommandOption("file", 'f', IsRequired = false, Description = "Path to OS, Runtime or ESP file")]
+    public string? Path { get; set; } = default!;
+
+    [CommandOption("address", 'a', IsRequired = false, Description = "Address location to write the file to")]
+    public int? Address { get; set; } = default!;
+
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
 
-    private ILibUsbDevice? _libUsbDevice;
+    private const string FileWriteComplete = "Firmware Write Complete!";
+    private ILibUsbDevice[]? _libUsbDevices;
+    private IMeadowConnection? connection;
+
     // TODO private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -66,25 +77,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
 
-        if (package != null && package.OsWithoutBootloader == null
+        if ((Files != null && Files.Contains(FirmwareType.OS)) && (package != null && package.OsWithoutBootloader == null
             || !deviceSupportsOta
-            || UseDfu)
+            || UseDfu))
         {
             UseDfu = true;
         }
 
-        IMeadowConnection? connection;
-
-        if (UseDfu && Files != null && Files.Contains(FirmwareType.OS) && package != null)
+        if (Files != null && package != null)
         {
-            // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
-            var initialPorts = await MeadowConnectionManager.GetSerialPorts();
-
             // get the device's serial number via DFU - we'll need it to find the device after it resets
-            ILibUsbDevice libUsbDevice;
             try
             {
-                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+                if (UseDfu)
+                {
+                    GetLibUsbDevicesInBootloaderModeForCurrentEnvironment();
+                }
             }
             catch (Exception ex)
             {
@@ -92,60 +100,96 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return;
             }
 
-            var serial = libUsbDevice.GetDeviceSerialNumber();
+            var flashStatus = new ConcurrentDictionary<string, string>();
 
-            // no connection is required here - in fact one won't exist
-            // unless maybe we add a "DFUConnection"?
-
-            try
+            if (_libUsbDevices != null)
             {
-                if (package != null && package.OSWithBootloader != null)
+                if (_libUsbDevices.Length > 1)
                 {
-                    await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serial);
+                    await Console!.Output.WriteLineAsync($"Found {_libUsbDevices.Length} devices in bootloader mode.{Environment.NewLine}Would you like to flash them all (Y/N)?");
+                    var yesOrNo = await Console!.Input.ReadLineAsync();
+                    if (!string.IsNullOrEmpty(yesOrNo))
+                    {
+                        if (yesOrNo.ToLower() == "n")
+                        {
+                            Logger?.LogInformation("User elected not to proceed.");
+                            return;
+                        }
+                    }
+                }
+
+                foreach (var libUsbDevice in _libUsbDevices)
+                {
+                    var serialNumber = libUsbDevice.GetDeviceSerialNumber();
+
+                    // no connection is required here - in fact one won't exist
+                    // unless maybe we add a "DFUConnection"?
+
+                    try
+                    {
+                        if (package != null && package.OSWithBootloader != null && Files.Contains(FirmwareType.OS))
+                        {
+                            flashStatus[serialNumber] = "WritingOS";
+                            await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serialNumber);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        flashStatus[serialNumber] = ex.Message;
+                        Logger?.LogError($"Exception type: {ex.GetType().Name}");
+
+                        // TODO: scope this to the right exception type for Win 10 access violation thing
+                        // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
+                        Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
+
+                        Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
+                        continue;
+                    }
+
+                    var newPort = await MeadowConnectionManager.GetPortFromSerialNumber(serialNumber);
+
+                    if (!string.IsNullOrEmpty(newPort))
+                    {
+                        Logger?.LogInformation($"Meadow found at {newPort}");
+
+                        // configure the route to that port for the user
+                        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+                        await WriteNonOSToDevice(Files, package, flashStatus);
+
+                        flashStatus[serialNumber] = FileWriteComplete;
+                    }
+
+                }
+
+                Logger?.LogInformation($"{Environment.NewLine}Firmware Write Status:");
+                foreach (var item in flashStatus)
+                {
+                    var textColour = ExtensionMethods.ConsoleColourRed;
+                    if (item.Value.Contains(FileWriteComplete)) {
+                        textColour = ExtensionMethods.ConsoleColourGreen;
+                    }
+                    Logger?.LogInformation($"Serial Number: {item.Key} - {item.Value}".ColourConsoleText(textColour));
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Logger?.LogError($"Exception type: {ex.GetType().Name}");
+                await WriteNonOSToDevice(Files, package, flashStatus);
 
-                // TODO: scope this to the right exception type for Win 10 access violation thing
-                // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
-                Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
-
-                Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
-                return;
+                if (connection != null)
+                    flashStatus[connection.Name] = FileWriteComplete;
             }
+        }
+    }
 
-            // now wait for a new serial port to appear
-            var ports = await MeadowConnectionManager.GetSerialPorts();
-            var retryCount = 0;
+    private async Task WriteNonOSToDevice(FirmwareType[] files, FirmwarePackage? package, ConcurrentDictionary<string, string> flashStatus)
+    {
+        // get the connection associated with that route
+        connection = await GetCurrentConnection();
 
-            var newPort = ports.Except(initialPorts).FirstOrDefault();
-            while (newPort == null)
-            {
-                if (retryCount++ > 10)
-                {
-                    throw new Exception("New meadow device not found");
-                }
-                await Task.Delay(500);
-                ports = await MeadowConnectionManager.GetSerialPorts();
-                newPort = ports.Except(initialPorts).FirstOrDefault();
-            }
-
-            Logger?.LogInformation($"Meadow found at {newPort}");
-
-            // configure the route to that port for the user
-            Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
-            // get the connection associated with that route
-            connection = await GetCurrentConnection();
-
-            if (connection == null)
-            {
-                return;
-            }
-
-            if (Files.Any(f => f != FirmwareType.OS))
+        try
+        {
+            if (connection != null && files.Any(f => f != FirmwareType.OS))
             {
                 await connection.WaitForMeadowAttach();
 
@@ -154,67 +198,56 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     return;
                 }
 
-                await WriteFiles(connection);
+                flashStatus[connection.Name] = "WriteFiles";
+                await WriteFiles(package, connection);
             }
         }
-        else
+        catch (Exception ex)
         {
-            connection = await GetCurrentConnection();
+            if (connection != null)
+                flashStatus[connection.Name] = ex.Message;
+            // Log the exception but move onto the next device
+            Logger?.LogError($"{Environment.NewLine}Exception type: {ex.GetType().Name}", ex);
 
-            if (connection == null)
-            {
-                return;
-            }
-
-            await WriteFiles(connection);
+            return;
         }
-
-        await connection.ResetDevice(CancellationToken);
-        await connection.WaitForMeadowAttach();
-
-        if (connection.Device != null)
+        finally
         {
-            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
-
-            if (deviceInfo != null)
-            {
-                Logger?.LogInformation(deviceInfo.ToString());
-            }
+            // Needed to avoid double messages
+            DetachMessageHandlers(connection);
         }
     }
 
-    private ILibUsbDevice GetLibUsbDeviceForCurrentEnvironment()
+    private void GetLibUsbDevicesInBootloaderModeForCurrentEnvironment()
     {
-        if (_libUsbDevice == null)
+        // Clear it out each
+        if (_libUsbDevices != null && _libUsbDevices.Length > 0)
         {
-            ILibUsbProvider provider;
-
-            // TODO: read the settings manager to decide which provider to use (default to non-classic)
-            var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
-            if (setting == "classic")
-            {
-                provider = new ClassicLibUsbProvider();
-            }
-            else
-            {
-                provider = new LibUsbProvider();
-            }
-
-            var devices = provider.GetDevicesInBootloaderMode();
-
-            switch (devices.Count)
-            {
-                case 0:
-                    throw new Exception("No device found in bootloader mode");
-                case 1:
-                    _libUsbDevice = devices[0];
-                    break;
-                default:
-                    throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
-            }
+            _libUsbDevices = Array.Empty<ILibUsbDevice>();
         }
 
-        return _libUsbDevice;
+        ILibUsbProvider provider;
+
+        // TODO: read the settings manager to decide which provider to use (default to non-classic)
+        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
+        if (setting == "classic")
+        {
+            provider = new ClassicLibUsbProvider();
+        }
+        else
+        {
+            provider = new LibUsbProvider();
+        }
+
+        var devices = provider.GetDevicesInBootloaderMode();
+
+        switch (devices.Count)
+        {
+            case 0:
+                throw new Exception("No devices found in bootloader mode.");
+        }
+
+        _libUsbDevices = devices.ToArray();
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
@@ -247,14 +280,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async ValueTask WriteFiles(IMeadowConnection connection)
+    private async ValueTask WriteFiles(FirmwarePackage? package, IMeadowConnection connection)
     {
         connection.FileWriteFailed += (s, e) =>
         {
+            Logger?.LogError($"WriteFiles FAILED!!");
             // TODO _fileWriteError = true;
         };
-
-        var package = await GetSelectedPackage();
 
         if (Files != null
             && connection.Device != null
@@ -271,7 +303,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             connection.FileWriteProgress += (s, e) =>
             {
                 var p = (e.completed / (double)e.total) * 100d;
-                Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+                if (p == 100.0)
+                {
+                    Console?.Output.WriteAsync($"{Environment.NewLine}");
+                }
+                else
+                {
+                    Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
+                }
             };
 
             if (Files.Contains(FirmwareType.OS))
@@ -290,10 +329,19 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (Files.Contains(FirmwareType.Runtime))
             {
-                Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
+                string? runtime;
+                if (!string.IsNullOrEmpty(Path))
+                {
+                    runtime = Path;
+                }
+                else
+                {
+                    // get the path to the runtime bin file
+                    runtime = package.Runtime;
+                }
 
-                // get the path to the runtime file
-                var runtime = package.Runtime;
+                Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {runtime}...");
+
                 if (string.IsNullOrEmpty(runtime))
                     runtime = string.Empty;
                 var rtpath = package.GetFullyQualifiedPath(runtime);
@@ -313,23 +361,41 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (Files.Contains(FirmwareType.ESP))
             {
-                Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
-
-                string[]? fileList;
-                if (package.CoprocApplication != null
-                    && package.CoprocBootloader != null
-                    && package.CoprocPartitionTable != null)
+                string? coProcessorFilePath;
+                if (!string.IsNullOrEmpty(Path))
                 {
-                    fileList = new string[]
-                        {
-                        package.GetFullyQualifiedPath(package.CoprocApplication),
-                        package.GetFullyQualifiedPath(package.CoprocBootloader),
-                        package.GetFullyQualifiedPath(package.CoprocPartitionTable),
-                        };
+                    // use passed in path
+                    coProcessorFilePath = Path;
                 }
                 else
                 {
-                    fileList = Array.Empty<string>();
+                    // get the default path to the coprocessor bin file
+                    coProcessorFilePath = package.CoprocApplication;
+                }
+
+                Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor file {coProcessorFilePath}...");
+
+                string[]? fileList = Array.Empty<string>();
+                if (coProcessorFilePath != null
+                    && package.CoprocBootloader != null
+                    && package.CoprocPartitionTable != null)
+                {
+                    if (!string.IsNullOrEmpty(Path))
+                    {
+                        fileList = new string[]
+                        {
+                            package.GetFullyQualifiedPath(coProcessorFilePath),
+                        };
+                    }
+                    else
+                    {
+                        fileList = new string[]
+                        {
+                            package.GetFullyQualifiedPath(coProcessorFilePath),
+                            package.GetFullyQualifiedPath(package.CoprocBootloader),
+                            package.GetFullyQualifiedPath(package.CoprocPartitionTable),
+                        };
+                    }
                 }
 
                 await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
@@ -359,4 +425,3 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
     }
 }
-

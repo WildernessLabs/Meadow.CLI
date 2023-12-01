@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public interface IPackageManager
 {
@@ -29,4 +29,11 @@ public interface IPackageManager
         ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 
+    List<string>? AssemblyDependencies { get; set; }
+
+    IEnumerable<string>? TrimmedDependencies { get; set; }
+    bool Trimmed { get; set; }
+
+    string? RuntimeVersion { get; set; }
+    string? MeadowAssembliesPath { get; }
 }

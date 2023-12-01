@@ -11,7 +11,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Meadow.Cli.Core\Meadow.Cli.Core.csproj" />
+    <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
   </ItemGroup>
 
     <ItemGroup>

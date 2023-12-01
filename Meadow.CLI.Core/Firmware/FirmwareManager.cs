@@ -20,11 +20,11 @@ namespace Meadow.CLI.Core
 
     public static class FirmwareManager
     {
-        public static async Task<string?> GetRemoteFirmwareInfo(string versionNumber, ILogger logger)
+        public static async Task<string?> GetRemoteFirmwareInfo(string versionNumber, ILogger logger, CancellationToken cancellationToken)
         {
             var manager = new DownloadManager(logger);
 
-            return await manager.DownloadMeadowOSVersionFile(versionNumber);
+            return await manager.DownloadMeadowOSVersionFile(versionNumber, cancellationToken);
         }
 
         public static async Task GetRemoteFirmware(string versionNumber, ILogger logger)

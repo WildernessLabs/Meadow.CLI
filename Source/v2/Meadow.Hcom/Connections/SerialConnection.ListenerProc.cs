@@ -55,7 +55,7 @@ namespace Meadow.Hcom
                     read:
                         try
                         {
-                            receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                            receivedLength = await _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
                         }
                         catch (OperationCanceledException)
                         {
@@ -219,7 +219,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-                                        EncodeAndSendPacket(uploadRequest.Serialize());
+                                        await EncodeAndSendPacket(uploadRequest.Serialize());
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {

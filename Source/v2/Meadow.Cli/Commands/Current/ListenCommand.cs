@@ -20,13 +20,31 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
     {
+        string textColour;
+        switch (e.source)
+        {
+            case "stdout":
+                textColour = ExtensionMethods.ConsoleColourBlue;
+                break;
+            case "info":
+                textColour = ExtensionMethods.ConsoleColourGreen;
+                break;
+            case "stderr":
+                textColour = ExtensionMethods.ConsoleColourRed;
+                break;
+            default:
+                textColour = ExtensionMethods.ConsoleColourReset;
+                break;
+        }
+
         if (NoPrefix)
         {
-            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r').ColourConsoleText(textColour)}");
         }
         else
         {
-            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
+
+            Logger?.LogInformation($"{e.source?.ColourConsoleText(textColour)}> {e.message.TrimEnd('\n', '\r')}");
         }
     }
 

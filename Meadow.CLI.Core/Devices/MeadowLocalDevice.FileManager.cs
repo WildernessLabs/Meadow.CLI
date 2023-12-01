@@ -605,7 +605,8 @@ namespace Meadow.CLI.Core.Devices
 
                 var binaries = Directory.EnumerateFiles(directoryName, "*.*", SearchOption.TopDirectoryOnly)
                                        .Where(s => new FileInfo(s).Extension != ".dll")
-                                       .Where(s => new FileInfo(s).Extension != ".pdb");
+                                       .Where(s => new FileInfo(s).Extension != ".pdb")
+                                       .Where(s => !s.Contains(".DS_Store"));
                 //                 .Where(s => extensions.Contains(new FileInfo(s).Extension));
 
                 var files = new Dictionary<string, uint>();
@@ -650,9 +651,8 @@ namespace Meadow.CLI.Core.Devices
                 }
 
                 var dependencies = AssemblyManager.GetDependencies(fileName, directoryName, osVersion)
-                    .Where(x => x.Contains("App.") == false)
-                    // .Where(x => dllLinkIngoreList.Any(f => x.Contains(f)) == false)
-                    .ToList();
+                                    .Except(new string[] { "App.dll", "App.exe" })
+                                    .ToList();
 
                 var trimmedDependencies = await AssemblyManager.TrimDependencies(fileName, directoryName, dependencies, noLink, Logger, includePdbs: includePdbs, verbose: verbose);
 
