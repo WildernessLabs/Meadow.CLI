@@ -82,6 +82,12 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         var info = await connection.Device!.GetDeviceInfo(CancellationToken);
 
+        if (info == null)
+        {
+            Logger?.LogError($"Unable to get device info");
+            return;
+        }
+
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
@@ -103,7 +109,27 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
 
-        var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
+        string provisioningID;
+
+        // prefer processorID (since the F7 works that way)
+        if (!string.IsNullOrEmpty(info.ProcessorId))
+        {
+            provisioningID = info.ProcessorId;
+        }
+        else
+        {
+            if (info.SerialNumber == null)
+            {
+                Logger?.LogError($"Unable to get device serial number or processor ID");
+                return;
+            }
+
+            provisioningID = info.SerialNumber;
+        }
+
+        // upper-case to prevent issues where clients and provisioning differ
+        provisioningID = provisioningID.ToUpper();
+
         var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 
         var result = await _deviceService.AddDevice(org.Id!, provisioningID!, publicKey, CollectionId, provisioningName, Host, CancellationToken);
