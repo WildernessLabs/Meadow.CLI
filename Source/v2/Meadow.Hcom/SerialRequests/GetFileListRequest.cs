@@ -1,4 +1,6 @@
-﻿namespace Meadow.Hcom
+﻿using System.Text;
+
+namespace Meadow.Hcom
 {
     internal class GetFileListRequest : Request
     {
@@ -7,6 +9,24 @@
                 : RequestType.HCOM_MDOW_REQUEST_LIST_PARTITION_FILES;
 
         public bool IncludeCrcs { get; set; }
+
+        public string? Path
+        {
+            get
+            {
+                if (Payload?.Length == 0)
+                    return null;
+
+                return Encoding.ASCII.GetString(Payload);
+            }
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    base.Payload = Encoding.ASCII.GetBytes(value);
+                }
+            }
+        }
 
         public GetFileListRequest()
         {

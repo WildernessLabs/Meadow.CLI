@@ -129,7 +129,7 @@ public static class AppManager
         CancellationToken cancellationToken)
     {
         // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList(true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+        var deviceFiles = await connection.GetFileList(true, null, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
         // get a list of files of the device files that are not in the list we intend to deploy
         var removeFiles = deviceFiles

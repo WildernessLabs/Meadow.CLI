@@ -21,6 +21,7 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
+            string? path = null,
             CancellationToken cancellationToken = default)
         {
             var started = false;
@@ -56,6 +57,7 @@ namespace Meadow.CLI.Core.Devices
         public async Task<IList<FileData>> GetFilesAndCrcs(
             TimeSpan timeout,
             int partition = 0,
+            string? path = null,
             CancellationToken cancellationToken = default)
         {
             var started = false;

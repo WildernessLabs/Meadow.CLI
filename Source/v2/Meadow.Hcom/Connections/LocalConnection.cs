@@ -132,7 +132,7 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, string? path = null, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
