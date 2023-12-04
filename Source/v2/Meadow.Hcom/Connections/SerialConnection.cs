@@ -800,10 +800,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return _deviceInfo;
     }
 
-    public override async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, string? path = null, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetFileListRequest>();
         command.IncludeCrcs = includeCrcs;
+        command.Path = path;
 
         EnqueueRequest(command);
 

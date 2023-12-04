@@ -8,6 +8,9 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
+    [CommandParameter(0, Name = "Path to folder to see contents", IsRequired = false)]
+    public string? Path { get; set; } = default!;
+
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -20,7 +23,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
         if (Connection != null && Connection.Device != null)
         {
             Logger?.LogInformation($"Getting file list...");
-            var files = await Connection.Device.GetFileList(Verbose, CancellationToken);
+            var files = await Connection.Device.GetFileList(Verbose, Path, CancellationToken);
 
             if (files == null || files.Length == 0)
             {

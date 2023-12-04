@@ -30,14 +30,14 @@ namespace Meadow.CLI.Core.Devices
 
         public MeadowDeviceInfo DeviceInfo { get; private set; }
 
-        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default)
+        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, string? path = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetFilesAndCrcs(timeout, partition, cancellationToken);
+            return _meadowDevice.GetFilesAndCrcs(timeout, partition, path, cancellationToken);
         }
 
-        public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, string? path = null, CancellationToken cancellationToken = default)
         {
-            return _meadowDevice.GetFilesAndFolders(timeout, cancellationToken);
+            return _meadowDevice.GetFilesAndFolders(timeout, path, cancellationToken);
         }
 
         public Task<FileTransferResult> WriteFile(string sourceFileName, string destinationFileName, TimeSpan timeout, CancellationToken cancellationToken = default)
