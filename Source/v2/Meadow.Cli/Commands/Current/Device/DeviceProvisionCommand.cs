@@ -21,7 +21,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
     public string? Name { get; set; }
 
-    [CommandOption("host", 'e', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+    [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
     public DeviceProvisionCommand(DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -82,54 +82,16 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         var info = await connection.Device!.GetDeviceInfo(CancellationToken);
 
-        if (info == null)
-        {
-            Logger?.LogError($"Unable to get device info");
-            return;
-        }
-
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
-        var delimList = new string[]
-        {
-            "-----END PUBLIC KEY-----",
-            "-----END RSA PUBLIC KEY-----"
-        };
+        var delim = "-----END RSA PUBLIC KEY-----\n";
+        publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
-        foreach (var delim in delimList)
-        {
-            var i = publicKey.IndexOf(delim);
-            if (i >= 0)
-            {
-                publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
-                break;
-            }
-        }
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
 
-        string provisioningID;
-
-        // prefer processorID (since the F7 works that way)
-        if (!string.IsNullOrEmpty(info.ProcessorId))
-        {
-            provisioningID = info.ProcessorId;
-        }
-        else
-        {
-            if (info.SerialNumber == null)
-            {
-                Logger?.LogError($"Unable to get device serial number or processor ID");
-                return;
-            }
-
-            provisioningID = info.SerialNumber;
-        }
-
-        // upper-case to prevent issues where clients and provisioning differ
-        provisioningID = provisioningID.ToUpper();
-
+        var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
         var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 
         var result = await _deviceService.AddDevice(org.Id!, provisioningID!, publicKey, CollectionId, provisioningName, Host, CancellationToken);

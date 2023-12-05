@@ -39,7 +39,7 @@ public class LocalConnection : ConnectionBase
                 }
                 using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography\"))
                 {
-                    info.Add("SerialNo", (key?.GetValue("MachineGuid")?.ToString() ?? "Unknown").Trim().ToUpper());
+                    info.Add("SerialNo", (key?.GetValue("MachineGuid")?.ToString() ?? "Unknown").Trim());
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -58,7 +58,7 @@ public class LocalConnection : ConnectionBase
             _deviceInfo = new DeviceInfo(info);
         }
 
-        return Task.FromResult<DeviceInfo?>(_deviceInfo);
+        return Task.FromResult< DeviceInfo?>(_deviceInfo);
     }
 
     private string ExecuteBashCommandLine(string command)
@@ -68,6 +68,7 @@ public class LocalConnection : ConnectionBase
             FileName = "/bin/bash",
             Arguments = $"-c \"{command}\"",
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
@@ -76,30 +77,14 @@ public class LocalConnection : ConnectionBase
 
         process?.WaitForExit();
 
-        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
-    }
+        var stdout = process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        var stderr = process?.StandardError.ReadToEnd() ?? string.Empty;
 
-    private string ExecuteWindowsCommandLine(string command, string args)
-    {
-        var psi = new ProcessStartInfo()
-        {
-            FileName = command,
-            Arguments = args,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(psi);
-
-        process?.WaitForExit();
-
-        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        return stdout;
     }
 
     public override Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
     {
-        // DEV NOTE: this *must* be in PEM format: i.e. -----BEGIN RSA PUBLIC KEY----- ... -----END RSA PUBLIC KEY---- 
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -117,37 +102,25 @@ public class LocalConnection : ConnectionBase
                     throw new Exception("Public key not found");
                 }
 
-                var pkFileContent = File.ReadAllText(pkFile);
-                if (!pkFileContent.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
-                {
-                    // need to convert
-                    pkFileContent = ExecuteWindowsCommandLine("ssh-keygen", $"-e -m pem -f {pkFile}");
-                }
-
-                return Task.FromResult(pkFileContent);
+                return Task.FromResult(File.ReadAllText(pkFile));
             }
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            // this will generate a PEM output *assuming* the key has already been created
-            var keygenOutput = ExecuteBashCommandLine("ssh-keygen -f id_rsa -e -m pem");
-            if (!keygenOutput.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
-            {
-                // probably no key generated
-                throw new Exception("Unable to retrieve a public key.  Please run 'ssh-keygen -t rsa'");
-            }
-
-            return Task.FromResult(keygenOutput);
+            // ssh-agent sh -c 'ssh-add; ssh-add -L'
+            throw new PlatformNotSupportedException();
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
-            if (!pubkey.Contains("BEGIN RSA PUBLIC KEY", StringComparison.OrdinalIgnoreCase))
+
+            if (pubkey.StartsWith("ssh-rsa"))
             {
-                var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ssh", "id_rsa.pub");
-                pubkey = ExecuteBashCommandLine($"ssh-keygen -f {path} -e -m pem");
+                // convert to PEM format
+                pubkey = this.ExecuteBashCommandLine("ssh-keygen -f ~/.ssh/id_rsa.pub -m 'PEM' -e");
             }
+
             return Task.FromResult(pubkey);
         }
         else
