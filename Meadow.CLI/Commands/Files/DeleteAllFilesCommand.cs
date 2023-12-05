@@ -40,6 +40,7 @@ namespace Meadow.CLI.Commands.Files
             var files = await Meadow.GetFilesAndCrcs(
                                         TimeSpan.FromSeconds(60),
                                         Partition,
+                                        "/meadow0/",
                                         cancellationToken);
 
             if (files.Any() == false)
