@@ -1,6 +1,9 @@
-﻿using Meadow.Hcom;
+﻿using Meadow.CLI;
+using Meadow.Hcom;
+using Meadow.LibUsb;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -37,10 +40,6 @@ public class MeadowConnectionManager
         if (route == "local")
         {
             _currentConnection = new LocalConnection();
-        }
-        else if (route == "simulator")
-        {
-            _currentConnection = new SimulatorConnection();
         }
         else
         {
