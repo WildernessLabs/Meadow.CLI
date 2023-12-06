@@ -817,18 +817,31 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         var list = new List<MeadowFileInfo>();
+        string directoryPrepend = string.Empty;
 
         foreach (var candidate in _textList)
         {
             var fi = MeadowFileInfo.Parse(candidate);
             if (fi != null)
             {
-                list.Add(fi);
+                if (fi.IsDirectory) // Current Directory we are listing.
+                {
+                    directoryPrepend = fi.Name;
+                }
+                else
+                {
+                    if (!fi.IsSummary)
+                    {
+                        fi.Name = directoryPrepend + fi.Name;
+                    }
+                    list.Add(fi);
+                }
+
             }
         }
 
         _textListComplete = null;
-        return list.ToArray();
+        return list.OrderBy(f => f.Name).ToArray();
     }
 
     public override async Task<bool> WriteFile(

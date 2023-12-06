@@ -73,14 +73,22 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
                 }
                 else
                 {
+                    string summary = string.Empty;
                     foreach (var file in files)
                     {
-                        Logger?.LogInformation(file.Name);
+                        if (file.IsSummary)
+                        {
+                            summary = file.Name;
+                        }
+                        else
+                        {
+                            Logger?.LogInformation(file.Name);
+                        }
                     }
 
                     Logger?.LogInformation(
                         $"\nSummary:\n" +
-                        $"\t{files.Length} files");
+                        $"\t{summary}");
                 }
             }
         }
