@@ -82,7 +82,7 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
                 };
                 await trimApplicationCommand.ExecuteAsync(Console!);
 
-                var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken)
+                var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains(System.IO.Path.DirectorySeparatorChar + "Debug" + System.IO.Path.DirectorySeparatorChar), false, Logger, CancellationToken)
                     .WithSpinner(Console!);
                 Console?.Output.WriteAsync("\n");
 
