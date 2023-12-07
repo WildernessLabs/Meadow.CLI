@@ -68,6 +68,7 @@ public class LocalConnection : ConnectionBase
             FileName = "/bin/bash",
             Arguments = $"-c \"{command}\"",
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
@@ -76,7 +77,10 @@ public class LocalConnection : ConnectionBase
 
         process?.WaitForExit();
 
-        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        var stdout = process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        var stderr = process?.StandardError.ReadToEnd() ?? string.Empty;
+
+        return stdout;
     }
 
     public override Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
@@ -110,6 +114,13 @@ public class LocalConnection : ConnectionBase
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
+
+            if (pubkey.StartsWith("ssh-rsa"))
+            {
+                // convert to PEM format
+                pubkey = this.ExecuteBashCommandLine("ssh-keygen -f ~/.ssh/id_rsa.pub -m 'PEM' -e");
+            }
+
             return Task.FromResult(pubkey);
         }
         else

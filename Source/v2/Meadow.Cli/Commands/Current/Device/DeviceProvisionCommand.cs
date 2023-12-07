@@ -85,7 +85,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
-        var delim = "-----END PUBLIC KEY-----\n";
+        var delim = "-----END RSA PUBLIC KEY-----\n";
         publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
 
 
