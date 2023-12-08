@@ -14,6 +14,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 {
     public const int DefaultBaudRate = 115200;
     public const int ReadBufferSizeBytes = 0x2000;
+    private const int DefaultTimeout = 5000;
 
     private event EventHandler<string> FileReadCompleted = delegate { };
     private event EventHandler FileWriteAccepted;
@@ -46,7 +47,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         State = ConnectionState.Disconnected;
         _logger = logger;
         _port = new SerialPort(port);
-        _port.ReadTimeout = _port.WriteTimeout = 5000;
+        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
         new Task(
             () => _ = ListenerProc(),

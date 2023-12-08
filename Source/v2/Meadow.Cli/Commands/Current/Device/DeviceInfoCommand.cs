@@ -21,13 +21,10 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
             return;
         }
 
-        if (connection != null)
+        var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
+        if (deviceInfo != null)
         {
-            var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
-            if (deviceInfo != null)
-            {
-                Logger?.LogInformation(deviceInfo.ToString());
-            }
+            Logger?.LogInformation(deviceInfo.ToString());
         }
     }
 }
