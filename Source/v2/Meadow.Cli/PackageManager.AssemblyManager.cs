@@ -4,7 +4,7 @@ using Mono.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public partial class PackageManager
 {

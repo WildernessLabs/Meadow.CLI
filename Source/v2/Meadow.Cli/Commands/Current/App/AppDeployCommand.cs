@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -75,7 +75,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 if (!file.Exists)
                 {
                     // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                    var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+                    var candidates = CLI.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
                     if (candidates.Length == 0)
                     {

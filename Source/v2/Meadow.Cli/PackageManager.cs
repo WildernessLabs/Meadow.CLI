@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using YamlDotNet.Serialization;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public partial class PackageManager : IPackageManager
 {

@@ -1,4 +1,4 @@
-﻿using Meadow.Cli;
+﻿using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 

@@ -2,7 +2,7 @@
 using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
-using Meadow.Cli;
+using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
