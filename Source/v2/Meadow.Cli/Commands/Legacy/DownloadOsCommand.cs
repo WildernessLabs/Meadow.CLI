@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +11,6 @@ public class DownloadOsCommand : FirmwareDownloadCommand
     public DownloadOsCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
     {
-        Logger?.LogWarning($"Deprecated command.  Use `runtime disable` instead");
+        Logger?.LogWarning($"Deprecated command.  Use `firmware download` instead");
     }
 }

@@ -51,7 +51,7 @@ public class LibSecret : IDisposable
         HandleError(errorPtr, "An error was encountered while writing secret to keyring");
     }
 
-    public String GetSecret()
+    public string GetSecret()
     {
         IntPtr passwordPtr = secret_password_lookup_sync(intPt, IntPtr.Zero, out IntPtr errorPtr, serviceLabel, Service, accountLabel, Account, IntPtr.Zero);
         HandleError(errorPtr, "An error was encountered while reading secret from keyring");

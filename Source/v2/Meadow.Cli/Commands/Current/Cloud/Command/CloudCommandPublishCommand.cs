@@ -10,8 +10,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud command publish", Description = "Publish a command to Meadow devices via the Meadow Service")]
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
-    public const string DefaultHost = "https://www.meadowcloud.co";
-
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
     public string CommandName { get; set; }
 

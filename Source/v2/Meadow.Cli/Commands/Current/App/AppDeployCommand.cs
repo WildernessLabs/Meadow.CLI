@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -7,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
-    private IPackageManager _packageManager;
+    private readonly IPackageManager _packageManager;
 
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
@@ -75,7 +74,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 if (!file.Exists)
                 {
                     // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                    var candidates = Cli.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+                    var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
                     if (candidates.Length == 0)
                     {

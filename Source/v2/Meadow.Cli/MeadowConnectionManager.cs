@@ -1,4 +1,4 @@
-﻿using Meadow.Cli;
+﻿using Meadow.CLI;
 using Meadow.Hcom;
 using System.Diagnostics;
 using System.IO.Ports;

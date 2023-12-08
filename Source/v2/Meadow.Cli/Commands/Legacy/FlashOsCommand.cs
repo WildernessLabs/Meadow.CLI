@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cli;
+using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
 using Meadow.Software;

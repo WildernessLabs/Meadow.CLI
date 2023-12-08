@@ -1,7 +1,7 @@
 ﻿using System.Configuration;
 using System.Text.Json;
 
-namespace Meadow.Cli;
+namespace Meadow.CLI;
 
 public class SettingsManager : ISettingsManager
 {

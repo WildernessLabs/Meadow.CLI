@@ -89,7 +89,7 @@ public static class FirmwareManager
                     list.Add(fi);
                 }
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
                 // work around for Issue #229 (bad json)
                 var index = json.IndexOf(']');
@@ -120,8 +120,6 @@ public static class FirmwareManager
     {
         return new FirmwareUpdater(connection);
     }
-
-
 
     public static async Task PushApplicationToDevice(IMeadowConnection connection, DirectoryInfo appFolder, ILogger? logger = null)
     {

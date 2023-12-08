@@ -20,34 +20,33 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
         if (connection == null)
         {
+			
             return;
         }
 
-        if (connection != null)
+        if (Time == null)
         {
-            if (Time == null)
+            Logger?.LogInformation($"Getting device clock...");
+            var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
+            Logger?.LogInformation($"{deviceTime.Value:s}Z");
+        }
+        else
+        {
+            if (Time == "now")
             {
-                Logger?.LogInformation($"Getting device clock...");
-                var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
-                Logger?.LogInformation($"{deviceTime.Value:s}Z");
+                Logger?.LogInformation($"Setting device clock...");
+                await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
+            }
+            else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
+            {
+                Logger?.LogInformation($"Setting device clock...");
+                await connection.Device.SetRtcTime(dto, CancellationToken);
             }
             else
             {
-                if (Time == "now")
-                {
-                    Logger?.LogInformation($"Setting device clock...");
-                    await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
-                }
-                else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
-                {
-                    Logger?.LogInformation($"Setting device clock...");
-                    await connection.Device.SetRtcTime(dto, CancellationToken);
-                }
-                else
-                {
-                    Logger?.LogInformation($"Unable to parse '{Time}' to a valid time.");
-                }
+                Logger?.LogInformation($"Unable to parse '{Time}' to a valid time.");
             }
         }
+        
     }
 }
