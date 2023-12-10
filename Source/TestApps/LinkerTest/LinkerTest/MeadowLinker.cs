@@ -5,30 +5,19 @@ using System.Reflection;
 
 namespace LinkerTest;
 
-public class MeadowLinker
+public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
 {
     private const string IL_LINKER_DIR = "lib";
     private const string IL_LINKER_DLL = "illink.dll";
     private const string MEADOW_LINK_XML = "meadow_link.xml";
 
-
     public const string PostLinkDirectoryName = "postlink_bin";
     public const string PreLinkDirectoryName = "prelink_bin";
 
-    readonly ILogger? logger;
+    readonly ILLinker _linker = new ILLinker(logger);
+    readonly ILogger? _logger = logger;
 
-    readonly ILLinker linker;
-
-    private readonly string meadowAssembliesPath;
-
-    public MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
-    {
-        this.meadowAssembliesPath = meadowAssembliesPath;
-
-        this.logger = logger;
-
-        linker = new ILLinker(logger);
-    }
+    private readonly string _meadowAssembliesPath = meadowAssembliesPath;
 
     public async Task Trim(
         FileInfo meadowAppFile,
@@ -39,7 +28,7 @@ public class MeadowLinker
 
         CopyDependenciesToPreLinkFolder(meadowAppFile, dependencies, includePdbs);
 
-        //run the linker against the dependencies
+        //run the _linker against the dependencies
         await TrimMeadowApp(meadowAppFile, noLink);
     }
 
@@ -98,11 +87,11 @@ public class MeadowLinker
         var illinker_path = Path.Combine(base_path!, IL_LINKER_DIR, IL_LINKER_DLL);
         var descriptor_path = Path.Combine(base_path!, IL_LINKER_DIR, MEADOW_LINK_XML);
 
-        //prepare linker arguments
+        //prepare _linker arguments
         var no_link_args = noLink != null ? string.Join(" ", noLink.Select(o => $"-p copy \"{o}\"")) : string.Empty;
 
         //link the apps
-        await linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_dir, postlink_dir);
+        await _linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_dir, postlink_dir);
 
         return Directory.EnumerateFiles(postlink_dir);
     }
@@ -121,7 +110,7 @@ public class MeadowLinker
 
         foreach (var reference in assemblyReferences)
         {
-            var fullPath = FindAssemblyFullPath(reference.Name, appDir, meadowAssembliesPath);
+            var fullPath = FindAssemblyFullPath(reference.Name, appDir, _meadowAssembliesPath);
 
             Collection<AssemblyNameReference> namedRefs = default!;
 

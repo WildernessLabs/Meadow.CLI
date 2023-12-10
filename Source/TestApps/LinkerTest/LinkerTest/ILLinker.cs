@@ -5,11 +5,11 @@ namespace LinkerTest
 {
     internal class ILLinker
     {
-        readonly ILogger? logger;
+        readonly ILogger? _logger;
 
         public ILLinker(ILogger? logger = null)
         {
-            this.logger = logger;
+            _logger = logger;
         }
 
         public async Task RunILLink(
@@ -22,7 +22,7 @@ namespace LinkerTest
         {
             if (!File.Exists(illinkerDllPath))
             {
-                throw new FileNotFoundException("Cannot run trimming operation, illink.dll not found.");
+                throw new FileNotFoundException("Cannot run trimming operation, illink.dll not found");
             }
 
             //original
@@ -30,7 +30,7 @@ namespace LinkerTest
 
             var monolinker_args = $"\"{illinkerDllPath}\" -x \"{descriptorXmlPath}\" {noLinkArgs} --skip-unresolved true --deterministic true --keep-facades true --ignore-descriptors false -b true -c link -o \"{postlinkDir}\" -r \"{prelinkAppPath}\" -d \"{prelinkDir}\"";
 
-            logger?.Log(LogLevel.Information, "Trimming assemblies");
+            _logger?.Log(LogLevel.Information, "Trimming assemblies");
 
             using (var process = new Process())
             {
@@ -50,14 +50,14 @@ namespace LinkerTest
 
                     Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
 
-                    logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
+                    _logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
                 }
 
                 await process.WaitForExitAsync();
 
                 if (process.ExitCode != 0)
                 {
-                    logger?.Log(LogLevel.Debug, $"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
+                    _logger?.Log(LogLevel.Debug, $"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
                     throw new Exception("Trimming failed");
                 }
             }
