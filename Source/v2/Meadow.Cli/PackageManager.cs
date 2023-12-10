@@ -121,7 +121,7 @@ public partial class PackageManager : IPackageManager
         return success;
     }
 
-    public async Task TrimApplication(
+    public Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
         IList<string>? noLink = null,
@@ -155,11 +155,9 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        await TrimDependencies(
-            applicationFilePath,
-            noLink,
-            null, // ILogger
-            includePdbs);
+        var linker = new MeadowLinker(MeadowAssembliesPath);
+
+        return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
 
     public const string PackageMetadataFileName = "info.json";
