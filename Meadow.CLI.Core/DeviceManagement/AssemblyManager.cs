@@ -90,6 +90,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             using (var process = new Process())
             {
+                process.StartInfo.WorkingDirectory = Directory.GetDirectoryRoot(path);
                 process.StartInfo.FileName = "dotnet";
                 process.StartInfo.Arguments = monolinker_args;
                 process.StartInfo.UseShellExecute = false;
@@ -107,7 +108,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     {
                         Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
                     }
-                    
+
                 }
 
                 string stdErrorReaderResult;

@@ -90,8 +90,15 @@ public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
         //prepare _linker arguments
         var no_link_args = noLink != null ? string.Join(" ", noLink.Select(o => $"-p copy \"{o}\"")) : string.Empty;
 
-        //link the apps
-        await _linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_dir, postlink_dir);
+        try
+        {
+            //link the apps
+            await _linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_dir, postlink_dir);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error trimming Meadow app");
+        }
 
         return Directory.EnumerateFiles(postlink_dir);
     }
@@ -136,17 +143,18 @@ public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
             fileName += ".dll";
         }
 
+        //meadow assemblies path
+        if (File.Exists(Path.Combine(meadowAssembliesPath, fileName)))
+        {
+            return Path.Combine(meadowAssembliesPath, fileName);
+        }
+
         //localPath
         if (File.Exists(Path.Combine(localPath, fileName)))
         {
             return Path.Combine(localPath, fileName);
         }
 
-        //meadow assemblies localPath
-        if (File.Exists(Path.Combine(meadowAssembliesPath, fileName)))
-        {
-            return Path.Combine(meadowAssembliesPath, fileName);
-        }
         return null;
     }
 
