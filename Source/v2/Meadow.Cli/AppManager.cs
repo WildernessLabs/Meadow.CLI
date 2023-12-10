@@ -41,6 +41,7 @@ public static class AppManager
 
         // get a list of files to send
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
+        dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
         logger.LogInformation("Generating the list of files to deploy...");
         foreach (var file in dependencies)
