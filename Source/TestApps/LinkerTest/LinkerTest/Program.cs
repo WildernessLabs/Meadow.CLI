@@ -4,6 +4,8 @@ namespace LinkerTest
 {
     internal class Program
     {
+        private static readonly string _meadowAssembliesPath = @"C:\Users\adria\AppData\Local\WildernessLabs\Firmware\1.6.0.1\meadow_assemblies\";
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("Hello, World!");
@@ -12,11 +14,11 @@ namespace LinkerTest
 
             //  return;
 
-            var linker = new MeadowLinker();
+            var linker = new MeadowLinker(_meadowAssembliesPath);
 
             string fileToLink = @"H:\WL\Meadow.ProjectLab\Source\ProjectLab_Demo\bin\Debug\netstandard2.1\App.dll";
 
-            await linker.TrimApplication(new FileInfo(fileToLink), true);
+            await linker.Trim(new FileInfo(fileToLink), true);
         }
 
         static async Task OtherLink()
