@@ -8,8 +8,12 @@ namespace LinkerTest;
 public class MeadowLinker
 {
     private const string IL_LINKER_DIR = "lib";
-    public const string PostLinkDirectoryName = "postlink";
-    public const string PreLinkDirectoryName = "prelink";
+    private const string IL_LINKER_DLL = "illink.dll";
+    private const string MEADOW_LINK_XML = "meadow_link.xml";
+
+
+    public const string PostLinkDirectoryName = "postlink_bin";
+    public const string PreLinkDirectoryName = "prelink_bin";
 
     readonly ILogger? logger;
 
@@ -88,18 +92,17 @@ public class MeadowLinker
     {
         //set up the paths
         var prelink_dir = Path.Combine(file.DirectoryName!, PreLinkDirectoryName);
-        var prelink_app = Path.Combine(prelink_dir, file.Name);
-        var prelink_os = Path.Combine(prelink_dir, "Meadow.dll");
         var postlink_dir = Path.Combine(file.DirectoryName!, PostLinkDirectoryName);
+        var prelink_app = Path.Combine(prelink_dir, file.Name);
         var base_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var illinker_path = Path.Combine(base_path!, IL_LINKER_DIR, "illink.dll");
-        var descriptor_path = Path.Combine(base_path!, IL_LINKER_DIR, "meadow_link.xml");
+        var illinker_path = Path.Combine(base_path!, IL_LINKER_DIR, IL_LINKER_DLL);
+        var descriptor_path = Path.Combine(base_path!, IL_LINKER_DIR, MEADOW_LINK_XML);
 
         //prepare linker arguments
         var no_link_args = noLink != null ? string.Join(" ", noLink.Select(o => $"-p copy \"{o}\"")) : string.Empty;
 
         //link the apps
-        await linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_os, prelink_dir, postlink_dir);
+        await linker.RunILLink(illinker_path, descriptor_path, no_link_args, prelink_app, prelink_dir, postlink_dir);
 
         return Directory.EnumerateFiles(postlink_dir);
     }
@@ -110,7 +113,7 @@ public class MeadowLinker
     private List<string> GetDependencies(string assemblyPath, Collection<AssemblyNameReference> assemblyReferences, List<string> dependencyMap, string appDir)
     {
         if (dependencyMap.Contains(assemblyPath))
-        {   //already have this assembly
+        {   //already have this assembly mapped
             return dependencyMap;
         }
 
@@ -129,7 +132,7 @@ public class MeadowLinker
             namedRefs = GetAssemblyReferences(fullPath);
 
             //recursive!
-            GetDependencies(fullPath!, namedRefs!, dependencyMap, appDir);
+            dependencyMap = GetDependencies(fullPath!, namedRefs!, dependencyMap, appDir);
         }
 
         return dependencyMap.Where(x => x.Contains("App.") == false).ToList();
@@ -144,15 +147,16 @@ public class MeadowLinker
             fileName += ".dll";
         }
 
-        //meadow assemblies localPath
-        if (File.Exists(Path.Combine(meadowAssembliesPath, fileName)))
-        {
-            return Path.Combine(meadowAssembliesPath, fileName);
-        }
         //localPath
         if (File.Exists(Path.Combine(localPath, fileName)))
         {
             return Path.Combine(localPath, fileName);
+        }
+
+        //meadow assemblies localPath
+        if (File.Exists(Path.Combine(meadowAssembliesPath, fileName)))
+        {
+            return Path.Combine(meadowAssembliesPath, fileName);
         }
         return null;
     }
