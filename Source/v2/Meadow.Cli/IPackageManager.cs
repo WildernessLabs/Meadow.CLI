@@ -23,5 +23,4 @@ public interface IPackageManager
         string filter = "*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null);
-
 }

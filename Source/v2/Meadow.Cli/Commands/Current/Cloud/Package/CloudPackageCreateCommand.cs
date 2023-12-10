@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
 using Meadow.Software;
@@ -72,6 +71,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         // package
         var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
+        //TODO - properly manage shared paths
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");

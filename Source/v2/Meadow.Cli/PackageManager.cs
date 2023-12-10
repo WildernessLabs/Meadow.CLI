@@ -1,4 +1,5 @@
 ﻿using GlobExpressions;
+using LinkerTest;
 using Meadow.Cloud;
 using Meadow.Software;
 using System.Diagnostics;
@@ -14,10 +15,13 @@ public partial class PackageManager : IPackageManager
     public const string BuildOptionsFileName = "app.build.yaml";
 
     private FileManager _fileManager;
+    private MeadowLinker _meadowLinker;
 
     public PackageManager(FileManager fileManager)
     {
         _fileManager = fileManager;
+
+        _meadowLinker = new MeadowLinker(MeadowAssembliesPath, null);
     }
 
     private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
@@ -151,17 +155,11 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var dependencies = GetDependencies(applicationFilePath)
-            .Where(x => x.Contains("App.") == false)
-            .ToList();
-
         await TrimDependencies(
             applicationFilePath,
-            dependencies,
             noLink,
             null, // ILogger
-            includePdbs,
-            verbose: false);
+            includePdbs);
     }
 
     public const string PackageMetadataFileName = "info.json";
@@ -257,7 +255,6 @@ public partial class PackageManager : IPackageManager
                 }
 
                 FindApp(dir, fileList);
-
             }
         }
 
