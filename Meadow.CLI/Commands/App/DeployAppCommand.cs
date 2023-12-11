@@ -27,7 +27,7 @@ namespace Meadow.CLI.Commands.App
         public IList<string> NoLink { get; init; } = null;
 
         [CommandOption("includePdbs", 'i', Description = "Include the PDB files on deploy to enable debugging", IsRequired = false)]
-        public bool IncludePdbs { get; init; } = true;
+        public bool IncludePdbs { get; init; } = false;
 
         public DeployAppCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
             : base(downloadManager, loggerFactory, meadowDeviceManager)
