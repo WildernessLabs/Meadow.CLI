@@ -7,11 +7,11 @@ using System.Text.Json;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud command publish", Description = "Publish a command to Meadow devices via the Meadow Service")]
+[Command("cloud command publish", Description = "Publish a command to Meadow devices via Meadow.Cloud")]
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
-    public string CommandName { get; set; } = default!;
+    public string CommandName { get; set; } = string.Empty;
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command")]
     public string? CollectionId { get; set; }
@@ -64,12 +64,11 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
         try
         {
-            Logger?.LogInformation($"Publishing '{CommandName}' command to Meadow.Cloud. Please wait...");
             if (!string.IsNullOrWhiteSpace(CollectionId))
             {
                 await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }
-            else if (DeviceIds.Any())
+            else if (DeviceIds?.Length > 0)
             {
                 await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }

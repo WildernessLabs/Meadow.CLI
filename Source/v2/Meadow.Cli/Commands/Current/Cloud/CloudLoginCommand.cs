@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud login", Description = "Log into the Meadow Service")]
+[Command("cloud login", Description = "Log in to Meadow.Cloud")]
 public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
 {
     [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
