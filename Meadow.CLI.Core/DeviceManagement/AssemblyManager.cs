@@ -91,6 +91,7 @@ namespace Meadow.CLI.Core.DeviceManagement
 
             using (var process = new Process())
             {
+                process.StartInfo.WorkingDirectory = Path.GetTempPath();
                 process.StartInfo.FileName = "dotnet";
                 process.StartInfo.Arguments = monolinker_args;
                 process.StartInfo.UseShellExecute = false;

@@ -1,4 +1,5 @@
 ﻿using Meadow.CLI.Core.Common;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -55,7 +56,7 @@ namespace Meadow.CLI.Core
 
         private static readonly HttpClient Client = new()
         {
-            Timeout = TimeSpan.FromMinutes(5)
+            Timeout = TimeSpan.FromSeconds(30)
         };
 
         private readonly ILogger _logger;
@@ -72,6 +73,11 @@ namespace Meadow.CLI.Core
 
         internal async Task<string?> DownloadMeadowOSVersionFile(string? version, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
+
             string versionCheckUrl;
             if (version is null || string.IsNullOrWhiteSpace(version))
             {
@@ -84,7 +90,7 @@ namespace Meadow.CLI.Core
                 versionCheckUrl = VersionCheckUrlRoot + version + ".json";
             }
 
-            string versionCheckFile;
+            string? versionCheckFile;
 
             try
             {
@@ -118,11 +124,10 @@ namespace Meadow.CLI.Core
             return true;
         }
 
-        //ToDo rename this method - DownloadOSAsync?
         public async Task DownloadOsBinaries(string? version = null, bool force = false, CancellationToken cancellationToken = default)
         {
             string local_path;
-            if (!string.IsNullOrEmpty(version))
+            /*if (!string.IsNullOrEmpty(version))
             {
                 local_path = Path.Combine(FirmwareDownloadsFilePathRoot, version);
 
@@ -133,10 +138,11 @@ namespace Meadow.CLI.Core
                     _logger.LogInformation($"Meadow OS version {version} was previously downloaded to: {local_path}.{Environment.NewLine}");
                     return;
                 }
-            }
+            }*/
 
+            _logger.LogInformation("Checking for Internet Availability. Press Ctrl+C to skip this check.");
             // Check if there is an active internet connection
-            if (!NetworkInterface.GetIsNetworkAvailable())
+            if (!await IsInternetAvailable(cancellationToken))
             {
                 _logger.LogError($"No internet connection! Cannot download Meadow OS version {version}. Please retry once an internet connection is available.{Environment.NewLine}");
                 return;
@@ -287,25 +293,41 @@ namespace Meadow.CLI.Core
             }
         }
 
-        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates()
+        public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates(CancellationToken cancellationToken)
         {
             try
             {
                 var packageId = "WildernessLabs.Meadow.CLI";
                 var appVersion = Assembly.GetEntryAssembly()!
-                                         .GetCustomAttribute<AssemblyFileVersionAttribute>()
+                                         .GetCustomAttribute<AssemblyFileVersionAttribute>()?
                                          .Version;
 
+                if (string.IsNullOrWhiteSpace(appVersion)
+                    || cancellationToken.IsCancellationRequested)
+                {
+                    return (false, string.Empty, string.Empty);
+                }
+
                 var json = await Client.GetStringAsync(
-                               $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json");
+                               $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json", cancellationToken);
 
                 var result = JsonSerializer.Deserialize<PackageVersions>(json);
 
                 if (!string.IsNullOrEmpty(result?.Versions.LastOrDefault()))
                 {
-                    var latest = result!.Versions!.Last();
+                    var stableVersions = result.Versions
+                        .Where(version => !version.Contains("-alpha", StringComparison.OrdinalIgnoreCase)
+                            && !version.Contains("-beta", StringComparison.OrdinalIgnoreCase)
+                            && !version.Contains("-rc", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    var latest = stableVersions.Last();
                     return (latest.ToVersion() > appVersion.ToVersion(), latest, appVersion);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // User cancelled the Update Check, let's exit peacefully
+                return (false, string.Empty, string.Empty);
             }
             catch (Exception ex)
             {
@@ -315,8 +337,13 @@ namespace Meadow.CLI.Core
             return (false, string.Empty, string.Empty);
         }
 
-        private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
+        private async Task<string?> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
+
             var downloadFileName = string.Empty;
 
             try
@@ -397,6 +424,34 @@ namespace Meadow.CLI.Core
                     _logger.LogDebug(ex, "Failed to delete directory");
                 }
             }
+        }
+
+        static async Task<bool> IsInternetAvailable(CancellationToken cancellationToken)
+        {
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        var result = await ping.SendPingAsync("www.google.com", 2000);
+
+                        if (result.Status == IPStatus.Success)
+                        {
+                            return true;
+                        }
+
+                        // Shouldn't theoretically be needed, but just in case we need to check twice.
+                        await Task.Delay(1000, cancellationToken);
+                    }
+                }
+            }
+            catch (PingException)
+            {
+                // If any PingException occurrd we'll leave quietly and assume no internet:)
+            }
+
+            return false;
         }
     }
 }

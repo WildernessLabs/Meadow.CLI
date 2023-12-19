@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
@@ -25,6 +26,8 @@ namespace Meadow.CLI.Commands
 
         public virtual async ValueTask ExecuteAsync(IConsole console)
         {
+            var cancellationToken = console.RegisterCancellationHandler();
+
             var logger = LoggerFactory.CreateLogger(typeof(MeadowCommand));
             var lastUpdateCheckString = SettingsManager.GetSetting(Setting.LastUpdateCheck);
             var lastUpdateCheck = string.IsNullOrWhiteSpace(lastUpdateCheckString)
@@ -35,7 +38,9 @@ namespace Meadow.CLI.Commands
             Version currentVersion, latestVersion;
             if (lastUpdateCheck.AddDays(1) < DateTimeOffset.UtcNow || SettingsManager.GetSetting(Setting.LatestVersion) == null)
             {
-                var (ue, lv, cv) = await DownloadManager.CheckForUpdates();
+                var updateCancellationTokenSource = new CancellationTokenSource();
+                logger.LogInformation("Checking for Updates. Press Ctrl+C to skip this check.");
+                var (ue, lv, cv) = await DownloadManager.CheckForUpdates(updateCancellationTokenSource.Token);
                 SettingsManager.SaveSetting(Setting.LastUpdateCheck, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
                 SettingsManager.SaveSetting(Setting.LatestVersion, lv);
                 updateExists = ue;
@@ -65,14 +70,14 @@ namespace Meadow.CLI.Commands
                 latestVersion = latestVersionString.ToVersion();
                 updateExists = latestVersion > currentVersion;
             }
-            
+
             if (updateExists)
             {
                 logger.LogInformation(
                     "A Meadow.CLI update is available. Current Version {currentVersion} Latest Version {latestVersion}.",
                     currentVersion,
                     latestVersion);
-                logger.LogInformation($"Run `dotnet tool update WildernessLabs.Meadow.CLI --global` to update. {Environment.NewLine}");
+                logger.LogInformation($"Run `{DownloadManager.UpdateCommand}` to update.{Environment.NewLine}");
             }
         }
     }
