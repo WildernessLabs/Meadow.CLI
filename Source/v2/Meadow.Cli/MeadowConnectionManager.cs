@@ -1,13 +1,10 @@
 ﻿using Meadow.CLI;
 using Meadow.Hcom;
-using Meadow.LibUsb;
 using System.Diagnostics;
 using System.IO.Ports;
-using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -37,56 +34,49 @@ public class MeadowConnectionManager
         if (_currentConnection != null) return _currentConnection;
 
         // try to determine what the route is
-        if (route == "local")
+        string? uri = null;
+        if (route.StartsWith("http"))
         {
-            _currentConnection = new LocalConnection();
+            uri = route;
+        }
+        else if (IPAddress.TryParse(route, out var ipAddress))
+        {
+            uri = $"http://{route}:5000";
+        }
+        else if (IPEndPoint.TryParse(route, out var endpoint))
+        {
+            uri = $"http://{route}";
+        }
+
+        if (uri != null)
+        {
+            _currentConnection = new TcpConnection(uri);
         }
         else
         {
-            string? uri = null;
-            if (route.StartsWith("http"))
-            {
-                uri = route;
-            }
-            else if (IPAddress.TryParse(route, out var ipAddress))
-            {
-                uri = $"http://{route}:5000";
-            }
-            else if (IPEndPoint.TryParse(route, out var endpoint))
-            {
-                uri = $"http://{route}";
-            }
+            var retryCount = 0;
 
-            if (uri != null)
+        get_serial_connection:
+            try
             {
-                _currentConnection = new TcpConnection(uri);
+                _currentConnection = new SerialConnection(route);
             }
-            else
+            catch
             {
-                var retryCount = 0;
-
-            get_serial_connection:
-                try
+                retryCount++;
+                if (retryCount > 10)
                 {
-                    _currentConnection = new SerialConnection(route);
+                    throw new Exception($"Cannot find port {route}");
                 }
-                catch
-                {
-                    retryCount++;
-                    if (retryCount > 10)
-                    {
-                        throw new Exception($"Cannot find port {route}");
-                    }
-                    Thread.Sleep(500);
-                    goto get_serial_connection;
-                }
+                Thread.Sleep(500);
+                goto get_serial_connection;
             }
         }
 
         return _currentConnection;
     }
 
-    public static async Task<IList<MeadowSerialPort>> GetSerialPorts()
+    public static async Task<IList<string>> GetSerialPorts()
     {
         try
         {
@@ -117,14 +107,14 @@ public class MeadowConnectionManager
         }
     }
 
-    public static async Task<IList<MeadowSerialPort>> GetMeadowSerialPortsForOsx()
+    public static async Task<IList<string>> GetMeadowSerialPortsForOsx()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
             throw new PlatformNotSupportedException("This method is only supported on macOS");
 
         return await Task.Run(() =>
         {
-            var ports = new List<MeadowSerialPort>();
+            var ports = new List<string>();
 
             var psi = new ProcessStartInfo
             {
@@ -166,10 +156,8 @@ public class MeadowConnectionManager
                     int startIndex = line.IndexOf("/");
                     int endIndex = line.IndexOf("\"", startIndex + 1);
                     var port = line.Substring(startIndex, endIndex - startIndex);
-                    int serialNumberIndex = line.IndexOf("tty.usbmodem") + 12;
-                    var serialNumber = line.Substring(serialNumberIndex, endIndex - serialNumberIndex);
 
-                    ports.Add(new MeadowSerialPort { Name = port, SerialNumber = serialNumber });
+                    ports.Add(port);
                     foundMeadow = false;
                 }
             }
@@ -178,7 +166,7 @@ public class MeadowConnectionManager
         });
     }
 
-    public static async Task<IList<MeadowSerialPort>> GetMeadowSerialPortsForLinux()
+    public static async Task<IList<string>> GetMeadowSerialPortsForLinux()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
             throw new PlatformNotSupportedException("This method is only supported on Linux");
@@ -196,37 +184,22 @@ public class MeadowConnectionManager
 
             using var proc = Process.Start(psi);
             _ = proc?.WaitForExit(1000);
-            var output = proc?.StandardOutput;
+            var output = proc?.StandardOutput.ReadToEnd();
 
-            if (output != null)
-            {
-                var outputText = output.ReadToEnd();
-                if (!string.IsNullOrEmpty(outputText))
-                {
-
-                    return outputText
-                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                          .Where(x => x.Contains("Wilderness_Labs"))
-                          .Select(
-                              line =>
-                              {
-                                  var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
-                                  var target = parts[1];
-                                  var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                                  int serialNumberIndex = line.IndexOf("ttyACM") + 6;
-                                  var serialNumber = line.Substring(serialNumberIndex);
-
-                                  return new MeadowSerialPort { Name = port, SerialNumber = serialNumber };
-                              }).ToArray();
-                }
-            }
-
-            return Array.Empty<MeadowSerialPort>();
+            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                  .Where(x => x.Contains("Wilderness_Labs"))
+                  .Select(
+                      line =>
+                      {
+                          var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
+                          var target = parts[1];
+                          var port = Path.GetFullPath(Path.Combine(devicePath, target));
+                          return port;
+                      }).ToArray();
         });
     }
 
-    [SupportedOSPlatform("windows")]
-    public static IList<MeadowSerialPort> GetMeadowSerialPortsForWindows()
+    public static IList<string> GetMeadowSerialPortsForWindows()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
             throw new PlatformNotSupportedException("This method is only supported on Windows");
@@ -244,7 +217,7 @@ public class MeadowConnectionManager
             // our query for all ports that have a PnP device id starting with Wilderness Labs' USB VID.
             string query = @$"SELECT Name, Caption, PNPDeviceID FROM Win32_PnPEntity WHERE PNPClass = 'Ports' AND PNPDeviceID like '{escapedPrefix}%'";
 
-            List<MeadowSerialPort> results = new();
+            List<string> results = new();
 
             // build the searcher for the query
             using ManagementObjectSearcher searcher = new(wmiScope, query);
@@ -252,42 +225,29 @@ public class MeadowConnectionManager
             // get the query results
             foreach (ManagementObject moResult in searcher.Get())
             {
-                // Try Caption 1st, then Name, they both seem to contain the COM port 
-                var captionObject = moResult["Caption"];
-
-                var portLongName = captionObject?.ToString();
+                // Try Caption and if not Name, they both seems to contain the COM port 
+                string portLongName = moResult["Caption"].ToString();
                 if (string.IsNullOrEmpty(portLongName))
-                {
-                    var nameObject = moResult["Name"];
-                    portLongName = nameObject?.ToString();
-                }
+                    portLongName = moResult["Name"].ToString();
+                string pnpDeviceId = moResult["PNPDeviceID"].ToString();
 
                 // we could collect and return a fair bit of other info from the query:
+
                 //string description = moResult["Description"].ToString();
                 //string service = moResult["Service"].ToString();
                 //string manufacturer = moResult["Manufacturer"].ToString();
 
-                if (!string.IsNullOrEmpty(portLongName))
-                {
-                    var comIndex = portLongName.IndexOf("(COM") + 1;
-                    var copyLength = portLongName.IndexOf(")") - comIndex;
-                    var port = portLongName.Substring(comIndex, copyLength);
+                var comIndex = portLongName.IndexOf("(COM") + 1;
+                var copyLength = portLongName.IndexOf(")") - comIndex;
+                var port = portLongName.Substring(comIndex, copyLength);
 
-                    var pnpDeviceObject = moResult["PNPDeviceID"];
-                    var pnpDeviceId = pnpDeviceObject?.ToString();
+                // the meadow serial is in the device id, after
+                // the characters: USB\VID_XXXX&PID_XXXX\
+                // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
+                var splits = pnpDeviceId.Split('\\');
+                var serialNumber = splits[2];
 
-                    // the meadow serial is in the device id, after
-                    // the characters: USB\VID_XXXX&PID_XXXX\
-                    // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
-                    string? serialNumber = string.Empty;
-                    if (!string.IsNullOrEmpty(pnpDeviceId))
-                    {
-                        var splits = pnpDeviceId.Split('\\');
-                        serialNumber = splits[2];
-                    }
-
-                    results.Add(new MeadowSerialPort { Name = port, SerialNumber = serialNumber });
-                }
+                results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
             }
 
             return results.ToArray();
@@ -300,53 +260,7 @@ public class MeadowConnectionManager
             //hack to skip COM1
             ports = ports.Where((source, index) => source != "COM1").Distinct().ToArray();
 
-            List<MeadowSerialPort> results = new();
-            foreach (var port in ports)
-            {
-                results.Add(new MeadowSerialPort { Name = port, SerialNumber = string.Empty });
-            }
-
-            return results;
+            return ports;
         }
     }
-
-    public static async Task<string> GetPortFromSerialNumber(string serialNumber)
-    {
-        var retryCount = 0;
-
-        string? newPort = null;
-
-        // now wait for the serial port with the passed in serialNumber to appear
-        while (newPort == null)
-        {
-            var ports = await GetSerialPorts();
-
-            if (ports != null)
-            {
-                foreach (var meadowSerialPort in ports)
-                {
-                    if (meadowSerialPort.SerialNumber != null && meadowSerialPort.SerialNumber.Contains(serialNumber))
-                    {
-                        newPort = meadowSerialPort.Name;
-                        break;
-                    }
-                }
-
-                if (retryCount++ > 12)
-                {
-                    throw new Exception("Meadow device not found");
-                }
-            }
-
-            await Task.Delay(500);
-        }
-
-        return newPort;
-    }
-}
-
-public class MeadowSerialPort
-{
-    public string? Name { get; set; }
-    public string? SerialNumber { get; set; }
 }

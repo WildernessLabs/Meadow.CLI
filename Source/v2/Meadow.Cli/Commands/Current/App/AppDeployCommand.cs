@@ -1,26 +1,34 @@
 ﻿using CliFx.Attributes;
+using Meadow.CLI;
+
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
-public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
+public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
-    private string lastFile = string.Empty;
+    private readonly IPackageManager _packageManager;
 
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
     public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(packageManager, connectionManager, loggerFactory)
+        : base(connectionManager, loggerFactory)
     {
+        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null)
+        {
+            return;
+        }
+
+        if (connection != null)
         {
             string path = Path == null
                 ? Environment.CurrentDirectory
@@ -29,17 +37,30 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
             // is the path a file?
             FileInfo file;
 
-            lastFile = string.Empty;
+            var lastFile = string.Empty;
 
             // in order to deploy, the runtime must be disabled
-            var wasRuntimeEnabled = await Connection.IsRuntimeEnabled();
-
+            var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
             if (wasRuntimeEnabled)
             {
                 Logger?.LogInformation("Disabling runtime...");
 
-                await Connection.RuntimeDisable(CancellationToken);
+                await connection.RuntimeDisable(CancellationToken);
             }
+
+            connection.FileWriteProgress += (s, e) =>
+            {
+                var p = (e.completed / (double)e.total) * 100d;
+
+                if (e.fileName != lastFile)
+                {
+                    Console?.Output.WriteAsync("\n");
+                    lastFile = e.fileName;
+                }
+
+                // Console instead of Logger due to line breaking for progress bar
+                Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%         \r");
+            };
 
             if (!File.Exists(path))
             {
@@ -74,50 +95,15 @@ public class AppDeployCommand : BaseAppCommand<AppDeployCommand>
 
             var targetDirectory = file.DirectoryName;
 
-            if (Logger != null && !string.IsNullOrEmpty(targetDirectory))
-            {
-                var trimApplicationCommand = new AppTrimCommand(_packageManager, ConnectionManager, LoggerFactory!)
-                {
-                    Path = path,
-                };
-                await trimApplicationCommand.ExecuteAsync(Console!);
-
-                var localFiles = await AppManager.GenerateDeployList(_packageManager, targetDirectory, targetDirectory.Contains("Debug"), false, Logger, CancellationToken)
-                    .WithSpinner(Console!);
-                Console?.Output.WriteAsync("\n");
-
-                if (localFiles != null && localFiles.Count > 0)
-                {
-                    Connection.FileWriteProgress += Connection_FileWriteProgress;
-
-                    await AppManager.DeployApplication(Connection, localFiles, Logger, CancellationToken);
-                    Console?.Output.WriteAsync("\n");
-
-                    Connection.FileWriteProgress -= Connection_FileWriteProgress;
-                }
-            }
+            await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
 
             if (wasRuntimeEnabled)
             {
                 // restore runtime state
-                Logger?.LogInformation("Enabling runtime...");
+                Logger.LogInformation("Enabling runtime...");
 
-                await Connection.RuntimeEnable(CancellationToken);
+                await connection.RuntimeEnable(CancellationToken);
             }
         }
-    }
-
-    private void Connection_FileWriteProgress(object? sender, (string fileName, long completed, long total) e)
-    {
-        var p = (e.completed / (double)e.total) * 100d;
-
-        if (e.fileName != lastFile)
-        {
-            Console?.Output.WriteAsync("\n");
-            lastFile = e.fileName;
-        }
-
-        // Console instead of Logger due to line breaking for progress bar
-        Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%     \r");
     }
 }

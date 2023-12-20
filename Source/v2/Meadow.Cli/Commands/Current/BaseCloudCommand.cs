@@ -1,7 +1,5 @@
-﻿using System.Configuration;
-using Meadow.Cloud;
+﻿using Meadow.Cloud;
 using Meadow.Cloud.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -37,9 +35,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         {
             Logger?.LogInformation("Retrieving your user and organization information...");
 
-            var userOrgs = await UserService.GetUserOrgs(host, cancellationToken)
-                .WithSpinner(Console!);
-
+            var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
             if (!userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {host} to register your account.");
@@ -50,7 +46,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
             {
-                org = userOrgs.First();
+                orgNameOrId = userOrgs.First().Id;
             }
             else
             {

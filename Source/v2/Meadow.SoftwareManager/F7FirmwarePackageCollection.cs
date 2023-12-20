@@ -11,7 +11,7 @@ namespace Meadow.Software;
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
     /// <inheritdoc/>
-    public event EventHandler<long>? DownloadProgress;
+    public event EventHandler<long> DownloadProgress;
 
     public string PackageFileRoot { get; }
 
@@ -70,18 +70,13 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         // if we're deleting the default, we need to det another default
         var i = _f7Packages.Count - 1;
-        if (DefaultPackage != null)
+        while (DefaultPackage.Version == _f7Packages[i].Version)
         {
-            while (DefaultPackage.Version == _f7Packages[i].Version)
-            {
-                i--;
-            }
-            var newDefault = _f7Packages[i].Version;
-            _f7Packages.Remove(DefaultPackage);
-
-            if (!string.IsNullOrEmpty(newDefault))
-                SetDefaultPackage(newDefault);
+            i--;
         }
+        var newDefault = _f7Packages[i].Version;
+        _f7Packages.Remove(DefaultPackage);
+        SetDefaultPackage(newDefault);
 
         var path = Path.Combine(PackageFileRoot, version);
 
@@ -92,9 +87,6 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
     public Task SetDefaultPackage(string version)
     {
-        // Refresh the list, in case we've just downloaded it.
-        Refresh();
-
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
         if (existing == null)

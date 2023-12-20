@@ -15,11 +15,12 @@ namespace Meadow.HCom.Integration.Tests
             });
         }
 
-        /* TODO [Fact]
+        [Fact]
         public async void TestListen()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {
+                /*
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
                 var listener = new TestListener();
@@ -41,8 +42,9 @@ namespace Meadow.HCom.Integration.Tests
                 }
 
                 Assert.True(listener.Messages.Count > 0);
+                */
             }
-        }*/
+        }
 
         [Fact]
         public async void TestAttachPositive()

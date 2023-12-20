@@ -18,11 +18,14 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        await FileManager.Refresh();
+
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var collection = FileManager.Firmware["Meadow F7"];
 
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
-        if (Collection != null)
-            await Collection.DeletePackage(Version);
+        await collection.DeletePackage(Version);
     }
 }

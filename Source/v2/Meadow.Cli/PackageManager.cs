@@ -1,7 +1,7 @@
 ﻿using GlobExpressions;
+using LinkerTest;
 using Meadow.Cloud;
 using Meadow.Software;
-using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -15,10 +15,13 @@ public partial class PackageManager : IPackageManager
     public const string BuildOptionsFileName = "app.build.yaml";
 
     private FileManager _fileManager;
+    private MeadowLinker _meadowLinker;
 
     public PackageManager(FileManager fileManager)
     {
         _fileManager = fileManager;
+
+        _meadowLinker = new MeadowLinker(MeadowAssembliesPath, null);
     }
 
     private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
@@ -67,7 +70,7 @@ public partial class PackageManager : IPackageManager
         return success;
     }
 
-    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, ILogger? logger = null, CancellationToken? cancellationToken = null)
+    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
     {
         if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
         {
@@ -99,7 +102,6 @@ public partial class PackageManager : IPackageManager
                 Debug.WriteLine(dataLine.Data);
                 if (dataLine.Data.Contains("Build FAILED", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    logger?.LogError(dataLine.Data);
                     Debug.WriteLine("Build failed");
                     success = false;
                 }
@@ -119,11 +121,10 @@ public partial class PackageManager : IPackageManager
         return success;
     }
 
-    public async Task TrimApplication(
+    public Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
         IList<string>? noLink = null,
-        ILogger? logger = null,
         CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)
@@ -131,52 +132,32 @@ public partial class PackageManager : IPackageManager
             throw new FileNotFoundException($"{applicationFilePath} not found");
         }
 
-        Trimmed = false;
-
-        // does an app.build.yaml file exist?
+        // does a meadow.build.yml file exist?
         var buildOptionsFile = Path.Combine(
             applicationFilePath.DirectoryName ?? string.Empty,
             BuildOptionsFileName);
 
         if (File.Exists(buildOptionsFile))
         {
-            logger?.LogInformation($"'{BuildOptionsFileName}' is present");
             var yaml = File.ReadAllText(buildOptionsFile);
             var deserializer = new DeserializerBuilder()
                 .IgnoreUnmatchedProperties()
                 .Build();
             var opts = deserializer.Deserialize<BuildOptions>(yaml);
 
-            if (opts.Deploy?.NoLink != null && opts.Deploy?.NoLink.Count > 0)
+            if (opts.Deploy.NoLink != null && opts.Deploy.NoLink.Count > 0)
             {
                 noLink = opts.Deploy.NoLink;
             }
-            if (opts.Deploy?.IncludePDBs != null)
+            if (opts.Deploy.IncludePDBs != null)
             {
                 includePdbs = opts.Deploy.IncludePDBs.Value;
             }
         }
 
-        AssemblyDependencies = GetDependencies(applicationFilePath)
-            .ToList();
+        var linker = new MeadowLinker(MeadowAssembliesPath);
 
-        try
-        {
-            TrimmedDependencies = await TrimDependencies(
-                applicationFilePath,
-                AssemblyDependencies,
-                noLink,
-                logger,
-                includePdbs,
-                verbose: false);
-        }
-        catch (Exception)
-        {
-            logger?.LogError($"Trimming FAILED. Falling back to untrimmed dependencies");
-            Trimmed = false;
-        }
-
-        Trimmed = true;
+        return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
 
     public const string PackageMetadataFileName = "info.json";
@@ -187,7 +168,6 @@ public partial class PackageManager : IPackageManager
         string osVersion,
         string filter = "*",
         bool overwrite = false,
-        ILogger? logger = null,
         CancellationToken? cancellationToken = null)
     {
         var di = new DirectoryInfo(outputFolder);
@@ -273,7 +253,6 @@ public partial class PackageManager : IPackageManager
                 }
 
                 FindApp(dir, fileList);
-
             }
         }
 

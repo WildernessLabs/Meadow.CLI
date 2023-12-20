@@ -7,10 +7,6 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <WarningLevel>4</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
         <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />

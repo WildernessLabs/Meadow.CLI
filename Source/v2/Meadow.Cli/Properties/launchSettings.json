@@ -173,7 +173,7 @@
     },
     "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "app trim F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app trim H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\"
     },
     "Dfu Install": {
       "commandName": "Project",
@@ -185,7 +185,7 @@
     },
     "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app deploy H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\bin\\Debug\\netstandard2.1\\postlink_bin"
     },
     "App Deploy (untrimmed output)": {
       "commandName": "Project",

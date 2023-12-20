@@ -1,8 +1,6 @@
-﻿using System.Configuration;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -10,8 +8,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud package upload", Description = "Upload a Meadow Package (MPAK) to Meadow.Cloud")]
 public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadCommand>
 {
-    [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = false)]
-    public string? MpakPath { get; set; }
+    [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = true)]
+    public string MpakPath { get; init; }
 
     [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
     public string? OrgId { get; set; }
@@ -38,58 +36,22 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (string.IsNullOrEmpty(MpakPath))
-        {
-            var candidates = PackageManager.GetAvailableBuiltConfigurations(Environment.CurrentDirectory, "App.dll");
-
-            if (candidates.Length == 0)
-            {
-                Logger?.LogError($"Cannot find a compiled application at '{Environment.CurrentDirectory}'");
-                return;
-            }
-
-            var appDll = candidates.OrderByDescending(c => c.LastWriteTime).First();
-            var packageDir = Path.Combine(appDll.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
-            var files = Directory.EnumerateFiles(packageDir, "*.*", SearchOption.TopDirectoryOnly);
-
-            var fileInfoList = new List<FileInfo>();
-            foreach (var file in files)
-            {
-                fileInfoList.Add(new FileInfo(file));
-            }
-
-            MpakPath = fileInfoList.OrderByDescending(f => f.LastWriteTime).First().FullName;
-        }
-
         if (!File.Exists(MpakPath))
         {
             Logger?.LogError($"Package {MpakPath} does not exist");
             return;
         }
 
-        if (Host == null)
-            Host = DefaultHost;
-
+        if (Host == null) Host = DefaultHost;
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null || string.IsNullOrEmpty(org.Id))
-        {
-            Logger?.LogError($"Invalid Org");
-            return;
-        }
-
-        if (string.IsNullOrEmpty(Description))
-        {
-            Description = string.Empty;
-        }
+        if (org == null) return;
 
         try
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken)
-                .WithSpinner(Console!);
-
+            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
             Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)

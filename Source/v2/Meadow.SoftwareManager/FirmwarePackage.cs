@@ -16,8 +16,8 @@ public class FirmwarePackage
         return Path.Combine(_collection.PackageFileRoot, Version, file);
     }
 
-    public string? Version { get; set; }
-    public string? Targets { get; set; }
+    public string Version { get; set; }
+    public string Targets { get; set; }
     public string? CoprocBootloader { get; set; }
     public string? CoprocPartitionTable { get; set; }
     public string? CoprocApplication { get; set; }

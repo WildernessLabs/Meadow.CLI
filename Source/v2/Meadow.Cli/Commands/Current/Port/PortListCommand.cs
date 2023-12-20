@@ -6,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("port list", Description = "List available local serial ports")]
 public class PortListCommand : BaseCommand<PortListCommand>
 {
-    public IList<MeadowSerialPort>? Portlist;
+    public IList<string>? Portlist;
 
     public PortListCommand(ILoggerFactory loggerFactory)
         : base(loggerFactory)
@@ -22,7 +22,7 @@ public class PortListCommand : BaseCommand<PortListCommand>
             Logger?.LogInformation($"Found the following device{plural}:");
             for (int i = 0; i < Portlist.Count; i++)
             {
-                Logger?.LogInformation($" {i + 1}: {Portlist[i].Name}");
+                Logger?.LogInformation($" {i + 1}: {Portlist[i]}");
             }
         }
         else

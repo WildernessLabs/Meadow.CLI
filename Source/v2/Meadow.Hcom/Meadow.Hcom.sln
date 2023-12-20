@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Hcom", "Meadow.Hcom.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom.Integration.Tests", "..\Meadow.HCom.Integration.Tests\Meadow.HCom.Integration.Tests.csproj", "{F8830C1D-8343-4700-A849-B22537411E98}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.CLI", "..\Meadow.CLI\Meadow.CLI.csproj", "{5E2ACCA3-232B-4B79-BCB9-A7184E42816B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Cli", "..\Meadow.Cli\Meadow.Cli.csproj", "{5E2ACCA3-232B-4B79-BCB9-A7184E42816B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

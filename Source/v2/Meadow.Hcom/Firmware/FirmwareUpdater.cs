@@ -6,11 +6,11 @@ namespace Meadow.Hcom;
 public class FirmwareUpdater
 {
     private ILogger? _logger;
-    // TODO private Task? _updateTask;
+    private Task? _updateTask;
     private IMeadowConnection _connection;
     private UpdateState _state;
 
-    private string? RequestedVersion { get; set; }
+    private string RequestedVersion { get; set; }
 
     public enum UpdateState
     {
@@ -31,10 +31,10 @@ public class FirmwareUpdater
 
     public UpdateState PreviousState { get; private set; }
 
-    internal FirmwareUpdater(IMeadowConnection connection, ILogger? logger = null)
+    internal FirmwareUpdater(IMeadowConnection connection)
     {
         _connection = connection;
-        _logger = logger;
+        //        _logger = connection.Logger;
     }
 
     public UpdateState CurrentState
@@ -45,7 +45,7 @@ public class FirmwareUpdater
             if (value == _state) return;
             PreviousState = CurrentState;
             _state = value;
-            _logger?.LogDebug($"Firmware Updater: {PreviousState}->{CurrentState}");
+            _logger.LogDebug($"Firmware Updater: {PreviousState}->{CurrentState}");
         }
     }
 
@@ -62,22 +62,19 @@ public class FirmwareUpdater
                 case UpdateState.NotStarted:
                     try
                     {
-                        if (_connection.Device != null)
+                        // make sure we have a current device info
+                        info = await _connection.Device.GetDeviceInfo();
+
+                        if (info.OsVersion == RequestedVersion)
                         {
-                            // make sure we have a current device info
-                            info = await _connection.Device.GetDeviceInfo();
-
-                            if (info?.OsVersion == RequestedVersion)
-                            {
-                                // no need to update, it's already there
-                                CurrentState = UpdateState.DFUCompleted;
-                                break;
-                            }
-
-                            // enter DFU mode
-                            // await _connection.Device.EnterDfuMode();
-                            CurrentState = UpdateState.EnteringDFUMode;
+                            // no need to update, it's already there
+                            CurrentState = UpdateState.DFUCompleted;
+                            break;
                         }
+
+                        // enter DFU mode
+                        // await _connection.Device.EnterDfuMode();
+                        CurrentState = UpdateState.EnteringDFUMode;
                     }
                     catch (Exception ex)
                     {
@@ -99,7 +96,7 @@ public class FirmwareUpdater
                         ++tries;
                         if (tries > 5)
                         {
-                            _logger?.LogError($"Failed to enter DFU mode: {ex.Message}");
+                            _logger.LogError($"Failed to enter DFU mode: {ex.Message}");
                             CurrentState = UpdateState.Error;
 
                             // exit state machine
@@ -140,7 +137,7 @@ public class FirmwareUpdater
                         await _connection.WaitForMeadowAttach();
                         await Task.Delay(2000); // wait 2 seconds to allow full boot
 
-                        if (info == null && _connection.Device != null)
+                        if (info == null)
                         {
                             info = await _connection.Device.GetDeviceInfo();
                         }
@@ -157,10 +154,7 @@ public class FirmwareUpdater
                 case UpdateState.DisablingMonoForRuntime:
                     try
                     {
-                        if (_connection.Device != null)
-                        {
-                            await _connection.Device.RuntimeDisable();
-                        }
+                        await _connection.Device.RuntimeDisable();
                     }
                     catch (Exception ex)
                     {
@@ -171,7 +165,7 @@ public class FirmwareUpdater
                     CurrentState = UpdateState.UpdatingRuntime;
                     break;
                 case UpdateState.UpdatingRuntime:
-                    if (info?.RuntimeVersion == RequestedVersion)
+                    if (info.RuntimeVersion == RequestedVersion)
                     {
                         // no need to update, it's already there
                     }
@@ -182,12 +176,12 @@ public class FirmwareUpdater
                             await _connection.WaitForMeadowAttach();
                             await Task.Delay(2000); // wait 2 seconds to allow full boot
 
-                            if (info == null && _connection.Device != null)
+                            if (info == null)
                             {
                                 info = await _connection.Device.GetDeviceInfo();
                             }
 
-                            // await _connection.Device.FlashRuntime(RequestedVersion);
+                            //                            await _connection.Device.FlashRuntime(RequestedVersion);
                         }
                         catch (Exception ex)
                         {
@@ -201,10 +195,7 @@ public class FirmwareUpdater
                 case UpdateState.DisablingMonoForCoprocessor:
                     try
                     {
-                        if (_connection.Device != null)
-                        {
-                            await _connection.Device.RuntimeDisable();
-                        }
+                        await _connection.Device.RuntimeDisable();
 
                         CurrentState = UpdateState.UpdatingCoprocessor;
                     }
@@ -217,7 +208,7 @@ public class FirmwareUpdater
                     CurrentState = UpdateState.UpdatingCoprocessor;
                     break;
                 case UpdateState.UpdatingCoprocessor:
-                    if (info?.CoprocessorOsVersion == RequestedVersion)
+                    if (info.CoprocessorOsVersion == RequestedVersion)
                     {
                         // no need to update, it's already there
                     }
@@ -230,7 +221,7 @@ public class FirmwareUpdater
                             Debug.WriteLine(">> delay");
                             await Task.Delay(3000); // wait to allow full boot - no idea why this takes longer
 
-                            if (info == null && _connection.Device != null)
+                            if (info == null)
                             {
                                 Debug.WriteLine(">> query device info");
                                 info = await _connection.Device.GetDeviceInfo();
@@ -252,10 +243,7 @@ public class FirmwareUpdater
                 case UpdateState.AllWritesComplete:
                     try
                     {
-                        if (_connection.Device != null)
-                        {
-                            await _connection.Device.Reset();
-                        }
+                        await _connection.Device.Reset();
                     }
                     catch (Exception ex)
                     {
@@ -263,34 +251,28 @@ public class FirmwareUpdater
                         CurrentState = UpdateState.Error;
                         return;
                     }
-                    CurrentState = UpdateState.VerifySuccess;
                     break;
+                    CurrentState = UpdateState.VerifySuccess;
                 case UpdateState.VerifySuccess:
                     try
                     {
                         await _connection.WaitForMeadowAttach();
                         await Task.Delay(2000); // wait 2 seconds to allow full boot
-                        if (_connection.Device != null)
+                        info = await _connection.Device.GetDeviceInfo();
+                        if (info.OsVersion != RequestedVersion)
                         {
-                            info = await _connection.Device.GetDeviceInfo();
-                            if (info != null)
-                            {
-                                if (info.OsVersion != RequestedVersion)
-                                {
-                                    // this is a failure
-                                    _logger?.LogWarning($"OS version {info.OsVersion} does not match requested version {RequestedVersion}");
-                                }
-                                if (info.RuntimeVersion != RequestedVersion)
-                                {
-                                    // this is a failure
-                                    _logger?.LogWarning($"Runtime version {info.RuntimeVersion} does not match requested version {RequestedVersion}");
-                                }
-                                if (info.CoprocessorOsVersion != RequestedVersion)
-                                {
-                                    // not necessarily an error
-                                    _logger?.LogWarning($"Coprocessor version {info.CoprocessorOsVersion} does not match requested version {RequestedVersion}");
-                                }
-                            }
+                            // this is a failure
+                            _logger?.LogWarning($"OS version {info.OsVersion} does not match requested version {RequestedVersion}");
+                        }
+                        if (info.RuntimeVersion != RequestedVersion)
+                        {
+                            // this is a failure
+                            _logger?.LogWarning($"Runtime version {info.RuntimeVersion} does not match requested version {RequestedVersion}");
+                        }
+                        if (info.CoprocessorOsVersion != RequestedVersion)
+                        {
+                            // not necessarily an error
+                            _logger?.LogWarning($"Coprocessor version {info.CoprocessorOsVersion} does not match requested version {RequestedVersion}");
                         }
                     }
                     catch (Exception ex)

@@ -32,7 +32,8 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        UserOrg? org;
+        UserOrg org;
+
         try
         {
             if (Host == null) Host = DefaultHost;
@@ -80,7 +81,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             return;
         }
 
-        var info = await connection.Device!.GetDeviceInfo(CancellationToken);
+        var info = await connection.Device.GetDeviceInfo(CancellationToken);
 
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
@@ -90,7 +91,6 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
-
         var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
         var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 

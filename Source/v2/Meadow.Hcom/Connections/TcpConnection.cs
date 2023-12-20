@@ -18,37 +18,34 @@ public class TcpConnection : ConnectionBase
 
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
-        return await Task.Run(() =>
+        /*
+        var request = RequestBuilder.Build<GetDeviceInfoRequest>();
+
+        base.EnqueueRequest(request);
+
+        // get the info and "attach"
+        var timeout = timeoutSeconds * 2;
+
+        while (timeout-- > 0)
         {
-            /*
-            var request = RequestBuilder.Build<GetDeviceInfoRequest>();
+            if (cancellationToken?.IsCancellationRequested ?? false) return null;
+            if (timeout <= 0) throw new TimeoutException();
 
-            base.EnqueueRequest(request);
+            // do we have a device info?
 
-            // get the info and "attach"
-            var timeout = timeoutSeconds * 2;
-
-            while (timeout-- > 0)
+            if (State == ConnectionState.MeadowAttached)
             {
-                if (cancellationToken?.IsCancellationRequested ?? false) return null;
-                if (timeout <= 0) throw new TimeoutException();
-
-                // do we have a device info?
-
-                if (State == ConnectionState.MeadowAttached)
-                {
-                    break;
-                }
-
-                await Task.Delay(500);
+                break;
             }
-            */
 
-            // TODO: is there a way to "attach"?  ping result? device info?
-            return Device = new MeadowDevice(this);
+            await Task.Delay(500);
+        }
+        */
 
-            // TODO: web socket for listen?
-        });
+        // TODO: is there a way to "attach"?  ping result? device info?
+        return Device = new MeadowDevice(this);
+
+        // TODO: web socket for listen?
     }
 
     public override async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
@@ -58,14 +55,7 @@ public class TcpConnection : ConnectionBase
         if (response.IsSuccessStatusCode)
         {
             var r = JsonSerializer.Deserialize<DeviceInfoHttpResponse>(await response.Content.ReadAsStringAsync());
-            if (r != null)
-            {
-                return new DeviceInfo(r.ToDictionary());
-            }
-            else
-            {
-                return null;
-            }
+            return new DeviceInfo(r.ToDictionary());
         }
         else
         {
