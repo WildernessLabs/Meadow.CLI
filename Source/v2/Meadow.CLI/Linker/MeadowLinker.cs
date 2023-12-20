@@ -149,7 +149,7 @@ public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
             return Path.Combine(meadowAssembliesPath, fileName);
         }
 
-        //localPath
+        //local path
         if (File.Exists(Path.Combine(localPath, fileName)))
         {
             return Path.Combine(localPath, fileName);

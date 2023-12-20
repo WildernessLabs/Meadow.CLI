@@ -21,15 +21,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private event EventHandler<string> FileDataReceived;
     public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
 
-    private SerialPort _port;
-    private ILogger? _logger;
+    private readonly SerialPort _port;
+    private readonly ILogger? _logger;
     private bool _isDisposed;
     private ConnectionState _state;
-    private List<IConnectionListener> _listeners = new List<IConnectionListener>();
-    private Queue<IRequest> _pendingCommands = new Queue<IRequest>();
+    private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
+    private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
-    private List<string> _textList = new List<string>();
+    private readonly List<string> _textList = new List<string>();
     private int _messageCount = 0;
     private ReadFileInfo? _readFileInfo = null;
     private string? _lastError = null;
@@ -290,7 +290,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
-        Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
+        //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
         while (!_port.IsOpen)
         {
