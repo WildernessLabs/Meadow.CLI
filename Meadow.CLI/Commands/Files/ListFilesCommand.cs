@@ -22,6 +22,9 @@ namespace Meadow.CLI.Commands.Files
         [CommandOption("includeCrcs", 'i', Description = "Include the CRCs of the files")]
         public bool IncludeCrcs { get; init; }
 
+        [CommandParameter(0, Name = "Path to folder to see contents", IsRequired = false)]
+        public string Path { get; set; } = default!;
+
         private readonly ILogger<ListFilesCommand> _logger;
 
         public ListFilesCommand(DownloadManager downloadManager, ILoggerFactory loggerFactory, MeadowDeviceManager meadowDeviceManager)
@@ -41,6 +44,7 @@ namespace Meadow.CLI.Commands.Files
             var files = await Meadow.GetFilesAndCrcs(
                                         TimeSpan.FromSeconds(60),
                                         Partition,
+                                        Path,
                                         cancellationToken);
 
             if (files.Any())

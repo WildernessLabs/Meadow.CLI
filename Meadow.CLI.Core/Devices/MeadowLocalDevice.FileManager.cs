@@ -21,6 +21,7 @@ namespace Meadow.CLI.Core.Devices
 
         public async Task<IList<string>> GetFilesAndFolders(
             TimeSpan timeout,
+            string? path = null,
             CancellationToken cancellationToken = default)
         {
             var started = false;
@@ -56,6 +57,7 @@ namespace Meadow.CLI.Core.Devices
         public async Task<IList<FileData>> GetFilesAndCrcs(
             TimeSpan timeout,
             int partition = 0,
+            string? path = null,
             CancellationToken cancellationToken = default)
         {
             var started = false;
@@ -473,7 +475,7 @@ namespace Meadow.CLI.Core.Devices
         //Need updated API to read files after B5.1
         private async Task DeleteTemporaryFiles(CancellationToken cancellationToken = default)
         {
-            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), cancellationToken);
+            var items = await GetFilesAndFolders(new TimeSpan(0, 0, 15), null, cancellationToken);
 
             bool isRoot = false;
             bool isFolder = false;
@@ -777,7 +779,7 @@ namespace Meadow.CLI.Core.Devices
         {
             if (FilesOnDevice.Any() == false)
             {
-                await GetFilesAndCrcs(DefaultTimeout, 0, cancellationToken);
+                await GetFilesAndCrcs(DefaultTimeout, 0, null, cancellationToken);
             }
             return FilesOnDevice.Any(f => f.FileName == filename);
         }

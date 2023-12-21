@@ -13,8 +13,8 @@ namespace Meadow.CLI.Core.Devices
         public MeadowDeviceInfo? DeviceInfo { get; }
 
         public IList<FileData> FilesOnDevice { get; }
-        public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, CancellationToken cancellationToken = default);
-        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, CancellationToken cancellationToken = default);
+        public Task<IList<string>> GetFilesAndFolders(TimeSpan timeout, string? path = null, CancellationToken cancellationToken = default);
+        public Task<IList<FileData>> GetFilesAndCrcs(TimeSpan timeout, int partition = 0, string? path = null, CancellationToken cancellationToken = default);
         public Task<FileTransferResult> WriteFile(string filename, string path, TimeSpan timeout, CancellationToken cancellationToken = default);
         public Task DeleteFile(string fileName, uint partition = 0, CancellationToken cancellationToken = default);
         public Task EraseFlash(CancellationToken cancellationToken = default);

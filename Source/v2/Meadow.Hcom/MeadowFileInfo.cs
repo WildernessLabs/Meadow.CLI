@@ -1,18 +1,32 @@
 ﻿public class MeadowFileInfo
 {
-    public string Name { get; private set; } = default!;
+    public string Name { get; set; } = default!;
     public long? Size { get; private set; }
     public string? Crc { get; private set; }
+    public bool IsDirectory { get; private set; } = default!;
+    public bool IsSummary { get; private set; } = default!;
 
     public static MeadowFileInfo? Parse(string info)
     {
-        MeadowFileInfo? mfi = null;
+        MeadowFileInfo? mfi = new MeadowFileInfo(); ;
 
-        // parse the input to a file info
-        if (info.StartsWith("/"))
+        if (info.StartsWith("Directory:")) // Directory we are currently in
         {
-            mfi = new MeadowFileInfo();
-
+            mfi.IsDirectory = true;
+            var indexOfColon = info.IndexOf(':') + 1;
+            mfi.Name = info.Substring(indexOfColon, info.Length - indexOfColon).Trim();
+        }
+        else if (info.StartsWith("/")) // must be a sub-directory of the current directory
+        {
+            mfi.Name = info.Substring(1, info.Length - 1).Trim() + "/";
+        }
+        else if (info.StartsWith("A total of")) // must be a sub-directory of the current directory
+        {
+            mfi.IsSummary = true;
+            mfi.Name = info;
+        }
+        else // Must be a file in our current directory
+        {
             // "/meadow0/App.deps.json [0xa0f6d6a2] 28 KB (26575 bytes)"
             var indexOfSquareBracket = info.IndexOf('[');
             if (indexOfSquareBracket <= 0)
