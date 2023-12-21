@@ -316,9 +316,9 @@ namespace Meadow.CLI.Core
                 if (!string.IsNullOrEmpty(result?.Versions.LastOrDefault()))
                 {
                     var stableVersions = result.Versions
-                        .Where(version => !version.Contains("-alpha", StringComparison.OrdinalIgnoreCase)
-                            && !version.Contains("-beta", StringComparison.OrdinalIgnoreCase)
-                            && !version.Contains("-rc", StringComparison.OrdinalIgnoreCase))
+                        .Where(version => !version.Contains("-alpha")
+                            && !version.Contains("-beta")
+                            && !version.Contains("-rc"))
                         .ToList();
                     var latest = stableVersions.Last();
                     return (latest.ToVersion() > appVersion.ToVersion(), latest, appVersion);
