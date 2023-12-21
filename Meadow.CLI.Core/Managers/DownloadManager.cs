@@ -302,16 +302,16 @@ namespace Meadow.CLI.Core
                                          .GetCustomAttribute<AssemblyFileVersionAttribute>()?
                                          .Version;
 
+                var json = await Client.GetStringAsync($"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json");
+
+                var result = JsonSerializer.Deserialize<PackageVersions>(json);
+
+                // Check here, because we can't pass cancellationToken to GetStringAsync due to Windows extension .NET version limitation
                 if (string.IsNullOrWhiteSpace(appVersion)
                     || cancellationToken.IsCancellationRequested)
                 {
                     return (false, string.Empty, string.Empty);
                 }
-
-                var json = await Client.GetStringAsync(
-                               $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json", cancellationToken);
-
-                var result = JsonSerializer.Deserialize<PackageVersions>(json);
 
                 if (!string.IsNullOrEmpty(result?.Versions.LastOrDefault()))
                 {
