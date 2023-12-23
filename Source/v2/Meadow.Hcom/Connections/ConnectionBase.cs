@@ -2,33 +2,18 @@
 
 namespace Meadow.Hcom;
 
-public delegate void ConnectionStateChangedHandler(ConnectionBase connection, ConnectionState oldState, ConnectionState newState);
-
 public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {
     private bool _isDisposed;
 
-    private ConnectionState _state;
-    public ConnectionState State
-    {
-        get => _state;
-        protected set
-        {
-            if (value == State) return;
-
-            var old = _state;
-            _state = value;
-            ConnectionStateChanged?.Invoke(this, old, State);
-        }
-    }
+    public ConnectionState State { get; protected set; }
     public IMeadowDevice? Device { get; protected set; }
 
     public event EventHandler<(string message, string? source)> DeviceMessageReceived = default!;
     public event EventHandler<Exception> ConnectionError = default!;
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
-    public event EventHandler? FileWriteFailed;
-    public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
+    public event EventHandler FileWriteFailed;
 
     public abstract string Name { get; }
 

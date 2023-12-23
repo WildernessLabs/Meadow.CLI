@@ -20,49 +20,33 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
     {
-        string textColour;
-        switch (e.source)
-        {
-            case "stdout":
-                textColour = ExtensionMethods.ConsoleColourBlue;
-                break;
-            case "info":
-                textColour = ExtensionMethods.ConsoleColourGreen;
-                break;
-            case "stderr":
-                textColour = ExtensionMethods.ConsoleColourRed;
-                break;
-            default:
-                textColour = ExtensionMethods.ConsoleColourReset;
-                break;
-        }
-
         if (NoPrefix)
         {
-            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r').ColourConsoleText(textColour)}");
+            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
         }
         else
         {
-
-            Logger?.LogInformation($"{e.source?.ColourConsoleText(textColour)}> {e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
         }
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null)
         {
-            Connection.DeviceMessageReceived += OnDeviceMessageReceived;
-            Connection.ConnectionMessage += Connection_ConnectionMessage;
+            return;
+        }
 
-            Logger?.LogInformation($"Listening for Meadow Console output on '{Connection.Name}'. Press Ctrl+C to exit...");
+        connection.DeviceMessageReceived += OnDeviceMessageReceived;
+        connection.ConnectionMessage += Connection_ConnectionMessage;
 
-            while (!CancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(1000);
-            }
+        Logger?.LogInformation($"Listening for Meadow Console output on '{connection.Name}'. Press Ctrl+C to exit...");
+
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(1000);
         }
     }
 }

@@ -1,30 +1,31 @@
-﻿using System.Threading;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
-public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
+public class AppTrimCommand : BaseCommand<AppTrimCommand>
 {
+    private IPackageManager _packageManager;
+
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
     public string? Configuration { get; set; }
 
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
     public string? Path { get; set; } = default!;
 
-    public AppTrimCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(packageManager, connectionManager, loggerFactory)
+    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
+        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
-
         string path = Path == null
-            ? Environment.CurrentDirectory
+            ? AppDomain.CurrentDomain.BaseDirectory
             : Path;
 
         // is the path a file?
@@ -55,30 +56,9 @@ public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
             file = new FileInfo(path);
         }
 
-        // Find RuntimeVersion
-        if (Connection != null)
-        {
-            var info = await Connection.GetDeviceInfo(CancellationToken);
+        // if no configuration was provided, find the most recently built
+        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
 
-            _packageManager.RuntimeVersion = info?.RuntimeVersion;
-
-            if (!string.IsNullOrWhiteSpace(_packageManager.MeadowAssembliesPath) && Directory.Exists(_packageManager.MeadowAssembliesPath))
-            {
-                Logger?.LogInformation($"Using runtime files from {_packageManager.MeadowAssembliesPath}");
-
-                // Avoid double reporting.
-                DetachMessageHandlers(Connection);
-            }
-            else
-            {
-                Logger?.LogError($"Meadow Assemblies Path: '{_packageManager.MeadowAssembliesPath}' does NOT exist for Runtime: '{_packageManager.RuntimeVersion}'.");
-                return;
-            }
-
-        }
-
-        // TODO: support `nolink` command line args
-        await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken)
-            .WithSpinner(Console!);
+        await _packageManager.TrimApplication(file, false, null, CancellationToken);
     }
 }

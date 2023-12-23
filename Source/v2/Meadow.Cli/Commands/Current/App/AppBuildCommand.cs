@@ -1,5 +1,7 @@
 ﻿using CliFx.Attributes;
+using CliFx.Infrastructure;
 using Meadow.CLI;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -23,40 +25,35 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await Task.Run(async () =>
-        {
-            string path = Path == null
-            ? Environment.CurrentDirectory
+        string path = Path == null
+            ? AppDomain.CurrentDomain.BaseDirectory
             : Path;
 
-            // is the path a file?
-            if (!File.Exists(path))
+        // is the path a file?
+        if (!File.Exists(path))
+        {
+            // is it a valid directory?
+            if (!Directory.Exists(path))
             {
-                // is it a valid directory?
-                if (!Directory.Exists(path))
-                {
-                    Logger?.LogError($"Invalid application path '{path}'");
-                    return;
-                }
+                Logger?.LogError($"Invalid application path '{path}'");
+                return;
             }
+        }
 
-            if (Configuration == null)
-                Configuration = "Release";
+        if (Configuration == null) Configuration = "Release";
 
-            Logger?.LogInformation($"Building {Configuration} configuration of {path} (this may take a few seconds)...");
+        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
-            // TODO: enable cancellation of this call
-            var success = await Task.FromResult(_packageManager.BuildApplication(path, Configuration))
-                .WithSpinner(Console!);
+        // TODO: enable cancellation of this call
+        var success = _packageManager.BuildApplication(path, Configuration);
 
-            if (!success)
-            {
-                Logger?.LogError($"Build failed!");
-            }
-            else
-            {
-                Logger?.LogError($"Build success.");
-            }
-        });
+        if (!success)
+        {
+            Logger?.LogError($"Build failed!");
+        }
+        else
+        {
+            Logger?.LogError($"Build success.");
+        }
     }
 }

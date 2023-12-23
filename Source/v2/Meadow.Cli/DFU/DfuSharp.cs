@@ -199,7 +199,6 @@ namespace DfuSharp
 
     struct ConfigDescriptor
     {
-#pragma warning disable CS0649
         public byte bLength;
         public byte bDescriptorType;
         public ushort wTotalLength;
@@ -211,15 +210,12 @@ namespace DfuSharp
         public IntPtr interfaces;
         public IntPtr extra;
         public int extra_length;
-#pragma warning restore CS0649
     }
 
     struct @Interface
     {
-#pragma warning disable CS0649
         public IntPtr altsetting;
         public int num_altsetting;
-#pragma warning restore CS0649
 
         public InterfaceDescriptor[] Altsetting
         {
@@ -293,7 +289,7 @@ namespace DfuSharp
                 throw new Exception("Error opening device");
         }
 
-        public event UploadingEventHandler? Uploading;
+        public event UploadingEventHandler Uploading;
 
         protected virtual void OnUploading(UploadingEventArgs e)
         {

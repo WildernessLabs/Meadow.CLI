@@ -8,19 +8,27 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
+    [CommandOption("verbose", 'v', IsRequired = false)]
+    public bool Verbose { get; set; }
+
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
+        Logger?.LogInformation($"Getting file list...");
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null && Connection.Device != null)
+        if (connection == null)
         {
-            Logger?.LogInformation($"Getting file list...");
-            var files = await Connection.Device.GetFileList(Verbose, CancellationToken);
+            return;
+        }
+
+        if (connection != null)
+        {
+            var files = await connection.Device.GetFileList(Verbose, CancellationToken);
 
             if (files == null || files.Length == 0)
             {

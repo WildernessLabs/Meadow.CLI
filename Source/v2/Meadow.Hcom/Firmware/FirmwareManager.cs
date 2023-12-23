@@ -40,7 +40,7 @@ public static class FirmwareManager
 
             if (json == null) return string.Empty;
 
-            return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty })!.version;
+            return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty }).version;
         }
     }
 
@@ -116,9 +116,9 @@ public static class FirmwareManager
         return list.ToArray();
     }
 
-    public static FirmwareUpdater GetFirmwareUpdater(IMeadowConnection connection, ILogger? logger = null)
+    public static FirmwareUpdater GetFirmwareUpdater(IMeadowConnection connection)
     {
-        return new FirmwareUpdater(connection, logger);
+        return new FirmwareUpdater(connection);
     }
 
     public static async Task PushApplicationToDevice(IMeadowConnection connection, DirectoryInfo appFolder, ILogger? logger = null)

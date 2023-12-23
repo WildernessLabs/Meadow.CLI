@@ -92,7 +92,7 @@ public class DebuggingServer : IDisposable
         {
             _listener.Start();
             LocalEndpoint = (IPEndPoint)_listener.LocalEndpoint;
-            _logger?.LogInformation($"Listening for Visual Studio to connect on {LocalEndpoint.Address}:{LocalEndpoint.Port}" + Environment.NewLine);
+            _logger.LogInformation($"Listening for Visual Studio to connect on {LocalEndpoint.Address}:{LocalEndpoint.Port}" + Environment.NewLine);
             _isReady = true;
 
             // This call will wait for the client to connect, before continuing. We shouldn't need a loop.
@@ -101,13 +101,13 @@ public class DebuggingServer : IDisposable
         }
         catch (SocketException soex)
         {
-            _logger?.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
-            _logger?.LogError($"Error:\n{soex.Message} \nStack Trace:\n{soex.StackTrace}");
+            _logger.LogError("A Socket error occurred. The port may already be in use. Try rebooting to free up the port.");
+            _logger.LogError($"Error:\n{soex.Message} \nStack Trace:\n{soex.StackTrace}");
         }
         catch (Exception ex)
         {
-            _logger?.LogError("An unhandled exception occurred while listening for debugging connections.");
-            _logger?.LogError($"Error:\n{ex.Message} \nStack Trace:\n{ex.StackTrace}");
+            _logger.LogError("An unhandled exception occurred while listening for debugging connections.");
+            _logger.LogError($"Error:\n{ex.Message} \nStack Trace:\n{ex.StackTrace}");
         }
     }
 
@@ -117,26 +117,22 @@ public class DebuggingServer : IDisposable
         {
             lock (_lck)
             {
-                _logger?.LogInformation("Visual Studio has Connected" + Environment.NewLine);
+                _logger.LogInformation("Visual Studio has Connected" + Environment.NewLine);
                 if (_activeClientCount > 0 && _activeClient?.Disposed == false)
                 {
-                    _logger?.LogDebug("Closing active client");
+                    _logger.LogDebug("Closing active client");
                     Debug.Assert(_activeClientCount == 1);
                     Debug.Assert(_activeClient != null);
                     CloseActiveClient();
                 }
 
-                if (_cancellationTokenSource != null
-                    && _logger != null)
-                {
-                    _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
-                    _activeClientCount++;
-                }
+                _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
+                _activeClientCount++;
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "An error occurred while connecting to Visual Studio");
+            _logger.LogError(ex, "An error occurred while connecting to Visual Studio");
         }
     }
 
@@ -170,7 +166,7 @@ public class DebuggingServer : IDisposable
         private readonly CancellationTokenSource _cts;
         private readonly Task _receiveVsDebugDataTask;
         private readonly Task _receiveMeadowDebugDataTask;
-        private readonly ILogger? _logger;
+        private readonly ILogger _logger;
         public bool Disposed = false;
 
         // Constructor
@@ -181,7 +177,7 @@ public class DebuggingServer : IDisposable
             _meadow = meadow;
             _tcpClient = tcpClient;
             _networkStream = tcpClient.GetStream();
-            _logger?.LogDebug("Starting receive task");
+            _logger.LogDebug("Starting receive task");
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, TaskCreationOptions.LongRunning);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
         }
@@ -212,12 +208,12 @@ public class DebuggingServer : IDisposable
                             Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
 
                             // Forward the RECIEVE_BUFFER_SIZE chunk to Meadow immediately
-                            _logger?.LogTrace("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
+                            _logger.LogTrace("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
                                                 meadowBuffer.Length,
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
+                            // TODO await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
                             meadowBuffer = Array.Empty<byte>();
 
                             // Ensure we read all the data in this message before passing it along
@@ -227,26 +223,26 @@ public class DebuggingServer : IDisposable
                     else
                     {
                         // User probably hit stop
-                        _logger?.LogInformation("Unable to Read Data from Visual Studio");
-                        _logger?.LogTrace("Unable to Read Data from Visual Studio");
+                        _logger.LogInformation("Unable to Read Data from Visual Studio");
+                        _logger.LogTrace("Unable to Read Data from Visual Studio");
                     }
                 }
             }
             catch (IOException ioe)
             {
                 // VS client probably died
-                _logger?.LogInformation("Visual Studio has Disconnected" + Environment.NewLine);
-                _logger?.LogTrace(ioe, "Visual Studio has Disconnected");
+                _logger.LogInformation("Visual Studio has Disconnected" + Environment.NewLine);
+                _logger.LogTrace(ioe, "Visual Studio has Disconnected");
             }
             catch (ObjectDisposedException ode)
             {
                 // User probably hit stop
-                _logger?.LogInformation("Visual Studio has stopped debugging" + Environment.NewLine);
-                _logger?.LogTrace(ode, "Visual Studio has stopped debugging");
+                _logger.LogInformation("Visual Studio has stopped debugging" + Environment.NewLine);
+                _logger.LogTrace(ode, "Visual Studio has stopped debugging");
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error receiving data from Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+                _logger.LogError($"Error receiving data from Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
                 throw;
             }
         }
@@ -259,38 +255,38 @@ public class DebuggingServer : IDisposable
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
+                        /* TODO while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
                         {
                             var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
-                            _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
+                            _logger.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
                             if (!_tcpClient.Connected)
                             {
-                                _logger?.LogDebug("Cannot forward data, Visual Studio is not connected");
+                                _logger.LogDebug("Cannot forward data, Visual Studio is not connected");
                                 return;
                             }
 
                             await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
-                            _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
-                        }
+                            _logger.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                        }*/
                     }
                     else
                     {
                         // User probably hit stop
-                        _logger?.LogInformation("Unable to Write Data from Visual Studio");
-                        _logger?.LogTrace("Unable to Write Data from Visual Studio");
+                        _logger.LogInformation("Unable to Write Data from Visual Studio");
+                        _logger.LogTrace("Unable to Write Data from Visual Studio");
                     }
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce)
             {
                 // User probably hit stop; Removed logging as User doesn't need to see this
                 // Keeping it as a TODO in case we find a side effect that needs logging.
-                // TODO _logger?.LogInformation("Operation Cancelled");
-                // TODO _logger?.LogTrace(oce, "Operation Cancelled");
+                // TODO _logger.LogInformation("Operation Cancelled");
+                // TODO _logger.LogTrace(oce, "Operation Cancelled");
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error sending data to Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
+                _logger.LogError($"Error sending data to Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
 
                 if (_cts.IsCancellationRequested)
                     throw;
@@ -304,7 +300,7 @@ public class DebuggingServer : IDisposable
                 if (Disposed)
                     return;
 
-                _logger?.LogTrace("Disposing ActiveClient");
+                _logger.LogTrace("Disposing ActiveClient");
                 _cts.Cancel(false);
                 _receiveVsDebugDataTask.Wait(TimeSpan.FromSeconds(10));
                 _receiveMeadowDebugDataTask.Wait(TimeSpan.FromSeconds(10));

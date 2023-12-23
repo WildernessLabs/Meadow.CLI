@@ -20,11 +20,8 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        await Task.Run(() =>
-        {
-            Logger?.LogInformation($"Logging out of Meadow.Cloud...");
+        Logger?.LogInformation($"Logging out of Meadow.Cloud...");
 
-            IdentityManager.Logout();
-        });
+        IdentityManager.Logout();
     }
 }

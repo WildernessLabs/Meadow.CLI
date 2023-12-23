@@ -68,12 +68,12 @@ public class DownloadManager
         string versionCheckUrl;
         if (version is null || string.IsNullOrWhiteSpace(version))
         {
-            _logger?.LogInformation("Downloading latest version file" + Environment.NewLine);
+            _logger.LogInformation("Downloading latest version file" + Environment.NewLine);
             versionCheckUrl = VersionCheckUrlRoot + "latest.json";
         }
         else
         {
-            _logger?.LogInformation("Downloading version file for Meadow OS " + version + Environment.NewLine);
+            _logger.LogInformation("Downloading version file for Meadow OS " + version + Environment.NewLine);
             versionCheckUrl = VersionCheckUrlRoot + version + ".json";
         }
 
@@ -98,7 +98,7 @@ public class DownloadManager
 
         if (versionCheckFilePath == null)
         {
-            _logger?.LogError($"Meadow OS {version} cannot be downloaded or is not available");
+            _logger.LogError($"Meadow OS {version} cannot be downloaded or is not available");
             return;
         }
 
@@ -107,7 +107,7 @@ public class DownloadManager
 
         if (release == null)
         {
-            _logger?.LogError($"Unable to read release details for Meadow OS {version}. Payload: {payload}");
+            _logger.LogError($"Unable to read release details for Meadow OS {version}. Payload: {payload}");
             return;
         }
 
@@ -122,9 +122,9 @@ public class DownloadManager
             File.WriteAllText(Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt"), release.Version);
         }
 
-        if (release.Version != null && release.Version.ToVersion() < "0.6.0.0".ToVersion())
+        if (release.Version.ToVersion() < "0.6.0.0".ToVersion())
         {
-            _logger?.LogInformation(
+            _logger.LogInformation(
                 $"Downloading OS version {release.Version} is no longer supported. The minimum OS version is 0.6.0.0." + Environment.NewLine);
             return;
         }
@@ -139,7 +139,7 @@ public class DownloadManager
             }
             else
             {
-                _logger?.LogInformation($"Meadow OS version {release.Version} is already downloaded." + Environment.NewLine);
+                _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded." + Environment.NewLine);
                 return;
             }
         }
@@ -148,27 +148,27 @@ public class DownloadManager
 
         try
         {
-            _logger?.LogInformation($"Downloading Meadow OS" + Environment.NewLine);
+            _logger.LogInformation($"Downloading Meadow OS" + Environment.NewLine);
             await DownloadAndExtractFile(new Uri(release.DownloadURL), local_path);
         }
         catch
         {
-            _logger?.LogError($"Unable to download Meadow OS {version}");
+            _logger.LogError($"Unable to download Meadow OS {version}");
             return;
         }
 
         try
         {
-            _logger?.LogInformation("Downloading coprocessor firmware" + Environment.NewLine);
+            _logger.LogInformation("Downloading coprocessor firmware" + Environment.NewLine);
             await DownloadAndExtractFile(new Uri(release.NetworkDownloadURL), local_path);
         }
         catch
         {
-            _logger?.LogError($"Unable to download coprocessor firmware {version}");
+            _logger.LogError($"Unable to download coprocessor firmware {version}");
             return;
         }
 
-        _logger?.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}" + Environment.NewLine);
+        _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}" + Environment.NewLine);
     }
 
     public async Task InstallDfuUtil(bool is64Bit = true,
@@ -176,7 +176,7 @@ public class DownloadManager
     {
         try
         {
-            _logger?.LogInformation("Installing dfu-util...");
+            _logger.LogInformation("Installing dfu-util...");
 
             if (Directory.Exists(WildernessLabsTemp))
             {
@@ -236,11 +236,11 @@ public class DownloadManager
                 File.Delete(libUsbPath);
             }
 
-            _logger?.LogInformation("dfu-util 0.10 installed");
+            _logger.LogInformation("dfu-util 0.10 installed");
         }
         catch (Exception ex)
         {
-            _logger?.LogError(
+            _logger.LogError(
                 ex,
                 ex.Message.Contains("Access to the path")
                     ? $"Run terminal as administrator and try again."
@@ -277,7 +277,7 @@ public class DownloadManager
         }
         catch (Exception ex)
         {
-            _logger?.LogDebug(ex, "Error checking for updates to Meadow.CLI");
+            _logger.LogDebug(ex, "Error checking for updates to Meadow.CLI");
         }
 
         return (false, string.Empty, string.Empty);
@@ -291,7 +291,7 @@ public class DownloadManager
         response.EnsureSuccessStatusCode();
 
         var downloadFileName = Path.GetTempFileName();
-        _logger?.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
+        _logger.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
         using (var stream = await response.Content.ReadAsStreamAsync())
         using (var downloadFileStream = new DownloadFileStream(stream, _logger))
         using (var firmwareFile = File.OpenWrite(downloadFileName))
@@ -305,7 +305,7 @@ public class DownloadManager
     {
         var downloadFileName = await DownloadFile(uri, cancellationToken);
 
-        _logger?.LogDebug("Extracting firmware to {path}", target_path);
+        _logger.LogDebug("Extracting firmware to {path}", target_path);
         ZipFile.ExtractToDirectory(
             downloadFileName,
             target_path);
@@ -315,8 +315,8 @@ public class DownloadManager
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning("Unable to delete temporary file");
-            _logger?.LogDebug(ex, "Unable to delete temporary file");
+            _logger.LogWarning("Unable to delete temporary file");
+            _logger.LogDebug(ex, "Unable to delete temporary file");
         }
     }
 
@@ -331,8 +331,8 @@ public class DownloadManager
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning("Failed to delete file {file} in firmware path", file.FullName);
-                _logger?.LogDebug(ex, "Failed to delete file");
+                _logger.LogWarning("Failed to delete file {file} in firmware path", file.FullName);
+                _logger.LogDebug(ex, "Failed to delete file");
             }
         }
         foreach (DirectoryInfo dir in di.GetDirectories())
@@ -343,8 +343,8 @@ public class DownloadManager
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning("Failed to delete directory {directory} in firmware path", dir.FullName);
-                _logger?.LogDebug(ex, "Failed to delete directory");
+                _logger.LogWarning("Failed to delete directory {directory} in firmware path", dir.FullName);
+                _logger.LogDebug(ex, "Failed to delete directory");
             }
         }
     }

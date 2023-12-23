@@ -10,17 +10,13 @@ internal class SetRtcTimeRequest : Request
     {
         get
         {
-            if (Payload?.Length == 0)
-                return null;
+            if (Payload.Length == 0) { return null; }
 
             return DateTimeOffset.Parse(Encoding.ASCII.GetString(Payload));
         }
         set
         {
-            if (value.HasValue)
-            {
-                base.Payload = Encoding.ASCII.GetBytes(value.Value.ToUniversalTime().ToString("o"));
-            }
+            base.Payload = Encoding.ASCII.GetBytes(value.Value.ToUniversalTime().ToString("o"));
         }
     }
 
