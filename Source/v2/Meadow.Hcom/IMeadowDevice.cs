@@ -9,7 +9,7 @@ namespace Meadow.Hcom
         Task RuntimeEnable(CancellationToken? cancellationToken = null);
         Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null);
         Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null);
-        Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
+        Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null);
         Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
         Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
         Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null);

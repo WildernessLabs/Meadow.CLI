@@ -25,7 +25,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (connection != null)
         {
-            var fileList = await connection.GetFileList(false);
+            var fileList = await connection.GetFileList("/meadow0/", false);
 
             if (MeadowFile == "all")
             {

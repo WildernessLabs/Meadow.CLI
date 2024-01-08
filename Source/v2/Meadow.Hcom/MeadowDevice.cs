@@ -36,9 +36,9 @@ namespace Meadow.Hcom
             return await _connection.GetDeviceInfo(cancellationToken);
         }
 
-        public async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+        public async Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
         {
-            return await _connection.GetFileList(includeCrcs, cancellationToken);
+            return await _connection.GetFileList(folder, includeCrcs, cancellationToken);
         }
 
         public async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
