@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace LinkerTest;
 
-public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
+public class MeadowLinker
 {
     private const string IL_LINKER_DIR = "lib";
     private const string IL_LINKER_DLL = "illink.dll";
@@ -14,11 +14,18 @@ public class MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
     private const string PostLinkDirectoryName = "postlink_bin";
     private const string PreLinkDirectoryName = "prelink_bin";
 
-    readonly ILLinker _linker = new ILLinker(logger);
-    readonly ILogger? _logger = logger;
+    readonly ILLinker _linker;
+    readonly ILogger? _logger;
 
     //ToDo ... might need to make this a property or pass it in when used
-    private readonly string _meadowAssembliesPath = meadowAssembliesPath;
+    private readonly string _meadowAssembliesPath;
+
+    public MeadowLinker(string meadowAssembliesPath, ILogger? logger = null)
+    {
+        _meadowAssembliesPath = meadowAssembliesPath;
+        _logger = logger;
+        _linker = new ILLinker(logger);
+    }
 
     public async Task Trim(
         FileInfo meadowAppFile,
