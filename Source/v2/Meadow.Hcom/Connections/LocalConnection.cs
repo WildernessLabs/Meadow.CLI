@@ -58,7 +58,7 @@ public class LocalConnection : ConnectionBase
             _deviceInfo = new DeviceInfo(info);
         }
 
-        return Task.FromResult< DeviceInfo?>(_deviceInfo);
+        return Task.FromResult<DeviceInfo?>(_deviceInfo);
     }
 
     private string ExecuteBashCommandLine(string command)
@@ -143,7 +143,7 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }

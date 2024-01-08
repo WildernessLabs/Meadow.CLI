@@ -11,6 +11,9 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; set; }
 
+    [CommandParameter(0, Name = "Folder", IsRequired = false)]
+    public string? Folder { get; set; } = default!;
+
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -28,7 +31,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
         if (connection != null)
         {
-            var files = await connection.Device.GetFileList(Verbose, CancellationToken);
+            var files = await connection.Device.GetFileList(Folder ?? "/meadow0/", Verbose, CancellationToken);
 
             if (files == null || files.Length == 0)
             {

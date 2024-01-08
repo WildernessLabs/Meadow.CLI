@@ -20,7 +20,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task WaitForMeadowAttach(CancellationToken? cancellationToken = null);
     public abstract Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10);
     public abstract Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null);
-    public abstract Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
+    public abstract Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null);
     public abstract Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
     public abstract Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
     public abstract Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);

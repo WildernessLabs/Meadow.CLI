@@ -173,6 +173,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         State = ConnectionState.Disconnected;
     }
 
+    public void Detach()
+    {
+        Close();
+    }
+
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
         try
@@ -759,10 +764,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return _deviceInfo;
     }
 
-    public override async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override async Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetFileListRequest>();
         command.IncludeCrcs = includeCrcs;
+
+        command.Path = folder;
 
         EnqueueRequest(command);
 
