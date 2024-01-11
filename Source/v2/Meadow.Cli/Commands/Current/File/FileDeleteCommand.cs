@@ -25,7 +25,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (connection != null)
         {
-            var fileList = await connection.GetFileList("/meadow0/", false);
+            // get a list of files in the target folder
+            var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
+            var fileList = await connection.GetFileList($"{folder}/", false);
 
             if (MeadowFile == "all")
             {
@@ -38,7 +40,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             }
             else
             {
-                var exists = fileList?.Any(f => Path.GetFileName(f.Name) == MeadowFile) ?? false;
+                var requested = Path.GetFileName(MeadowFile);
+
+                var exists = fileList?.Any(f => Path.GetFileName(f.Name) == requested) ?? false;
 
                 if (!exists)
                 {
