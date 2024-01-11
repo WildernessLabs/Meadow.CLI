@@ -246,13 +246,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
 
                 var command = _pendingCommands.Dequeue() as Request;
+                if (command != null)
+                {
+                    // if this is a file write, we need to packetize for progress
 
-                // if this is a file write, we need to packetize for progress
+                    var payload = command.Serialize();
+                    EncodeAndSendPacket(payload);
 
-                var payload = command.Serialize();
-                EncodeAndSendPacket(payload);
-
-                // TODO: re-queue on fail?
+                    // TODO: re-queue on fail?
+                }
             }
 
             Thread.Sleep(1000);
