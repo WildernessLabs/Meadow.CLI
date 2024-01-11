@@ -175,6 +175,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public void Detach()
     {
+        if (MaintainConnection)
+        {
+            // TODO: close this up
+        }
+
         Close();
     }
 
@@ -1137,7 +1142,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return contents;
     }
 
-    public override async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override async Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<FileDeleteRequest>();
         command.MeadowFileName = meadowFileName;
@@ -1146,7 +1151,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        var result = await WaitForConcluded(null, cancellationToken);
+        return result;
     }
 
     public override async Task EraseFlash(CancellationToken? cancellationToken = null)

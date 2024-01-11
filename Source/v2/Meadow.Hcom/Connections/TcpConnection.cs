@@ -113,7 +113,7 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }

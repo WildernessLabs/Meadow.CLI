@@ -133,7 +133,7 @@ public class LocalConnection : ConnectionBase
 
 
 
-    public override Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
