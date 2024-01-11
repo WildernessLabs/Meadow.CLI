@@ -17,7 +17,19 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogInformation($"Getting file list...");
+        if (Folder != null)
+        {
+            if (!Folder.EndsWith('/'))
+            {
+                Folder += "/";
+            }
+
+            Logger?.LogInformation($"Getting file list from '{Folder}'...");
+        }
+        else
+        {
+            Logger?.LogInformation($"Getting file list...");
+        }
     }
 
     protected override async ValueTask ExecuteCommand()
