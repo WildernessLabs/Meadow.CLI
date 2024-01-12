@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -6,13 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
-
-  </ItemGroup>
-
     <ItemGroup>
         <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj" />
     </ItemGroup>
 
 </Project>
