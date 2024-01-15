@@ -20,7 +20,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
         string path = Path == null
             ? AppDomain.CurrentDomain.BaseDirectory
@@ -33,11 +33,14 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             if (!Directory.Exists(path))
             {
                 Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                return ValueTask.CompletedTask;
             }
         }
 
-        if (Configuration == null) Configuration = "Release";
+        if (Configuration == null)
+        {
+            Configuration = "Release";
+        }
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -52,5 +55,6 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         {
             Logger?.LogError($"Build successful");
         }
+        return ValueTask.CompletedTask;
     }
 }

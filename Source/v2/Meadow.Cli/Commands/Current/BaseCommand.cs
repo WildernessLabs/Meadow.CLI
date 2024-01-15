@@ -43,5 +43,4 @@ public abstract class BaseCommand<T> : ICommand
             Logger?.LogInformation($"Done");
         }
     }
-
 }

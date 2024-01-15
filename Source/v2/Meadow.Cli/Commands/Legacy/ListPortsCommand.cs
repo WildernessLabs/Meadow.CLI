@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -10,7 +9,7 @@ public class ListPortsCommand : PortListCommand
     public ListPortsCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
-        Logger?.LogWarning($"Deprecated command.  Use `port list` instead");
+        Logger?.LogWarning($"Deprecated command - use `port list` instead");
     }
 
     protected override ValueTask ExecuteCommand()
@@ -18,4 +17,3 @@ public class ListPortsCommand : PortListCommand
         return base.ExecuteCommand();
     }
 }
-

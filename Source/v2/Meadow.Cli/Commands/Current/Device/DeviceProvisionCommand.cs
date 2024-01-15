@@ -8,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("device provision", Description = "Registers and prepares connected device for use with Meadow Cloud")]
 public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 {
-    private DeviceService _deviceService;
+    private readonly DeviceService _deviceService;
 
     public const string DefaultHost = "https://www.meadowcloud.co";
 
@@ -75,9 +75,9 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"No connection path is defined");
+            Logger?.LogError($"Device provision failed - device or connection not found");
             return;
         }
 

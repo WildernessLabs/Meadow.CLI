@@ -11,11 +11,11 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
 
     public ListenCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     private void Connection_ConnectionMessage(object? sender, string e)
     {
+        //ToDo
     }
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
