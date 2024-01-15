@@ -18,9 +18,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
-            Logger?.LogInformation($"File delete failed, no connection to a device");
+            Logger?.LogInformation($"File delete failed - device or connection not found");
             return;
         }
 
@@ -35,7 +35,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (fileList == null || fileList.Length == 0)
         {
-            Logger?.LogInformation($"File delete failed, no files found");
+            Logger?.LogError($"File delete failed, no files found");
             return;
         }
 

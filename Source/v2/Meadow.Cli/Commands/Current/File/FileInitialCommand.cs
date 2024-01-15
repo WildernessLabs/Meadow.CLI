@@ -11,15 +11,15 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
     public FileInitialCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"File initial failed - device or connection not found");
             return;
         }
 
@@ -27,6 +27,12 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
         var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
 
-        Logger.LogInformation(data);
+        if (data == null)
+        {
+            Logger?.LogError($"Failed to retrieve file");
+            return;
+        }
+
+        Logger?.LogInformation(data);
     }
 }
