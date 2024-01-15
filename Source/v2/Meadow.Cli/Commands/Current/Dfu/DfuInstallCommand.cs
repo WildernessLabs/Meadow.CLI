@@ -1,8 +1,5 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
-using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
-using Meadow.Hcom;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
@@ -26,15 +23,11 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
 
     public DfuInstallCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Version == null)
-        {
-            Version = DefaultVersion;
-        }
+        Version ??= DefaultVersion;
 
         switch (Version)
         {
@@ -43,7 +36,7 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
                 // valid
                 break;
             default:
-                Logger?.LogError("Only versions 0.10 and 0.11 are supported.");
+                Logger?.LogError("Only DFU versions 0.10 and 0.11 are supported");
                 return;
         }
 
@@ -64,8 +57,7 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            Logger?.LogWarning(
-                "To install DFU on Linux, use the package manager to install the dfu-util package");
+            Logger?.LogWarning("To install DFU on Linux, use the package manager to install the dfu-util package");
         }
     }
 

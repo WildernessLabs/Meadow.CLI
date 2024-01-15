@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +9,7 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 {
     public FirmwareDefaultCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     [CommandParameter(0, Name = "Version number to use as default", IsRequired = false)]
     public string? Version { get; set; } = null;

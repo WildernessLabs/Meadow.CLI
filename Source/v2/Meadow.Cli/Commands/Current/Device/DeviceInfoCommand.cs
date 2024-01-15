@@ -16,8 +16,9 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogInformation($"Device info failed - device or connection not found");
             return;
         }
 

@@ -1,6 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -8,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
 public class AppTrimCommand : BaseCommand<AppTrimCommand>
 {
-    private IPackageManager _packageManager;
+    private readonly IPackageManager _packageManager;
 
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
     public string? Configuration { get; set; }

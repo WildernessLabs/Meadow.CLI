@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app build", Description = "Compiles a Meadow application")]
+[Command("app build", Description = "Compile a Meadow application")]
 public class AppBuildCommand : BaseCommand<AppBuildCommand>
 {
     private readonly IPackageManager _packageManager;
@@ -22,9 +22,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override ValueTask ExecuteCommand()
     {
-        string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
-            : Path;
+        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
 
         // is the path a file?
         if (!File.Exists(path))
@@ -37,10 +35,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             }
         }
 
-        if (Configuration == null)
-        {
-            Configuration = "Release";
-        }
+        Configuration ??= "Release";
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -53,7 +48,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         }
         else
         {
-            Logger?.LogError($"Build successful");
+            Logger?.LogInformation($"Build successful");
         }
         return ValueTask.CompletedTask;
     }

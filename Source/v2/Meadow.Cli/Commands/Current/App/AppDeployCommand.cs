@@ -1,11 +1,10 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app deploy", Description = "Deploys a built Meadow application to a target device")]
+[Command("app deploy", Description = "Deploy a built Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;

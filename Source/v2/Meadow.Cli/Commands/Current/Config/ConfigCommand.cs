@@ -1,8 +1,5 @@
-﻿using CliFx;
-using CliFx.Attributes;
+﻿using CliFx.Attributes;
 using CliFx.Exceptions;
-using CliFx.Infrastructure;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -18,11 +15,9 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
 
     public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
         : base(settingsManager, loggerFactory)
-    {
-        
-    }
+    { }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
         if (List)
         {
@@ -64,5 +59,7 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
                     throw new CommandException($"Too many parameters provided");
             }
         }
+
+        return ValueTask.CompletedTask;
     }
 }

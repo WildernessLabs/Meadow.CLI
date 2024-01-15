@@ -6,11 +6,11 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 public class JsonDocumentBindingConverter : BindingConverter<JsonDocument>
 {
-    public override JsonDocument Convert(string rawValue)
+    public override JsonDocument Convert(string? rawValue)
     {
         try
         {
-            return JsonDocument.Parse(rawValue);
+            return JsonDocument.Parse(rawValue!);
         }
         catch (JsonException ex)
         {

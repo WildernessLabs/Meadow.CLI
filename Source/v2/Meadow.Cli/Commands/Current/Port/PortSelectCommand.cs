@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -9,40 +8,36 @@ public class PortSelectCommand : BaseCommand<PortSelectCommand>
 {
     public PortSelectCommand(ILoggerFactory loggerFactory)
         : base(loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (LoggerFactory != null)
+        if (LoggerFactory != null && Console != null)
         {
-            if (Console != null)
+            var portListCommand = new PortListCommand(LoggerFactory);
+
+            await portListCommand.ExecuteAsync(Console);
+
+            if (portListCommand.Portlist?.Count > 0)
             {
-                var portListCommand = new PortListCommand(LoggerFactory);
-
-                await portListCommand.ExecuteAsync(Console);
-
-                if (portListCommand.Portlist?.Count > 0)
+                if (portListCommand.Portlist?.Count > 1)
                 {
-                    if (portListCommand.Portlist?.Count > 1)
-                    {
-                        Logger?.LogInformation($"{Environment.NewLine}Type the number of the port you would like to use.{Environment.NewLine}or just press Enter to keep your current port.");
+                    Logger?.LogInformation($"{Environment.NewLine}Type the number of the port you would like to use.{Environment.NewLine}or just press Enter to keep your current port.");
 
-                        byte deviceSelected;
-                        if (byte.TryParse(await Console.Input.ReadLineAsync(), out deviceSelected))
+                    byte deviceSelected;
+                    if (byte.TryParse(await Console.Input.ReadLineAsync(), out deviceSelected))
+                    {
+                        if (deviceSelected > 0 && deviceSelected <= portListCommand.Portlist?.Count)
                         {
-                            if (deviceSelected > 0 && deviceSelected <= portListCommand.Portlist?.Count)
-                            {
-                                await CallConfigCommand(portListCommand.Portlist[deviceSelected - 1]);
-                            }
+                            await CallConfigCommand(portListCommand.Portlist[deviceSelected - 1]);
                         }
                     }
-                    else
-                    {
-                        // Only 1 device attached, let's auto select it
-                        if (portListCommand.Portlist != null)
-                            await CallConfigCommand(portListCommand.Portlist[0]);
-                    }
+                }
+                else
+                {
+                    // Only 1 device attached, let's auto select it
+                    if (portListCommand.Portlist != null)
+                        await CallConfigCommand(portListCommand.Portlist[0]);
                 }
             }
         }

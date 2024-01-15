@@ -35,60 +35,57 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             return;
         }
 
-        if (connection != null)
+        string path = Path == null
+            ? AppDomain.CurrentDomain.BaseDirectory
+            : Path;
+
+        if (!Directory.Exists(path))
         {
-            string path = Path == null
-                ? AppDomain.CurrentDomain.BaseDirectory
-                : Path;
-
-            if (!Directory.Exists(path))
-            {
-                Logger?.LogError($"Target directory '{path}' not found.");
-                return;
-            }
-
-            var lastFile = string.Empty;
-
-            // in order to deploy, the runtime must be disabled
-            var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
-            if (wasRuntimeEnabled)
-            {
-                Logger?.LogInformation("Disabling runtime...");
-
-                await connection.RuntimeDisable(CancellationToken);
-            }
-
-            if (!await BuildApplication(path, CancellationToken))
-            {
-                return;
-            }
-
-            if (!await TrimApplication(path, CancellationToken))
-            {
-                return;
-            }
-
-            // illink returns before all files are written - attempt a delay of 1s
-            await Task.Delay(1000);
-
-            if (!await DeployApplication(connection, path, CancellationToken))
-            {
-                return;
-            }
-
-            Logger?.LogInformation("Enabling the runtime...");
-            await connection.RuntimeEnable(CancellationToken);
-
-            Logger?.LogInformation("Listening for messages from Meadow...\n");
-            connection.DeviceMessageReceived += OnDeviceMessageReceived;
-
-            while (!CancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(1000);
-            }
-
-            Logger?.LogInformation("Listen cancelled...");
+            Logger?.LogError($"Target directory '{path}' not found.");
+            return;
         }
+
+        var lastFile = string.Empty;
+
+        // in order to deploy, the runtime must be disabled
+        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
+        if (wasRuntimeEnabled)
+        {
+            Logger?.LogInformation("Disabling runtime...");
+
+            await connection.RuntimeDisable(CancellationToken);
+        }
+
+        if (!await BuildApplication(path, CancellationToken))
+        {
+            return;
+        }
+
+        if (!await TrimApplication(path, CancellationToken))
+        {
+            return;
+        }
+
+        // illink returns before all files are written - attempt a delay of 1s
+        await Task.Delay(1000);
+
+        if (!await DeployApplication(connection, path, CancellationToken))
+        {
+            return;
+        }
+
+        Logger?.LogInformation("Enabling the runtime...");
+        await connection.RuntimeEnable(CancellationToken);
+
+        Logger?.LogInformation("Listening for messages from Meadow...\n");
+        connection.DeviceMessageReceived += OnDeviceMessageReceived;
+
+        while (!CancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(1000);
+        }
+
+        Logger?.LogInformation("Listen cancelled...");
     }
 
     private Task<bool> BuildApplication(string path, CancellationToken cancellationToken)

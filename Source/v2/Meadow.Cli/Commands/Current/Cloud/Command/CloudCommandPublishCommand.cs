@@ -11,7 +11,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
-    public string CommandName { get; set; }
+    public string CommandName { get; set; } = default!;
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command")]
     public string? CollectionId { get; set; }
@@ -54,7 +54,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.", showHelp: true);
         }
 
-        if (Host == null) Host = DefaultHost;
+        Host ??= DefaultHost;
 
         var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))

@@ -10,12 +10,12 @@ public class PortListCommand : BaseCommand<PortListCommand>
 
     public PortListCommand(ILoggerFactory loggerFactory)
         : base(loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         Portlist = await MeadowConnectionManager.GetSerialPorts();
+
         if (Portlist.Count > 0)
         {
             var plural = Portlist.Count > 1 ? "s" : string.Empty;
