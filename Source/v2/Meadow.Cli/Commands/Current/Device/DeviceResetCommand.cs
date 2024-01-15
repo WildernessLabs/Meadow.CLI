@@ -16,8 +16,9 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogInformation($"Device reset failed - device or connection not found");
             return;
         }
 

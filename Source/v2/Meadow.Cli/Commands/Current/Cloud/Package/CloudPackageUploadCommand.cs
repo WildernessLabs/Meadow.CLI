@@ -20,7 +20,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
-    private PackageService _packageService;
+    private readonly PackageService _packageService;
 
     public CloudPackageUploadCommand(
         IdentityManager identityManager,
@@ -42,10 +42,10 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
             return;
         }
 
-        if (Host == null) Host = DefaultHost;
+        Host ??= DefaultHost;
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
-        if (org == null) return;
+        if (org == null) { return; }
 
         try
         {
@@ -58,6 +58,5 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         {
             Logger?.LogError($"Upload failed: {mex.Message}");
         }
-
     }
 }

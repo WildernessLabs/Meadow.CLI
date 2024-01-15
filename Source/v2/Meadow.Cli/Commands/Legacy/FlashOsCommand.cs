@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
 using Meadow.Software;
@@ -11,7 +10,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 {
     [CommandOption("osFile", 'o', Description = "Path to the Meadow OS binary")]
-    public string OSFile { get; init; }
+    public string OSFile { get; init; } = default!;
 
     [CommandOption("runtimeFile", 'r', Description = "Path to the Meadow Runtime binary")]
     public string RuntimeFile { get; init; }
@@ -39,10 +38,13 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
     private ILibUsbDevice? _libUsbDevice;
 
-    public FlashOsCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public FlashOsCommand(ISettingsManager settingsManager,
+            FileManager fileManager,
+            MeadowConnectionManager connectionManager,
+            ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogWarning($"Deprecated command.  Use `firmware write` instead");
+        Logger?.LogWarning($"Deprecated command. Use `firmware write` instead");
 
         FileManager = fileManager;
         Settings = settingsManager;
@@ -72,7 +74,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
         if (!Files.Contains(FirmwareType.OS) && UseDfu)
         {
-            Logger.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
+            Logger.LogError($"DFU is only used for OS files - select an OS file or remove the DFU option");
             return;
         }
 
@@ -196,7 +198,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             case 1:
                 return devices[0];
             default:
-                throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
+                throw new Exception("Multiple devices found in bootloader mode - only connect one device");
         }
     }
 

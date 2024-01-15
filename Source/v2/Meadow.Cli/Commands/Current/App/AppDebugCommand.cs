@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app debug", Description = "Debugs a running application")]
+[Command("app debug", Description = "Debug a running application")]
 public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 {
     // VS 2019 - 4024
@@ -14,8 +14,7 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 
     public AppDebugCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
@@ -27,20 +26,17 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
             return;
         }
 
-        if (connection != null)
+        connection.DeviceMessageReceived += (s, e) =>
         {
-            connection.DeviceMessageReceived += (s, e) =>
-            {
-                Logger?.LogInformation(e.message);
-            };
+            Logger?.LogInformation(e.message);
+        };
 
-            using (var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken))
+        using (var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken))
+        {
+            if (Console != null)
             {
-                if (Console != null)
-                {
-                    Logger?.LogInformation("Debugging server started. Press Enter to exit");
-                    await Console.Input.ReadLineAsync();
-                }
+                Logger?.LogInformation("Debugging server started - press Enter to exit");
+                await Console.Input.ReadLineAsync();
             }
         }
     }

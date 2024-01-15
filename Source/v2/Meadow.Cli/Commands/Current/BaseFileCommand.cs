@@ -1,5 +1,4 @@
-﻿using Meadow.CLI;
-using Meadow.Software;
+﻿using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;

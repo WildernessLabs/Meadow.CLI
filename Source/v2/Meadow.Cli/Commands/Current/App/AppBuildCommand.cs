@@ -1,15 +1,12 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
-using Meadow.CLI;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app build", Description = "Compiles a Meadow application")]
+[Command("app build", Description = "Compile a Meadow application")]
 public class AppBuildCommand : BaseCommand<AppBuildCommand>
 {
-    private IPackageManager _packageManager;
+    private readonly IPackageManager _packageManager;
 
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
@@ -23,11 +20,9 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
-        string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
-            : Path;
+        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
 
         // is the path a file?
         if (!File.Exists(path))
@@ -36,11 +31,11 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             if (!Directory.Exists(path))
             {
                 Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                return ValueTask.CompletedTask;
             }
         }
 
-        if (Configuration == null) Configuration = "Release";
+        Configuration ??= "Release";
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -53,7 +48,8 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         }
         else
         {
-            Logger?.LogError($"Build success.");
+            Logger?.LogInformation($"Build successful");
         }
+        return ValueTask.CompletedTask;
     }
 }

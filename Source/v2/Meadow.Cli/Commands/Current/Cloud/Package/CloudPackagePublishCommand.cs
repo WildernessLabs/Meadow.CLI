@@ -8,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud package publish", Description = "Publishes a Meadow Package (MPAK)")]
 public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCommand>
 {
-    private PackageService _packageService;
+    private readonly PackageService _packageService;
 
     [CommandParameter(0, Name = "PackageID", Description = "ID of the package to publish", IsRequired = true)]
     public string PackageId { get; init; }
@@ -36,14 +36,14 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        Host ??= DefaultHost;
 
         try
         {
             Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
             await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, CancellationToken);
-            Logger?.LogInformation("Publish successful.");
+            Logger?.LogInformation("Publish successful");
         }
         catch (MeadowCloudException mex)
         {

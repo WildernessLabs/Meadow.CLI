@@ -9,6 +9,6 @@ public class MonoEnableCommand : RuntimeEnableCommand
     public MonoEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger.LogWarning($"Deprecated command.  Use `runtime enable` instead");
+        Logger?.LogWarning($"Deprecated command - use `runtime enable` instead");
     }
 }

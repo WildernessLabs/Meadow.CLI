@@ -8,18 +8,19 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
 {
     public RuntimeStateCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-        Logger?.LogInformation($"Querying runtime state...");
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"Runtime state failed - device or connection not found");
             return;
         }
+
+        Logger?.LogInformation($"Querying runtime state...");
 
         var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
 

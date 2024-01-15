@@ -14,33 +14,29 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 
     public DeveloperCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"Developer parameter set failed - device or connection not found");
             return;
         }
 
         Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
 
-        if (connection != null)
+        connection.DeviceMessageReceived += (s, e) =>
         {
-            connection.DeviceMessageReceived += (s, e) =>
-            {
-                Logger?.LogInformation(e.message);
-            };
-            connection.ConnectionError += (s, e) =>
-            {
-                Logger?.LogError(e.Message);
-            };
+            Logger?.LogInformation(e.message);
+        };
+        connection.ConnectionError += (s, e) =>
+        {
+            Logger?.LogError(e.Message);
+        };
 
-            await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
-        }
+        await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
     }
 }
-

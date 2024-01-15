@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.LibUsb;
@@ -58,7 +57,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (!Files.Contains(FirmwareType.OS) && UseDfu)
         {
-            Logger?.LogError($"DFU is only used for OS files.  Select an OS file or remove the DFU option");
+            Logger?.LogError($"DFU is only used for OS files - select an OS file or remove the DFU option");
             return;
         }
 
@@ -199,7 +198,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     _libUsbDevice = devices[0];
                     break;
                 default:
-                    throw new Exception("Multiple devices found in bootloader mode.  Disconnect all but one");
+                    throw new Exception("Multiple devices found in bootloader mode - only connect one device");
             }
         }
 
@@ -298,7 +297,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         write_runtime:
             if (!await connection.Device.WriteRuntime(rtpath, CancellationToken))
             {
-                Logger?.LogInformation($"Error writing runtime.  Retrying.");
+                Logger?.LogInformation($"Error writing runtime - retrying");
                 goto write_runtime;
             }
         }
@@ -346,4 +345,3 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
     }
 }
-

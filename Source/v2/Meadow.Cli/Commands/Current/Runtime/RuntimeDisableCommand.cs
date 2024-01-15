@@ -8,18 +8,19 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 {
     public RuntimeDisableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-        Logger?.LogInformation($"Disabling runtime...");
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"Runtime disable failed - device or connection not found");
             return;
         }
+
+        Logger?.LogInformation($"Disabling runtime...");
 
         await connection.Device.RuntimeDisable(CancellationToken);
 
