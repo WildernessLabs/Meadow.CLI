@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +9,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
     public FirmwareDownloadCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     [CommandOption("force", 'f', IsRequired = false)]
     public bool Force { get; set; }
@@ -59,7 +57,6 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
         Logger?.LogInformation($"Downloading firmware package '{Version}'...");
 
-
         try
         {
             collection.DownloadProgress += OnDownloadProgress;
@@ -74,7 +71,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             {
                 Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
 
-                if (explicitVersion)
+                if (explicitVersion == false)
                 {
                     await collection.SetDefaultPackage(Version);
                 }
@@ -85,8 +82,6 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
         }
     }
-
-    private long _lastProgress = 0;
 
     private void OnDownloadProgress(object? sender, long e)
     {
