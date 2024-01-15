@@ -16,7 +16,18 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
+    { }
+
+    protected override async ValueTask ExecuteCommand()
     {
+        var connection = await GetCurrentConnection();
+
+        if (connection == null || connection.Device == null)
+        {
+            Logger?.LogError($"File list failed - device or connection not found");
+            return;
+        }
+
         if (Folder != null)
         {
             if (Folder.EndsWith('/') == false)
@@ -29,17 +40,6 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
         else
         {
             Logger?.LogInformation($"Getting file list...");
-        }
-    }
-
-    protected override async ValueTask ExecuteCommand()
-    {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            Logger?.LogError($"File list failed - device or connection not found");
-            return;
         }
 
         var files = await connection.Device.GetFileList(Folder ?? "/meadow0/", Verbose, CancellationToken);
