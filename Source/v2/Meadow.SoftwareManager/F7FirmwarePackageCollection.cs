@@ -29,6 +29,10 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
     }
 
+    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
+
+    public FirmwarePackage this[int index] => _f7Packages[index];
+
     internal F7FirmwarePackageCollection(string rootPath)
     {
         if (!Directory.Exists(rootPath))
@@ -85,8 +89,10 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return Task.CompletedTask;
     }
 
-    public Task SetDefaultPackage(string version)
+    public async Task SetDefaultPackage(string version)
     {
+        await Refresh();
+
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
         if (existing == null)
@@ -96,8 +102,6 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         var downloadManager = new F7FirmwareDownloadManager();
         downloadManager.SetDefaultVersion(PackageFileRoot, version);
-
-        return Task.CompletedTask;
     }
 
     public async Task<bool> IsVersionAvailableForDownload(string version)
