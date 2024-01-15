@@ -193,7 +193,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // search for the device via HCOM - we'll use a simple command since we don't have a "ping"
             var command = RequestBuilder.Build<GetDeviceInfoRequest>();
 
-            // sequence numbers are only for file retrieval.  Setting it to non-zero will cause it to hang
+            // sequence numbers are only for file retrieval - Setting it to non-zero will cause it to hang
 
             _port.DiscardInBuffer();
 

@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -7,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("use port", Description = "** Deprecated ** Use `config route` instead")]
 public class UsePortCommand : BaseCommand<UsePortCommand>
 {
-    private ISettingsManager _settingsManager;
+    private readonly ISettingsManager _settingsManager;
 
     [CommandParameter(0, Name = "Port", IsRequired = true)]
     public string Port { get; set; } = default!;
@@ -15,7 +14,7 @@ public class UsePortCommand : BaseCommand<UsePortCommand>
     public UsePortCommand(ILoggerFactory loggerFactory, ISettingsManager settingsManager)
         : base(loggerFactory)
     {
-        Logger?.LogWarning($"Deprecated command.  Use `config route` instead");
+        Logger?.LogWarning($"Deprecated command -use `config route` instead");
         _settingsManager = settingsManager;
     }
 
@@ -27,4 +26,3 @@ public class UsePortCommand : BaseCommand<UsePortCommand>
         return ValueTask.CompletedTask;
     }
 }
-

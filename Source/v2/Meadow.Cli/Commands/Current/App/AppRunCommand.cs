@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
@@ -69,7 +68,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
                 return;
             }
 
-            // illink returns before all files are actually written.  That's not fun, but we must just wait a little while.
+            // illink returns before all files are written - attempt a delay of 1s
             await Task.Delay(1000);
 
             if (!await DeployApplication(connection, path, CancellationToken))

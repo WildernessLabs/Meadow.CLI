@@ -230,7 +230,7 @@ public partial class PackageManager : IPackageManager
 
         // look for a 'bin' folder
         var path = Path.Combine(rootFolder, "bin");
-        if (!Directory.Exists(path)) throw new FileNotFoundException($"No 'bin' directory found under {rootFolder}.  Have you compiled?");
+        if (!Directory.Exists(path)) throw new FileNotFoundException($"No 'bin' directory found under {rootFolder}. Have you compiled?");
 
         var files = new List<FileInfo>();
         FindApp(path, files);
