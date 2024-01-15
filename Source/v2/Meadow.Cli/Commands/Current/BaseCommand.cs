@@ -36,11 +36,11 @@ public abstract class BaseCommand<T> : ICommand
 
         if (CancellationToken.IsCancellationRequested)
         {
-            Logger?.LogInformation($"Cancelled.");
+            Logger?.LogInformation($"Cancelled");
         }
         else
         {
-            Logger?.LogInformation($"Done.");
+            Logger?.LogInformation($"Done");
         }
     }
 

@@ -1,7 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Infrastructure;
-using Meadow.CLI;
-using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -9,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app build", Description = "Compiles a Meadow application")]
 public class AppBuildCommand : BaseCommand<AppBuildCommand>
 {
-    private IPackageManager _packageManager;
+    private readonly IPackageManager _packageManager;
 
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
@@ -53,7 +50,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         }
         else
         {
-            Logger?.LogError($"Build success.");
+            Logger?.LogError($"Build successful");
         }
     }
 }
