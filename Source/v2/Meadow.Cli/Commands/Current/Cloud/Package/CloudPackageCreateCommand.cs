@@ -41,10 +41,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (ProjectPath == null)
-        {
-            ProjectPath = AppDomain.CurrentDomain.BaseDirectory;
-        }
+        ProjectPath ??= AppDomain.CurrentDomain.BaseDirectory;
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
@@ -85,6 +82,5 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         {
             Logger?.LogError($"Package assembly failed.");
         }
-
     }
 }

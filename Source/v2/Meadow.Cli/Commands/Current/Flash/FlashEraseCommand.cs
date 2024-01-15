@@ -8,8 +8,7 @@ public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
 {
     public FlashEraseCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {

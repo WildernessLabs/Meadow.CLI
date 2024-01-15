@@ -345,4 +345,3 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
     }
 }
-

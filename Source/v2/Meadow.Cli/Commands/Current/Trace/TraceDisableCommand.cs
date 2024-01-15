@@ -8,15 +8,15 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
 {
     public TraceDisableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"Trace disable failed - device or connection not found");
             return;
         }
 
@@ -30,4 +30,3 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
         await connection.Device.TraceDisable(CancellationToken);
     }
 }
-

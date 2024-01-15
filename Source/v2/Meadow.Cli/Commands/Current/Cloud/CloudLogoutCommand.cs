@@ -15,13 +15,14 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
         CollectionService collectionService,
         ILoggerFactory? loggerFactory)
         : base(identityManager, userService, deviceService, collectionService, loggerFactory)
-    {
-    }
+    { }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
         Logger?.LogInformation($"Logging out of Meadow.Cloud...");
 
         IdentityManager.Logout();
+
+        return ValueTask.CompletedTask;
     }
 }

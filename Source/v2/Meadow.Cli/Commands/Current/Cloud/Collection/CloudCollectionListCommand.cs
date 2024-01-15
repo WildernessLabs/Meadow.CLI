@@ -20,12 +20,11 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
         CollectionService collectionService,
         ILoggerFactory? loggerFactory)
         : base(identityManager, userService, deviceService, collectionService, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        Host ??= DefaultHost;
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;

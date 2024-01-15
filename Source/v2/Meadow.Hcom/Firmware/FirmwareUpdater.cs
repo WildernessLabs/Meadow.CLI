@@ -5,8 +5,8 @@ namespace Meadow.Hcom;
 
 public class FirmwareUpdater
 {
-    private ILogger? _logger;
-    private Task? _updateTask;
+    private readonly ILogger? _logger;
+    private readonly Task? _updateTask;
     private IMeadowConnection _connection;
     private UpdateState _state;
 
@@ -130,7 +130,7 @@ public class FirmwareUpdater
                     }
                     break;
                 case UpdateState.DFUCompleted:
-                    // if we started in DFU mode, we'll have no connection.  We'll have to just assume the first one to appear is what we're after
+                    // if we started in DFU mode, we'll have no connection. We'll have to just assume the first one to appear is what we're after
                     try
                     {
                         // wait for device to reconnect

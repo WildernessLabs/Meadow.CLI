@@ -18,12 +18,11 @@ public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
         CollectionService collectionService,
         ILoggerFactory? loggerFactory)
         : base(identityManager, userService, deviceService, collectionService, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (Host == null) Host = DefaultHost;
+        Host ??= DefaultHost;
 
         Logger?.LogInformation($"Logging into {Host}...");
 
