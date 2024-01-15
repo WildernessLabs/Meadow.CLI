@@ -38,7 +38,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogInformation($"File list failed - device or connection not found");
+            Logger?.LogError($"File list failed - device or connection not found");
             return;
         }
 
@@ -85,7 +85,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
                 Logger?.LogInformation(
                     $"\nSummary:\n" +
-                    $"\t{files.Length} files\n" +
+                    $"\t{files.Length} file(s)\n" +
                     $"\t{totalBytesUsed / 1000000d:0.00}MB of file data\n" +
                     $"\tSpanning {totalBlocksUsed} blocks\n" +
                     $"\tConsuming {totalBlocksUsed * FileSystemBlockSize / 1000000d:0.00}MB on disk");
@@ -97,9 +97,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
                     Logger?.LogInformation(file.Name);
                 }
 
-                Logger?.LogInformation(
-                    $"\nSummary:\n" +
-                    $"\t{files.Length} files");
+                Logger?.LogInformation($"\t{files.Length} file(s)");
             }
         }
     }

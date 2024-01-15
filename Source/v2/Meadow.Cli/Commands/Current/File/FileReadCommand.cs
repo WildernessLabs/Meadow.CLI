@@ -14,15 +14,15 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
 
     public FileReadCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"File read failed - device or connection not found");
             return;
         }
 
