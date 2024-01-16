@@ -81,7 +81,7 @@
     },
     "File Delete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete meadow.log"
+      "commandLineArgs": "file delete Juego.pdb"
     },
     "File Read": {
       "commandName": "Project",
@@ -105,7 +105,7 @@
     },
     "Firmware Download version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware download -v 1.0.2.0 --force"
+      "commandLineArgs": "firmware download -v 1.7.1.4 --force"
     },
     "Firmware Default get": {
       "commandName": "Project",
@@ -125,7 +125,7 @@
     },
     "Firmware Write version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write -v 1.7.1.3"
+      "commandLineArgs": "firmware write -v 1.8.0.0"
     },
     "Firmware Write runtime": {
       "commandName": "Project",

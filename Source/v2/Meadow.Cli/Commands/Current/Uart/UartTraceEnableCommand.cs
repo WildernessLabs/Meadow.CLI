@@ -8,15 +8,15 @@ public class UartTraceEnableCommand : BaseDeviceCommand<UartTraceEnableCommand>
 {
     public UartTraceEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
+            Logger?.LogError($"Uart trace enable failed - device or connection not found");
             return;
         }
 
