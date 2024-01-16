@@ -311,7 +311,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             serialNumber,
             logger: Logger,
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
-
         }
         catch (Exception ex)
         {
