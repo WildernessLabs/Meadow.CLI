@@ -293,7 +293,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
 
         string serialNumber;
-
         try
         {
             serialNumber = libUsbDevice.GetDeviceSerialNumber();

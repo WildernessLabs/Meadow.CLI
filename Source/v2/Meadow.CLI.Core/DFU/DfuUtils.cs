@@ -273,27 +273,10 @@ public static class DfuUtils
 
             var targetDir = is64Bit
                                 ? Environment.GetFolderPath(Environment.SpecialFolder.System)
-                                : Environment.GetFolderPath(
-                                    Environment.SpecialFolder.SystemX86);
+                                : Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
 
             File.Copy(dfuUtilExe.FullName, Path.Combine(targetDir, dfuUtilExe.Name), true);
             File.Copy(libUsbDll.FullName, Path.Combine(targetDir, libUsbDll.Name), true);
-
-            // clean up from previous version
-            var systemDirectory = Environment.SystemDirectory;
-
-            var dfuPath = Path.Combine(systemDirectory, dfuUtilExe.Name);
-            var libUsbPath = Path.Combine(systemDirectory, libUsbDll.Name);
-
-            if (File.Exists(dfuPath))
-            {
-                File.Delete(dfuPath);
-            }
-
-            if (File.Exists(libUsbPath))
-            {
-                File.Delete(libUsbPath);
-            }
         }
         finally
         {
