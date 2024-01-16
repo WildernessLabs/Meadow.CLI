@@ -53,12 +53,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
 
-            FirmwareFileTypes =
-                [
-                    FirmwareType.OS,
-                    FirmwareType.Runtime,
-                    FirmwareType.ESP
-                ];
+            FirmwareFileTypes = new FirmwareType[]
+            {
+                FirmwareType.OS,
+                FirmwareType.Runtime,
+                FirmwareType.ESP
+            };
         }
 
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
