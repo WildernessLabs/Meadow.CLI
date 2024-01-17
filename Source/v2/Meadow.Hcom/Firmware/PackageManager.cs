@@ -21,7 +21,7 @@ public class PackageManager
             throw new ArgumentException($"Invalid applicationPath: {applicationPath}");
         }
 
-        var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFilePathRoot, osVersion);
+        var osFilePath = Path.Combine(DownloadManager.FirmwareDownloadsFolder, osVersion);
         if (!Directory.Exists(osFilePath))
         {
             throw new ArgumentException($"osVersion {osVersion} not found. Please download.");

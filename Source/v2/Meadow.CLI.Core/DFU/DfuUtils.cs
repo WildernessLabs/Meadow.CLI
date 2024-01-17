@@ -11,9 +11,7 @@ namespace Meadow.CLI.Core.Internals.Dfu;
 
 public static class DfuUtils
 {
-    private static int _osAddress = 0x08000000;
-
-    //    public static string LastSerialNumber { get; private set; } = "";
+    private static readonly int _osAddress = 0x08000000;
 
     public enum DfuFlashFormat
     {
@@ -98,15 +96,15 @@ public static class DfuUtils
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logger.LogError("dfu-util update required. To update, run in administrator mode: `meadow install dfu-util`");
+                logger.LogError("dfu-util update required - to update, run in administrator mode: `meadow install dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                logger.LogError("dfu-util update required. To update, run: `brew upgrade dfu-util`");
+                logger.LogError("dfu-util update required - to update, run: `brew upgrade dfu-util`");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                logger.LogError("dfu-util update required. To update , run: `apt upgrade dfu-util` or the equivalent for your Linux distribution");
+                logger.LogError("dfu-util update required - to update , run: `apt upgrade dfu-util` or the equivalent for your Linux distribution");
             }
             else
             {
@@ -275,24 +273,10 @@ public static class DfuUtils
 
             var targetDir = is64Bit
                                 ? Environment.GetFolderPath(Environment.SpecialFolder.System)
-                                : Environment.GetFolderPath(
-                                    Environment.SpecialFolder.SystemX86);
+                                : Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
 
             File.Copy(dfuUtilExe.FullName, Path.Combine(targetDir, dfuUtilExe.Name), true);
             File.Copy(libUsbDll.FullName, Path.Combine(targetDir, libUsbDll.Name), true);
-
-            // clean up from previous version
-            var dfuPath = Path.Combine(@"C:\Windows\System", dfuUtilExe.Name);
-            var libUsbPath = Path.Combine(@"C:\Windows\System", libUsbDll.Name);
-            if (File.Exists(dfuPath))
-            {
-                File.Delete(dfuPath);
-            }
-
-            if (File.Exists(libUsbPath))
-            {
-                File.Delete(libUsbPath);
-            }
         }
         finally
         {
@@ -302,5 +286,4 @@ public static class DfuUtils
             }
         }
     }
-
 }

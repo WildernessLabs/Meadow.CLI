@@ -11,8 +11,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {

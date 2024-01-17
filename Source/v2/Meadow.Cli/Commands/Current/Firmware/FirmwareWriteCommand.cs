@@ -24,7 +24,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     public bool UseDfu { get; set; }
 
     [CommandParameter(0, Name = "Files to write", IsRequired = false)]
-    public FirmwareType[]? Files { get; set; } = default!;
+    public FirmwareType[]? FirmwareFileTypes { get; set; } = default!;
 
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
@@ -43,22 +43,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         var package = await GetSelectedPackage();
 
-        if (Files == null)
+        if (package == null)
+        {
+            Logger?.LogError($"Firware write failed - No package selected");
+            return;
+        }
+
+        if (FirmwareFileTypes == null)
         {
             Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
 
-            Files = new FirmwareType[]
-                {
-                    FirmwareType.OS,
-                    FirmwareType.Runtime,
-                    FirmwareType.ESP
-                };
-        }
-
-        if (!Files.Contains(FirmwareType.OS) && UseDfu)
-        {
-            Logger?.LogError($"DFU is only used for OS files - select an OS file or remove the DFU option");
-            return;
+            FirmwareFileTypes = new FirmwareType[]
+            {
+                FirmwareType.OS,
+                FirmwareType.Runtime,
+                FirmwareType.ESP
+            };
         }
 
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
@@ -70,95 +70,46 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             UseDfu = true;
         }
 
-        IMeadowConnection connection;
-
-        if (UseDfu && Files.Contains(FirmwareType.OS))
+        if (!FirmwareFileTypes.Contains(FirmwareType.OS) && UseDfu)
         {
-            // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
-            var initialPorts = await MeadowConnectionManager.GetSerialPorts();
-
-            // get the device's serial number via DFU - we'll need it to find the device after it resets
-            ILibUsbDevice libUsbDevice;
-            try
-            {
-                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex.Message);
-                return;
-            }
-
-            var serial = libUsbDevice.GetDeviceSerialNumber();
-
-            // no connection is required here - in fact one won't exist
-            // unless maybe we add a "DFUConnection"?
-
-            try
-            {
-                await WriteOsWithDfu(package.GetFullyQualifiedPath(package.OSWithBootloader), serial);
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError($"Exception type: {ex.GetType().Name}");
-
-                // TODO: scope this to the right exception type for Win 10 access violation thing
-                // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
-                Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
-
-                Logger?.LogWarning("This machine requires an older version of libusb.  Not to worry, I'll make the change for you, but you will have to re-run this 'firmware write' command.");
-                return;
-            }
-
-            // now wait for a new serial port to appear
-            var ports = await MeadowConnectionManager.GetSerialPorts();
-            var retryCount = 0;
-
-            var newPort = ports.Except(initialPorts).FirstOrDefault();
-            while (newPort == null)
-            {
-                if (retryCount++ > 10)
-                {
-                    throw new Exception("New meadow device not found");
-                }
-                await Task.Delay(500);
-                ports = await MeadowConnectionManager.GetSerialPorts();
-                newPort = ports.Except(initialPorts).FirstOrDefault();
-            }
-
-            Logger?.LogInformation($"Meadow found at {newPort}");
-
-            // configure the route to that port for the user
-            Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
-            connection = await GetCurrentConnection();
-
-            if (connection == null)
-            {
-                return;
-            }
-
-            if (Files.Any(f => f != FirmwareType.OS))
-            {
-                await connection.WaitForMeadowAttach();
-
-                if (CancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                await WriteFiles(connection);
-            }
+            Logger?.LogError($"DFU is only used for OS files - select an OS file or remove the DFU option");
+            return;
         }
-        else
+
+        if (UseDfu && FirmwareFileTypes.Contains(FirmwareType.OS))
+        {
+            var osFile = package.GetFullyQualifiedPath(package.OSWithBootloader);
+
+            if (osFile == null)
+            {
+                Logger?.LogError($"OS file not found for version '{package.Version}'");
+                return;
+            }
+            if (await WriteOsWithDfu(osFile) == false)
+            {
+                return;
+            }
+            //remove from collection to enable writing of other files - ToDo rework this logic
+            FirmwareFileTypes = FirmwareFileTypes.Where(t => t != FirmwareType.OS).ToArray();
+        }
+
+        IMeadowConnection? connection = null;
+        try
         {
             connection = await GetCurrentConnection();
-            if (connection == null)
-            {
-                return;
-            }
-            await WriteFiles(connection);
         }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex.Message);
+            return;
+        }
+
+        if (connection == null || connection.Device == null)
+        {
+            return;
+        }
+
+        await WriteFiles(connection, FirmwareFileTypes);
 
         await connection.ResetDevice(CancellationToken);
         await connection.WaitForMeadowAttach();
@@ -190,16 +141,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             var devices = provider.GetDevicesInBootloaderMode();
 
-            switch (devices.Count)
+            _libUsbDevice = devices.Count switch
             {
-                case 0:
-                    throw new Exception("No device found in bootloader mode");
-                case 1:
-                    _libUsbDevice = devices[0];
-                    break;
-                default:
-                    throw new Exception("Multiple devices found in bootloader mode - only connect one device");
-            }
+                0 => throw new Exception("No device found in bootloader mode"),
+                1 => devices[0],
+                _ => throw new Exception("Multiple devices found in bootloader mode - only connect one device"),
+            };
         }
 
         return _libUsbDevice;
@@ -219,7 +166,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (existing == null)
             {
-                Logger?.LogError($"Requested version '{Version}' not found.");
+                Logger?.LogError($"Requested version '{Version}' not found");
                 return null;
             }
             package = existing;
@@ -235,14 +182,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async ValueTask WriteFiles(IMeadowConnection connection)
+    private async ValueTask WriteFiles(IMeadowConnection connection, FirmwareType[] firmwareFileTypes)
     {
         // the connection passes messages back to us (info about actions happening on-device
         connection.DeviceMessageReceived += (s, e) =>
         {
             if (e.message.Contains("% downloaded"))
-            {
-                // don't echo this, as we're already reporting % written
+            {   // don't echo this, as we're already reporting % written
             }
             else
             {
@@ -260,7 +206,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         var package = await GetSelectedPackage();
 
-        var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
+        var wasRuntimeEnabled = await connection!.Device!.IsRuntimeEnabled(CancellationToken);
 
         if (wasRuntimeEnabled)
         {
@@ -274,20 +220,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
-        if (Files.Contains(FirmwareType.OS))
+        if (firmwareFileTypes.Contains(FirmwareType.OS))
         {
-            if (UseDfu)
-            {
-                // this would have already happened before now (in ExecuteAsync) so ignore
-            }
-            else
-            {
-                Logger?.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
+            Logger?.LogInformation($"{Environment.NewLine}Writing OS {package.Version}...");
 
-                throw new NotSupportedException("OtA writes for the OS are not yet supported");
-            }
+            throw new NotSupportedException("OtA writes for the OS are not yet supported");
         }
-        if (Files.Contains(FirmwareType.Runtime))
+        if (firmwareFileTypes.Contains(FirmwareType.Runtime))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
@@ -307,7 +246,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return;
         }
 
-        if (Files.Contains(FirmwareType.ESP))
+        if (FirmwareFileTypes.Contains(FirmwareType.ESP))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
@@ -336,12 +275,76 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         // TODO: if we're an F7 device, we need to reset
     }
 
-    private async Task WriteOsWithDfu(string osFile, string serialNumber)
+    private async Task<bool> WriteOsWithDfu(string osFile)
     {
-        await DfuUtils.FlashFile(
+        // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
+        var initialPorts = await MeadowConnectionManager.GetSerialPorts();
+
+        // get the device's serial number via DFU - we'll need it to find the device after it resets
+        ILibUsbDevice libUsbDevice;
+        try
+        {
+            libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex.Message);
+            return false;
+        }
+
+        string serialNumber;
+        try
+        {
+            serialNumber = libUsbDevice.GetDeviceSerialNumber();
+        }
+        catch
+        {
+            Logger?.LogError("Firmware write failed - unable to read device serial number (make sure device is connected)");
+            return false;
+        }
+
+        try
+        {
+            await DfuUtils.FlashFile(
             osFile,
             serialNumber,
             logger: Logger,
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError($"Exception type: {ex.GetType().Name}");
+
+            // TODO: scope this to the right exception type for Win 10 access violation thing
+            // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
+            Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
+
+            Logger?.LogWarning("This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.");
+            return false;
+        }
+
+        // now wait for a new serial port to appear
+        var ports = await MeadowConnectionManager.GetSerialPorts();
+        var retryCount = 0;
+
+        var newPort = ports.Except(initialPorts).FirstOrDefault();
+
+        while (newPort == null)
+        {
+            if (retryCount++ > 10)
+            {
+                throw new Exception("New meadow device not found");
+            }
+            await Task.Delay(500);
+            ports = await MeadowConnectionManager.GetSerialPorts();
+            newPort = ports.Except(initialPorts).FirstOrDefault();
+        }
+
+        Logger?.LogInformation($"Meadow found at {newPort}");
+
+        // configure the route to that port for the user
+        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+        return true;
     }
 }

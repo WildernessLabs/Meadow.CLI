@@ -34,7 +34,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (latest == null)
             {
-                Logger?.LogError($"Unable to get latest version information.");
+                Logger?.LogError($"Unable to get latest version information");
                 return;
             }
 
@@ -65,11 +65,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (!result)
             {
-                Logger?.LogError($"Unable to download package '{Version}'.");
+                Logger?.LogError($"Unable to download package '{Version}'");
             }
             else
             {
-                Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
+                Logger?.LogInformation($"Firmware package '{Version}' downloaded");
 
                 if (explicitVersion == false)
                 {

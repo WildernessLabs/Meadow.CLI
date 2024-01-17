@@ -1,9 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 
 namespace DfuSharp
 {
@@ -22,7 +18,6 @@ namespace DfuSharp
     }
 
     public delegate void HotplugCallback(IntPtr ctx, IntPtr device, HotplugEventType eventType, IntPtr userData);
-
 
     class NativeMethods
     {
@@ -266,7 +261,7 @@ namespace DfuSharp
 
         public UploadingEventArgs(int bytesUploaded)
         {
-            this.BytesUploaded = bytesUploaded;
+            BytesUploaded = bytesUploaded;
         }
     }
 
@@ -277,16 +272,19 @@ namespace DfuSharp
         const int transfer_size = 0x800;
         const int address = 0x08000000;
 
-        IntPtr handle;
+        readonly IntPtr handle;
         InterfaceDescriptor interface_descriptor;
         DfuFunctionDescriptor dfu_descriptor;
 
         public DfuDevice(IntPtr device, InterfaceDescriptor interface_descriptor, DfuFunctionDescriptor dfu_descriptor)
         {
-            this.interface_descriptor = interface_descriptor;
-            this.dfu_descriptor = dfu_descriptor;
+            interface_descriptor = interface_descriptor;
+            dfu_descriptor = dfu_descriptor;
+
             if (NativeMethods.libusb_open(device, ref handle) < 0)
+            {
                 throw new Exception("Error opening device");
+            }
         }
 
         public event UploadingEventHandler Uploading;
@@ -411,6 +409,7 @@ namespace DfuSharp
             {
                 int count = 0;
                 ushort transaction = 2;
+
                 using (var writer = new BinaryWriter(file))
                 {
                     while (count < flash_size)
@@ -659,7 +658,7 @@ namespace DfuSharp
         IntPtr _callbackHandle = IntPtr.Zero;
 
 
-        IntPtr handle;
+        readonly IntPtr handle;
         public Context(LogLevel debug_level = LogLevel.None)
         {
             var ret = NativeMethods.libusb_init(ref handle);
@@ -669,12 +668,12 @@ namespace DfuSharp
                 throw new Exception(string.Format("Error: {0} while trying to initialize libusb", ret));
 
             // instantiate our callback handler
-            this._hotplugCallbackHandler = new HotplugCallback(HandleHotplugCallback);
+            _hotplugCallbackHandler = new HotplugCallback(HandleHotplugCallback);
         }
 
         public void Dispose()
         {
-            //this.StopListeningForHotplugEvents(); // not needed, they're automatically deregistered in libusb_exit.
+            //StopListeningForHotplugEvents(); // not needed, they're automatically deregistered in libusb_exit.
             NativeMethods.libusb_exit(handle);
         }
 
@@ -707,8 +706,10 @@ namespace DfuSharp
                     var ret2 = NativeMethods.libusb_get_config_descriptor(devices[i], (ushort)j, out ptr);
 
                     if (ret2 < 0)
+                    {
                         continue;
-                        //throw new Exception(string.Format("Error: {0} while trying to get the config descriptor", ret2));
+                    }
+                    //throw new Exception(string.Format("Error: {0} while trying to get the config descriptor", ret2));
 
                     var config_descriptor = Marshal.PtrToStructure<ConfigDescriptor>(ptr);
 
@@ -717,7 +718,9 @@ namespace DfuSharp
                         var p = config_descriptor.interfaces + j * Marshal.SizeOf<@Interface>();
 
                         if (p == IntPtr.Zero)
+                        {
                             continue;
+                        }
 
                         var @interface = Marshal.PtrToStructure<@Interface>(p);
                         for (int l = 0; l < @interface.num_altsetting; l++)
@@ -726,11 +729,16 @@ namespace DfuSharp
 
                             // Ensure this is a DFU descriptor
                             if (interface_descriptor.bInterfaceClass != 0xfe || interface_descriptor.bInterfaceSubClass != 0x1)
+                            {
                                 continue;
+                            }
 
                             var dfu_descriptor = FindDescriptor(interface_descriptor.extra, interface_descriptor.extra_length, (byte)Consts.USB_DT_DFU);
+
                             if (dfu_descriptor != null)
+                            {
                                 dfu_devices.Add(new DfuDevice(devices[i], interface_descriptor, dfu_descriptor.Value));
+                            }
                         }
                     }
                 }
@@ -763,7 +771,7 @@ namespace DfuSharp
 
         public bool HasCapability(Capabilities caps)
         {
-            return NativeMethods.libusb_has_capability(caps) == 0 ? false : true;
+            return NativeMethods.libusb_has_capability(caps) != 0;
         }
 
         public void BeginListeningForHotplugEvents()
@@ -791,8 +799,8 @@ namespace DfuSharp
             int deviceClass = -1;
             IntPtr userData = IntPtr.Zero;
 
-            ErrorCodes success = NativeMethods.libusb_hotplug_register_callback(this.handle, HotplugEventType.DeviceArrived | HotplugEventType.DeviceLeft, HotplugFlags.DefaultNoFlags,
-                                                                    vendorID, productID, deviceClass, this._hotplugCallbackHandler, userData, out _callbackHandle);
+            ErrorCodes success = NativeMethods.libusb_hotplug_register_callback(handle, HotplugEventType.DeviceArrived | HotplugEventType.DeviceLeft, HotplugFlags.DefaultNoFlags,
+                                                                    vendorID, productID, deviceClass, _hotplugCallbackHandler, userData, out _callbackHandle);
 
             if (success == ErrorCodes.Success)
             {
@@ -813,15 +821,14 @@ namespace DfuSharp
                 return;
             }
 
-            NativeMethods.libusb_hotplug_deregister_callback(this.handle, this._callbackHandle);
-
+            NativeMethods.libusb_hotplug_deregister_callback(handle, _callbackHandle);
         }
 
         public void HandleHotplugCallback(IntPtr ctx, IntPtr device, HotplugEventType eventType, IntPtr userData)
         {
             Debug.WriteLine("Hotplug Callback called, event type: " + eventType.ToString());
             // raise the event
-            this.DeviceConnected(this, new EventArgs());
+            DeviceConnected(this, new EventArgs());
         }
     }
 }

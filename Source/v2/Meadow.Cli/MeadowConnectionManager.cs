@@ -1,5 +1,4 @@
-﻿using Meadow.CLI;
-using Meadow.Hcom;
+﻿using Meadow.Hcom;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Management;
@@ -11,9 +10,9 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class MeadowConnectionManager
 {
     public const string WILDERNESS_LABS_USB_VID = "2E6A";
-    private static object _lockObject = new();
+    private static readonly object _lockObject = new();
 
-    private ISettingsManager _settingsManager;
+    private readonly ISettingsManager _settingsManager;
     private IMeadowConnection? _currentConnection;
 
     public MeadowConnectionManager(ISettingsManager settingsManager)
@@ -169,7 +168,9 @@ public class MeadowConnectionManager
     public static async Task<IList<string>> GetMeadowSerialPortsForLinux()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
+        {
             throw new PlatformNotSupportedException("This method is only supported on Linux");
+        }
 
         return await Task.Run(() =>
         {
