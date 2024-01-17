@@ -13,16 +13,17 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// <inheritdoc/>
     public event EventHandler<long> DownloadProgress;
 
+    public event EventHandler<FirmwarePackage?> DefaultVersionChanged;
+
     public string PackageFileRoot { get; }
 
     private List<FirmwarePackage> _f7Packages = new();
-
-    public FirmwarePackage? DefaultPackage { get; private set; }
 
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "WildernessLabs",
         "Firmware");
+    private FirmwarePackage? _defaultPackage;
 
     internal F7FirmwarePackageCollection()
         : this(DefaultF7FirmwareStoreRoot)
@@ -41,6 +42,16 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         }
 
         PackageFileRoot = rootPath;
+    }
+
+    public FirmwarePackage? DefaultPackage
+    {
+        get => _defaultPackage;
+        private set
+        {
+            _defaultPackage = value;
+            DefaultVersionChanged?.Invoke(this, value);
+        }
     }
 
     /// <summary>

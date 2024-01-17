@@ -13,6 +13,7 @@ namespace Meadow.Hcom
         string Name { get; }
         IMeadowDevice? Device { get; }
         Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10);
+        void Detach();
         Task WaitForMeadowAttach(CancellationToken? cancellationToken = null);
         ConnectionState State { get; }
 
