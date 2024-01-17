@@ -181,4 +181,9 @@ public class TcpConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override void Detach()
+    {
+        throw new NotImplementedException();
+    }
 }

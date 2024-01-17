@@ -247,4 +247,9 @@ public class LocalConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override void Detach()
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -32,6 +32,8 @@ internal class SerialResponse
                 return new TextInformationResponse(data, length);
             case ResponseType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
                 return new TextRequestResponse(data, length);
+            case ResponseType.HCOM_HOST_REQUEST_TEXT_REJECTED:
+                return new TextRequestRejectedResponse(data, length);
             case ResponseType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
                 return new DeviceInfoSerialResponse(data, length);
             case ResponseType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:

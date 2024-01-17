@@ -173,7 +173,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         State = ConnectionState.Disconnected;
     }
 
-    public void Detach()
+    public override void Detach()
     {
         if (MaintainConnection)
         {
