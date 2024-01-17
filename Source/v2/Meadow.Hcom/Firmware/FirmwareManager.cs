@@ -46,7 +46,7 @@ public static class FirmwareManager
 
     public static string GetLocalLatestFirmwareVersion()
     {
-        var di = new DirectoryInfo(DownloadManager.FirmwareDownloadsFilePathRoot);
+        var di = new DirectoryInfo(DownloadManager.FirmwareDownloadsFolder);
         var latest = string.Empty;
         var latestFile = di.GetFiles("latest.txt").FirstOrDefault();
         if (latestFile != null)
@@ -60,7 +60,7 @@ public static class FirmwareManager
     {
         var list = new List<FirmwareInfo>();
 
-        var di = new DirectoryInfo(DownloadManager.FirmwareDownloadsFilePathRoot);
+        var di = new DirectoryInfo(DownloadManager.FirmwareDownloadsFolder);
 
         var latest = GetLocalLatestFirmwareVersion();
 
