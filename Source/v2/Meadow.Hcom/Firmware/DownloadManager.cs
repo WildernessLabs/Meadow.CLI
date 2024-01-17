@@ -1,40 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.IO.Compression;
-using System.Reflection;
 using System.Text.Json;
 
 namespace Meadow.Hcom;
 
 public class DownloadManager
 {
-    public static readonly string FirmwareDownloadsFilePathRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WildernessLabs",
-        "Firmware");
-
-    public static string FirmwareLatestVersion
-    {
-        get
-        {
-            string latest_txt = Path.Combine(FirmwareDownloadsFilePathRoot, "latest.txt");
-            if (File.Exists(latest_txt))
-                return File.ReadAllText(latest_txt);
-            else
-                throw new FileNotFoundException("OS download was not found.");
-        }
-    }
-
-    public static string FirmwareDownloadsFilePath => FirmwarePathForVersion(FirmwareLatestVersion);
-
-    public static string FirmwarePathForVersion(string firmwareVersion)
-    {
-        return Path.Combine(FirmwareDownloadsFilePathRoot, firmwareVersion);
-    }
-
-    public static readonly string WildernessLabsTemp = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WildernessLabs",
-        "temp");
+    static readonly string RootFolder = "WildernessLabs";
+    static readonly string FirmwareFolder = "Firmware";
+    static readonly string LatestFilename = "latest.txt";
 
     public static readonly string OsFilename = "Meadow.OS.bin";
     public static readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
@@ -46,17 +20,26 @@ public class DownloadManager
 
     public static readonly string UpdateCommand = "dotnet tool update WildernessLabs.Meadow.CLI --global";
 
-    private static readonly HttpClient Client = new()
+    public static readonly string FirmwareDownloadsFilePathRoot = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        RootFolder, FirmwareFolder);
+
+    public static string FirmwareLatestVersion
     {
-        Timeout = TimeSpan.FromMinutes(5)
-    };
+        get
+        {
+            string latestPath = Path.Combine(FirmwareDownloadsFilePathRoot, LatestFilename);
+            if (File.Exists(latestPath))
+            {
+                return File.ReadAllText(latestPath);
+            }
+            throw new FileNotFoundException("Latest firmware not found");
+        }
+    }
+
+    private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromMinutes(1) };
 
     private readonly ILogger _logger;
-
-    public DownloadManager(ILoggerFactory loggerFactory)
-    {
-        _logger = loggerFactory.CreateLogger<DownloadManager>();
-    }
 
     public DownloadManager(ILogger logger)
     {
@@ -91,7 +74,6 @@ public class DownloadManager
         return versionCheckFile;
     }
 
-    //ToDo rename this method - DownloadOSAsync?
     public async Task DownloadOsBinaries(string? version = null, bool force = false)
     {
         var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
@@ -135,7 +117,7 @@ public class DownloadManager
         {
             if (force)
             {
-                CleanPath(local_path);
+                DeleteDirectoryContents(local_path);
             }
             else
             {
@@ -171,34 +153,6 @@ public class DownloadManager
         _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}" + Environment.NewLine);
     }
 
-    public async Task<(bool updateExists, string latestVersion, string currentVersion)> CheckForUpdates()
-    {
-        try
-        {
-            var packageId = "WildernessLabs.Meadow.CLI";
-            var appVersion = Assembly.GetEntryAssembly()!
-                                     .GetCustomAttribute<AssemblyFileVersionAttribute>()
-                                     .Version;
-
-            var json = await Client.GetStringAsync(
-                           $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLower()}/index.json");
-
-            var result = JsonSerializer.Deserialize<PackageVersions>(json);
-
-            if (!string.IsNullOrEmpty(result?.Versions.LastOrDefault()))
-            {
-                var latest = result!.Versions!.Last();
-                return (latest.ToVersion() > appVersion.ToVersion(), latest, appVersion);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "Error checking for updates to Meadow.CLI");
-        }
-
-        return (false, string.Empty, string.Empty);
-    }
-
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -208,23 +162,24 @@ public class DownloadManager
 
         var downloadFileName = Path.GetTempFileName();
         _logger.LogDebug("Copying downloaded file to temp file {filename}", downloadFileName);
-        using (var stream = await response.Content.ReadAsStreamAsync())
-        using (var downloadFileStream = new DownloadFileStream(stream, _logger))
-        using (var firmwareFile = File.OpenWrite(downloadFileName))
-        {
-            await downloadFileStream.CopyToAsync(firmwareFile);
-        }
+
+        using var stream = await response.Content.ReadAsStreamAsync();
+        using var downloadFileStream = new DownloadFileStream(stream, _logger);
+        using var firmwareFile = File.OpenWrite(downloadFileName);
+
+        await downloadFileStream.CopyToAsync(firmwareFile);
+
         return downloadFileName;
     }
 
-    private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
+    private async Task DownloadAndExtractFile(Uri uri, string targetPath, CancellationToken cancellationToken = default)
     {
         var downloadFileName = await DownloadFile(uri, cancellationToken);
 
-        _logger.LogDebug("Extracting firmware to {path}", target_path);
+        _logger.LogDebug($"Extracting firmware to {targetPath}");
         ZipFile.ExtractToDirectory(
             downloadFileName,
-            target_path);
+            targetPath);
         try
         {
             File.Delete(downloadFileName);
@@ -236,31 +191,27 @@ public class DownloadManager
         }
     }
 
-    private void CleanPath(string path)
+    private void DeleteDirectoryContents(string path)
     {
         var di = new DirectoryInfo(path);
-        foreach (FileInfo file in di.GetFiles())
+        foreach (var fileSystemInfo in di.GetFileSystemInfos())
         {
             try
             {
-                file.Delete();
+                if (fileSystemInfo is FileInfo file)
+                {
+                    file.Delete();
+                }
+                else if (fileSystemInfo is DirectoryInfo dir)
+                {
+                    dir.Delete(true);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to delete file {file} in firmware path", file.FullName);
-                _logger.LogDebug(ex, "Failed to delete file");
-            }
-        }
-        foreach (DirectoryInfo dir in di.GetDirectories())
-        {
-            try
-            {
-                dir.Delete(true);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning("Failed to delete directory {directory} in firmware path", dir.FullName);
-                _logger.LogDebug(ex, "Failed to delete directory");
+                var type = fileSystemInfo is FileInfo ? "file" : "directory";
+                _logger.LogWarning("Failed to delete {type} {path} in firmware path", type, fileSystemInfo.FullName);
+                _logger.LogDebug(ex, "Failed to delete {type}", type);
             }
         }
     }
