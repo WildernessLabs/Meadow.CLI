@@ -47,8 +47,9 @@ public class DownloadManager
 
     internal async Task<string?> DownloadMeadowOSVersionFile(string? version)
     {
-        string versionCheckUrl;
-        if (version is null || string.IsNullOrWhiteSpace(version))
+        string versionCheckUrl, versionCheckFile;
+
+        if (string.IsNullOrWhiteSpace(version))
         {
             _logger.LogInformation("Downloading latest version file" + Environment.NewLine);
             versionCheckUrl = VersionCheckUrlRoot + "latest.json";
@@ -58,8 +59,6 @@ public class DownloadManager
             _logger.LogInformation("Downloading version file for Meadow OS " + version + Environment.NewLine);
             versionCheckUrl = VersionCheckUrlRoot + version + ".json";
         }
-
-        string versionCheckFile;
 
         try
         {
@@ -75,20 +74,20 @@ public class DownloadManager
 
     public async Task DownloadOsBinaries(string? version = null, bool force = false)
     {
-        var versionCheckFilePath = await DownloadMeadowOSVersionFile(version);
+        var versionFilePath = await DownloadMeadowOSVersionFile(version);
 
-        if (versionCheckFilePath == null)
+        if (versionFilePath == null)
         {
             _logger.LogError($"Meadow OS {version} cannot be downloaded or is not available");
             return;
         }
 
-        var payload = File.ReadAllText(versionCheckFilePath);
+        var payload = File.ReadAllText(versionFilePath);
         var release = JsonSerializer.Deserialize<ReleaseMetadata>(payload);
 
         if (release == null)
         {
-            _logger.LogError($"Unable to read release details for Meadow OS {version}. Payload: {payload}");
+            _logger.LogError($"Unable to read release details for Meadow OS");
             return;
         }
 
@@ -96,34 +95,34 @@ public class DownloadManager
         {
             Directory.CreateDirectory(FirmwareDownloadsFolder);
             //we'll write latest.txt regardless of version if it doesn't exist
-            File.WriteAllText(Path.Combine(FirmwareDownloadsFolder, "latest.txt"), release.Version);
+            File.WriteAllText(Path.Combine(FirmwareDownloadsFolder, LatestFilename), release.Version);
         }
         else if (version == null)
-        {   //otherwise only update if we're pulling the latest release OS
-            File.WriteAllText(Path.Combine(FirmwareDownloadsFolder, "latest.txt"), release.Version);
+        {   //otherwise update if we're pulling the latest release OS
+            File.WriteAllText(Path.Combine(FirmwareDownloadsFolder, LatestFilename), release.Version);
         }
 
-        var local_path = Path.Combine(FirmwareDownloadsFolder, release.Version);
+        var firmwareVersionPath = Path.Combine(FirmwareDownloadsFolder, release.Version);
 
-        if (Directory.Exists(local_path))
+        if (Directory.Exists(firmwareVersionPath))
         {
             if (force)
             {
-                DeleteDirectory(local_path);
+                DeleteDirectory(firmwareVersionPath);
             }
             else
             {
-                _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded" + Environment.NewLine);
+                _logger.LogInformation($"Meadow OS version {release.Version} is already downloaded");
                 return;
             }
         }
 
-        Directory.CreateDirectory(local_path);
+        Directory.CreateDirectory(firmwareVersionPath);
 
         try
         {
-            _logger.LogInformation($"Downloading Meadow OS" + Environment.NewLine);
-            await DownloadAndUnpack(new Uri(release.DownloadURL), local_path);
+            _logger.LogInformation($"Downloading Meadow OS");
+            await DownloadAndUnpack(new Uri(release.DownloadURL), firmwareVersionPath);
         }
         catch
         {
@@ -134,7 +133,7 @@ public class DownloadManager
         try
         {
             _logger.LogInformation("Downloading coprocessor firmware");
-            await DownloadAndUnpack(new Uri(release.NetworkDownloadURL), local_path);
+            await DownloadAndUnpack(new Uri(release.NetworkDownloadURL), firmwareVersionPath);
         }
         catch
         {
@@ -142,7 +141,7 @@ public class DownloadManager
             return;
         }
 
-        _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {local_path}");
+        _logger.LogInformation($"Downloaded and extracted OS version {release.Version} to: {firmwareVersionPath}");
     }
 
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
