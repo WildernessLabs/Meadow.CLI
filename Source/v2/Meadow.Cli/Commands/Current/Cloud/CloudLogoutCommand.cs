@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud logout", Description = "Log out of the Meadow Service")]
+[Command("cloud logout", Description = "Log out of Meadow.Cloud")]
 public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
 {
     public CloudLogoutCommand(

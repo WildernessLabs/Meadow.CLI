@@ -55,6 +55,7 @@ public class Program
         services.AddSingleton<CollectionService>();
         services.AddSingleton<CommandService>();
         services.AddSingleton<PackageService>();
+        services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager, IdentityManager>();
 
         if (File.Exists("appsettings.json"))
