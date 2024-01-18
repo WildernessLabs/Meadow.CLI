@@ -6,8 +6,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("listen", Description = "Listen for console output from Meadow")]
 public class ListenCommand : BaseDeviceCommand<ListenCommand>
 {
-    [CommandOption("no-prefix", 'n', IsRequired = false, Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed")]
-    public bool NoPrefix { get; set; }
+    [CommandOption("no-prefix", 'n', Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed", IsRequired = false)]
+    public bool NoPrefix { get; init; }
 
     public ListenCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

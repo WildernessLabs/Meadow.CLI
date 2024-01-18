@@ -7,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 {
     [CommandParameter(0, Name = "Time", IsRequired = false)]
-    public string? Time { get; set; }
+    public string? Time { get; init; }
 
     public DeviceClockCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

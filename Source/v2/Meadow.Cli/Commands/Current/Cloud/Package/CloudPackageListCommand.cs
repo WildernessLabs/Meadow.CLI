@@ -11,7 +11,7 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
     private readonly PackageService _packageService;
 
     [CommandOption("orgId", 'o', Description = "Optional organization ID", IsRequired = false)]
-    public string? OrgId { get; set; }
+    public string? OrgId { get; init; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }

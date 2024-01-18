@@ -7,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 {
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
-    public string MeadowFile { get; set; } = default!;
+    public string MeadowFile { get; init; } = default!;
 
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

@@ -11,21 +11,21 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
-    public string CommandName { get; set; } = string.Empty;
+    public string CommandName { get; init; } = default!;
 
-    [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command")]
-    public string? CollectionId { get; set; }
+    [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command", IsRequired = false)]
+    public string? CollectionId { get; init; }
 
-    [CommandOption("deviceIds", 'd', Description = "The target devices for publishing the command")]
-    public string[]? DeviceIds { get; set; }
+    [CommandOption("deviceIds", 'd', Description = "The target devices for publishing the command", IsRequired = false)]
+    public string[]? DeviceIds { get; init; }
 
-    [CommandOption("args", 'a', Description = "The arguments for the command as a JSON string", Converter = typeof(JsonDocumentBindingConverter))]
-    public JsonDocument? Arguments { get; set; }
+    [CommandOption("args", 'a', Description = "The arguments for the command as a JSON string", Converter = typeof(JsonDocumentBindingConverter), IsRequired = false)]
+    public JsonDocument? Arguments { get; init; }
 
-    [CommandOption("qos", 'q', Description = "The MQTT-defined quality of service for the command")]
-    public QualityOfService QualityOfService { get; set; } = QualityOfService.AtLeastOnce;
+    [CommandOption("qos", 'q', Description = "The MQTT-defined quality of service for the command", IsRequired = false)]
+    public QualityOfService QualityOfService { get; init; } = QualityOfService.AtLeastOnce;
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)")]
+    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
     private CommandService CommandService { get; }

@@ -11,13 +11,13 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
     private readonly PackageService _packageService;
 
     [CommandParameter(0, Name = "PackageID", Description = "ID of the package to publish", IsRequired = true)]
-    public string PackageId { get; init; } = string.Empty;
+    public string PackageId { get; init; } = default!;
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing", IsRequired = true)]
-    public string CollectionId { get; set; } = string.Empty;
+    public string CollectionId { get; init; } = default!;
 
     [CommandOption("metadata", 'm', Description = "Pass through metadata", IsRequired = false)]
-    public string? Metadata { get; set; }
+    public string? Metadata { get; init; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }

@@ -10,13 +10,13 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
-    public string? ProjectPath { get; set; } = default!;
+    public string? ProjectPath { get; set; }
 
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
-    public string Configuration { get; set; } = "Release";
+    public string Configuration { get; init; } = "Release";
 
     [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
-    public string? MpakName { get; init; } = default!;
+    public string? MpakName { get; init; }
 
     [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
         IsRequired = false)]

@@ -10,8 +10,9 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
 {
     [CommandOption("host", 'h', Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
     public string? Host { get; set; }
+
     [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
-    public string? OrgId { get; set; }
+    public string? OrgId { get; init; }
 
     public CloudCollectionListCommand(
         IdentityManager identityManager,
@@ -25,6 +26,7 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
     protected override async ValueTask ExecuteCommand()
     {
         Host ??= DefaultHost;
+
         var org = await ValidateOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;

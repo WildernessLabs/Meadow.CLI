@@ -12,7 +12,7 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
     { }
 
     [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
-    public string Version { get; set; } = default!;
+    public string Version { get; init; } = default!;
 
     protected override async ValueTask ExecuteCommand()
     {

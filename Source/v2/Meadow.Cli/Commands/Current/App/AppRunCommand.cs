@@ -10,14 +10,14 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     private readonly IPackageManager _packageManager;
     private string? _lastFile;
 
-    [CommandOption("no-prefix", 'n', IsRequired = false, Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'")]
-    public bool NoPrefix { get; set; }
+    [CommandOption("no-prefix", 'n', Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'", IsRequired = false)]
+    public bool NoPrefix { get; init; }
 
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
 
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
-    public string? Path { get; set; } = default!;
+    public string? Path { get; init; }
 
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

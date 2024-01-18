@@ -10,7 +10,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     private readonly IPackageManager _packageManager;
 
     [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
-    public string? Path { get; set; } = default!;
+    public string? Path { get; init; }
 
     public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

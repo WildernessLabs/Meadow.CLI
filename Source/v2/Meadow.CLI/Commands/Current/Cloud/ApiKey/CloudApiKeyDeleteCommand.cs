@@ -10,7 +10,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudApiKeyDeleteCommand : BaseCloudCommand<CloudApiKeyDeleteCommand>
 {
     [CommandParameter(0, Description = "The name or ID of the API key", IsRequired = true, Name = "NAME_OR_ID")]
-    public string? NameOrId { get; set; }
+    public string NameOrId { get; init; } = default!;
 
     [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
     public string? Host { get; set; }

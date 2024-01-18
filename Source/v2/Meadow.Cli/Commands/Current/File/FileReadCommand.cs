@@ -7,10 +7,10 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
 {
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
-    public string MeadowFile { get; set; } = default!;
+    public string MeadowFile { get; init; } = default!;
 
     [CommandParameter(1, Name = "LocalFile", IsRequired = false)]
-    public string? LocalFile { get; set; }
+    public string? LocalFile { get; init; }
 
     public FileReadCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

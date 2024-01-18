@@ -10,12 +10,12 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateCommand>
 {
     [CommandParameter(0, Description = "The name or ID of the API key", IsRequired = true, Name = "NAME_OR_ID")]
-    public string? NameOrId { get; set; }
+    public string NameOrId { get; init; } = default!;
 
-    [CommandOption("name", 'n', Description = "The new name to use for the API key")]
+    [CommandOption("name", 'n', Description = "The new name to use for the API key", IsRequired = false)]
     public string? NewName { get; set; }
 
-    [CommandOption("scopes", 's', Description = "The list of scopes (permissions) to grant the API key")]
+    [CommandOption("scopes", 's', Description = "The list of scopes (permissions) to grant the API key", IsRequired = false)]
     public string[]? Scopes { get; set; }
 
     [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]

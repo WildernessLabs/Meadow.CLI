@@ -16,10 +16,10 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     public string? OrgId { get; set; }
 
     [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
-    public string? CollectionId { get; set; }
+    public string? CollectionId { get; init; }
 
     [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
-    public string? Name { get; set; }
+    public string? Name { get; init; }
 
     [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
@@ -36,7 +36,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         try
         {
-            if (Host == null) Host = DefaultHost;
+            Host ??= DefaultHost;
 
             var identityManager = new IdentityManager(Logger);
             var _userService = new UserService(identityManager);

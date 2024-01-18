@@ -6,11 +6,11 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("developer", Description = "Sets a specified developer parameter on the Meadow")]
 public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 {
-    [CommandOption("param", 'p', Description = "The parameter to set.")]
-    public ushort Parameter { get; set; }
+    [CommandOption("param", 'p', Description = "The parameter to set.", IsRequired = false)]
+    public ushort Parameter { get; init; }
 
-    [CommandOption("value", 'v', Description = "The value to apply to the parameter. Valid values are 0 to 4,294,967,295")]
-    public uint Value { get; set; }
+    [CommandOption("value", 'v', Description = "The value to apply to the parameter. Valid values are 0 to 4,294,967,295", IsRequired = false)]
+    public uint Value { get; init; }
 
     public DeveloperCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

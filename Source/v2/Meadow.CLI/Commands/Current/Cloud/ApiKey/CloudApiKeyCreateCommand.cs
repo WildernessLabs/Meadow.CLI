@@ -10,15 +10,15 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudApiKeyCreateCommand : BaseCloudCommand<CloudApiKeyCreateCommand>
 {
     [CommandParameter(0, Description = "The name of the API key", IsRequired = true, Name = "NAME")]
-    public string? Name { get; set; }
+    public string Name { get; init; } = default!;
 
     [CommandOption("duration", 'd', Description = "The duration of the API key, in days", IsRequired = true)]
-    public int Duration { get; set; }
+    public int Duration { get; init; } = default!;
 
     [CommandOption("scopes", 's', Description = "The list of scopes (permissions) to grant the API key", IsRequired = true)]
-    public string[]? Scopes { get; set; }
+    public string[] Scopes { get; init; } = default!;
 
-    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})")]
+    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
     public string? Host { get; set; }
 
     private ApiTokenService ApiTokenService { get; }

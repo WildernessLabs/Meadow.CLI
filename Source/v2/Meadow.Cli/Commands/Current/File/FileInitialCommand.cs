@@ -7,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 {
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
-    public string MeadowFile { get; set; } = default!;
+    public string MeadowFile { get; init; } = default!;
 
     public FileInitialCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

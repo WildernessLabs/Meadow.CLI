@@ -12,7 +12,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
     public string? Configuration { get; set; }
 
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
-    public string? Path { get; set; } = default!;
+    public string? Path { get; init; }
 
     public AppBuildCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)

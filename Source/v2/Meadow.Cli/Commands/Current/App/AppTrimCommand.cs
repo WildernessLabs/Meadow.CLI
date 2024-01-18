@@ -9,10 +9,10 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     private readonly IPackageManager _packageManager;
 
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
-    public string? Configuration { get; set; }
+    public string? Configuration { get; init; }
 
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
-    public string? Path { get; set; } = default!;
+    public string? Path { get; init; }
 
     public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
