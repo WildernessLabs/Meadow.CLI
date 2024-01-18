@@ -5,8 +5,8 @@ namespace Meadow.Hcom;
 
 public class TcpConnection : ConnectionBase
 {
-    private HttpClient _client;
-    private string _baseUri;
+    private readonly HttpClient _client;
+    private readonly string _baseUri;
 
     public override string Name => _baseUri;
 

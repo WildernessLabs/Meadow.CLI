@@ -16,7 +16,7 @@ namespace Meadow.HCom.Integration.Tests
         }
 
         [Fact]
-        public async void TestListen()
+        public void TestListen()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {

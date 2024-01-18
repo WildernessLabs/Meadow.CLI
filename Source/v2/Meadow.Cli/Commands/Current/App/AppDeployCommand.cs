@@ -92,7 +92,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 file = new FileInfo(path);
             }
 
-            var targetDirectory = file.DirectoryName;
+            var targetDirectory = file.DirectoryName!;
 
             await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
 

@@ -69,7 +69,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             {
                 await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }
-            else if (DeviceIds.Any())
+            else if (DeviceIds != null && DeviceIds.Any())
             {
                 await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }

@@ -32,7 +32,7 @@ public static class AppManager
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
-        ILogger logger,
+        ILogger? logger,
         CancellationToken cancellationToken)
     {
         // TODO: add sub-folder support when HCOM supports it
@@ -43,7 +43,7 @@ public static class AppManager
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
-        logger.LogInformation("Generating the list of files to deploy...");
+        logger?.LogInformation("Generating the list of files to deploy...");
         foreach (var file in dependencies)
         {
             // TODO: add any other filtering capability here
@@ -65,7 +65,7 @@ public static class AppManager
 
         if (localFiles.Count() == 0)
         {
-            logger.LogInformation($"No new files to deploy");
+            logger?.LogInformation($"No new files to deploy");
         }
 
         // get a list of files on-device, with CRCs
@@ -85,7 +85,7 @@ public static class AppManager
         // delete those files
         foreach (var file in removeFiles)
         {
-            logger.LogInformation($"Deleting file '{file}'...");
+            logger?.LogInformation($"Deleting file '{file}'...");
             await connection.DeleteFile(file, cancellationToken);
         }
 
@@ -94,7 +94,7 @@ public static class AppManager
         {
             var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
-            if (existing != null)
+            if (existing != null && existing.Crc != null)
             {
                 if (uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber) == localFile.Value)
                 {
@@ -107,7 +107,7 @@ public static class AppManager
 
             if (!await connection?.WriteFile(localFile.Key, null, cancellationToken))
             {
-                logger.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
+                logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
                 await Task.Delay(100);
                 goto send_file;
             }

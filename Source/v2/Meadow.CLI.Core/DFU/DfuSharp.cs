@@ -278,8 +278,8 @@ namespace DfuSharp
 
         public DfuDevice(IntPtr device, InterfaceDescriptor interface_descriptor, DfuFunctionDescriptor dfu_descriptor)
         {
-            interface_descriptor = interface_descriptor;
-            dfu_descriptor = dfu_descriptor;
+            this.interface_descriptor = interface_descriptor;
+            this.dfu_descriptor = dfu_descriptor;
 
             if (NativeMethods.libusb_open(device, ref handle) < 0)
             {
@@ -287,12 +287,11 @@ namespace DfuSharp
             }
         }
 
-        public event UploadingEventHandler Uploading;
+        public event UploadingEventHandler Uploading = default!;
 
         protected virtual void OnUploading(UploadingEventArgs e)
         {
-            if (Uploading != null)
-                Uploading(this, e);
+            Uploading?.Invoke(this, e);
         }
         public void ClaimInterface()
         {
