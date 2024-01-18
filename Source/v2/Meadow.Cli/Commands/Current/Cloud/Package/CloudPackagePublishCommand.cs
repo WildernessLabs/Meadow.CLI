@@ -11,16 +11,16 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
     private readonly PackageService _packageService;
 
     [CommandParameter(0, Name = "PackageID", Description = "ID of the package to publish", IsRequired = true)]
-    public string PackageId { get; init; }
+    public string PackageId { get; init; } = string.Empty;
 
     [CommandOption("collectionId", 'c', Description = "The target collection for publishing", IsRequired = true)]
-    public string CollectionId { get; set; }
+    public string CollectionId { get; set; } = string.Empty;
 
     [CommandOption("metadata", 'm', Description = "Pass through metadata", IsRequired = false)]
-    public string Metadata { get; set; }
+    public string? Metadata { get; set; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string Host { get; set; }
+    public string? Host { get; set; }
 
     public CloudPackagePublishCommand(
         IdentityManager identityManager,
@@ -42,8 +42,8 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
         {
             Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
-            await _packageService.PublishPackage(PackageId, CollectionId, Metadata, Host, CancellationToken);
-            Logger?.LogInformation("Publish successful");
+            await _packageService.PublishPackage(PackageId, CollectionId, Metadata ?? string.Empty, Host, CancellationToken);
+            Logger?.LogInformation("Publish successful.");
         }
         catch (MeadowCloudException mex)
         {

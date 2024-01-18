@@ -6,11 +6,8 @@ namespace Meadow.Cloud;
 
 public class CommandService : CloudServiceBase
 {
-    private readonly IdentityManager _identityManager;
-
     public CommandService(IdentityManager identityManager) : base(identityManager)
     {
-        _identityManager = identityManager;
     }
 
     public async Task PublishCommandForCollection(
