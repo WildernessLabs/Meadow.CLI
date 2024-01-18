@@ -1,0 +1,56 @@
+﻿using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.LibUsb;
+using Microsoft.Extensions.Logging;
+
+namespace MeadowCLI;
+
+public class FirmwareWriter
+{
+    public IEnumerable<ILibUsbDevice> GetLibUsbDevices(bool useLegacyLibUsb = false)
+    {
+        ILibUsbProvider provider;
+
+        if (useLegacyLibUsb)
+        {
+            provider = new ClassicLibUsbProvider();
+        }
+        else
+        {
+            provider = new LibUsbProvider();
+        }
+
+        return provider.GetDevicesInBootloaderMode();
+    }
+
+    public bool IsDfuDeviceAvailable(bool useLegacyLibUsb = false)
+    {
+        try
+        {
+            return GetLibUsbDevices(useLegacyLibUsb).Count() > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task WriteOsWithDfu(string osFile, ILogger? logger = null, bool useLegacyLibUsb = false)
+    {
+        var devices = GetLibUsbDevices(useLegacyLibUsb);
+
+        switch (devices.Count())
+        {
+            case 0: throw new Exception("No device found in bootloader mode");
+            case 1: break;
+            default: throw new Exception("Multiple devices found in bootloader mode - only connect one device");
+        }
+
+        var serialNumber = devices.First().GetDeviceSerialNumber();
+
+        await DfuUtils.FlashFile(
+        osFile,
+        serialNumber,
+        logger: logger,
+        format: DfuUtils.DfuFlashFormat.ConsoleOut);
+    }
+}
