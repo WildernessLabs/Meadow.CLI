@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.LibUsb;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace MeadowCLI;
 
@@ -46,6 +47,8 @@ public class FirmwareWriter
         }
 
         var serialNumber = devices.First().GetDeviceSerialNumber();
+
+        Debug.WriteLine($"DFU Writing file {osFile}");
 
         await DfuUtils.FlashFile(
         osFile,
