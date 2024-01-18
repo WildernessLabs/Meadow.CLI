@@ -99,7 +99,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             if (wasRuntimeEnabled)
             {
                 // restore runtime state
-                Logger.LogInformation("Enabling runtime...");
+                Logger?.LogInformation("Enabling runtime...");
 
                 await connection.RuntimeEnable(CancellationToken);
             }

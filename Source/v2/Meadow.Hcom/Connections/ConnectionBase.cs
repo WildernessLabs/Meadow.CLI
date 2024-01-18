@@ -6,7 +6,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {
     private bool _isDisposed;
 
-    public ConnectionState State { get; protected set; }
+    public virtual ConnectionState State { get; protected set; }
     public IMeadowDevice? Device { get; protected set; }
 
     public event EventHandler<(string message, string? source)> DeviceMessageReceived = default!;

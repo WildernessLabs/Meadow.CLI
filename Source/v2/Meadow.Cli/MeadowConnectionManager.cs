@@ -227,10 +227,12 @@ public class MeadowConnectionManager
             foreach (ManagementObject moResult in searcher.Get())
             {
                 // Try Caption and if not Name, they both seems to contain the COM port 
-                string portLongName = moResult["Caption"].ToString();
+                string portLongName = $"{moResult["Caption"]}";
                 if (string.IsNullOrEmpty(portLongName))
-                    portLongName = moResult["Name"].ToString();
-                string pnpDeviceId = moResult["PNPDeviceID"].ToString();
+                {
+                    portLongName = $"{moResult["Name"]}";
+                }
+                string pnpDeviceId = $"{moResult["PNPDeviceID"]}";
 
                 // we could collect and return a fair bit of other info from the query:
 

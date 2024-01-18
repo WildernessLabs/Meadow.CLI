@@ -38,7 +38,7 @@ public static class FirmwareManager
         {
             var json = await reader.ReadToEndAsync();
 
-            if (json == null) return string.Empty;
+            if (json == null) { return string.Empty; }
 
             return JsonSerializerExtensions.DeserializeAnonymousType(json, new { version = string.Empty }).version;
         }

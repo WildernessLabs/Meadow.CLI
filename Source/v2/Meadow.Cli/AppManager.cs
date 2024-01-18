@@ -77,9 +77,9 @@ public static class AppManager
             .Except(localFiles.Keys
                 .Select(f => Path.GetFileName(f)));
 
-        if (removeFiles.Count() == 0)
+        if (!removeFiles.Any())
         {
-            logger.LogInformation($"No files to delete");
+            logger?.LogInformation($"No files to delete");
         }
 
         // delete those files
@@ -105,7 +105,7 @@ public static class AppManager
 
         send_file:
 
-            if (!await connection?.WriteFile(localFile.Key, null, cancellationToken))
+            if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
             {
                 logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}'.  Retrying.");
                 await Task.Delay(100);

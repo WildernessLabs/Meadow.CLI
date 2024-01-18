@@ -16,7 +16,7 @@ public class TcpConnection : ConnectionBase
         _client = new HttpClient();
     }
 
-    public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
+    public override Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
         /*
         var request = RequestBuilder.Build<GetDeviceInfoRequest>();
@@ -43,7 +43,9 @@ public class TcpConnection : ConnectionBase
         */
 
         // TODO: is there a way to "attach"?  ping result? device info?
-        return Device = new MeadowDevice(this);
+        Device = new MeadowDevice(this);
+
+        return Task.FromResult<IMeadowDevice?>(Device);
 
         // TODO: web socket for listen?
     }

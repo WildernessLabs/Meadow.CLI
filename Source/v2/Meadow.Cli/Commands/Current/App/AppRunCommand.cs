@@ -135,7 +135,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName, true, false, Logger, CancellationToken);
+        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, CancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

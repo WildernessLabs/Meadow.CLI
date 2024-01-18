@@ -32,11 +32,11 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        UserOrg org;
+        UserOrg? org;
 
         try
         {
-            if (Host == null) Host = DefaultHost;
+            Host ??= DefaultHost;
 
             var identityManager = new IdentityManager(Logger);
             var _userService = new UserService(identityManager);
@@ -44,6 +44,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
+
             if (userOrgs == null || !userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {Host} to register your account.");
@@ -60,6 +61,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             }
 
             org = userOrgs.FirstOrDefault(o => o.Id == OrgId || o.Name == OrgId);
+
             if (org == null)
             {
                 Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
