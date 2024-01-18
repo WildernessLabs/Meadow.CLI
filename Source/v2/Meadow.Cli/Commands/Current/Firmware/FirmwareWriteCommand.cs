@@ -30,7 +30,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private ISettingsManager Settings { get; }
 
     private ILibUsbDevice? _libUsbDevice;
-    private bool _fileWriteError = false;
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
@@ -201,10 +200,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         };
         connection.FileWriteFailed += (s, e) =>
         {
-            _fileWriteError = true;
+            Logger?.LogError("Error writing file");
         };
 
         var package = await GetSelectedPackage();
+
+        if (package == null)
+        {
+            Logger?.LogError($"Firware write failed - unable to find selected package");
+            return;
+        }
 
         var wasRuntimeEnabled = await connection!.Device!.IsRuntimeEnabled(CancellationToken);
 
@@ -246,7 +251,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return;
         }
 
-        if (FirmwareFileTypes.Contains(FirmwareType.ESP))
+        if (FirmwareFileTypes != null && FirmwareFileTypes.Contains(FirmwareType.ESP))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 

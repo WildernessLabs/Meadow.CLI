@@ -44,7 +44,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
-            if (!userOrgs.Any())
+            if (userOrgs == null || !userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {Host} to register your account.");
                 return;

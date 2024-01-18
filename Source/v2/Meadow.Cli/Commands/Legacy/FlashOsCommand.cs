@@ -54,6 +54,12 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
     {
         var package = await GetSelectedPackage();
 
+        if (package == null)
+        {
+            Logger?.LogError($"Unable to get selected OS package");
+            return;
+        }
+
         var files = new List<FirmwareType>();
         if (!SkipOS) files.Add(FirmwareType.OS);
         if (!SkipEsp) files.Add(FirmwareType.ESP);
@@ -62,7 +68,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
         if (Files == null)
         {
-            Logger.LogInformation($"Writing all firmware for version '{package.Version}'...");
+            Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
 
             Files = new FirmwareType[]
                 {
@@ -80,7 +86,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
         bool deviceSupportsOta = false; // TODO: get this based on device OS version
 
-        if (package?.OsWithoutBootloader == null
+        if (package.OsWithoutBootloader == null
             || !deviceSupportsOta
             || UseDfu)
         {
@@ -259,7 +265,14 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             Logger?.LogInformation(message);
         };
 
-        var package = await GetSelectedPackage();
+
+        var pack = await GetSelectedPackage();
+
+        if (pack == null)
+        {
+            Logger?.LogError($"Unable to get selected OS package");
+        }
+        FirmwarePackage package = pack!;
 
         var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
 
@@ -275,7 +288,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
             Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
         };
 
-        if (Files.Contains(FirmwareType.OS))
+        if (Files!.Contains(FirmwareType.OS))
         {
             if (UseDfu)
             {
@@ -288,7 +301,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
                 throw new NotSupportedException("OtA writes for the OS are not yet supported");
             }
         }
-        if (Files.Contains(FirmwareType.Runtime))
+        if (Files!.Contains(FirmwareType.Runtime))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
@@ -299,7 +312,7 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             await connection.Device.WriteRuntime(rtpath, CancellationToken);
         }
-        if (Files.Contains(FirmwareType.ESP))
+        if (Files!.Contains(FirmwareType.ESP))
         {
             Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
@@ -312,8 +325,6 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             await connection.Device.WriteCoprocessorFiles(fileList, CancellationToken);
         }
-
-        Logger?.LogInformation($"{Environment.NewLine}");
 
         if (wasRuntimeEnabled)
         {

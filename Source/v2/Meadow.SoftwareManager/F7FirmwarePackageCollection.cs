@@ -11,13 +11,13 @@ namespace Meadow.Software;
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
     /// <inheritdoc/>
-    public event EventHandler<long> DownloadProgress;
+    public event EventHandler<long> DownloadProgress = default!;
 
     public event EventHandler<FirmwarePackage?> DefaultVersionChanged;
 
     public string PackageFileRoot { get; }
 
-    private List<FirmwarePackage> _f7Packages = new();
+    private readonly List<FirmwarePackage> _f7Packages = new();
 
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -85,7 +85,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         // if we're deleting the default, we need to det another default
         var i = _f7Packages.Count - 1;
-        while (DefaultPackage.Version == _f7Packages[i].Version)
+        while (DefaultPackage?.Version == _f7Packages[i].Version)
         {
             i--;
         }

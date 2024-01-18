@@ -24,7 +24,7 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 
         if (Version == null)
         {
-            Logger?.LogInformation($"Default firmware is '{collection.DefaultPackage.Version}'.");
+            Logger?.LogInformation($"Default firmware is '{collection?.DefaultPackage?.Version}'.");
         }
         else
         {

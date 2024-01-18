@@ -8,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 {
     private readonly IPackageManager _packageManager;
-    private string _lastFile;
+    private string? _lastFile;
 
     [CommandOption("no-prefix", 'n', IsRequired = false, Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'")]
     public bool NoPrefix { get; set; }

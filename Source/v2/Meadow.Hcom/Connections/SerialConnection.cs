@@ -16,10 +16,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     public const int ReadBufferSizeBytes = 0x2000;
     private const int DefaultTimeout = 5000;
 
-    private event EventHandler<string> FileReadCompleted = delegate { };
-    private event EventHandler FileWriteAccepted;
-    private event EventHandler<string> FileDataReceived;
-    public event ConnectionStateChangedHandler ConnectionStateChanged = delegate { };
+    private event EventHandler<string> FileReadCompleted = default!;
+    private event EventHandler FileWriteAccepted = default!;
+    private event EventHandler<string> FileDataReceived = default!;
+    public event ConnectionStateChangedHandler ConnectionStateChanged = default!;
 
     private readonly SerialPort _port;
     private readonly ILogger? _logger;
@@ -1178,7 +1178,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         var command = RequestBuilder.Build<GetPublicKeyRequest>();
 
-        string? contents = null;
+        string contents = string.Empty;
 
         void OnFileDataReceived(object? sender, string data)
         {

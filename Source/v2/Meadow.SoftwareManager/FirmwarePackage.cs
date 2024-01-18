@@ -11,7 +11,7 @@ public class FirmwarePackage
         _collection = collection;
     }
 
-    public string GetFullyQualifiedPath(string file)
+    public string GetFullyQualifiedPath(string? file)
     {
         return Path.Combine(_collection.PackageFileRoot, Version, file);
     }
