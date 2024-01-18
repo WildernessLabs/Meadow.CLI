@@ -13,7 +13,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// <inheritdoc/>
     public event EventHandler<long> DownloadProgress = default!;
 
-    public event EventHandler<FirmwarePackage?> DefaultVersionChanged;
+    public event EventHandler<FirmwarePackage?> DefaultVersionChanged = default!;
 
     public string PackageFileRoot { get; }
 
@@ -74,7 +74,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return null;
     }
 
-    public Task DeletePackage(string version)
+    public async Task DeletePackage(string version)
     {
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
@@ -91,13 +91,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         }
         var newDefault = _f7Packages[i].Version;
         _f7Packages.Remove(DefaultPackage);
-        SetDefaultPackage(newDefault);
+        await SetDefaultPackage(newDefault);
 
         var path = Path.Combine(PackageFileRoot, version);
 
         Directory.Delete(path, true);
-
-        return Task.CompletedTask;
     }
 
     public async Task SetDefaultPackage(string version)

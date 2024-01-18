@@ -134,12 +134,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // TODO: stop maintaining connection?
     }
 
-    public ConnectionState State
+    public override ConnectionState State
     {
         get => _state;
-        private set
+        protected set
         {
-            if (value == State) return;
+            if (value == State) { return; }
 
             var old = _state;
             _state = value;
@@ -237,7 +237,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private async void CommandManager()
+    private void CommandManager()
     {
         while (!_isDisposed)
         {
@@ -1203,25 +1203,23 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
     {
-        if (Device != null)
-        {
-            logger?.LogDebug($"Start Debugging on port: {port}");
-            await Device.StartDebugging(port, logger, cancellationToken);
-
-            /* TODO logger?.LogDebug("Reinitialize the device");
-            await ReInitializeMeadow(cancellationToken); */
-
-            var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-            var debuggingServer = new DebuggingServer(Device, endpoint, logger);
-
-            logger?.LogDebug("Tell the Debugging Server to Start Listening");
-            await debuggingServer.StartListening(cancellationToken);
-            return debuggingServer;
-        }
-        else
+        if (Device == null)
         {
             throw new DeviceNotFoundException();
         }
+
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
+        /* TODO logger?.LogDebug("Reinitialize the device");
+        await ReInitializeMeadow(cancellationToken); */
+
+        var endpoint = new IPEndPoint(IPAddress.Loopback, port);
+        var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+
+        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        await debuggingServer.StartListening(cancellationToken);
+        return debuggingServer;
     }
 
     public override async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)

@@ -45,13 +45,13 @@ public class LibSecret : IDisposable
             (int)AttributeType.STRING, IntPtr.Zero);
     }
 
-    public void SetSecret(String password)
+    public void SetSecret(string password)
     {
         _ = secret_password_store_sync(intPt, COLLECTION_SESSION, $"{Service}/{Account}", password, IntPtr.Zero, out IntPtr errorPtr, serviceLabel, Service, accountLabel, Account, IntPtr.Zero);
         HandleError(errorPtr, "An error was encountered while writing secret to keyring");
     }
 
-    public string GetSecret()
+    public string? GetSecret()
     {
         IntPtr passwordPtr = secret_password_lookup_sync(intPt, IntPtr.Zero, out IntPtr errorPtr, serviceLabel, Service, accountLabel, Account, IntPtr.Zero);
         HandleError(errorPtr, "An error was encountered while reading secret from keyring");

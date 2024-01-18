@@ -51,7 +51,7 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
         {
             Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description, Host, CancellationToken);
+            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description ?? string.Empty, Host, CancellationToken);
             Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)
