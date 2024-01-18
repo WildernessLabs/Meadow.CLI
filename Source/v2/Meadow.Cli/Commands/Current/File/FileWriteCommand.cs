@@ -16,7 +16,8 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
     [CommandOption(
         "targetFiles",
         't',
-        Description = "The filename(s) to use on the Meadow File System")]
+        Description = "The filename(s) to use on the Meadow File System",
+        IsRequired = false)]
     public IList<string> TargetFileNames { get; init; } = Array.Empty<string>();
 
     public FileWriteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)

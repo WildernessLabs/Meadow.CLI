@@ -12,10 +12,10 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
     { }
 
     [CommandOption("force", 'f', IsRequired = false)]
-    public bool Force { get; set; }
+    public bool Force { get; init; }
 
     [CommandOption("version", 'v', IsRequired = false)]
-    public string? Version { get; set; } = default!;
+    public string? Version { get; set; }
 
     protected override async ValueTask ExecuteCommand()
     {

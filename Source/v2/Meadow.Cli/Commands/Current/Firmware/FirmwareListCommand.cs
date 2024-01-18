@@ -8,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 {
     [CommandOption("verbose", 'v', IsRequired = false)]
-    public bool Verbose { get; set; }
+    public bool Verbose { get; init; }
 
     private FileManager FileManager { get; }
 

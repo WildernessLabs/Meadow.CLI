@@ -9,10 +9,10 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     public const int FileSystemBlockSize = 4096;
 
     [CommandOption("verbose", 'v', IsRequired = false)]
-    public bool Verbose { get; set; }
+    public bool Verbose { get; init; }
 
     [CommandParameter(0, Name = "Folder", IsRequired = false)]
-    public string? Folder { get; set; } = default!;
+    public string? Folder { get; set; }
 
     public FileListCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

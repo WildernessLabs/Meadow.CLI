@@ -12,7 +12,7 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
     { }
 
     [CommandParameter(0, Name = "Version number to use as default", IsRequired = false)]
-    public string? Version { get; set; } = null;
+    public string? Version { get; init; }
 
     protected override async ValueTask ExecuteCommand()
     {

@@ -8,10 +8,10 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
 {
     [CommandOption("list", IsRequired = false)]
-    public bool List { get; set; }
+    public bool List { get; init; }
 
     [CommandParameter(0, Name = "Settings", IsRequired = false)]
-    public string[]? Settings { get; set; }
+    public string[]? Settings { get; init; }
 
     public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
         : base(settingsManager, loggerFactory)

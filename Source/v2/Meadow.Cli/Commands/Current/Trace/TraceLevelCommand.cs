@@ -7,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
 {
     [CommandParameter(0, Name = "Level", IsRequired = true)]
-    public int Level { get; set; }
+    public int Level { get; init; }
 
     public TraceLevelCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)

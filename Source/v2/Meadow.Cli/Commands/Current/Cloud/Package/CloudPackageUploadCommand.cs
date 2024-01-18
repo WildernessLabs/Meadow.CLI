@@ -9,13 +9,13 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadCommand>
 {
     [CommandParameter(0, Name = "MpakPath", Description = "The full path of the mpak file", IsRequired = true)]
-    public string MpakPath { get; init; } = string.Empty;
+    public string MpakPath { get; init; } = default!;
 
     [CommandOption("orgId", 'o', Description = "OrgId to upload to", IsRequired = false)]
-    public string? OrgId { get; set; }
+    public string? OrgId { get; init; }
 
     [CommandOption("description", 'd', Description = "Description of the package", IsRequired = false)]
-    public string? Description { get; set; }
+    public string? Description { get; init; }
 
     [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
