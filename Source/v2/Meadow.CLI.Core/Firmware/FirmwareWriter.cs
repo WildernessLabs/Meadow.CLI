@@ -36,7 +36,7 @@ public class FirmwareWriter
         }
     }
 
-    public async Task WriteOsWithDfu(string osFile, ILogger? logger = null, bool useLegacyLibUsb = false)
+    public Task WriteOsWithDfu(string osFile, ILogger? logger = null, bool useLegacyLibUsb = false)
     {
         var devices = GetLibUsbDevices(useLegacyLibUsb);
 
@@ -51,24 +51,24 @@ public class FirmwareWriter
 
         Debug.WriteLine($"DFU Writing file {osFile}");
 
-        await DfuUtils.FlashFile(
+        return DfuUtils.FlashFile(
         osFile,
         serialNumber,
         logger: logger,
         format: DfuUtils.DfuFlashFormat.ConsoleOut);
     }
 
-    public async Task WriteRuntimeWithHcom(IMeadowConnection connection, string firmwareFile, ILogger? logger = null)
+    public Task WriteRuntimeWithHcom(IMeadowConnection connection, string firmwareFile, ILogger? logger = null)
     {
         if (connection.Device == null) throw new Exception("No connected device");
 
-        await connection.Device.WriteRuntime(firmwareFile);
+        return connection.Device.WriteRuntime(firmwareFile);
     }
 
-    public async Task WriteCoprocessorFilesWithHcom(IMeadowConnection connection, string[] files, ILogger? logger = null)
+    public Task WriteCoprocessorFilesWithHcom(IMeadowConnection connection, string[] files, ILogger? logger = null)
     {
         if (connection.Device == null) throw new Exception("No connected device");
 
-        await connection.Device.WriteCoprocessorFiles(files);
+        return connection.Device.WriteCoprocessorFiles(files);
     }
 }
