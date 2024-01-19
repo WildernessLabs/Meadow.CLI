@@ -1,4 +1,5 @@
 ﻿using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Hcom;
 using Meadow.LibUsb;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -55,5 +56,19 @@ public class FirmwareWriter
         serialNumber,
         logger: logger,
         format: DfuUtils.DfuFlashFormat.ConsoleOut);
+    }
+
+    public async Task WriteRuntimeWithHcom(IMeadowConnection connection, string firmwareFile, ILogger? logger = null)
+    {
+        if (connection.Device == null) throw new Exception("No connected device");
+
+        await connection.Device.WriteRuntime(firmwareFile);
+    }
+
+    public async Task WriteCoprocessorFilesWithHcom(IMeadowConnection connection, string[] files, ILogger? logger = null)
+    {
+        if (connection.Device == null) throw new Exception("No connected device");
+
+        await connection.Device.WriteCoprocessorFiles(files);
     }
 }
