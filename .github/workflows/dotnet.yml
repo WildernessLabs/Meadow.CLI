@@ -1,4 +1,4 @@
-name: Meadow.CLI
+name: Meadow.CLI Packaging
 env:
   CLI_RELEASE_VERSION: 1.5.0.0
   IDE_TOOLS_RELEASE_VERSION: 1.5.0
@@ -7,13 +7,9 @@ env:
   VS_MAC_2022_VERSION: 17.6
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
-# Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build-and-optionally-publish-nuget:
