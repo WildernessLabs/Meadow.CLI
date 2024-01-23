@@ -176,7 +176,7 @@ public partial class PackageManager : IPackageManager
             di.Create();
         }
 
-        var mpakName = Path.Combine(outputFolder, $"{DateTime.UtcNow.ToString("yyyyMMddff")}.mpak");
+        var mpakName = Path.Combine(outputFolder, $"{DateTime.UtcNow:yyyyMMddff}.mpak");
 
         if (File.Exists(mpakName))
         {
@@ -199,7 +199,7 @@ public partial class PackageManager : IPackageManager
 
         // write a metadata file info.json in the mpak
         // TODO: we need to see what is necessary and meaningful here and pass it in via param (or the entire file via param?)
-        PackageInfo info = new PackageInfo()
+        PackageInfo info = new()
         {
             Version = "1.0",
             OsVersion = osVersion
@@ -226,7 +226,13 @@ public partial class PackageManager : IPackageManager
 
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
     {
-        if (!Directory.Exists(rootFolder)) throw new FileNotFoundException();
+        if (!Directory.Exists(rootFolder)) { throw new FileNotFoundException(); }
+
+        //see if this is a fully qualified path to the app.dll
+        if (File.Exists(Path.Combine(rootFolder, appName)))
+        {
+            return new FileInfo[] { new(Path.Combine(rootFolder, appName)) };
+        }
 
         // look for a 'bin' folder
         var path = Path.Combine(rootFolder, "bin");
@@ -239,9 +245,9 @@ public partial class PackageManager : IPackageManager
         {
             foreach (var dir in Directory.GetDirectories(directory))
             {
-                var shortname = System.IO.Path.GetFileName(dir);
+                var shortname = Path.GetFileName(dir);
 
-                if (shortname == PackageManager.PostLinkDirectoryName || shortname == PackageManager.PreLinkDirectoryName)
+                if (shortname == PostLinkDirectoryName || shortname == PreLinkDirectoryName)
                 {
                     continue;
                 }

@@ -80,7 +80,7 @@ public class Program
         {
             await new CliApplicationBuilder()
                 .AddCommandsFromThisAssembly()
-                .UseTypeActivator(serviceProvider.GetService)
+                .UseTypeActivator(serviceProvider.GetService!)
                 .SetExecutableName("meadow")
                 .Build()
                 .RunAsync();

@@ -31,17 +31,15 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (connection == null)
         {
-            Logger?.LogError($"No connection path is defined");
+            Logger?.LogError("No connection path is defined");
             return;
         }
 
-        string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
-            : Path;
+        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
 
         if (!Directory.Exists(path))
         {
-            Logger?.LogError($"Target directory '{path}' not found.");
+            Logger?.LogError($"Target directory '{path}' not found");
             return;
         }
 
@@ -90,7 +88,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private Task<bool> BuildApplication(string path, CancellationToken cancellationToken)
     {
-        if (Configuration == null) Configuration = "Debug";
+        if (Configuration == null) { Configuration = "Debug"; }
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -112,9 +110,14 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
 
         // if no configuration was provided, find the most recently built
-        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
+        Logger?.LogInformation($"Trimming {file.FullName}");
+        Logger?.LogInformation("This may take a few seconds...");
 
-        await _packageManager.TrimApplication(file, false, null, cancellationToken);
+        var cts = new CancellationTokenSource();
+        ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);
+
+        await _packageManager.TrimApplication(file, false, null, CancellationToken);
+        cts.Cancel();
 
         return true;
     }
@@ -144,7 +147,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)
     {
-        var p = (e.completed / (double)e.total) * 100d;
+        var p = e.completed / (double)e.total * 100d;
 
         if (e.fileName != _lastFile)
         {
