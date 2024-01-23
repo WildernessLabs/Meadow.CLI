@@ -29,9 +29,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (connection != null)
         {
-            string path = Path == null
-                ? Environment.CurrentDirectory
-                : Path;
+            string path = Path ?? Environment.CurrentDirectory;
 
             // is the path a file?
             FileInfo file;
