@@ -22,9 +22,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        string path = Path == null
-            ? AppDomain.CurrentDomain.BaseDirectory
-            : Path;
+        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
 
         // is the path a file?
         FileInfo file;
@@ -55,8 +53,13 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
         }
 
         // if no configuration was provided, find the most recently built
-        Logger?.LogInformation($"Trimming {file.FullName} (this may take a few seconds)...");
+        Logger?.LogInformation($"Trimming {file.FullName}");
+        Logger?.LogInformation("This may take a few seconds...");
+
+        var cts = new CancellationTokenSource();
+        ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);
 
         await _packageManager.TrimApplication(file, false, null, CancellationToken);
+        cts.Cancel();
     }
 }
