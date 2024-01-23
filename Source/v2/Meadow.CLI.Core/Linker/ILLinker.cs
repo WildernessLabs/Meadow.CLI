@@ -68,8 +68,6 @@ namespace LinkerTest
                 {
                     stdOutReaderResult = await stdOutReader.ReadToEndAsync();
 
-                    Console.WriteLine("StandardOutput Contains: " + stdOutReaderResult);
-
                     _logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
                 }
 
