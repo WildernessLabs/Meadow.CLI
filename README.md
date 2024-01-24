@@ -1,5 +1,3 @@
-<img alt="Meadow CLI project banner stating Meadow's Command-Line-Interface to interact with the board and perform functions via a terminal/command-line window." src="Design/banner.jpg" style="margin-bottom:10px" />
-
 ## Build Status
 [![Build](https://github.com/WildernessLabs/Meadow.CLI/actions/workflows/dotnet.yml/badge.svg)](https://github.com/WildernessLabs/Meadow.CLI/actions)
 
