@@ -12,7 +12,7 @@
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	  <PackageVersion>2.0.0-beta.1</PackageVersion>
 	  <Platforms>AnyCPU</Platforms>
-	  <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.Foundation/</PackageProjectUrl>
+	  <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.CLI/</PackageProjectUrl>
 	  <RepositoryUrl>https://github.com/WildernessLabs/Meadow.CLI</RepositoryUrl>
 	  <PackageIcon>icon.png</PackageIcon>
 	  <PackageTags>Meadow, Meadow.Foundation, Meadow.CLI</PackageTags>
