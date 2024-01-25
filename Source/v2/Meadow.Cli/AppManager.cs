@@ -43,7 +43,7 @@ public static class AppManager
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
-        logger?.LogInformation("Generating the list of files to deploy...");
+        logger?.LogInformation("Generating list of files to deploy...");
         foreach (var file in dependencies)
         {
             // TODO: add any other filtering capability here
