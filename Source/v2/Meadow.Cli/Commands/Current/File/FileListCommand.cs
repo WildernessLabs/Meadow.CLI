@@ -24,7 +24,6 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"File list failed - device or connection not found");
             return;
         }
 

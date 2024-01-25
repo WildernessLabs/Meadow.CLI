@@ -31,7 +31,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (connection == null)
         {
-            Logger?.LogError("No connection path is defined");
             return;
         }
 

@@ -16,7 +16,6 @@ public class RuntimeStateCommand : BaseDeviceCommand<RuntimeStateCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Runtime state failed - device or connection not found");
             return;
         }
 

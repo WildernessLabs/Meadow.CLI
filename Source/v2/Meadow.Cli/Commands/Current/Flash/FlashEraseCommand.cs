@@ -16,7 +16,6 @@ public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogInformation($"Flash erase failed - device or connection not found");
             return;
         }
 

@@ -19,7 +19,6 @@ public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Trace level failed - device or connection not found");
             return;
         }
 

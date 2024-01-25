@@ -93,15 +93,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
 
         IMeadowConnection? connection = null;
-        try
-        {
-            connection = await GetCurrentConnection();
-        }
-        catch (Exception ex)
-        {
-            Logger?.LogError(ex.Message);
-            return;
-        }
+
+        connection = await GetCurrentConnection();
 
         if (connection == null || connection.Device == null)
         {

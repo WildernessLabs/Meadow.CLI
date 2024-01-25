@@ -18,7 +18,6 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogInformation($"Device info failed - device or connection not found");
             return;
         }
 

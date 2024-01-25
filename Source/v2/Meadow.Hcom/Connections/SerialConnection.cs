@@ -418,8 +418,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         public SerialMessage(Memory<byte> segment)
         {
-            _segments = new List<Memory<byte>>();
-            _segments.Add(segment);
+            _segments = new List<Memory<byte>>
+            {
+                segment
+            };
         }
 
         public void AddSegment(Memory<byte> segment)
@@ -1240,5 +1242,25 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             new Exception($"{typeof(StartDebuggingRequest)} command failed to build");
         }
+    }
+
+    public override async Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
+    {
+        var command = RequestBuilder.Build<DebuggerDataRequest>(userData);
+        command.DebuggerData = debuggerData;
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        var success = await WaitForResult(() =>
+        {
+            if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+            {
+                return true;
+            }
+
+            return false;
+        }, cancellationToken);
     }
 }

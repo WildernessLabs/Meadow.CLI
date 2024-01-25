@@ -16,7 +16,6 @@ public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Uart trace disable failed - device or connection not found");
             return;
         }
 

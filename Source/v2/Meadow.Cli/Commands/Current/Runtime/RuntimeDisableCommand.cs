@@ -16,7 +16,6 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Runtime disable failed - device or connection not found");
             return;
         }
 

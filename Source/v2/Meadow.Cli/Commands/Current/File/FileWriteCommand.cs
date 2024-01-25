@@ -30,7 +30,6 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"File write failed - device or connection not found");
             return;
         }
 

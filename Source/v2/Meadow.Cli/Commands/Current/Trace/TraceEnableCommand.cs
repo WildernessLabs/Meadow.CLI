@@ -19,7 +19,6 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Trace enable failed - device or connection not found");
             return;
         }
 

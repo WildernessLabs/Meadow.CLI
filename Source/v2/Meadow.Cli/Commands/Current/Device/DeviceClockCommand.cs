@@ -19,7 +19,6 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogInformation($"Device clock failed - device or connection not found");
             return;
         }
 
