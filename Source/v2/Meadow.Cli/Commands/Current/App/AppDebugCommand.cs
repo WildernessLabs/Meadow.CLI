@@ -31,13 +31,12 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
             Logger?.LogInformation(e.message);
         };
 
-        using (var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken))
+        using var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken);
+
+        if (Console != null)
         {
-            if (Console != null)
-            {
-                Logger?.LogInformation("Debugging server started - press Enter to exit");
-                await Console.Input.ReadLineAsync();
-            }
+            Logger?.LogInformation("Debugging server started - press Enter to exit");
+            await Console.Input.ReadLineAsync();
         }
     }
 }

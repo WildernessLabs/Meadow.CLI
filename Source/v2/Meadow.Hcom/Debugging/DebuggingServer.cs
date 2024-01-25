@@ -17,7 +17,7 @@ public class DebuggingServer : IDisposable
     // VS 2015 - 4020
     public IPEndPoint LocalEndpoint { get; private set; }
 
-    private readonly object _lck = new object();
+    private readonly object _lck = new();
     private CancellationTokenSource _cancellationTokenSource;
     private readonly ILogger? _logger;
     private readonly IMeadowDevice _meadow;
@@ -193,6 +193,7 @@ public class DebuggingServer : IDisposable
                 // Receive from Visual Studio and send to Meadow
                 var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
                 var meadowBuffer = Array.Empty<byte>();
+
                 while (!_cts.IsCancellationRequested)
                 {
                     if (_networkStream != null && _networkStream.CanRead)
@@ -201,8 +202,11 @@ public class DebuggingServer : IDisposable
                         do
                         {
                             bytesRead = await _networkStream.ReadAsync(receiveBuffer, 0, receiveBuffer.Length, _cts.Token);
+
                             if (bytesRead == 0 || _cts.IsCancellationRequested)
+                            {
                                 continue;
+                            }
 
                             var destIndex = meadowBuffer.Length;
                             Array.Resize(ref meadowBuffer, destIndex + bytesRead);
@@ -214,7 +218,8 @@ public class DebuggingServer : IDisposable
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
-                            // TODO await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
+
+                            await _meadow.SendDebuggerData(meadowBuffer, 0, _cts.Token);
                             meadowBuffer = Array.Empty<byte>();
 
                             // Ensure we read all the data in this message before passing it along
