@@ -46,5 +46,6 @@ namespace Meadow.Hcom
         Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
         Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
         Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
+        Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
     }
 }

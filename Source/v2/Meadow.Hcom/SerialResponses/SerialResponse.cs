@@ -22,53 +22,31 @@ internal class SerialResponse
     {
         var type = (ResponseType)BitConverter.ToUInt16(data, HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET);
 
-        switch (type)
+        return type switch
         {
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR:
-                return new TextStdErrResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT:
-                return new TextStdOutResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_INFORMATION:
-                return new TextInformationResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_ACCEPTED:
-                return new TextRequestResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_REJECTED:
-                return new TextRequestRejectedResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO:
-                return new DeviceInfoSerialResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_CONCLUDED:
-                return new TextConcludedResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER:
-                return new TextListHeaderResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER:
-                return new TextListMemberResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER:
-                return new TextCrcMemberResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_INIT_UPLOAD_FAIL:
-                return new FileReadInitFailedResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_INIT_UPLOAD_OKAY:
-                return new FileReadInitOkResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_UPLOADING_FILE_DATA:
-                return new UploadDataPacketResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_UPLOAD_FILE_COMPLETED:
-                return new UploadCompletedResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_ERROR:
-                return new RequestErrorTextResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_TEXT_RECONNECT:
-                return new ReconnectRequiredResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_FAIL:
-                return new FileWriteInitFailedSerialResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_OKAY:
-                return new FileWriteInitOkSerialResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_SEND_INITIAL_FILE_BYTES:
-                return new TextPayloadSerialResponse(data, length);
-            case ResponseType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE:
-                return new TextPayloadSerialResponse(data, length);
-            case ResponseType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND:
-                return new FileDownloadFailedResponse(data, length);
-            default:
-                return new SerialResponse(data, length);
-        }
+            ResponseType.HCOM_HOST_REQUEST_TEXT_MONO_STDERR => new TextStdErrResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_MONO_STDOUT => new TextStdOutResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_INFORMATION => new TextInformationResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_ACCEPTED => new TextRequestResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_REJECTED => new TextRequestRejectedResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_DEVICE_INFO => new DeviceInfoSerialResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_CONCLUDED => new TextConcludedResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_LIST_HEADER => new TextListHeaderResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_LIST_MEMBER => new TextListMemberResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_CRC_MEMBER => new TextCrcMemberResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_INIT_UPLOAD_FAIL => new FileReadInitFailedResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_INIT_UPLOAD_OKAY => new FileReadInitOkResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_UPLOADING_FILE_DATA => new UploadDataPacketResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_UPLOAD_FILE_COMPLETED => new UploadCompletedResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_ERROR => new RequestErrorTextResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_TEXT_RECONNECT => new ReconnectRequiredResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_FAIL => new FileWriteInitFailedSerialResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_INIT_DOWNLOAD_OKAY => new FileWriteInitOkSerialResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_SEND_INITIAL_FILE_BYTES => new TextPayloadSerialResponse(data, length),
+            ResponseType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE => new TextPayloadSerialResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND => new FileDownloadFailedResponse(data, length),
+            _ => new SerialResponse(data, length),
+        };
     }
 
     protected SerialResponse(byte[] data, int length)

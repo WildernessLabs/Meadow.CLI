@@ -4,7 +4,7 @@ namespace Meadow.Hcom
 {
     public partial class MeadowDevice : IMeadowDevice
     {
-        private IMeadowConnection _connection;
+        private readonly IMeadowConnection _connection;
 
         internal MeadowDevice(IMeadowConnection connection)
         {
@@ -155,6 +155,11 @@ namespace Meadow.Hcom
         public async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
         {
             await _connection.StartDebugging(port, logger, cancellationToken);
+        }
+
+        public async Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
+        {
+            await _connection.SendDebuggerData(debuggerData, userData, cancellationToken);
         }
     }
 }

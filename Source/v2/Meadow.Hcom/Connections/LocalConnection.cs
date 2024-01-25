@@ -208,6 +208,11 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public override Task TraceDisable(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();

@@ -196,7 +196,8 @@ namespace Meadow.Hcom
                                     else if (response is TextRequestResponse trr)
                                     {
                                         // this is a response to a text request - the exact request is cached
-                                        Debug.WriteLine($"RESPONSE> {trr.Text}");
+                                        _lastRequestConcluded = (RequestType)trr.RequestType;
+                                        //Debug.WriteLine($"RESPONSE> {trr.Text}");
                                     }
                                     else if (response is DeviceInfoSerialResponse dir)
                                     {
