@@ -19,7 +19,6 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"File delete failed - device or connection not found");
             return;
         }
 

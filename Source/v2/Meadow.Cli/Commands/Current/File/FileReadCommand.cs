@@ -22,7 +22,6 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"File read failed - device or connection not found");
             return;
         }
 

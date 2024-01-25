@@ -19,7 +19,6 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"File initial failed - device or connection not found");
             return;
         }
 

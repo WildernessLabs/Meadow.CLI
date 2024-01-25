@@ -79,7 +79,6 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Device provision failed - device or connection not found");
             return;
         }
 

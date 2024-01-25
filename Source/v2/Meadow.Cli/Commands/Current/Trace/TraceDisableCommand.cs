@@ -16,7 +16,6 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Trace disable failed - device or connection not found");
             return;
         }
 

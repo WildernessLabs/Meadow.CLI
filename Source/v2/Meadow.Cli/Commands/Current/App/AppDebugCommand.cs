@@ -22,7 +22,6 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 
         if (connection == null)
         {
-            Logger?.LogError($"No connection path is defined");
             return;
         }
 

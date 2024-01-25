@@ -154,7 +154,6 @@ public class FlashOsCommand : BaseDeviceCommand<FlashOsCommand>
 
             if (connection == null || connection.Device == null)
             {
-                Logger?.LogError($"No connection path is defined");
                 return;
             }
 

@@ -22,7 +22,6 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 
         if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"Developer parameter set failed - device or connection not found");
             return;
         }
 
