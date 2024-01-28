@@ -78,7 +78,7 @@ internal class InitFileWriteRequest : Request
     public byte[] Esp32MD5 { get; set; } = new byte[32];
 
     public string LocalFileName { get; private set; } = default!;
-    public string MeadowFileName { get; private set; }
+    public string MeadowFileName { get; private set; } = default!;
 
     public void SetParameters(
         string localFile,

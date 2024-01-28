@@ -90,7 +90,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
             i--;
         }
         var newDefault = _f7Packages[i].Version;
-        _f7Packages.Remove(DefaultPackage);
+
+        if (DefaultPackage != null)
+        {
+            _f7Packages.Remove(DefaultPackage);
+        }
         await SetDefaultPackage(newDefault);
 
         var path = Path.Combine(PackageFileRoot, version);
