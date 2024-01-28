@@ -38,9 +38,5 @@ public abstract class BaseCommand<T> : ICommand
         {
             Logger?.LogInformation($"Cancelled");
         }
-        else
-        {
-            Logger?.LogInformation($"Done");
-        }
     }
 }
