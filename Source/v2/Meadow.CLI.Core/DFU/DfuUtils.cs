@@ -39,10 +39,9 @@ public static class DfuUtils
         {
             if (logLine.Contains("%"))
             {
-                var operation = logLine.Substring(0,
-                    logLine.IndexOf("\t", StringComparison.Ordinal)).Trim();
                 var progressBarEnd = logLine.IndexOf("]", StringComparison.Ordinal) + 1;
                 var progress = logLine.Substring(progressBarEnd, logLine.IndexOf("%", StringComparison.Ordinal) - progressBarEnd + 1).TrimStart();
+
                 if (progress != "100%")
                 {
                     logger?.LogInformation(progress);
