@@ -18,7 +18,7 @@ public class DebuggingServer : IDisposable
     public IPEndPoint LocalEndpoint { get; private set; }
 
     private readonly object _lck = new();
-    private CancellationTokenSource _cancellationTokenSource;
+    private CancellationTokenSource? _cancellationTokenSource;
     private readonly ILogger? _logger;
     private readonly IMeadowDevice _meadow;
     private ActiveClient? _activeClient;
@@ -125,7 +125,7 @@ public class DebuggingServer : IDisposable
                     CloseActiveClient();
                 }
 
-                _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
+                _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource?.Token);
                 _activeClientCount++;
             }
         }
@@ -171,9 +171,17 @@ public class DebuggingServer : IDisposable
         public bool Disposed = false;
 
         // Constructor
-        internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger? logger, CancellationToken cancellationToken)
+        internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
         {
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (cancellationToken != null)
+            {
+                _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value);
+            }
+            else
+            {
+                _cts = new CancellationTokenSource();
+            }
+
             _logger = logger;
             _meadow = meadow;
             _tcpClient = tcpClient;
@@ -279,7 +287,6 @@ public class DebuggingServer : IDisposable
                     {
                         // User probably hit stop
                         _logger?.LogInformation("Unable to Write Data from Visual Studio");
-                        _logger?.LogTrace("Unable to Write Data from Visual Studio");
                     }
                 }
             }
@@ -287,8 +294,8 @@ public class DebuggingServer : IDisposable
             {
                 // User probably hit stop; Removed logging as User doesn't need to see this
                 // Keeping it as a TODO in case we find a side effect that needs logging.
-                // TODO _logger?.LogInformation("Operation Cancelled");
-                // TODO _logger?.LogTrace(oce, "Operation Cancelled");
+                _logger?.LogInformation("Operation Cancelled");
+                _logger?.LogTrace(oce, "Operation Cancelled");
             }
             catch (Exception ex)
             {

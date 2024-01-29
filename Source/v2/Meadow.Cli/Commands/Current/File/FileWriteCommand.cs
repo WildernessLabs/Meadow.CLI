@@ -11,7 +11,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
         'f',
         Description = "The file(s) to write to the Meadow Files System",
         IsRequired = true)]
-    public IList<string> Files { get; init; }
+    public IList<string> Files { get; init; } = Array.Empty<string>();
 
     [CommandOption(
         "targetFiles",
@@ -35,15 +35,14 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
-            Logger?.LogError(
-                $"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
+            Logger?.LogError($"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
 
             return;
         }
 
         connection.FileWriteProgress += (s, e) =>
         {
-            var p = (e.completed / (double)e.total) * 100d;
+            var p = e.completed / (double)e.total * 100d;
 
             // Console instead of Logger due to line breaking for progress bar
             Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
