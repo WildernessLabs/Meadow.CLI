@@ -1,15 +1,26 @@
 ﻿using CliFx.Attributes;
+using CliFx.Exceptions;
+using Meadow.Cloud.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware download", Description = "Download a firmware package")]
 public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
-    public FirmwareDownloadCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+    private IdentityManager IdentityManager { get; }
+
+    public FirmwareDownloadCommand(
+        FileManager fileManager,
+        IdentityManager identityManager, 
+        ISettingsManager settingsManager,
+        ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    { }
+    {
+        IdentityManager = identityManager;
+    }
 
     [CommandOption("force", 'f', IsRequired = false)]
     public bool Force { get; init; }
@@ -17,8 +28,24 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
     [CommandOption("version", 'v', IsRequired = false)]
     public string? Version { get; set; }
 
+    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+    public string? Host { get; set; }
+
     protected override async ValueTask ExecuteCommand()
     {
+        Host ??= BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost;
+
+        Logger?.LogInformation($"Retrieving firmware information from Meadow.Cloud{(Host != BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+
+        var token = await IdentityManager.GetAccessToken(CancellationToken);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new CommandException("You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+        }
+
+        FileManager.MeadowCloudClient.BaseAddress = new Uri(Host);
+        FileManager.MeadowCloudClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
         await FileManager.Refresh();
 
         // for now we only support F7

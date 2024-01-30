@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
-
 
 namespace Meadow.Software;
 
@@ -23,11 +23,14 @@ public class FileManager
 
     public FirmwareStore Firmware { get; }
 
-    public FileManager()
+    public HttpClient MeadowCloudClient { get; }
+
+    public FileManager(HttpClient meadowCloudClient)
     {
         Firmware = new FirmwareStore();
-        var f7Collection = new F7FirmwarePackageCollection();
+        var f7Collection = new F7FirmwarePackageCollection(meadowCloudClient);
         Firmware.AddCollection("Meadow F7", f7Collection);
+        MeadowCloudClient = meadowCloudClient;
     }
 
     public async Task Refresh()
