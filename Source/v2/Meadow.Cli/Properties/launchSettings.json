@@ -205,7 +205,7 @@
     },
     "Device provision": {
       "commandName": "Project",
-      "commandLineArgs": "device provision -o christacke6612"
+      "commandLineArgs": "device provision"
     },
     "Cloud login": {
       "commandName": "Project",
