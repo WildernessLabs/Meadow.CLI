@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Text.Json;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,15 +10,15 @@ namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
+    private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
+    private readonly HttpClient Client;
+
     public event EventHandler<long> DownloadProgress = default!;
 
-    private const string VersionCheckUrlRoot =
-           "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
-
-    private readonly HttpClient Client = new()
+    public F7FirmwareDownloadManager(HttpClient meadowCloudClient)
     {
-        Timeout = TimeSpan.FromMinutes(5)
-    };
+        Client = meadowCloudClient;
+    }
 
     public async Task<string> GetLatestAvailableVersion()
     {
@@ -29,32 +29,17 @@ internal class F7FirmwareDownloadManager
 
     public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null)
     {
-        string versionCheckUrl;
-        if (version is null || string.IsNullOrWhiteSpace(version))
-        {
-            versionCheckUrl = VersionCheckUrlRoot + "latest.json";
-        }
-        else
-        {
-            versionCheckUrl = VersionCheckUrlRoot + version + ".json";
-        }
+        version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
+        var response = await Client.GetAsync(VersionCheckUrlPath + version);
 
-        string versionCheckFile;
-
-        try
-        {
-            versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
-        }
-        catch
+        if (!response.IsSuccessStatusCode)
         {
             return null;
         }
 
         try
         {
-            var content = JsonSerializer.Deserialize<F7ReleaseMetadata>(File.ReadAllText(versionCheckFile));
-
-            return content;
+            return await response.Content.ReadFromJsonAsync<F7ReleaseMetadata>();
         }
         catch
         {
@@ -69,8 +54,7 @@ internal class F7FirmwareDownloadManager
 
     public async Task<bool> DownloadRelease(string destinationRoot, string version, bool overwrite = false)
     {
-        var downloadManager = new F7FirmwareDownloadManager();
-        var meta = await downloadManager.GetReleaseMetadata(version);
+        var meta = await GetReleaseMetadata(version);
         if (meta == null) return false;
 
         CreateFolder(destinationRoot, false);

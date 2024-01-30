@@ -6,9 +6,14 @@ using Meadow.Cloud.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+[assembly:InternalsVisibleTo("Meadow.SoftwareManager")]
 
 public class Program
 {
@@ -57,6 +62,14 @@ public class Program
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager, IdentityManager>();
+
+        services.AddHttpClient<FileManager>(c =>
+        {
+            c.Timeout = TimeSpan.FromMinutes(5);
+        });
+
+        // Required to disable console logging of HttpClient
+        services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         if (File.Exists("appsettings.json"))
         {
