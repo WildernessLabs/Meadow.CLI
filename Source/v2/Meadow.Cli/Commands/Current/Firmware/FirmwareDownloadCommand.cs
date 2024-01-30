@@ -40,7 +40,8 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
         var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new CommandException("You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            return;
         }
 
         FileManager.MeadowCloudClient.BaseAddress = new Uri(Host);
