@@ -11,20 +11,14 @@ namespace Meadow.Software;
 internal class F7FirmwareDownloadManager
 {
     private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
-    private const string StagingBaseAddress = "https://staging.meadowcloud.dev";
 
     private readonly HttpClient _client;
-    private readonly string _userAgent;
 
     public event EventHandler<long> DownloadProgress = default!;
 
-    public F7FirmwareDownloadManager(string requestUserAgent, HttpClient? meadowCloudClient = null)
+    public F7FirmwareDownloadManager(HttpClient meadowCloudClient)
     {
-        _userAgent = requestUserAgent;
-        _client = meadowCloudClient ?? new HttpClient()
-        {
-            BaseAddress = new Uri(StagingBaseAddress)
-        };
+        _client = meadowCloudClient;
     }
 
     public async Task<string> GetLatestAvailableVersion()
@@ -39,7 +33,6 @@ internal class F7FirmwareDownloadManager
         version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
         var uri = VersionCheckUrlPath + version;
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.Add("User-Agent", _userAgent);
 
         using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken ?? CancellationToken.None);
 
@@ -155,7 +148,6 @@ internal class F7FirmwareDownloadManager
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.Add("User-Agent", _userAgent);
 
         using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 

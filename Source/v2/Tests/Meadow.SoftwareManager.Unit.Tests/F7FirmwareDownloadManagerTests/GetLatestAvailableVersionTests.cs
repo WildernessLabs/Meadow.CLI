@@ -14,7 +14,7 @@ public class GetLatestAvailableVersionTests
             .WithFirmware("Meadow_Beta", "1.7.0.0")
             .WithFirmwareReference("Meadow_Beta", "latest", "1.8.0.0")
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
+        var downloadManager = new F7FirmwareDownloadManager(client);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();
@@ -31,7 +31,7 @@ public class GetLatestAvailableVersionTests
             .WithFirmware("Meadow_Beta", "1.8.0.0")
             .WithFirmware("Meadow_Beta", "1.7.0.0")
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
+        var downloadManager = new F7FirmwareDownloadManager(client);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();

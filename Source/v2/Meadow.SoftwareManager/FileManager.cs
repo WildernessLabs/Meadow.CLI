@@ -19,10 +19,12 @@ public class FileManager
 
     public HttpClient MeadowCloudClient { get; }
 
-    public FileManager(string userAgent, HttpClient? meadowCloudClient = null)
+    public FileManager(HttpClient meadowCloudClient)
     {
+        //        meadowCloudClient.BaseAddress = new Uri("https://staging.meadowcloud.dev");
+
         Firmware = new FirmwareStore();
-        var f7Collection = new F7FirmwarePackageCollection(userAgent, meadowCloudClient);
+        var f7Collection = new F7FirmwarePackageCollection(meadowCloudClient);
         Firmware.AddCollection("Meadow F7", f7Collection);
         MeadowCloudClient = meadowCloudClient;
     }
