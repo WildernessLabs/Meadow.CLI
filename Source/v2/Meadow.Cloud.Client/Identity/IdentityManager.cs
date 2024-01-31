@@ -18,12 +18,12 @@ public class IdentityManager
     private readonly string clientId = "0oa3axsuyupb7J6E15d6";
     private readonly ILogger _logger;
 
-    public IdentityManager(ILoggerFactory loggerFactory)
-        : this(loggerFactory.CreateLogger("IdentityManager"))
+    public IdentityManager(ILoggerFactory? loggerFactory = null)
+        : this(loggerFactory?.CreateLogger("IdentityManager") ?? null)
     {
     }
 
-    public IdentityManager(ILogger? logger = null)
+    private IdentityManager(ILogger? logger = null)
     {
         _logger = logger ?? NullLogger.Instance;
     }
