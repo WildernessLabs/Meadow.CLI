@@ -28,14 +28,14 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
     public FirmwarePackage this[int index] => _f7Packages[index];
 
-    internal F7FirmwarePackageCollection(string userAgent, HttpClient? meadowCloudClient = null)
-        : this(DefaultF7FirmwareStoreRoot, userAgent, meadowCloudClient)
+    internal F7FirmwarePackageCollection(HttpClient meadowCloudClient)
+        : this(DefaultF7FirmwareStoreRoot, meadowCloudClient)
     {
     }
 
-    internal F7FirmwarePackageCollection(string rootPath, string userAgent, HttpClient? meadowCloudClient = null)
+    internal F7FirmwarePackageCollection(string rootPath, HttpClient meadowCloudClient)
     {
-        _downloadManager = new F7FirmwareDownloadManager(userAgent, meadowCloudClient);
+        _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
 
         if (!Directory.Exists(rootPath))
         {

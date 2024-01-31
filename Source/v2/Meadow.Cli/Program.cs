@@ -51,8 +51,7 @@ public class Program
             });
 
         services.AddSingleton<MeadowConnectionManager>();
-        var fileManager = new FileManager(FileManager.UserAgentCli);
-        services.AddSingleton(fileManager);
+        services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
 
@@ -67,6 +66,7 @@ public class Program
         services.AddHttpClient<FileManager>(c =>
         {
             c.Timeout = TimeSpan.FromMinutes(5);
+            c.DefaultRequestHeaders.Add("User-Agent", FileManager.UserAgentCli);
         });
 
         // Required to disable console logging of HttpClient
