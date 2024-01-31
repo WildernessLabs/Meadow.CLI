@@ -12,32 +12,30 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
     /// <inheritdoc/>
     public event EventHandler<long> DownloadProgress = default!;
-
     public event EventHandler<FirmwarePackage?> DefaultVersionChanged = default!;
-
-    public string PackageFileRoot { get; }
-
-    private readonly List<FirmwarePackage> _f7Packages = new();
 
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "WildernessLabs",
         "Firmware");
+
+    private readonly List<FirmwarePackage> _f7Packages = new();
     private FirmwarePackage? _defaultPackage;
     private F7FirmwareDownloadManager _downloadManager;
 
-    internal F7FirmwarePackageCollection(HttpClient meadowCloudClient)
-        : this(meadowCloudClient, DefaultF7FirmwareStoreRoot)
+    public string PackageFileRoot { get; }
+
+    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
+    public FirmwarePackage this[int index] => _f7Packages[index];
+
+    internal F7FirmwarePackageCollection(string userAgent, HttpClient? meadowCloudClient = null)
+        : this(DefaultF7FirmwareStoreRoot, userAgent, meadowCloudClient)
     {
     }
 
-    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
-
-    public FirmwarePackage this[int index] => _f7Packages[index];
-
-    internal F7FirmwarePackageCollection(HttpClient meadowCloudClient, string rootPath)
+    internal F7FirmwarePackageCollection(string rootPath, string userAgent, HttpClient? meadowCloudClient = null)
     {
-        _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
+        _downloadManager = new F7FirmwareDownloadManager(userAgent, meadowCloudClient);
 
         if (!Directory.Exists(rootPath))
         {

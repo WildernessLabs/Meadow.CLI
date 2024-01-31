@@ -1,11 +1,6 @@
 ﻿using Meadow.Software;
 using Meadow.SoftwareManager.Unit.Tests.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Meadow.SoftwareManager.Unit.Tests.F7FirmwareDownloadManagerTests;
 
@@ -23,7 +18,7 @@ public class GetReleaseMetadataTests
             .WithFirmware("Meadow_Beta", "1.7.0.0")
             .WithFirmwareReference("Meadow_Beta", "latest", "1.8.0.0")
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager(client);
+        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
 
         // Act
         var result = await downloadManager.GetReleaseMetadata(version);
@@ -42,7 +37,7 @@ public class GetReleaseMetadataTests
             .WithFirmware("Meadow_Beta", "1.7.0.0")
             .WithFirmwareReference("Meadow_Beta", "latest", "1.8.0.0")
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager(client);
+        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
 
         // Act
         var result = await downloadManager.GetReleaseMetadata("1.7.0.0");
@@ -61,7 +56,7 @@ public class GetReleaseMetadataTests
             .WithFirmware("Meadow_Beta", "1.7.0.0")
             .WithFirmwareReference("Meadow_Beta", "latest", "1.8.0.0")
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager(client);
+        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
 
         // Act
         var result = await downloadManager.GetReleaseMetadata("1.6.0.0");
@@ -77,7 +72,7 @@ public class GetReleaseMetadataTests
         var client = new MeadowCloudClientBuilder()
             .WithFirmwareResponse("Meadow_Beta", "1.8.0.0", new HttpResponseMessage(HttpStatusCode.InternalServerError))
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager(client);
+        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
 
         // Act
         var result = await downloadManager.GetReleaseMetadata("1.8.0.0");
@@ -96,7 +91,7 @@ public class GetReleaseMetadataTests
                 Content = new StringContent("This is content.")
             })
             .Build();
-        var downloadManager = new F7FirmwareDownloadManager(client);
+        var downloadManager = new F7FirmwareDownloadManager("CLI.Test", client);
 
         // Act
         var result = await downloadManager.GetReleaseMetadata("1.8.0.0");

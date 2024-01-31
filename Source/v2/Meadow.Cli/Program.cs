@@ -13,7 +13,7 @@ using Serilog.Events;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("Meadow.SoftwareManager")]
+[assembly: InternalsVisibleTo("Meadow.SoftwareManager")]
 
 public class Program
 {
@@ -51,7 +51,8 @@ public class Program
             });
 
         services.AddSingleton<MeadowConnectionManager>();
-        services.AddSingleton<FileManager>();
+        var fileManager = new FileManager(FileManager.UserAgentCli);
+        services.AddSingleton(fileManager);
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
 
