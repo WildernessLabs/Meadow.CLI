@@ -1,6 +1,5 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud;
-using Meadow.Cloud.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -9,6 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 {
     private readonly DeviceService _deviceService;
+    private readonly UserService _userService;
 
     public const string DefaultHost = "https://www.meadowcloud.co";
 
@@ -24,10 +24,11 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
-    public DeviceProvisionCommand(DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public DeviceProvisionCommand(UserService userService, DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
         _deviceService = deviceService;
+        _userService = userService;
     }
 
     protected override async ValueTask ExecuteCommand()
@@ -37,9 +38,6 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         try
         {
             Host ??= DefaultHost;
-
-            var identityManager = new IdentityManager(Logger);
-            var _userService = new UserService(identityManager);
 
             Logger?.LogInformation("Retrieving your user and organization information...");
 
@@ -87,9 +85,36 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
-        var delim = "-----END RSA PUBLIC KEY-----\n";
-        publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+        if (string.IsNullOrWhiteSpace(publicKey))
+        {
+            Logger?.LogError("Could not retrieve device's public key.");
+            return;
+        }
 
+        var delimiters = new string[]
+        {
+            "-----END PUBLIC KEY-----\n", // F7 delimiter
+            "-----END RSA PUBLIC KEY-----\n" // linux/mac/windows delimiter
+        };
+
+        var valid = false;
+
+        foreach (var delim in delimiters)
+        {
+            var index = publicKey.IndexOf(delim);
+            if (index > 0)
+            {
+                valid = true;
+                publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+                break;
+            }
+        }
+
+        if (!valid)
+        {
+            Logger?.LogError("Device returned an invali dpublic key");
+            return;
+        }
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
         var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
@@ -105,7 +130,5 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         {
             Logger?.LogError($"Failed to provision device: {result.message}");
         }
-
-        return;
     }
 }
