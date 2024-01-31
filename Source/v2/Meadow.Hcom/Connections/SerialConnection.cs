@@ -1196,7 +1196,16 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _lastRequestConcluded = null;
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        if (!await WaitForResult(
+                        () =>
+                        {
+                            return contents != string.Empty;
+                        },
+                        cancellationToken))
+        {
+            CommandTimeoutSeconds = lastTimeout;
+            return string.Empty;
+        }
 
         CommandTimeoutSeconds = lastTimeout;
 
