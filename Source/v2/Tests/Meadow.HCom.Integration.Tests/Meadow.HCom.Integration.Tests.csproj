@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FakeItEasy" Version="8.1.0" />
-    <PackageReference Include="FakeItEasy.Analyzer.CSharp" Version="6.1.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="FakeItEasy.Extensions.ValueTask" Version="8.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
@@ -28,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
+    <ProjectReference Include="..\..\Meadow.CLI\Meadow.CLI.csproj" />
+    <ProjectReference Include="..\..\Meadow.Hcom\Meadow.Hcom.csproj" />
   </ItemGroup>
 
 </Project>

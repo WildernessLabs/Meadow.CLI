@@ -11,13 +11,20 @@ namespace Meadow.Software;
 internal class F7FirmwareDownloadManager
 {
     private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
-    private readonly HttpClient Client;
+    private const string StagingBaseAddress = "https://staging.meadowcloud.dev";
+
+    private readonly HttpClient _client;
+    private readonly string _userAgent;
 
     public event EventHandler<long> DownloadProgress = default!;
 
-    public F7FirmwareDownloadManager(HttpClient meadowCloudClient)
+    public F7FirmwareDownloadManager(string requestUserAgent, HttpClient? meadowCloudClient = null)
     {
-        Client = meadowCloudClient;
+        _userAgent = requestUserAgent;
+        _client = meadowCloudClient ?? new HttpClient()
+        {
+            BaseAddress = new Uri(StagingBaseAddress)
+        };
     }
 
     public async Task<string> GetLatestAvailableVersion()
@@ -27,24 +34,28 @@ internal class F7FirmwareDownloadManager
         return contents?.Version ?? string.Empty;
     }
 
-    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null)
+    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken? cancellationToken = null)
     {
         version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
-        var response = await Client.GetAsync(VersionCheckUrlPath + version);
+        var uri = VersionCheckUrlPath + version;
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Add("User-Agent", _userAgent);
+
+        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken ?? CancellationToken.None);
 
         if (!response.IsSuccessStatusCode)
         {
-            return null;
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new NotAuthenticatedException($"Access to '{_client.BaseAddress}' not authorized");
+            }
+            else
+            {
+                throw new Exception($"Request for release data failed.  Web request returned a {response.StatusCode}");
+            }
         }
 
-        try
-        {
-            return await response.Content.ReadFromJsonAsync<F7ReleaseMetadata>();
-        }
-        catch
-        {
-            return null;
-        }
+        return await response.Content.ReadFromJsonAsync<F7ReleaseMetadata>();
     }
 
     public void SetDefaultVersion(string destinationRoot, string version)
@@ -144,7 +155,9 @@ internal class F7FirmwareDownloadManager
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        request.Headers.Add("User-Agent", _userAgent);
+
+        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 

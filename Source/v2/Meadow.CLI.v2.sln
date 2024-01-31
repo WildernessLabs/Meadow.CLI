@@ -4,8 +4,6 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom", "Meadow.HCom\Meadow.HCom.csproj", "{6C2FA084-701B-4A28-8775-BF18B84E366B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom.Integration.Tests", "Meadow.HCom.Integration.Tests\Meadow.HCom.Integration.Tests.csproj", "{9EAF2357-2AB3-45BB-822B-B9B4629E651E}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.CLI", "Meadow.CLI\Meadow.CLI.csproj", "{1BD32521-158C-478A-AEE7-0EE52BF3571F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Contracts", "..\..\..\Meadow.Contracts\Source\Meadow.Contracts\Meadow.Contracts.csproj", "{62D2092A-5A19-47AC-9B81-A8F5D9D7BD47}"
@@ -18,8 +16,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Units", "..\..\..\Me
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager", "Meadow.SoftwareManager\Meadow.SoftwareManager.csproj", "{B842E44B-F57F-4728-980F-776DE6E2CDAA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Unit.Tests", "Meadow.SoftwareManager.Unit.Tests\Meadow.SoftwareManager.Unit.Tests.csproj", "{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLib", "Meadow.UsbLib\Meadow.UsbLib.csproj", "{5B071B58-550C-492D-8A24-973D4183FAAF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLibClassic", "Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj", "{42F3A4D2-CBF9-4DF3-8ADC-BF775101F34A}"
@@ -29,6 +25,16 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cloud.Client", "Meadow.Cloud.Client\Meadow.Cloud.Client.csproj", "{A71A3C98-2B11-46FE-AB7A-EAD9271862AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.UsbLib.Core", "Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj", "{F02ADBEF-4D52-4A71-9D95-74F45D68B43B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.HCom.Integration.Tests", "Tests\Meadow.HCom.Integration.Tests\Meadow.HCom.Integration.Tests.csproj", "{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Unit.Tests", "Tests\Meadow.SoftwareManager.Unit.Tests\Meadow.SoftwareManager.Unit.Tests.csproj", "{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Integration.Tests", "Tests\Meadow.SoftwareManager.Integration.Tests\Meadow.SoftwareManager.Integration.Tests.csproj", "{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cloud.Client.Integration.Tests", "Tests\Meadow.Cloud.Client.Integration.Tests\Meadow.Cloud.Client.Integration.Tests.csproj", "{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,10 +46,6 @@ Global
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9EAF2357-2AB3-45BB-822B-B9B4629E651E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9EAF2357-2AB3-45BB-822B-B9B4629E651E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9EAF2357-2AB3-45BB-822B-B9B4629E651E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9EAF2357-2AB3-45BB-822B-B9B4629E651E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1BD32521-158C-478A-AEE7-0EE52BF3571F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1BD32521-158C-478A-AEE7-0EE52BF3571F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BD32521-158C-478A-AEE7-0EE52BF3571F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -68,10 +70,6 @@ Global
 		{B842E44B-F57F-4728-980F-776DE6E2CDAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B842E44B-F57F-4728-980F-776DE6E2CDAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B842E44B-F57F-4728-980F-776DE6E2CDAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B093D40B-AA2F-4BA8-9B7E-DB14DAC9AFC9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B071B58-550C-492D-8A24-973D4183FAAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B071B58-550C-492D-8A24-973D4183FAAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B071B58-550C-492D-8A24-973D4183FAAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -92,6 +90,22 @@ Global
 		{F02ADBEF-4D52-4A71-9D95-74F45D68B43B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F02ADBEF-4D52-4A71-9D95-74F45D68B43B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F02ADBEF-4D52-4A71-9D95-74F45D68B43B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,6 +114,10 @@ Global
 		{62D2092A-5A19-47AC-9B81-A8F5D9D7BD47} = {562945CE-DA15-4A2E-86A2-CA7E3FF22DCA}
 		{946B7200-8CC1-4A8D-9BCE-FCB06EDC705B} = {562945CE-DA15-4A2E-86A2-CA7E3FF22DCA}
 		{5DC0D8EC-85D4-4E98-9403-2D5B9700D8AC} = {562945CE-DA15-4A2E-86A2-CA7E3FF22DCA}
+		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
+		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
+		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
+		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9BA76C46-6C2E-447A-BCAD-423B3C51C52D}

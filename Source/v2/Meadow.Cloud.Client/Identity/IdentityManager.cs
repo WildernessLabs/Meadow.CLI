@@ -2,6 +2,7 @@
 using IdentityModel.Client;
 using IdentityModel.OidcClient;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Logging;
 using System.Diagnostics;
 using System.Net;
@@ -15,16 +16,16 @@ public class IdentityManager
     private readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
     private readonly string redirectUri = "http://localhost:8877/";
     private readonly string clientId = "0oa3axsuyupb7J6E15d6";
-    private readonly ILogger? _logger;
+    private readonly ILogger _logger;
 
     public IdentityManager(ILoggerFactory loggerFactory)
         : this(loggerFactory.CreateLogger("IdentityManager"))
     {
     }
 
-    public IdentityManager(ILogger? logger)
+    public IdentityManager(ILogger? logger = null)
     {
-        _logger = logger;
+        _logger = logger ?? NullLogger.Instance;
     }
 
     /// <summary>
