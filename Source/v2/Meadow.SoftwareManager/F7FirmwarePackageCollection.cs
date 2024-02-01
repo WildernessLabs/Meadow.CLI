@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meadow.Cloud.Client;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -28,12 +29,12 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
     public FirmwarePackage this[int index] => _f7Packages[index];
 
-    internal F7FirmwarePackageCollection(HttpClient meadowCloudClient)
+    internal F7FirmwarePackageCollection(IMeadowCloudClient meadowCloudClient)
         : this(DefaultF7FirmwareStoreRoot, meadowCloudClient)
     {
     }
 
-    internal F7FirmwarePackageCollection(string rootPath, HttpClient meadowCloudClient)
+    internal F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
     {
         _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
 

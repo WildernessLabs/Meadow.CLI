@@ -1,8 +1,8 @@
-﻿using Meadow.Cloud.Identity;
+﻿using Meadow.Cloud.Client.Identity;
 using System.Text;
 using System.Text.Json;
 
-namespace Meadow.Cloud;
+namespace Meadow.Cloud.Client;
 
 public class CommandService : CloudServiceBase
 {
@@ -32,7 +32,7 @@ public class CommandService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudClassicException(message);
         }
     }
 
@@ -59,7 +59,7 @@ public class CommandService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudClassicException(message);
         }
     }
 }

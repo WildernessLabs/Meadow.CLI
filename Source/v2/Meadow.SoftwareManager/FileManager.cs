@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meadow.Cloud.Client;
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,21 +13,13 @@ public class FileManager
                "WildernessLabs",
                "temp");
 
-    public const string UserAgentCli = "Meadow.Cli";
-    public const string UserAgentWorkbench = "Meadow.Workbench";
-
     public FirmwareStore Firmware { get; }
 
-    public HttpClient MeadowCloudClient { get; }
-
-    public FileManager(HttpClient meadowCloudClient)
+    public FileManager(IMeadowCloudClient meadowCloudClient)
     {
-        //        meadowCloudClient.BaseAddress = new Uri("https://staging.meadowcloud.dev");
-
         Firmware = new FirmwareStore();
         var f7Collection = new F7FirmwarePackageCollection(meadowCloudClient);
         Firmware.AddCollection("Meadow F7", f7Collection);
-        MeadowCloudClient = meadowCloudClient;
     }
 
     public async Task Refresh()

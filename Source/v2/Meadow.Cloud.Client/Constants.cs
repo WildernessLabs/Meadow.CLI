@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud;
+﻿using System.ComponentModel;
+
+namespace Meadow.Cloud.Client;
 
 public static class Constants
 {

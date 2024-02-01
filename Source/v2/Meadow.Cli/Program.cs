@@ -1,8 +1,8 @@
 ﻿using CliFx;
 using Meadow.CLI;
 using Meadow.CLI.Commands.DeviceManagement;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,13 +61,12 @@ public class Program
         services.AddSingleton<CommandService>();
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
-        services.AddSingleton<IdentityManager, IdentityManager>();
+        services.AddSingleton<IdentityManager>();
 
-        services.AddHttpClient<FileManager>(c =>
-        {
-            c.Timeout = TimeSpan.FromMinutes(5);
-            c.DefaultRequestHeaders.Add("User-Agent", FileManager.UserAgentCli);
-        });
+        services.AddSingleton<IMeadowCloudClient, MeadowCloudClient>();
+        services.AddSingleton(MeadowCloudUserAgent.Cli);
+
+        services.AddHttpClient<MeadowCloudClient>();
 
         // Required to disable console logging of HttpClient
         services.RemoveAll<IHttpMessageHandlerBuilderFilter>();

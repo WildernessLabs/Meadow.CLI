@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 
-namespace Meadow.Cloud.Identity;
+namespace Meadow.Cloud.Client.Identity;
 
 public class IdentityManager
 {

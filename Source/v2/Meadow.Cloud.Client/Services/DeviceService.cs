@@ -1,8 +1,8 @@
-﻿using Meadow.Cloud.Identity;
+﻿using Meadow.Cloud.Client.Identity;
 using System.Text;
 using System.Text.Json;
 
-namespace Meadow.Cloud;
+namespace Meadow.Cloud.Client;
 
 public class DeviceService : CloudServiceBase
 {

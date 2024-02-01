@@ -1,7 +1,7 @@
-﻿using Meadow.Cloud.Identity;
+﻿using Meadow.Cloud.Client.Identity;
 using System.Net.Http.Headers;
 
-namespace Meadow.Cloud;
+namespace Meadow.Cloud.Client;
 
 public abstract class CloudServiceBase
 {

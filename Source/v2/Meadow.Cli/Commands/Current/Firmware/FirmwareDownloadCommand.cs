@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
-using CliFx.Exceptions;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
@@ -10,16 +10,16 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("firmware download", Description = "Download a firmware package")]
 public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
-    private IdentityManager IdentityManager { get; }
+    private readonly IMeadowCloudClient _meadowCloudClient;
 
     public FirmwareDownloadCommand(
         FileManager fileManager,
-        IdentityManager identityManager, 
+        IMeadowCloudClient meadowCloudClient, 
         ISettingsManager settingsManager,
         ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
     {
-        IdentityManager = identityManager;
+        _meadowCloudClient = meadowCloudClient;
     }
 
     [CommandOption("force", 'f', IsRequired = false)]
@@ -33,19 +33,21 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        Host ??= BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost;
+        //Host ??= MeadowCloudClient.DefaultHost;
 
-        Logger?.LogInformation($"Retrieving firmware information from Meadow.Cloud{(Host != BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        await _meadowCloudClient.AuthenticateAsync(Host, CancellationToken);
 
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
-            return;
-        }
+        //Logger?.LogInformation($"Retrieving firmware information from Meadow.Cloud{(Host != BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
 
-        FileManager.MeadowCloudClient.BaseAddress = new Uri(Host);
-        FileManager.MeadowCloudClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        //var token = await IdentityManager.GetAccessToken(CancellationToken);
+        //if (string.IsNullOrWhiteSpace(token))
+        //{
+        //    Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+        //    return;
+        //}
+
+        //FileManager.MeadowCloudClient.BaseAddress = new Uri(Host);
+        //FileManager.MeadowCloudClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         await FileManager.Refresh();
 

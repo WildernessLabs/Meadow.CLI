@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meadow.Cloud.Client;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -10,15 +11,16 @@ namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
-    private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
+    //private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
 
-    private readonly HttpClient _client;
+    //private readonly HttpClient _client;
+    private readonly IMeadowCloudClient _meadowCloudClient;
 
     public event EventHandler<long> DownloadProgress = default!;
 
-    public F7FirmwareDownloadManager(HttpClient meadowCloudClient)
+    public F7FirmwareDownloadManager(IMeadowCloudClient meadowCloudClient)
     {
-        _client = meadowCloudClient;
+        _meadowCloudClient = meadowCloudClient;
     }
 
     public async Task<string> GetLatestAvailableVersion()
@@ -28,27 +30,18 @@ internal class F7FirmwareDownloadManager
         return contents?.Version ?? string.Empty;
     }
 
-    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken? cancellationToken = null)
+    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
         version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
-        var uri = VersionCheckUrlPath + version;
-        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        var response = await _meadowCloudClient.Firmware.GetFirmwareVersionAsync("Meadow_Beta", version, cancellationToken);
 
-        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken ?? CancellationToken.None);
-
-        if (!response.IsSuccessStatusCode)
+        return new F7ReleaseMetadata()
         {
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                throw new NotAuthenticatedException($"Access to '{_client.BaseAddress}' not authorized");
-            }
-            else
-            {
-                throw new Exception($"Request for release data failed.  Web request returned a {response.StatusCode}");
-            }
-        }
-
-        return await response.Content.ReadFromJsonAsync<F7ReleaseMetadata>();
+            Version = response.Result.Version,
+            MinCLIVersion = response.Result.MinCLIVersion,
+            DownloadURL = response.Result.DownloadUrl,
+            NetworkDownloadURL = response.Result.NetworkDownloadUrl
+        };
     }
 
     public void SetDefaultVersion(string destinationRoot, string version)
@@ -147,11 +140,7 @@ internal class F7FirmwareDownloadManager
 
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-
-        using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-        response.EnsureSuccessStatusCode();
+        using var response = await _meadowCloudClient.Firmware.GetFirmwareDownloadResponseAsync(uri.ToString(), cancellationToken);
 
         var downloadFileName = Path.GetTempFileName();
 

@@ -1,5 +1,5 @@
-﻿using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+﻿using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;

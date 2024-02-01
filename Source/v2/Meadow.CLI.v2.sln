@@ -34,7 +34,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Unit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.SoftwareManager.Integration.Tests", "Tests\Meadow.SoftwareManager.Integration.Tests\Meadow.SoftwareManager.Integration.Tests.csproj", "{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cloud.Client.Integration.Tests", "Tests\Meadow.Cloud.Client.Integration.Tests\Meadow.Cloud.Client.Integration.Tests.csproj", "{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Cloud.Client.Unit.Tests", "Tests\Meadow.Cloud.Client.Unit.Tests\Meadow.Cloud.Client.Unit.Tests.csproj", "{E5DD4338-135A-4906-B67D-3EF2C44C96D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -102,10 +102,10 @@ Global
 		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5DD4338-135A-4906-B67D-3EF2C44C96D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5DD4338-135A-4906-B67D-3EF2C44C96D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5DD4338-135A-4906-B67D-3EF2C44C96D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5DD4338-135A-4906-B67D-3EF2C44C96D9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,7 +117,7 @@ Global
 		{F6617A9E-0CE9-4F6E-8D0B-F90DCD5FAC67} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
 		{5EE89C75-DCDA-40A6-920B-0FA7915AB1D8} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
 		{6D8D2257-09C0-4DCF-9E06-60A7D44A3FDC} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
-		{8F6E42DB-50A4-4E60-93A0-C91CB18C98E4} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
+		{E5DD4338-135A-4906-B67D-3EF2C44C96D9} = {21DDDD82-ED2C-49F3-988A-97F34D4AE8F5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9BA76C46-6C2E-447A-BCAD-423B3C51C52D}
