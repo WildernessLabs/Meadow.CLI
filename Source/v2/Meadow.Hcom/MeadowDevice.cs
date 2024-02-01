@@ -4,9 +4,7 @@ namespace Meadow.Hcom
 {
     public partial class MeadowDevice : IMeadowDevice
     {
-        private IMeadowConnection _connection;
-
-        public MeadowDataProcessor DataProcessor => throw new NotImplementedException();
+        private readonly IMeadowConnection _connection;
 
         internal MeadowDevice(IMeadowConnection connection)
         {
@@ -38,9 +36,9 @@ namespace Meadow.Hcom
             return await _connection.GetDeviceInfo(cancellationToken);
         }
 
-        public async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+        public async Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
         {
-            return await _connection.GetFileList(includeCrcs, cancellationToken);
+            return await _connection.GetFileList(folder, includeCrcs, cancellationToken);
         }
 
         public async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
@@ -159,9 +157,9 @@ namespace Meadow.Hcom
             await _connection.StartDebugging(port, logger, cancellationToken);
         }
 
-        public Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = null)
+        public async Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
         {
-            throw new NotImplementedException();
+            await _connection.SendDebuggerData(debuggerData, userData, cancellationToken);
         }
     }
 }

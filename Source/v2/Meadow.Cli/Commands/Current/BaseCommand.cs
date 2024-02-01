@@ -1,8 +1,6 @@
 ﻿using CliFx;
-using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -12,9 +10,6 @@ public abstract class BaseCommand<T> : ICommand
     protected ILoggerFactory? LoggerFactory { get; }
     protected IConsole? Console { get; private set; }
     protected CancellationToken CancellationToken { get; private set; }
-
-    [CommandOption("verbose", IsRequired = false)]
-    public bool Verbose { get; set; }
 
     public BaseCommand(ILoggerFactory? loggerFactory)
     {
@@ -41,12 +36,7 @@ public abstract class BaseCommand<T> : ICommand
 
         if (CancellationToken.IsCancellationRequested)
         {
-            Logger?.LogInformation($"Cancelled.");
-        }
-        else
-        {
-            Logger?.LogInformation($"Done.");
+            Logger?.LogInformation($"Cancelled");
         }
     }
-
 }

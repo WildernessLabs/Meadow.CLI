@@ -1,9 +1,9 @@
-﻿using System.Buffers;
+﻿using Microsoft.Extensions.Logging;
+using System.Buffers;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Logging;
 
 namespace Meadow.Hcom;
 
@@ -17,13 +17,13 @@ public class DebuggingServer : IDisposable
     // VS 2015 - 4020
     public IPEndPoint LocalEndpoint { get; private set; }
 
-    private readonly object _lck = new object();
+    private readonly object _lck = new();
     private CancellationTokenSource? _cancellationTokenSource;
-    private readonly ILogger _logger;
+    private readonly ILogger? _logger;
     private readonly IMeadowDevice _meadow;
     private ActiveClient? _activeClient;
     private int _activeClientCount = 0;
-    private TcpListener _listener;
+    private readonly TcpListener _listener;
     private Task? _listenerTask;
     private bool _isReady;
     public bool Disposed;
@@ -35,7 +35,7 @@ public class DebuggingServer : IDisposable
     /// <param name="meadow">The <see cref="IMeadowDevice"/> to debug</param>
     /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
     /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
-    public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger logger)
+    public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger? logger)
     {
         LocalEndpoint = localEndpoint;
         _meadow = meadow;
@@ -77,8 +77,7 @@ public class DebuggingServer : IDisposable
     {
         _listener?.Stop();
 
-        if (_cancellationTokenSource != null)
-            _cancellationTokenSource?.Cancel(false);
+        _cancellationTokenSource?.Cancel(false);
 
         if (_listenerTask != null)
         {
@@ -126,12 +125,8 @@ public class DebuggingServer : IDisposable
                     CloseActiveClient();
                 }
 
-                if (_cancellationTokenSource != null
-                    && _logger != null)
-                {
-                    _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource.Token);
-                    _activeClientCount++;
-                }
+                _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource?.Token);
+                _activeClientCount++;
             }
         }
         catch (Exception ex)
@@ -152,7 +147,9 @@ public class DebuggingServer : IDisposable
         lock (_lck)
         {
             if (Disposed)
+            {
                 return;
+            }
             _cancellationTokenSource?.Cancel(false);
             _activeClient?.Dispose();
             _listenerTask?.Dispose();
@@ -174,9 +171,17 @@ public class DebuggingServer : IDisposable
         public bool Disposed = false;
 
         // Constructor
-        internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger logger, CancellationToken cancellationToken)
+        internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
         {
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (cancellationToken != null)
+            {
+                _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value);
+            }
+            else
+            {
+                _cts = new CancellationTokenSource();
+            }
+
             _logger = logger;
             _meadow = meadow;
             _tcpClient = tcpClient;
@@ -196,6 +201,7 @@ public class DebuggingServer : IDisposable
                 // Receive from Visual Studio and send to Meadow
                 var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
                 var meadowBuffer = Array.Empty<byte>();
+
                 while (!_cts.IsCancellationRequested)
                 {
                     if (_networkStream != null && _networkStream.CanRead)
@@ -204,8 +210,11 @@ public class DebuggingServer : IDisposable
                         do
                         {
                             bytesRead = await _networkStream.ReadAsync(receiveBuffer, 0, receiveBuffer.Length, _cts.Token);
+
                             if (bytesRead == 0 || _cts.IsCancellationRequested)
+                            {
                                 continue;
+                            }
 
                             var destIndex = meadowBuffer.Length;
                             Array.Resize(ref meadowBuffer, destIndex + bytesRead);
@@ -217,7 +226,8 @@ public class DebuggingServer : IDisposable
                                                 BitConverter.ToString(md5.ComputeHash(meadowBuffer))
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
-                            await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
+
+                            await _meadow.SendDebuggerData(meadowBuffer, 0, _cts.Token);
                             meadowBuffer = Array.Empty<byte>();
 
                             // Ensure we read all the data in this message before passing it along
@@ -251,7 +261,7 @@ public class DebuggingServer : IDisposable
             }
         }
 
-        private async Task SendToVisualStudio()
+        private Task SendToVisualStudio()
         {
             try
             {
@@ -259,7 +269,7 @@ public class DebuggingServer : IDisposable
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
+                        /* TODO while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
                         {
                             var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
                             _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
@@ -271,30 +281,32 @@ public class DebuggingServer : IDisposable
 
                             await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
                             _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
-                        }
+                        }*/
                     }
                     else
                     {
                         // User probably hit stop
                         _logger?.LogInformation("Unable to Write Data from Visual Studio");
-                        _logger?.LogTrace("Unable to Write Data from Visual Studio");
                     }
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce)
             {
                 // User probably hit stop; Removed logging as User doesn't need to see this
                 // Keeping it as a TODO in case we find a side effect that needs logging.
-                // TODO _logger?.LogInformation("Operation Cancelled");
-                // TODO _logger?.LogTrace(oce, "Operation Cancelled");
+                _logger?.LogInformation("Operation Cancelled");
+                _logger?.LogTrace(oce, "Operation Cancelled");
             }
             catch (Exception ex)
             {
                 _logger?.LogError($"Error sending data to Visual Studio.{Environment.NewLine}Error: {ex.Message}{Environment.NewLine}StackTrace:{Environment.NewLine}{ex.StackTrace}");
 
                 if (_cts.IsCancellationRequested)
+                {
                     throw;
+                }
             }
+            return Task.CompletedTask;
         }
 
         public void Dispose()
@@ -302,7 +314,9 @@ public class DebuggingServer : IDisposable
             lock (_tcpClient)
             {
                 if (Disposed)
+                {
                     return;
+                }
 
                 _logger?.LogTrace("Disposing ActiveClient");
                 _cts.Cancel(false);

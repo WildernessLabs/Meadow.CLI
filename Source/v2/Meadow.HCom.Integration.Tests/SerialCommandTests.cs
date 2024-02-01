@@ -39,7 +39,7 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var files = await connection.GetFileList(false);
+                var files = await connection.GetFileList("/meadow0/", false);
 
                 Assert.NotNull(files);
                 Assert.True(files.Length > 0);
@@ -53,7 +53,7 @@ namespace Meadow.HCom.Integration.Tests
             {
                 Assert.Equal(ConnectionState.Disconnected, connection.State);
 
-                var files = await connection.GetFileList(true);
+                var files = await connection.GetFileList("/meadow0/", true);
 
                 Assert.NotNull(files);
                 Assert.True(files.Length > 0);

@@ -243,7 +243,7 @@ namespace Meadow.CLI.Core.Devices
             return _meadowDevice.QspiInit(value, cancellationToken);
         }
 
-        public async Task DeployApp(string fileName, bool includePdbs = true, CancellationToken cancellationToken = default, bool verbose = false, IList<string>? noLink = null)
+        public async Task DeployApp(string fileName, bool includePdbs = false, CancellationToken cancellationToken = default, bool verbose = false, IList<string>? noLink = null)
         {
             try
             {

@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,30 +9,30 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 {
     public FirmwareDefaultCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     [CommandParameter(0, Name = "Version number to use as default", IsRequired = false)]
-    public string? Version { get; set; } = null;
+    public string? Version { get; init; }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        await FileManager.Refresh();
 
-        if (Collection != null)
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var collection = FileManager.Firmware["Meadow F7"];
+
+        if (Version == null)
         {
-            if (Version == null)
-            {
-                Logger?.LogInformation($"Default firmware is '{Collection.DefaultPackage?.Version}'.");
-            }
-            else
-            {
-                var existing = Collection.FirstOrDefault(p => p.Version == Version);
+            Logger?.LogInformation($"Default firmware is '{collection?.DefaultPackage?.Version}'.");
+        }
+        else
+        {
+            var existing = collection.FirstOrDefault(p => p.Version == Version);
 
-                Logger?.LogInformation($"Setting default firmware to '{Version}'...");
+            Logger?.LogInformation($"Setting default firmware to '{Version}'...");
 
-                await Collection.SetDefaultPackage(Version);
-            }
+            await collection.SetDefaultPackage(Version);
         }
     }
 }

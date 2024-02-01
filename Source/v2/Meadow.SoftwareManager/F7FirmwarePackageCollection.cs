@@ -11,23 +11,28 @@ namespace Meadow.Software;
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
     /// <inheritdoc/>
-    public event EventHandler<long>? DownloadProgress;
+    public event EventHandler<long> DownloadProgress = default!;
+
+    public event EventHandler<FirmwarePackage?> DefaultVersionChanged = default!;
 
     public string PackageFileRoot { get; }
 
-    private List<FirmwarePackage> _f7Packages = new();
-
-    public FirmwarePackage? DefaultPackage { get; private set; }
+    private readonly List<FirmwarePackage> _f7Packages = new();
 
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "WildernessLabs",
         "Firmware");
+    private FirmwarePackage? _defaultPackage;
 
     internal F7FirmwarePackageCollection()
         : this(DefaultF7FirmwareStoreRoot)
     {
     }
+
+    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
+
+    public FirmwarePackage this[int index] => _f7Packages[index];
 
     internal F7FirmwarePackageCollection(string rootPath)
     {
@@ -37,6 +42,16 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         }
 
         PackageFileRoot = rootPath;
+    }
+
+    public FirmwarePackage? DefaultPackage
+    {
+        get => _defaultPackage;
+        private set
+        {
+            _defaultPackage = value;
+            DefaultVersionChanged?.Invoke(this, value);
+        }
     }
 
     /// <summary>
@@ -59,7 +74,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return null;
     }
 
-    public Task DeletePackage(string version)
+    public async Task DeletePackage(string version)
     {
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
@@ -70,30 +85,26 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         // if we're deleting the default, we need to det another default
         var i = _f7Packages.Count - 1;
+        while (DefaultPackage?.Version == _f7Packages[i].Version)
+        {
+            i--;
+        }
+        var newDefault = _f7Packages[i].Version;
+
         if (DefaultPackage != null)
         {
-            while (DefaultPackage.Version == _f7Packages[i].Version)
-            {
-                i--;
-            }
-            var newDefault = _f7Packages[i].Version;
             _f7Packages.Remove(DefaultPackage);
-
-            if (!string.IsNullOrEmpty(newDefault))
-                SetDefaultPackage(newDefault);
         }
+        await SetDefaultPackage(newDefault);
 
         var path = Path.Combine(PackageFileRoot, version);
 
         Directory.Delete(path, true);
-
-        return Task.CompletedTask;
     }
 
-    public Task SetDefaultPackage(string version)
+    public async Task SetDefaultPackage(string version)
     {
-        // Refresh the list, in case we've just downloaded it.
-        Refresh();
+        await Refresh();
 
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
@@ -104,8 +115,6 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         var downloadManager = new F7FirmwareDownloadManager();
         downloadManager.SetDefaultVersion(PackageFileRoot, version);
-
-        return Task.CompletedTask;
     }
 
     public async Task<bool> IsVersionAvailableForDownload(string version)

@@ -18,14 +18,11 @@ public class LibUsbProvider : ILibUsbProvider
 
     public List<ILibUsbDevice> GetDevicesInBootloaderMode()
     {
-        if (_devices == null)
-        {
-            _devices = _context
-               .List()
-               .Where(d => d.Info.VendorId == UsbBootLoaderVendorID)
-               .Select(d => new LibUsbDevice(d))
-               .ToList<ILibUsbDevice>();
-        }
+        _devices = _context
+           .List()
+           .Where(d => d.Info.VendorId == UsbBootLoaderVendorID)
+           .Select(d => new LibUsbDevice(d))
+           .ToList<ILibUsbDevice>();
 
         return _devices;
     }

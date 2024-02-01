@@ -5,8 +5,8 @@ namespace Meadow.Hcom;
 
 public class TcpConnection : ConnectionBase
 {
-    private HttpClient _client;
-    private string _baseUri;
+    private readonly HttpClient _client;
+    private readonly string _baseUri;
 
     public override string Name => _baseUri;
 
@@ -16,39 +16,38 @@ public class TcpConnection : ConnectionBase
         _client = new HttpClient();
     }
 
-    public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
+    public override Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
-        return await Task.Run(() =>
+        /*
+        var request = RequestBuilder.Build<GetDeviceInfoRequest>();
+
+        base.EnqueueRequest(request);
+
+        // get the info and "attach"
+        var timeout = timeoutSeconds * 2;
+
+        while (timeout-- > 0)
         {
-            /*
-            var request = RequestBuilder.Build<GetDeviceInfoRequest>();
+            if (cancellationToken?.IsCancellationRequested ?? false) return null;
+            if (timeout <= 0) throw new TimeoutException();
 
-            base.EnqueueRequest(request);
+            // do we have a device info?
 
-            // get the info and "attach"
-            var timeout = timeoutSeconds * 2;
-
-            while (timeout-- > 0)
+            if (State == ConnectionState.MeadowAttached)
             {
-                if (cancellationToken?.IsCancellationRequested ?? false) return null;
-                if (timeout <= 0) throw new TimeoutException();
-
-                // do we have a device info?
-
-                if (State == ConnectionState.MeadowAttached)
-                {
-                    break;
-                }
-
-                await Task.Delay(500);
+                break;
             }
-            */
 
-            // TODO: is there a way to "attach"?  ping result? device info?
-            return Device = new MeadowDevice(this);
+            await Task.Delay(500);
+        }
+        */
 
-            // TODO: web socket for listen?
-        });
+        // TODO: is there a way to "attach"?  ping result? device info?
+        Device = new MeadowDevice(this);
+
+        return Task.FromResult<IMeadowDevice?>(Device);
+
+        // TODO: web socket for listen?
     }
 
     public override async Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null)
@@ -58,14 +57,7 @@ public class TcpConnection : ConnectionBase
         if (response.IsSuccessStatusCode)
         {
             var r = JsonSerializer.Deserialize<DeviceInfoHttpResponse>(await response.Content.ReadAsStringAsync());
-            if (r != null)
-            {
-                return new DeviceInfo(r.ToDictionary());
-            }
-            else
-            {
-                return null;
-            }
+            return new DeviceInfo(r.ToDictionary());
         }
         else
         {
@@ -78,7 +70,7 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
@@ -123,7 +115,7 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
@@ -188,6 +180,16 @@ public class TcpConnection : ConnectionBase
     }
 
     public override Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Detach()
     {
         throw new NotImplementedException();
     }

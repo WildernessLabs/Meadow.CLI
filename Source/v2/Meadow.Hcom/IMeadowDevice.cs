@@ -9,7 +9,7 @@ namespace Meadow.Hcom
         Task RuntimeEnable(CancellationToken? cancellationToken = null);
         Task<bool> IsRuntimeEnabled(CancellationToken? cancellationToken = null);
         Task<DeviceInfo?> GetDeviceInfo(CancellationToken? cancellationToken = null);
-        Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null);
+        Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null);
         Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null);
         Task<bool> WriteFile(string localFileName, string? meadowFileName = null, CancellationToken? cancellationToken = null);
         Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null);
@@ -27,8 +27,6 @@ namespace Meadow.Hcom
         Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
         Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
         Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
-        Task ForwardVisualStudioDataToMono(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = default);
-
-        MeadowDataProcessor DataProcessor { get; }
+        Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
     }
 }

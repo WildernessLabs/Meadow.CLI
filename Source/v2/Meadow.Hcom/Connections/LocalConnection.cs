@@ -58,7 +58,7 @@ public class LocalConnection : ConnectionBase
             _deviceInfo = new DeviceInfo(info);
         }
 
-        return Task.FromResult< DeviceInfo?>(_deviceInfo);
+        return Task.FromResult<DeviceInfo?>(_deviceInfo);
     }
 
     private string ExecuteBashCommandLine(string command)
@@ -68,6 +68,7 @@ public class LocalConnection : ConnectionBase
             FileName = "/bin/bash",
             Arguments = $"-c \"{command}\"",
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
@@ -76,7 +77,10 @@ public class LocalConnection : ConnectionBase
 
         process?.WaitForExit();
 
-        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        var stdout = process?.StandardOutput.ReadToEnd() ?? string.Empty;
+        var stderr = process?.StandardError.ReadToEnd() ?? string.Empty;
+
+        return stdout;
     }
 
     public override Task<string> GetPublicKey(CancellationToken? cancellationToken = null)
@@ -110,6 +114,13 @@ public class LocalConnection : ConnectionBase
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
+
+            if (pubkey.StartsWith("ssh-rsa"))
+            {
+                // convert to PEM format
+                pubkey = this.ExecuteBashCommandLine("ssh-keygen -f ~/.ssh/id_rsa.pub -m 'PEM' -e");
+            }
+
             return Task.FromResult(pubkey);
         }
         else
@@ -122,7 +133,7 @@ public class LocalConnection : ConnectionBase
 
 
 
-    public override Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
@@ -132,7 +143,7 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
@@ -197,6 +208,11 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public override Task TraceDisable(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
@@ -233,6 +249,11 @@ public class LocalConnection : ConnectionBase
     }
 
     public override Task<bool> WriteRuntime(string localFileName, CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Detach()
     {
         throw new NotImplementedException();
     }

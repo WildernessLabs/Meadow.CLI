@@ -6,28 +6,36 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("developer", Description = "Sets a specified developer parameter on the Meadow")]
 public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
 {
-    [CommandOption("param", 'p', Description = "The parameter to set.")]
-    public ushort Parameter { get; set; }
+    [CommandOption("param", 'p', Description = "The parameter to set.", IsRequired = false)]
+    public ushort Parameter { get; init; }
 
-    [CommandOption("value", 'v', Description = "The value to apply to the parameter. Valid values are 0 to 4,294,967,295")]
-    public uint Value { get; set; }
+    [CommandOption("value", 'v', Description = "The value to apply to the parameter. Valid values are 0 to 4,294,967,295", IsRequired = false)]
+    public uint Value { get; init; }
 
     public DeveloperCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null || connection.Device == null)
         {
-            if (Connection.Device != null)
-            {
-                Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
-                await Connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
-            }
+            return;
         }
+
+        Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
+
+        connection.DeviceMessageReceived += (s, e) =>
+        {
+            Logger?.LogInformation(e.message);
+        };
+        connection.ConnectionError += (s, e) =>
+        {
+            Logger?.LogError(e.Message);
+        };
+
+        await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
     }
 }

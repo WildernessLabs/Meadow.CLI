@@ -30,7 +30,17 @@ namespace Meadow.Hcom
 
                 await Task.Delay(500);
 
-                Open();
+                if (!_port.IsOpen)
+                {
+                    try
+                    {
+                        Open();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Unable to open port: {ex.Message}");
+                    }
+                }
             }
 
             throw new TimeoutException();
@@ -55,7 +65,7 @@ namespace Meadow.Hcom
                     read:
                         try
                         {
-                            receivedLength = await _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
+                            receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
                         }
                         catch (OperationCanceledException)
                         {
@@ -124,7 +134,7 @@ namespace Meadow.Hcom
                                     var response = SerialResponse.Parse(decodedBuffer, decodedSize);
 
                                     Debug.WriteLine($"{response.RequestType}");
-                                    State = ConnectionState.MeadowAttached;
+                                    _state = ConnectionState.MeadowAttached;
 
                                     if (response != null)
                                     {
@@ -175,7 +185,7 @@ namespace Meadow.Hcom
 
                                         if (_reconnectInProgress)
                                         {
-                                            State = ConnectionState.MeadowAttached;
+                                            _state = ConnectionState.MeadowAttached;
                                             _reconnectInProgress = false;
                                         }
                                         else if (_textListComplete != null)
@@ -186,7 +196,7 @@ namespace Meadow.Hcom
                                     else if (response is TextRequestResponse trr)
                                     {
                                         // this is a response to a text request - the exact request is cached
-                                        Debug.WriteLine($"RESPONSE> {trr.Text}");
+                                        //Debug.WriteLine($"RESPONSE> {trr.Text}");
                                     }
                                     else if (response is DeviceInfoSerialResponse dir)
                                     {
@@ -194,8 +204,8 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
-                                        // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED/TextConcludedResponse to know it's back
-                                        State = ConnectionState.Disconnected;
+                                        // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
+                                        _state = ConnectionState.Disconnected;
                                         _reconnectInProgress = true;
                                     }
                                     else if (response is FileReadInitOkResponse fri)
@@ -219,7 +229,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-                                        await EncodeAndSendPacket(uploadRequest.Serialize());
+                                        EncodeAndSendPacket(uploadRequest.Serialize());
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {
@@ -243,10 +253,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream.Dispose();
                                         _readFileInfo = null;
 
-                                        if (!string.IsNullOrEmpty(fn))
-                                        {
-                                            FileReadCompleted?.Invoke(this, fn);
-                                        }
+                                        FileReadCompleted?.Invoke(this, fn);
                                     }
                                     else if (response is FileReadInitFailedResponse frf)
                                     {
@@ -255,6 +262,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is RequestErrorTextResponse ret)
                                     {
+                                        Debug.WriteLine(ret.Text);
                                         RaiseDeviceMessageReceived(ret.Text, "hcom");
                                         _lastError = ret.Text;
                                     }
@@ -304,20 +312,6 @@ namespace Meadow.Hcom
                         //ignoring for now until we wire cancellation ...
                         //this blocks the thread abort exception when the console app closes
                         Debug.WriteLine($"listen abort");
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        // On Mac the port gets disposed when the Meadow is reset
-                        await Task.Delay(1000);
-                        CreatePort();
-
-                        // make sure it's been re-opened
-                        while(!_port.IsOpen)
-                        {
-                            _port.Open();
-                            await Task.Delay(250);
-                            // TODO: add a timeout here
-                        }
                     }
                     catch (InvalidOperationException)
                     {

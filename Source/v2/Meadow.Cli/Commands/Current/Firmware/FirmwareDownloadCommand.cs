@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,81 +9,79 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
     public FirmwareDownloadCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     [CommandOption("force", 'f', IsRequired = false)]
-    public bool Force { get; set; }
+    public bool Force { get; init; }
 
     [CommandOption("version", 'v', IsRequired = false)]
-    public string? Version { get; set; } = default!;
+    public string? Version { get; set; }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        await FileManager.Refresh();
 
-        if (Collection != null)
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var collection = FileManager.Firmware["Meadow F7"];
+
+        bool explicitVersion;
+
+        if (Version == null)
         {
-            bool explicitVersion;
+            explicitVersion = false;
+            var latest = await collection.GetLatestAvailableVersion();
 
-            if (Version == null)
+            if (latest == null)
             {
-                explicitVersion = false;
-                var latest = await Collection.GetLatestAvailableVersion();
-
-                if (latest == null)
-                {
-                    Logger?.LogError($"Unable to get latest version information.");
-                    return;
-                }
-
-                Logger?.LogInformation($"Latest available version is '{latest}'...");
-                Version = latest;
-            }
-            else
-            {
-                explicitVersion = true;
-                Logger?.LogInformation($"Checking for firmware package '{Version}'...");
-            }
-
-            var isAvailable = await Collection.IsVersionAvailableForDownload(Version);
-
-            if (!isAvailable)
-            {
-                Logger?.LogError($"Requested package version '{Version}' is not available.");
+                Logger?.LogError($"Unable to get latest version information");
                 return;
             }
 
-            Logger?.LogInformation($"Downloading firmware package '{Version}'...");
+            Logger?.LogInformation($"Latest available version is '{latest}'...");
+            Version = latest;
+        }
+        else
+        {
+            explicitVersion = true;
+            Logger?.LogInformation($"Checking for firmware package '{Version}'...");
+        }
 
-            try
+        var isAvailable = await collection.IsVersionAvailableForDownload(Version);
+
+        if (!isAvailable)
+        {
+            Logger?.LogError($"Requested package version '{Version}' is not available.");
+            return;
+        }
+
+        Logger?.LogInformation($"Downloading firmware package '{Version}'...");
+
+        try
+        {
+            collection.DownloadProgress += OnDownloadProgress;
+
+            var result = await collection.RetrievePackage(Version, Force);
+
+            if (!result)
             {
-                Collection.DownloadProgress += OnDownloadProgress;
-
-                var result = await Collection.RetrievePackage(Version, Force);
-
-                if (!result)
-                {
-                    Logger?.LogError($"Unable to download package '{Version}'.");
-                }
-                else
-                {
-                    Logger?.LogError($"{Environment.NewLine} Firmware package '{Version}' downloaded.");
-
-                    if (!explicitVersion)
-                    {
-                        await Collection.SetDefaultPackage(Version);
-                    }
-                }
+                Logger?.LogError($"Unable to download package '{Version}'");
             }
-            catch (Exception ex)
+            else
             {
-                Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+                Logger?.LogInformation($"Firmware package '{Version}' downloaded");
+
+                if (explicitVersion == false)
+                {
+                    await collection.SetDefaultPackage(Version);
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+        }
     }
-
-    // TODO private long _lastProgress = 0;
 
     private void OnDownloadProgress(object? sender, long e)
     {

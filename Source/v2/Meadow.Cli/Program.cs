@@ -15,9 +15,14 @@ public class Program
     public static async Task<int> Main(string[] args)
     {
         var logLevel = LogEventLevel.Information;
+        var logModifier = args.FirstOrDefault(a => a.Contains("-m"))
+                              ?.Count(x => x == 'm') ?? 0;
 
-        if (args.Contains("--verbose"))
-            logLevel = LogEventLevel.Verbose;
+        logLevel -= logModifier;
+        if (logLevel < 0)
+        {
+            logLevel = 0;
+        }
 
         var outputTemplate = logLevel == LogEventLevel.Verbose
                                  ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
@@ -50,6 +55,7 @@ public class Program
         services.AddSingleton<CollectionService>();
         services.AddSingleton<CommandService>();
         services.AddSingleton<PackageService>();
+        services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager, IdentityManager>();
 
         if (File.Exists("appsettings.json"))
@@ -63,8 +69,7 @@ public class Program
         }
         else
         {
-            // Have an empty Configuration instead.
-            services.AddScoped<IConfiguration>(_ => new ConfigurationBuilder().Build());
+            services.AddScoped<IConfiguration>(_ => null);
         }
 
         AddCommandsAsServices(services);

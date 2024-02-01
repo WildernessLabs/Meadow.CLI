@@ -63,8 +63,6 @@
     <PackageReference Include="YamlDotNet" Version="13.1.1" />
   </ItemGroup>
 
-  <Import Project="..\MeadowLogger\MeadowLogger.projitems" Label="Shared" />
-
   <ItemGroup>
     <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
   </ItemGroup>

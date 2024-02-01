@@ -8,28 +8,23 @@ public class RuntimeEnableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 {
     public RuntimeEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null || connection.Device == null)
         {
-            if (Connection.Device != null)
-            {
-                try
-                {
-                    Logger?.LogInformation($"Enabling runtime...");
-
-                    await Connection.Device.RuntimeEnable(CancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    Logger?.LogError(ex, $"Failed to enable runtime.");
-                }
-            }
+            return;
         }
+
+        Logger?.LogInformation($"Enabling runtime...");
+
+        await connection.Device.RuntimeEnable(CancellationToken);
+
+        var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
+
+        Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
     }
 }

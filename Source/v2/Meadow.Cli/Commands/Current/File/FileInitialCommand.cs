@@ -7,27 +7,31 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 {
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
-    public string MeadowFile { get; set; } = default!;
+    public string MeadowFile { get; init; } = default!;
 
     public FileInitialCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null || connection.Device == null)
         {
-            if (Connection.Device != null)
-            {
-                Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
-
-                var data = await Connection.Device.ReadFileString(MeadowFile, CancellationToken);
-
-                Logger?.LogInformation(data);
-            }
+            return;
         }
+
+        Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
+
+        var data = await connection.Device.ReadFileString(MeadowFile, CancellationToken);
+
+        if (data == null)
+        {
+            Logger?.LogError($"Failed to retrieve file");
+            return;
+        }
+
+        Logger?.LogInformation(data);
     }
 }

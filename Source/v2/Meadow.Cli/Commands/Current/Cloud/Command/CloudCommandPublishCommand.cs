@@ -7,25 +7,25 @@ using System.Text.Json;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud command publish", Description = "Publish a command to Meadow devices via the Meadow Service")]
+[Command("cloud command publish", Description = "Publish a command to Meadow devices via Meadow.Cloud")]
 public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCommand>
 {
     [CommandParameter(0, Description = "The name of the command", IsRequired = true, Name = "COMMAND_NAME")]
-    public string? CommandName { get; set; }
+    public string CommandName { get; init; } = default!;
 
-    [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command")]
-    public string? CollectionId { get; set; }
+    [CommandOption("collectionId", 'c', Description = "The target collection for publishing the command", IsRequired = false)]
+    public string? CollectionId { get; init; }
 
-    [CommandOption("deviceIds", 'd', Description = "The target devices for publishing the command")]
-    public string[]? DeviceIds { get; set; }
+    [CommandOption("deviceIds", 'd', Description = "The target devices for publishing the command", IsRequired = false)]
+    public string[]? DeviceIds { get; init; }
 
-    [CommandOption("args", 'a', Description = "The arguments for the command as a JSON string", Converter = typeof(JsonDocumentBindingConverter))]
-    public JsonDocument? Arguments { get; set; }
+    [CommandOption("args", 'a', Description = "The arguments for the command as a JSON string", Converter = typeof(JsonDocumentBindingConverter), IsRequired = false)]
+    public JsonDocument? Arguments { get; init; }
 
-    [CommandOption("qos", 'q', Description = "The MQTT-defined quality of service for the command")]
-    public QualityOfService QualityOfService { get; set; } = QualityOfService.AtLeastOnce;
+    [CommandOption("qos", 'q', Description = "The MQTT-defined quality of service for the command", IsRequired = false)]
+    public QualityOfService QualityOfService { get; init; } = QualityOfService.AtLeastOnce;
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)")]
+    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
     private CommandService CommandService { get; }
@@ -54,8 +54,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.", showHelp: true);
         }
 
-        if (Host == null)
-            Host = DefaultHost;
+        Host ??= DefaultHost;
 
         var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))
@@ -65,23 +64,19 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
         try
         {
-            if (!string.IsNullOrEmpty(CommandName))
+            if (!string.IsNullOrWhiteSpace(CollectionId))
             {
-                Logger?.LogInformation($"Publishing '{CommandName}' command to Meadow.Cloud. Please wait...");
-                if (!string.IsNullOrWhiteSpace(CollectionId))
-                {
-                    await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
-                }
-                else if (DeviceIds != null && DeviceIds.Any())
-                {
-                    await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
-                }
-                else
-                {
-                    throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
-                }
-                Logger?.LogInformation("Publish command successful.");
+                await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
             }
+            else if (DeviceIds?.Length > 0)
+            {
+                await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
+            }
+            else
+            {
+                throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
+            }
+            Logger?.LogInformation("Publish command successful.");
         }
         catch (MeadowCloudAuthException ex)
         {

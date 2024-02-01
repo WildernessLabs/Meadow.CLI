@@ -1,31 +1,28 @@
-﻿using System.Threading;
-using CliFx.Attributes;
-using Meadow.CLI;
+﻿using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("app trim", Description = "Runs an already-compiled Meadow application through reference trimming")]
-public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
+public class AppTrimCommand : BaseCommand<AppTrimCommand>
 {
+    private readonly IPackageManager _packageManager;
+
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
-    public string? Configuration { get; set; }
+    public string? Configuration { get; init; }
 
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
-    public string? Path { get; set; } = default!;
+    public string? Path { get; init; }
 
-    public AppTrimCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(packageManager, connectionManager, loggerFactory)
+    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
+        _packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
-
-        string path = Path == null
-            ? Environment.CurrentDirectory
-            : Path;
+        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
 
         // is the path a file?
         FileInfo file;
@@ -55,21 +52,14 @@ public class AppTrimCommand : BaseAppCommand<AppTrimCommand>
             file = new FileInfo(path);
         }
 
-        // Find RuntimeVersion
-        if (Connection != null)
-        {
-            var info = await Connection.GetDeviceInfo(CancellationToken);
+        // if no configuration was provided, find the most recently built
+        Logger?.LogInformation($"Trimming {file.FullName}");
+        Logger?.LogInformation("This may take a few seconds...");
 
-            _packageManager.RuntimeVersion = info?.RuntimeVersion;
+        var cts = new CancellationTokenSource();
+        ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);
 
-            Logger?.LogInformation($"Using runtime files from {_packageManager.MeadowAssembliesPath}");
-
-            // Avoid double reporting.
-            DetachMessageHandlers(Connection);
-        }
-
-        // TODO: support `nolink` command line args
-        await _packageManager.TrimApplication(file, false, null, Logger, CancellationToken)
-            .WithSpinner(Console!, 250);
+        await _packageManager.TrimApplication(file, false, null, CancellationToken);
+        cts.Cancel();
     }
 }

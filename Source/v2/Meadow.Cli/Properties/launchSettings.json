@@ -45,7 +45,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM7"
+      "commandLineArgs": "config route COM10"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -81,7 +81,7 @@
     },
     "File Delete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete meadow.log"
+      "commandLineArgs": "file delete Juego.pdb"
     },
     "File Read": {
       "commandName": "Project",
@@ -105,7 +105,7 @@
     },
     "Firmware Download version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware download -v 1.0.2.0 --force"
+      "commandLineArgs": "firmware download -v 1.7.1.4 --force"
     },
     "Firmware Default get": {
       "commandName": "Project",
@@ -125,7 +125,7 @@
     },
     "Firmware Write version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write -v 1.2.0.1"
+      "commandLineArgs": "firmware write -v 1.8.0.0"
     },
     "Firmware Write runtime": {
       "commandName": "Project",
@@ -173,7 +173,7 @@
     },
     "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "app trim F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app trim H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\"
     },
     "Dfu Install": {
       "commandName": "Project",
@@ -185,7 +185,7 @@
     },
     "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app deploy H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\bin\\Debug\\netstandard2.1\\postlink_bin"
     },
     "App Deploy (untrimmed output)": {
       "commandName": "Project",
@@ -205,7 +205,7 @@
     },
     "Device provision": {
       "commandName": "Project",
-      "commandLineArgs": "device provision -o christacke6612"
+      "commandLineArgs": "device provision"
     },
     "Cloud login": {
       "commandName": "Project",

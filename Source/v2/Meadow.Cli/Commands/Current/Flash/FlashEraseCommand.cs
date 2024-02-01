@@ -3,26 +3,29 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("flash erase", Description = "Erases the device's flash storage")]
+[Command("flash erase", Description = "Erase the contents of the device flash storage")]
 public class FlashEraseCommand : BaseDeviceCommand<FlashEraseCommand>
 {
     public FlashEraseCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
-    {
-    }
+    { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        var connection = await GetCurrentConnection();
 
-        if (Connection != null)
+        if (connection == null || connection.Device == null)
         {
-            if (Connection.Device != null)
-            {
-                Logger?.LogInformation($"Erasing flash...");
-
-                await Connection.Device.EraseFlash(CancellationToken);
-            }
+            return;
         }
+
+        Logger?.LogInformation($"Erasing flash...");
+
+        connection.DeviceMessageReceived += (s, e) =>
+        {
+            Logger?.LogInformation(e.message);
+        };
+
+        await connection.Device.EraseFlash(CancellationToken);
     }
 }

@@ -124,7 +124,7 @@ public class ConnectionManagerTests
             Assert.Fail("no device");
             return;
         }
-        var files = await device.GetFileList(false);
+        var files = await device.GetFileList("/meadow0/", false);
         Assert.NotNull(files);
         Assert.True(files.Any());
         Assert.True(files.All(f => f.Name != null));
@@ -143,7 +143,7 @@ public class ConnectionManagerTests
             Assert.Fail("no device");
             return;
         }
-        var files = await device.GetFileList(true);
+        var files = await device.GetFileList("/meadow0/", true);
         Assert.NotNull(files);
         Assert.True(files.Any());
         Assert.True(files.All(f => f.Name != null));

@@ -14,6 +14,7 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
     /// EventArgs are the total number of bytes retrieved
     /// </remarks>
     public event EventHandler<long> DownloadProgress;
+    public event EventHandler<FirmwarePackage?> DefaultVersionChanged;
 
     FirmwarePackage? DefaultPackage { get; }
     Task SetDefaultPackage(string version);
@@ -23,6 +24,7 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
     Task<string?> UpdateAvailable();
     Task<bool> IsVersionAvailableForDownload(string version);
     Task<bool> RetrievePackage(string version, bool overwrite = false);
-
+    FirmwarePackage this[int index] { get; }
+    FirmwarePackage? this[string version] { get; }
     string PackageFileRoot { get; }
 }

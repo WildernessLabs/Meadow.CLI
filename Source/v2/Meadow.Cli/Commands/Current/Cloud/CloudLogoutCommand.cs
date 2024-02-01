@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud logout", Description = "Log out of the Meadow Service")]
+[Command("cloud logout", Description = "Log out of Meadow.Cloud")]
 public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
 {
     public CloudLogoutCommand(
@@ -15,16 +15,14 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
         CollectionService collectionService,
         ILoggerFactory? loggerFactory)
         : base(identityManager, userService, deviceService, collectionService, loggerFactory)
-    {
-    }
+    { }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
-        await Task.Run(() =>
-        {
-            Logger?.LogInformation($"Logging out of Meadow.Cloud...");
+        Logger?.LogInformation($"Logging out of Meadow.Cloud...");
 
-            IdentityManager.Logout();
-        });
+        IdentityManager.Logout();
+
+        return ValueTask.CompletedTask;
     }
 }

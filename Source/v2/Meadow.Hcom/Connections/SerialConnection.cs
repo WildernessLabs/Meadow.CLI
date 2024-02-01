@@ -1,14 +1,14 @@
-﻿using Meadow.Hardware;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 
 namespace Meadow.Hcom;
+
+public delegate void ConnectionStateChangedHandler(SerialConnection connection, ConnectionState oldState, ConnectionState newState);
 
 public partial class SerialConnection : ConnectionBase, IDisposable
 {
@@ -16,18 +16,20 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     public const int ReadBufferSizeBytes = 0x2000;
     private const int DefaultTimeout = 5000;
 
-    private event EventHandler<string>? FileReadCompleted = delegate { };
-    private event EventHandler? FileWriteAccepted;
-    private event EventHandler<string>? FileDataReceived;
+    private event EventHandler<string> FileReadCompleted = default!;
+    private event EventHandler FileWriteAccepted = default!;
+    private event EventHandler<string> FileDataReceived = default!;
+    public event ConnectionStateChangedHandler ConnectionStateChanged = default!;
 
-    private SerialPort _port = default!;
-    private ILogger? _logger;
+    private readonly SerialPort _port;
+    private readonly ILogger? _logger;
     private bool _isDisposed;
-    private List<IConnectionListener> _listeners = new List<IConnectionListener>();
-    private Queue<IRequest> _pendingCommands = new Queue<IRequest>();
+    private ConnectionState _state;
+    private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
+    private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
-    private List<string> _textList = new List<string>();
+    private readonly List<string> _textList = new List<string>();
     private int _messageCount = 0;
     private ReadFileInfo? _readFileInfo = null;
     private string? _lastError = null;
@@ -44,8 +46,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         Name = port;
         State = ConnectionState.Disconnected;
         _logger = logger;
-
-        CreatePort();
+        _port = new SerialPort(port);
+        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
         new Task(
             () => _ = ListenerProc(),
@@ -58,13 +60,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             Name = "HCOM Sender"
         }
         .Start();
-    }
-
-    private void CreatePort()
-    {
-        _port = new SerialPort(Name);
-        _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
-        _port.Open();
     }
 
     private bool MaintainConnection
@@ -96,7 +91,24 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         while (_maintainConnection)
         {
-            Open(true);
+            if (!_port.IsOpen)
+            {
+                try
+                {
+                    Debug.WriteLine("Opening COM port...");
+                    _port.Open();
+                    Debug.WriteLine("Opened COM port");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"{ex.Message}");
+                    Thread.Sleep(1000);
+                }
+            }
+            else
+            {
+                Thread.Sleep(1000);
+            }
         }
     }
 
@@ -122,57 +134,53 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // TODO: stop maintaining connection?
     }
 
-    private void Open(bool inLoop = false)
+    public override ConnectionState State
+    {
+        get => _state;
+        protected set
+        {
+            if (value == State) { return; }
+
+            var old = _state;
+            _state = value;
+            ConnectionStateChanged?.Invoke(this, old, State);
+        }
+    }
+
+    private void Open()
     {
         if (!_port.IsOpen)
         {
             try
             {
-                Debug.WriteLine("Opening COM port...");
                 _port.Open();
             }
-            catch (UnauthorizedAccessException ex)
+            catch (FileNotFoundException)
             {
-                // Handle unauthorized access (e.g., port in use by another application)
-                throw new Exception($"Serial port '{_port.PortName}' is in use by another application.", ex.InnerException);
-            }
-            catch (IOException ex)
-            {
-                // Handle I/O errors
-                throw new Exception($"An I/O error occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
-            }
-            catch (TimeoutException ex)
-            {
-                // Handle timeout
-                throw new Exception($"Timeout occurred when opening the serial port '{_port.PortName}'.", ex.InnerException);
+                throw new Exception($"Serial port '{_port.PortName}' not found");
             }
         }
-        else if (inLoop)
-        {
-            Thread.Sleep(1000);
-        }
-
         State = ConnectionState.Connected;
-
-        Debug.WriteLine("Opened COM port");
     }
 
     private void Close()
     {
         if (_port.IsOpen)
         {
-            try
-            {
-                _port.Close();
-            }
-            catch (IOException ex)
-            {
-                // Handle I/O errors
-                throw new Exception($"An I/O error occurred when attempting to close the serial port '{_port.PortName}'.", ex.InnerException);
-            }
+            _port.Close();
         }
 
         State = ConnectionState.Disconnected;
+    }
+
+    public override void Detach()
+    {
+        if (MaintainConnection)
+        {
+            // TODO: close this up
+        }
+
+        Close();
     }
 
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
@@ -185,7 +193,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // search for the device via HCOM - we'll use a simple command since we don't have a "ping"
             var command = RequestBuilder.Build<GetDeviceInfoRequest>();
 
-            // sequence numbers are only for file retrieval.  Setting it to non-zero will cause it to hang
+            // sequence numbers are only for file retrieval - Setting it to non-zero will cause it to hang
 
             _port.DiscardInBuffer();
 
@@ -229,32 +237,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private async void CommandManager()
+    private void CommandManager()
     {
-        await Task.Run(async () =>
+        while (!_isDisposed)
         {
-            while (!_isDisposed)
+            while (_pendingCommands.Count > 0)
             {
-                while (_pendingCommands.Count > 0)
+                Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
+
+                var command = _pendingCommands.Dequeue() as Request;
+                if (command != null)
                 {
-                    Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
-
-                    var command = _pendingCommands.Dequeue() as Request;
-
                     // if this is a file write, we need to packetize for progress
 
-                    if (command != null)
-                    {
-                        var payload = command.Serialize();
-                        await EncodeAndSendPacket(payload);
-                    }
+                    var payload = command.Serialize();
+                    EncodeAndSendPacket(payload);
 
                     // TODO: re-queue on fail?
                 }
-
-                Thread.Sleep(1000);
             }
-        });
+
+            Thread.Sleep(1000);
+        }
     }
 
     private class ReadFileInfo
@@ -291,119 +295,119 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _pendingCommands.Enqueue(command);
     }
 
-    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = default)
+    private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
     {
-        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
+        EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = default)
+    private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
-        if (messageBytes != null)
+        //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
+
+        while (!_port.IsOpen)
         {
-            Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
+            _state = ConnectionState.Disconnected;
+            Thread.Sleep(100);
+            // wait for the port to open
+        }
 
-            while (!_port.IsOpen)
-            {
-                State = ConnectionState.Disconnected;
-                Thread.Sleep(100);
-                // wait for the port to open
-            }
+        _state = ConnectionState.Connected;
 
-            State = ConnectionState.Connected;
+        try
+        {
+            int encodedToSend;
+            byte[] encodedBytes;
 
+            // For file download this is a LOT of messages
+            // _uiSupport.WriteDebugLine($"Sending packet with {messageSize} bytes");
+
+            // For testing calculate the crc including the sequence number
+            //_packetCrc32 = NuttxCrc.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
             try
             {
-                int encodedToSend;
-                byte[] encodedBytes;
+                // The encoded size using COBS is just a bit more than the original size adding 1 byte
+                // every 254 bytes plus 1 and need room for beginning and ending delimiters.
+                var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
+                encodedBytes = new byte[l + 2];
 
-                // For file download this is a LOT of messages
-                // _uiSupport.WriteDebugLine($"Sending packet with {messageSize} bytes");
+                // Skip over first byte so it can be a start delimiter
+                encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
 
-                // For testing calculate the crc including the sequence number
-                //_packetCrc32 = NuttxCrc.Crc32part(messageBytes, messageSize, 0, _packetCrc32);
-                try
+                // DEBUG TESTING
+                if (encodedToSend == -1)
                 {
-                    // The encoded size using COBS is just a bit more than the original size adding 1 byte
-                    // every 254 bytes plus 1 and need room for beginning and ending delimiters.
-                    var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
-                    encodedBytes = new byte[l + 2];
-
-                    // Skip over first byte so it can be a start delimiter
-                    encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
-
-                    // DEBUG TESTING
-                    if (encodedToSend == -1)
-                    {
-                        _logger?.LogError($"Error - encodedToSend == -1");
-                        return;
-                    }
-
-                    if (_port == null)
-                    {
-                        _logger?.LogError($"Error - SerialPort == null");
-                        throw new Exception("Port is null");
-                    }
-                }
-                catch (Exception except)
-                {
-                    string msg = string.Format("Send setup Exception: {0}", except);
-                    _logger?.LogError(msg);
-                    throw;
+                    _logger?.LogError($"Error - encodedToSend == -1");
+                    return;
                 }
 
-                // Add delimiters to packet boundaries
-                try
+                if (_port == null)
                 {
-                    encodedBytes[0] = 0;                // Start delimiter
-                    encodedToSend++;
-                    encodedBytes[encodedToSend] = 0;    // End delimiter
-                    encodedToSend++;
-                }
-                catch (Exception encodedBytesEx)
-                {
-                    // This should drop the connection and retry
-                    Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
-                    Thread.Sleep(500);    // Place for break point
-                    throw;
-                }
-
-                try
-                {
-                    // Send the data to Meadow
-                    await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken.HasValue ? cancellationToken.Value : default);
-                }
-                catch (InvalidOperationException ioe)  // Port not opened
-                {
-                    string msg = string.Format("Write but port not opened. Exception: {0}", ioe);
-                    _logger?.LogError(msg);
-                    throw;
-                }
-                catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
-                {
-                    string msg = string.Format("Write buffer, offset and count don't line up. Exception: {0}", aore);
-                    _logger?.LogError(msg);
-                    throw;
-                }
-                catch (ArgumentException ae)  // offset plus count > buffer length
-                {
-                    string msg = string.Format($"Write offset plus count > buffer length. Exception: {0}", ae);
-                    _logger?.LogError(msg);
-                    throw;
-                }
-                catch (TimeoutException te) // Took too long to send
-                {
-                    string msg = string.Format("Write took too long to send. Exception: {0}", te);
-                    _logger?.LogError(msg);
-                    throw;
+                    _logger?.LogError($"Error - SerialPort == null");
+                    throw new Exception("Port is null");
                 }
             }
             catch (Exception except)
             {
-                // DID YOU RESTART MEADOW?
-                // This should drop the connection and retry
-                _logger?.LogError($"EncodeAndSendPacket threw: {except}");
+                string msg = string.Format("Send setup Exception: {0}", except);
+                _logger?.LogError(msg);
                 throw;
             }
+
+            // Add delimiters to packet boundaries
+            try
+            {
+                encodedBytes[0] = 0;                // Start delimiter
+                encodedToSend++;
+                encodedBytes[encodedToSend] = 0;    // End delimiter
+                encodedToSend++;
+            }
+            catch (Exception encodedBytesEx)
+            {
+                // This should drop the connection and retry
+                Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
+                Thread.Sleep(500);    // Place for break point
+                throw;
+            }
+
+            try
+            {
+                // Send the data to Meadow
+                //                Debug.Write($"Sending {encodedToSend} bytes...");
+                //await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                _port.Write(encodedBytes, 0, encodedToSend);
+                //                Debug.WriteLine($"sent");
+            }
+            catch (InvalidOperationException ioe)  // Port not opened
+            {
+                string msg = string.Format("Write but port not opened. Exception: {0}", ioe);
+                _logger?.LogError(msg);
+                throw;
+            }
+            catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
+            {
+                string msg = string.Format("Write buffer, offset and count don't line up. Exception: {0}", aore);
+                _logger?.LogError(msg);
+                throw;
+            }
+            catch (ArgumentException ae)  // offset plus count > buffer length
+            {
+                string msg = string.Format($"Write offset plus count > buffer length. Exception: {0}", ae);
+                _logger?.LogError(msg);
+                throw;
+            }
+            catch (TimeoutException te) // Took too long to send
+            {
+                string msg = string.Format("Write took too long to send. Exception: {0}", te);
+                _logger?.LogError(msg);
+                throw;
+            }
+        }
+        catch (Exception except)
+        {
+            // DID YOU RESTART MEADOW?
+            // This should drop the connection and retry
+            _logger?.LogError($"EncodeAndSendPacket threw: {except}");
+            throw;
         }
     }
 
@@ -414,8 +418,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         public SerialMessage(Memory<byte> segment)
         {
-            _segments = new List<Memory<byte>>();
-            _segments.Add(segment);
+            _segments = new List<Memory<byte>>
+            {
+                segment
+            };
         }
 
         public void AddSegment(Memory<byte> segment)
@@ -450,7 +456,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         // any others that were queued along the usb serial pipe line.
         if (packetLength == 1)
         {
-            //_logger?.LogTrace("Throwing out 0x00 from buffer");
+            //_logger.LogTrace("Throwing out 0x00 from buffer");
             return false;
         }
 
@@ -501,12 +507,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> InfoMessages { get; } = new List<string>();
 
     private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
+    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
     private const string RuntimeStateToken = "Mono is";
     private const string RuntimeIsEnabledToken = "Mono is enabled";
-    private const string RuntimeIsDisabledToken = "Mono is disabled";
-    private const string RuntimeHasBeenToken = "Mono has been";
-    private const string RuntimeHasBeenEnabledToken = "Mono has been enabled";
-    private const string RuntimeHasBeenDisabledToken = "Mono has been disabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
@@ -623,47 +626,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        return await WaitForInformationResponse(RuntimeStateToken, RuntimeIsEnabledToken, cancellationToken);
-    }
-
-    private async Task<bool> WaitForInformationResponse(string[] textToWaitOn, CancellationToken? cancellationToken)
-    {
         // wait for an information response
         var timeout = CommandTimeoutSeconds * 2;
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false)
-                return false;
-            if (timeout <= 0)
-                throw new TimeoutException();
-
-            foreach (var t in textToWaitOn)
-            {
-                if (InfoMessages.Any(m => m.Contains(t))) return true;
-            }
-
-            await Task.Delay(500);
-        }
-        return false;
-    }
-
-    private async Task<bool> WaitForInformationResponse(string textToContain, string textToVerify, CancellationToken? cancellationToken)
-    {
-        // wait for an information response
-        var timeout = CommandTimeoutSeconds * 2;
-        while (timeout-- > 0)
-        {
-            if (cancellationToken?.IsCancellationRequested ?? false)
-                return false;
-            if (timeout <= 0)
-                throw new TimeoutException();
+            if (cancellationToken?.IsCancellationRequested ?? false) return false;
+            if (timeout <= 0) throw new TimeoutException();
 
             if (InfoMessages.Count > 0)
             {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(textToContain));
+                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
                 if (m != null)
                 {
-                    return m == textToVerify;
+                    return m == RuntimeIsEnabledToken;
                 }
             }
 
@@ -682,8 +657,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        // if the runtime and OS mismatch, we get "Mono disabled" otehrwise we get "Mono is disabled". Yay!
-        await WaitForInformationResponse(new string[] { "Mono disabled", RuntimeHasBeenEnabledToken }, cancellationToken);
+        await WaitForConcluded(null, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -696,8 +670,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        // if the runtime and OS mismatch, we get "Mono disabled" otehrwise we get "Mono is disabled". Yay!
-        await WaitForInformationResponse(new string[] { "Mono disabled", RuntimeIsDisabledToken }, cancellationToken);
+        await WaitForConcluded(null, cancellationToken);
     }
 
     public override async Task TraceEnable(CancellationToken? cancellationToken = null)
@@ -800,10 +773,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return _deviceInfo;
     }
 
-    public override async Task<MeadowFileInfo[]?> GetFileList(bool includeCrcs, CancellationToken? cancellationToken = null)
+    public override async Task<MeadowFileInfo[]?> GetFileList(string folder, bool includeCrcs, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<GetFileListRequest>();
         command.IncludeCrcs = includeCrcs;
+
+        command.Path = folder;
 
         EnqueueRequest(command);
 
@@ -1030,8 +1005,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         if (!await WaitForResult(
                 () =>
                 {
-                    if (ex != null)
-                        throw ex;
+                    if (ex != null) throw ex;
                     return accepted;
                 },
                 cancellationToken))
@@ -1048,10 +1022,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var expected = fileBytes.Length;
 
         var fileName = Path.GetFileName(localFileName);
-        var directoryName = Path.GetDirectoryName(localFileName).Split(Path.DirectorySeparatorChar);
-        var displayedFileName = Path.Combine(directoryName[directoryName.Length - 1], fileName);
 
-        base.RaiseFileWriteProgress(displayedFileName, progress, expected);
+        base.RaiseFileWriteProgress(fileName, progress, expected);
 
         var oldTimeout = _port.ReadTimeout;
         _port.ReadTimeout = 60000;
@@ -1075,7 +1047,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             Array.Copy(fileBytes, progress, packet, 2, toRead);
             try
             {
-                await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
             }
             catch (Exception)
             {
@@ -1083,7 +1055,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             }
 
             progress += toRead;
-            base.RaiseFileWriteProgress(displayedFileName, progress, expected);
+            base.RaiseFileWriteProgress(fileName, progress, expected);
             if (progress >= fileBytes.Length) break;
         }
 
@@ -1091,13 +1063,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             _port.ReadTimeout = oldTimeout;
 
-            base.RaiseFileWriteProgress(displayedFileName, expected, expected);
+            base.RaiseFileWriteProgress(fileName, expected, expected);
 
             // finish with an "end" message - not enqued because this is all a serial operation
             var request = RequestBuilder.Build<EndFileWriteRequest>();
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
-            await EncodeAndSendPacket(p, cancellationToken);
+            EncodeAndSendPacket(p, cancellationToken);
         }
 
         FileWriteAccepted -= OnFileWriteAccepted;
@@ -1174,7 +1146,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return contents;
     }
 
-    public override async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
+    public override async Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<FileDeleteRequest>();
         command.MeadowFileName = meadowFileName;
@@ -1183,7 +1155,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        var result = await WaitForConcluded(null, cancellationToken);
+        return result;
     }
 
     public override async Task EraseFlash(CancellationToken? cancellationToken = null)
@@ -1207,7 +1180,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         var command = RequestBuilder.Build<GetPublicKeyRequest>();
 
-        string? contents = null;
+        string contents = string.Empty;
 
         void OnFileDataReceived(object? sender, string data)
         {
@@ -1223,34 +1196,41 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _lastRequestConcluded = null;
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        if (!await WaitForResult(
+                        () =>
+                        {
+                            return contents != string.Empty;
+                        },
+                        cancellationToken))
+        {
+            CommandTimeoutSeconds = lastTimeout;
+            return string.Empty;
+        }
 
         CommandTimeoutSeconds = lastTimeout;
 
-        return contents!;
+        return contents;
     }
 
     public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
     {
-        if (Device != null)
-        {
-            logger?.LogDebug($"Start Debugging on port: {port}");
-            await Device.StartDebugging(port, logger, cancellationToken);
-
-            /* TODO logger?.LogDebug("Reinitialize the device");
-            await ReInitializeMeadow(cancellationToken); */
-
-            var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-            var debuggingServer = new DebuggingServer(Device, endpoint, logger!);
-
-            logger?.LogDebug("Tell the Debugging Server to Start Listening");
-            await debuggingServer.StartListening(cancellationToken);
-            return debuggingServer;
-        }
-        else
+        if (Device == null)
         {
             throw new DeviceNotFoundException();
         }
+
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
+        /* TODO logger?.LogDebug("Reinitialize the device");
+        await ReInitializeMeadow(cancellationToken); */
+
+        var endpoint = new IPEndPoint(IPAddress.Loopback, port);
+        var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+
+        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        await debuggingServer.StartListening(cancellationToken);
+        return debuggingServer;
     }
 
     public override async Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken)
@@ -1271,5 +1251,25 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             new Exception($"{typeof(StartDebuggingRequest)} command failed to build");
         }
+    }
+
+    public override async Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
+    {
+        var command = RequestBuilder.Build<DebuggerDataRequest>(userData);
+        command.DebuggerData = debuggerData;
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        var success = await WaitForResult(() =>
+        {
+            if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
+            {
+                return true;
+            }
+
+            return false;
+        }, cancellationToken);
     }
 }

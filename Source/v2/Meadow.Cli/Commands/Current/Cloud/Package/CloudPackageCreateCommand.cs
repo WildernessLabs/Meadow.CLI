@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Cloud;
 using Meadow.Cloud.Identity;
 using Meadow.Software;
@@ -7,24 +6,24 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud package create", Description = "Builds, trims and creates a Meadow Package (MPAK)")]
+[Command("cloud package create", Description = "Create a Meadow Package (MPAK)")]
 public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
-    public string? ProjectPath { get; set; } = default!;
+    public string? ProjectPath { get; set; }
 
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
-    public string Configuration { get; set; } = "Release";
+    public string Configuration { get; init; } = "Release";
 
     [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
-    public string? MpakName { get; init; } = default!;
+    public string? MpakName { get; init; }
 
     [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
         IsRequired = false)]
     public string Filter { get; init; } = "*";
 
-    private IPackageManager _packageManager;
-    private FileManager _fileManager;
+    private readonly IPackageManager _packageManager;
+    private readonly FileManager _fileManager;
 
     public CloudPackageCreateCommand(
         IdentityManager identityManager,
@@ -42,14 +41,11 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
     protected override async ValueTask ExecuteCommand()
     {
-        if (ProjectPath == null)
-        {
-            ProjectPath = Environment.CurrentDirectory;
-        }
+        ProjectPath ??= AppDomain.CurrentDomain.BaseDirectory;
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
-        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, Logger, CancellationToken))
+        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
             return;
         }
@@ -72,10 +68,11 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         // package
         var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
+        //TODO - properly manage shared paths
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, Logger, CancellationToken);
+        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {
@@ -85,6 +82,5 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         {
             Logger?.LogError($"Package assembly failed.");
         }
-
     }
 }

@@ -2,7 +2,7 @@
 {
     public static class RequestBuilder
     {
-        // TODO private static uint _sequenceNumber;
+        //private static uint _sequenceNumber;
 
         public static T Build<T>(uint userData = 0, ushort extraData = 0, ushort protocol = Protocol.HCOM_PROTOCOL_HCOM_VERSION_NUMBER)
             where T : Request, new()

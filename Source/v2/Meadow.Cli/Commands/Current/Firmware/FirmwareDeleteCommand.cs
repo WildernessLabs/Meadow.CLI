@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -10,19 +9,21 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
 {
     public FirmwareDeleteCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    {
-    }
+    { }
 
     [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
-    public string Version { get; set; } = default!;
+    public string Version { get; init; } = default!;
 
     protected override async ValueTask ExecuteCommand()
     {
-        await base.ExecuteCommand();
+        await FileManager.Refresh();
+
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var collection = FileManager.Firmware["Meadow F7"];
 
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
-        if (Collection != null)
-            await Collection.DeletePackage(Version);
+        await collection.DeletePackage(Version);
     }
 }

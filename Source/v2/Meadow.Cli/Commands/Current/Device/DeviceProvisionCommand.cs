@@ -1,6 +1,5 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud;
-using Meadow.Cloud.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -8,7 +7,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("device provision", Description = "Registers and prepares connected device for use with Meadow Cloud")]
 public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 {
-    private DeviceService _deviceService;
+    private readonly DeviceService _deviceService;
+    private readonly UserService _userService;
 
     public const string DefaultHost = "https://www.meadowcloud.co";
 
@@ -16,34 +16,34 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     public string? OrgId { get; set; }
 
     [CommandOption("collectionId", 'c', Description = "The target collection for device registration", IsRequired = false)]
-    public string? CollectionId { get; set; }
+    public string? CollectionId { get; init; }
 
     [CommandOption("name", 'n', Description = "Device friendly name", IsRequired = false)]
-    public string? Name { get; set; }
+    public string? Name { get; init; }
 
     [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
-    public DeviceProvisionCommand(DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public DeviceProvisionCommand(UserService userService, DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
         _deviceService = deviceService;
+        _userService = userService;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
         UserOrg? org;
+
         try
         {
-            if (Host == null) Host = DefaultHost;
-
-            var identityManager = new IdentityManager(Logger);
-            var _userService = new UserService(identityManager);
+            Host ??= DefaultHost;
 
             Logger?.LogInformation("Retrieving your user and organization information...");
 
             var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
-            if (!userOrgs.Any())
+
+            if (userOrgs == null || !userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {Host} to register your account.");
                 return;
@@ -59,6 +59,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             }
 
             org = userOrgs.FirstOrDefault(o => o.Id == OrgId || o.Name == OrgId);
+
             if (org == null)
             {
                 Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
@@ -74,23 +75,48 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
+        if (connection == null || connection.Device == null)
         {
-            Logger?.LogError($"No connection path is defined");
             return;
         }
 
-        var info = await connection.Device!.GetDeviceInfo(CancellationToken);
+        var info = await connection.Device.GetDeviceInfo(CancellationToken);
 
         Logger?.LogInformation("Requesting device public key (this will take a minute)...");
         var publicKey = await connection.Device.GetPublicKey(CancellationToken);
 
-        var delim = "-----END PUBLIC KEY-----\n";
-        publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+        if (string.IsNullOrWhiteSpace(publicKey))
+        {
+            Logger?.LogError("Could not retrieve device's public key.");
+            return;
+        }
 
+        var delimiters = new string[]
+        {
+            "-----END PUBLIC KEY-----\n", // F7 delimiter
+            "-----END RSA PUBLIC KEY-----\n" // linux/mac/windows delimiter
+        };
+
+        var valid = false;
+
+        foreach (var delim in delimiters)
+        {
+            var index = publicKey.IndexOf(delim);
+            if (index > 0)
+            {
+                valid = true;
+                publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+                break;
+            }
+        }
+
+        if (!valid)
+        {
+            Logger?.LogError("Device returned an invali dpublic key");
+            return;
+        }
 
         Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
-
         var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
         var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 
@@ -104,7 +130,5 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         {
             Logger?.LogError($"Failed to provision device: {result.message}");
         }
-
-        return;
     }
 }

@@ -9,7 +9,7 @@ namespace Meadow.Cloud;
 
 public class PackageService : CloudServiceBase
 {
-    private string _info_json = "info.json";
+    private readonly string _info_json = "info.json";
 
     public PackageService(IdentityManager identityManager) : base(identityManager)
     {
@@ -86,14 +86,11 @@ public class PackageService : CloudServiceBase
         {
             var content = File.ReadAllText(tempInfoJson);
             var packageInfo = JsonSerializer.Deserialize<PackageInfo>(content);
-            if (packageInfo != null)
-            {
-                result = packageInfo.OsVersion;
-            }
+            result = packageInfo?.OsVersion ?? string.Empty;
             File.Delete(tempInfoJson);
         }
 
-        return result!;
+        return result;
     }
 
     public async Task PublishPackage(
