@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Meadow.Cloud.Client;
+﻿namespace Meadow.Cloud.Client;
 
 public class UserOrg
 {

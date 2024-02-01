@@ -1,17 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
+﻿using Meadow.Cloud.Client.ApiTokens;
+using Meadow.Cloud.Client.Collections;
+using Meadow.Cloud.Client.Commands;
+using Meadow.Cloud.Client.Devices;
 using Meadow.Cloud.Client.Firmware;
-using Meadow.Cloud.Client.Identity;
-using Microsoft.Extensions.Logging;
+using Meadow.Cloud.Client.Packages;
+using Meadow.Cloud.Client.Users;
 
 namespace Meadow.Cloud.Client;
 
 public interface IMeadowCloudClient
 {
+    IApiTokenClient ApiToken { get; }
+    ICollectionClient Collection { get; }
+    ICommandClient Command { get; }
+    IDeviceClient Device { get; }
     IFirmwareClient Firmware { get; }
+    IPackageClient Package { get; }
+    IUserClient User { get; }
 
-    Task AuthenticateAsync(string? host = default, CancellationToken cancellationToken = default);
+    Task<bool> Authenticate(string? host = default, CancellationToken cancellationToken = default);
 }
 
 public class MeadowCloudClient : IMeadowCloudClient
@@ -23,20 +30,26 @@ public class MeadowCloudClient : IMeadowCloudClient
     private readonly IdentityManager _identityManager;
     private readonly ILogger _logger;
     
-    public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILoggerFactory loggerFactory)
+    public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILogger<MeadowCloudClient>? logger = default)
     {
         _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(httpClient));
 
         _httpClient = httpClient;
         _identityManager = identityManager;
-        _logger = loggerFactory.CreateLogger<MeadowCloudClient>();
+        _logger = logger ?? NullLogger<MeadowCloudClient>.Instance;
 
         _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
     }
 
+    public IApiTokenClient ApiToken => throw new NotImplementedException("This client is not implemented yet. Please use the 'ApiTokenService' instead.");
+    public ICollectionClient Collection => throw new NotImplementedException("This client is not implemented yet. Please use the 'CollectionService' instead.");
+    public ICommandClient Command => throw new NotImplementedException("This client is not implemented yet. Please use the 'CommandService' instead.");
+    public IDeviceClient Device => throw new NotImplementedException("This client is not implemented yet. Please use the 'DeviceService' instead.");
     public IFirmwareClient Firmware => _firmwareClient.Value;
+    public IPackageClient Package => throw new NotImplementedException("This client is not implemented yet. Please use the 'PackageService' instead.");
+    public IUserClient User => throw new NotImplementedException("This client is not implemented yet. Please use the 'UserService' instead.");
 
-    public async Task AuthenticateAsync(string? host = default, CancellationToken cancellationToken = default)
+    public async Task<bool> Authenticate(string? host = default, CancellationToken cancellationToken = default)
     {
         host ??= DefaultHost;
 
@@ -45,34 +58,11 @@ public class MeadowCloudClient : IMeadowCloudClient
         var token = await _identityManager.GetAccessToken(cancellationToken);
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         _httpClient.BaseAddress = new Uri(host);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return true;
     }
-}
-
-public class MeadowCloudUserAgent
-{
-    public static readonly MeadowCloudUserAgent Cli = new ("Meadow.Cli");
-    public static readonly MeadowCloudUserAgent Workbench = new ("Meadow.Workbench");
-
-    public string UserAgent { get; }
-
-    public MeadowCloudUserAgent(string userAgent)
-    {
-        if (string.IsNullOrWhiteSpace(userAgent))
-        {
-            throw new ArgumentException($"'{nameof(userAgent)}' cannot be null or whitespace.", nameof(userAgent));
-        }
-
-        UserAgent = userAgent;
-    }
-
-    public override string ToString() => UserAgent;
-    public override int GetHashCode() => UserAgent.GetHashCode();
-
-    public static implicit operator string(MeadowCloudUserAgent userAgent) => userAgent.UserAgent;
-    public static implicit operator MeadowCloudUserAgent(string userAgent) => new (userAgent);
 }

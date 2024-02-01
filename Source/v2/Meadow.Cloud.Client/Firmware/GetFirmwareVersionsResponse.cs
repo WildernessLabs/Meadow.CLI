@@ -1,18 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿namespace Meadow.Cloud.Client.Firmware;
 
-namespace Meadow.Cloud.Client.Firmware;
-
-public class GetFirmwareVersionsResponse
+public class GetFirmwareVersionsResponse(string version, DateTimeOffset lastModifiedAt)
 {
-    public GetFirmwareVersionsResponse(string version, DateTimeOffset lastModifiedAt)
-    {
-        Version = version;
-        LastModifiedAt = lastModifiedAt;
-    }
-
     [JsonPropertyName("version")]
-    public string Version { get; set; }
+    public string Version { get; set; } = version;
 
     [JsonPropertyName("lastModifiedAt")]
-    public DateTimeOffset LastModifiedAt { get; set; }
+    public DateTimeOffset LastModifiedAt { get; set; } = lastModifiedAt;
 }

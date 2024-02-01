@@ -1,9 +1,5 @@
-﻿using Meadow.Cloud.Client.Identity;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.IO.Hashing;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 
 namespace Meadow.Cloud.Client;
 

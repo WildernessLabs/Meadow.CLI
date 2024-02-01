@@ -34,21 +34,12 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        //Host ??= MeadowCloudClient.DefaultHost;
-
-        await _meadowCloudClient.AuthenticateAsync(Host, CancellationToken);
-
-        //Logger?.LogInformation($"Retrieving firmware information from Meadow.Cloud{(Host != BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
-
-        //var token = await IdentityManager.GetAccessToken(CancellationToken);
-        //if (string.IsNullOrWhiteSpace(token))
-        //{
-        //    Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
-        //    return;
-        //}
-
-        //FileManager.MeadowCloudClient.BaseAddress = new Uri(Host);
-        //FileManager.MeadowCloudClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var isAuthenticated = await _meadowCloudClient.Authenticate(Host, CancellationToken);
+        if (!isAuthenticated)
+        {
+            Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            return;
+        }
 
         await FileManager.Refresh();
 
@@ -65,7 +56,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (latest == null)
             {
-                Logger?.LogError($"Unable to get latest version information");
+                Logger?.LogError($"Unable to get latest version information.");
                 return;
             }
 
@@ -86,6 +77,12 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             return;
         }
 
+        if (collection[Version] != null)
+        {
+            Logger?.LogInformation($"Firmware package '{Version}' already exists locally.");
+            return;
+        }
+
         Logger?.LogInformation($"Downloading firmware package '{Version}'...");
 
         try
@@ -96,11 +93,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (!result)
             {
-                Logger?.LogError($"Unable to download package '{Version}'");
+                Logger?.LogError($"Unable to download package '{Version}'.");
             }
             else
             {
-                Logger?.LogInformation($"Firmware package '{Version}' downloaded");
+                Logger?.LogInformation($"Firmware package '{Version}' downloaded.");
 
                 if (explicitVersion == false)
                 {

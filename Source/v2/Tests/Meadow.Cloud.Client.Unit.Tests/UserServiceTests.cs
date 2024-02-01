@@ -1,6 +1,4 @@
-﻿using Meadow.Cloud.Client.Identity;
-
-namespace Meadow.Cloud.Client.Unit.Tests;
+﻿namespace Meadow.Cloud.Client.Unit.Tests;
 
 //public class IdentityManagerTests
 //{

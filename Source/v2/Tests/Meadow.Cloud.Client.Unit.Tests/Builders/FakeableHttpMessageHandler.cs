@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Meadow.Cloud.Client.Unit.Tests.Builders;
+﻿namespace Meadow.Cloud.Client.Unit.Tests.Builders;
 
 public abstract class FakeableHttpMessageHandler : HttpMessageHandler
 {

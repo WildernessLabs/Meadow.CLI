@@ -1,15 +1,14 @@
-﻿using System;
-using System.Net;
-
-namespace Meadow.Cloud.Client.Firmware;
+﻿namespace Meadow.Cloud.Client.Firmware;
 
 public interface IFirmwareClient
 {
-    Task<MeadowCloudResponse<IEnumerable<GetFirmwareVersionsResponse>>> GetFirmwareVersionsAsync(string type, CancellationToken cancellationToken = default);
+    Task<IEnumerable<GetFirmwareVersionsResponse>> GetVersions(string type, CancellationToken cancellationToken = default);
 
-    Task<MeadowCloudResponse<GetFirmwareVersionResponse>> GetFirmwareVersionAsync(string type, string version, CancellationToken cancellationToken = default);
+    Task<GetFirmwareVersionResponse?> GetVersion(string type, string version, CancellationToken cancellationToken = default);
 
-    Task<HttpResponseMessage> GetFirmwareDownloadResponseAsync(string path, CancellationToken cancellationToken = default);
+    Task<HttpResponseMessage> GetDownloadResponse(string url, CancellationToken cancellationToken = default);
+
+    Task<HttpResponseMessage> GetDownloadResponse(Uri url, CancellationToken cancellationToken = default);
 }
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
@@ -21,7 +20,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         _httpClient = httpClient;
     }
 
-    public async Task<MeadowCloudResponse<IEnumerable<GetFirmwareVersionsResponse>>> GetFirmwareVersionsAsync(string type, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<GetFirmwareVersionsResponse>> GetVersions(string type, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(type))
         {
@@ -31,10 +30,15 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         using var request = CreateHttpRequestMessage(HttpMethod.Get, "api/v1/firmware/{0}", type);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await ProcessResponseAsync<IEnumerable<GetFirmwareVersionsResponse>>(response, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Enumerable.Empty<GetFirmwareVersionsResponse>();
+        }
+
+        return await ProcessResponse<IEnumerable<GetFirmwareVersionsResponse>>(response, cancellationToken);
     }
 
-    public async Task<MeadowCloudResponse<GetFirmwareVersionResponse>> GetFirmwareVersionAsync(string type, string version, CancellationToken cancellationToken = default)
+    public async Task<GetFirmwareVersionResponse?> GetVersion(string type, string version, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(type))
         {
@@ -54,46 +58,55 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         using var request = CreateHttpRequestMessage(HttpMethod.Get, "api/v1/firmware/{0}/{1}", type, version);
         using var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await ProcessResponseAsync<GetFirmwareVersionResponse>(response, cancellationToken);
-    }
-
-    public async Task<HttpResponseMessage> GetFirmwareDownloadResponseAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(path))
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+            return null;
         }
 
-        if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        return await ProcessResponse<GetFirmwareVersionResponse>(response, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> GetDownloadResponse(string url, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(url))
         {
-            throw new ArgumentException($"'{nameof(path)}' must be a string that ends with '.zip'.", nameof(path));
+            throw new ArgumentException($"'{nameof(url)}' cannot be null or whitespace.", nameof(url));
+        }
+
+        if (!url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"'{nameof(url)}' must be a URL that ends with '.zip'.", nameof(url));
         }
 
         var baseAddress = _httpClient.BaseAddress?.ToString();
-        if (baseAddress != null && path.StartsWith(baseAddress))
+        if (baseAddress != null && url.StartsWith(baseAddress))
         {
-            path = path[baseAddress.Length..];
+            url = url[baseAddress.Length..];
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
         var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var headers = GetHeaders(response);
-            var statusCode = response.StatusCode;
-
-            var message = statusCode switch
-            {
-                HttpStatusCode.BadRequest => "The request is missing required information or is malformed.",
-                HttpStatusCode.Unauthorized => "The request failed due to invalid credentials.",
-                _ => "The HTTP status code of the response was not expected (" + (int)statusCode + ")."
-            };
-
+            await EnsureSuccessfulStatusCode(response, cancellationToken);
+        }
+        catch
+        {
             response.Dispose();
-            throw new MeadowCloudException(message, response.StatusCode, string.Empty, headers, null);
+            throw;
         }
 
         return response;
+    }
+
+    public async Task<HttpResponseMessage> GetDownloadResponse(Uri url, CancellationToken cancellationToken = default)
+    {
+        if (url is null)
+        {
+            throw new ArgumentNullException(nameof(url));
+        }
+
+        return await GetDownloadResponse(url.ToString(), cancellationToken);
     }
 }

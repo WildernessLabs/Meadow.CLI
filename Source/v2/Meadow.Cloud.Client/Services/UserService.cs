@@ -1,7 +1,4 @@
-﻿using Meadow.Cloud.Client.Identity;
-using System.Text.Json;
-
-namespace Meadow.Cloud.Client;
+﻿namespace Meadow.Cloud.Client;
 
 public class UserService : CloudServiceBase
 {

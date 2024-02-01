@@ -159,6 +159,7 @@ PublishScripts/
 !**/packages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/packages/repositories.config
+!**/Source/v2/Meadow.Cloud.Client/**/packages/*
 # NuGet v3's project.json files produces more ignoreable files
 *.nuget.props
 *.nuget.targets

@@ -11,9 +11,6 @@ namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
-    //private const string VersionCheckUrlPath = "/api/v1/firmware/Meadow_Beta/";
-
-    //private readonly HttpClient _client;
     private readonly IMeadowCloudClient _meadowCloudClient;
 
     public event EventHandler<long> DownloadProgress = default!;
@@ -33,14 +30,19 @@ internal class F7FirmwareDownloadManager
     public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
         version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
-        var response = await _meadowCloudClient.Firmware.GetFirmwareVersionAsync("Meadow_Beta", version, cancellationToken);
+        var response = await _meadowCloudClient.Firmware.GetVersion("Meadow_Beta", version, cancellationToken);
+
+        if (response == null)
+        {
+            return null;
+        }
 
         return new F7ReleaseMetadata()
         {
-            Version = response.Result.Version,
-            MinCLIVersion = response.Result.MinCLIVersion,
-            DownloadURL = response.Result.DownloadUrl,
-            NetworkDownloadURL = response.Result.NetworkDownloadUrl
+            Version = response.Version,
+            MinCLIVersion = response.MinCLIVersion,
+            DownloadURL = response.DownloadUrl,
+            NetworkDownloadURL = response.NetworkDownloadUrl
         };
     }
 
@@ -140,7 +142,7 @@ internal class F7FirmwareDownloadManager
 
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
-        using var response = await _meadowCloudClient.Firmware.GetFirmwareDownloadResponseAsync(uri.ToString(), cancellationToken);
+        using var response = await _meadowCloudClient.Firmware.GetDownloadResponse(uri, cancellationToken);
 
         var downloadFileName = Path.GetTempFileName();
 
