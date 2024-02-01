@@ -6,6 +6,6 @@ namespace Meadow.CLI
 {
     public static class Constants
     {
-        public const string CLI_VERSION = "2.0.0.8";
+        public const string CLI_VERSION = "2.0.0.9";
     }
 }
