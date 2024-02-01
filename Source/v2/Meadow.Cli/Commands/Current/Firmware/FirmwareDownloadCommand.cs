@@ -3,6 +3,7 @@ using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
