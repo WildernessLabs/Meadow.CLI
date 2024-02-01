@@ -21,8 +21,6 @@ public class FileManager
 
     public FileManager(HttpClient meadowCloudClient)
     {
-        //        meadowCloudClient.BaseAddress = new Uri("https://staging.meadowcloud.dev");
-
         Firmware = new FirmwareStore();
         var f7Collection = new F7FirmwarePackageCollection(meadowCloudClient);
         Firmware.AddCollection("Meadow F7", f7Collection);

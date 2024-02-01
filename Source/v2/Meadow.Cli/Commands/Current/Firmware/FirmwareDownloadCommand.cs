@@ -1,8 +1,8 @@
 ﻿using CliFx.Attributes;
-using CliFx.Exceptions;
 using Meadow.Cloud.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -14,7 +14,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     public FirmwareDownloadCommand(
         FileManager fileManager,
-        IdentityManager identityManager, 
+        IdentityManager identityManager,
         ISettingsManager settingsManager,
         ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
@@ -33,7 +33,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        Host ??= BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost;
+        Host ??= Debugger.IsAttached ? BaseCloudCommand<FirmwareDownloadCommand>.StagingHost : BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost;
 
         Logger?.LogInformation($"Retrieving firmware information from Meadow.Cloud{(Host != BaseCloudCommand<FirmwareDownloadCommand>.DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
 

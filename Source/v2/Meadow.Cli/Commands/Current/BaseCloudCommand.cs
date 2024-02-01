@@ -7,6 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public abstract class BaseCloudCommand<T> : BaseCommand<T>
 {
     public const string DefaultHost = "https://www.meadowcloud.co";
+    public const string StagingHost = "https://staging.meadowcloud.dev";
 
     protected IdentityManager IdentityManager { get; }
     protected UserService UserService { get; }
