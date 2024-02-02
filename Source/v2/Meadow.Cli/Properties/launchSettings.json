@@ -125,7 +125,7 @@
     },
     "Firmware Write version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write -v 1.8.0.0"
+      "commandLineArgs": "firmware write -v 1.6.0.1"
     },
     "Firmware Write runtime": {
       "commandName": "Project",
@@ -134,6 +134,10 @@
     "Firmware Write esp": {
       "commandName": "Project",
       "commandLineArgs": "firmware write esp"
+    },
+    "Firmware Write esp with file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write esp -f C:\\Users\\ctack\\AppData\\Local\\WildernessLabs\\Firmware\\1.6.0.1\\MeadowComms.bin"
     },
     "Firmware Write os DFU": {
       "commandName": "Project",
