@@ -44,7 +44,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (package == null)
         {
-            Logger?.LogError($"Firware write failed - No package selected");
+            Logger?.LogError($"Firmware write failed - No package selected");
             return;
         }
 
@@ -200,7 +200,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (package == null)
         {
-            Logger?.LogError($"Firware write failed - unable to find selected package");
+            Logger?.LogError($"Firmware write failed - unable to find selected package");
             return;
         }
 
