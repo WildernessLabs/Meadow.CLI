@@ -244,7 +244,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return GetEnumerator();
     }
 
-    internal static class F7FirmwareFiles
+    public static class F7FirmwareFiles
     {
         public const string CoprocBootloaderFile = "bootloader.bin";
         public const string CoprocPartitionTableFile = "partition-table.bin";
