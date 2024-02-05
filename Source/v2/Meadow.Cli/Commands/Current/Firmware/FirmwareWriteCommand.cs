@@ -174,9 +174,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     return;
                 }
 
-                // does write OS do this already?
-                //await connection.ResetDevice(CancellationToken);
-                await connection.WaitForMeadowAttach();
+                connection = await GetCurrentConnection();
+                await connection!.WaitForMeadowAttach();
 
             }
             else
