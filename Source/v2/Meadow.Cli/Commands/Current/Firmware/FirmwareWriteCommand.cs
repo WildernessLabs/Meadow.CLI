@@ -65,13 +65,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         if (System.Version.TryParse(info.OsVersion, out var version))
         {
-            switch (version.Major)
+            return version.Major switch
             {
-                case 0: return true;
-                case 1:
-                    return version.Minor < 8;
-                default: return false;
-            }
+                0 => true,
+                1 => version.Minor < 8,
+                _ => false,
+            };
         }
 
         return true;
@@ -81,13 +80,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         if (System.Version.TryParse(info.OsVersion, out var version))
         {
-            switch (version.Major)
+            return version.Major switch
             {
-                case 0: return true;
-                case 1:
-                    return version.Minor < 9;
-                default: return false;
-            }
+                0 => true,
+                1 => version.Minor < 9,
+                _ => false,
+            };
         }
 
         return true;
@@ -177,7 +175,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 dfuDevice?.Dispose();
 
                 connection = await GetCurrentConnection();
-                await connection!.WaitForMeadowAttach();
+
+                if (connection == null)
+                {
+                    Logger?.LogError("No device found");
+                    return;
+                }
+
+                await connection.WaitForMeadowAttach();
 
             }
             else
@@ -189,7 +194,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (FirmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
             connection = await WriteFirmware(connection, deviceInfo, package);
-            if (connection == null) return;
+            if (connection == null) { return; }
         }
 
         if (FirmwareFileTypes.Contains(FirmwareType.ESP)
@@ -206,11 +211,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> WriteFirmware(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-            if (connection == null) return null; // couldn't find a connected device
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
+
+        if (connection == null) { return null; } // couldn't find a connected device
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
@@ -242,11 +245,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-            if (connection == null) return; // couldn't find a connected device
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
+
+        if (connection == null) { return; }// couldn't find a connected device
 
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -281,10 +282,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             };
         }
 
-        if (deviceInfo == null)
-        {
-            deviceInfo = await connection.GetDeviceInfo(CancellationToken);
-        }
+        deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
         if (UseDfu || RequiresDfuForEspUpdates(deviceInfo))
         {
