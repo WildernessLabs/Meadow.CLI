@@ -36,6 +36,11 @@ public class LibUsbProvider : ILibUsbProvider
             _device = usbDevice;
         }
 
+        public void Dispose()
+        {
+            _device?.Dispose();
+        }
+
         public string GetDeviceSerialNumber()
         {
             var serialNumber = string.Empty;

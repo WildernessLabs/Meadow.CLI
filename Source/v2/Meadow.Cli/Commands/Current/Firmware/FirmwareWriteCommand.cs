@@ -174,6 +174,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                     return;
                 }
 
+                dfuDevice?.Dispose();
+
                 connection = await GetCurrentConnection();
                 await connection!.WaitForMeadowAttach();
 
