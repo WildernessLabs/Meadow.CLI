@@ -26,7 +26,7 @@ public class MeadowConnectionManager
 
         if (route == null)
         {
-            throw new Exception("No 'route' configuration set");
+            throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
