@@ -127,6 +127,16 @@ public class SimulatorConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task UartProfilerEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task UartProfilerDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+    
     public override Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();

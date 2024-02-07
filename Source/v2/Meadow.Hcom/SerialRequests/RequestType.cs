@@ -36,7 +36,8 @@ public enum RequestType : ushort
     HCOM_MDOW_REQUEST_MONO_FLASH = 0x19 | ProtocolType.HCOM_PROTOCOL_HEADER_ONLY_TYPE,
     HCOM_MDOW_REQUEST_SEND_TRACE_TO_UART = 0x1a | ProtocolType.HCOM_PROTOCOL_HEADER_ONLY_TYPE,
     HCOM_MDOW_REQUEST_NO_TRACE_TO_UART = 0x1b | ProtocolType.HCOM_PROTOCOL_HEADER_ONLY_TYPE,
-
+    HCOM_MDOW_REQUEST_SEND_PROFILER_TO_UART = 0x23 | ProtocolType.HCOM_PROTOCOL_HEADER_ONLY_TYPE, // TODO: Check if this is a good value
+    HCOM_MDOW_REQUEST_NO_PROFILER_TO_UART = 0x24 | ProtocolType.HCOM_PROTOCOL_HEADER_ONLY_TYPE, // TODO: Check if this is a good value
     // >>> Breaking protocol change.
     // ToDo: This message is miscategorized should be ProtocolType.HCOM_PROTOCOL_HEADER_FILE_START_TYPE
     // like HCOM_MDOW_REQUEST_START_FILE_TRANSFER.

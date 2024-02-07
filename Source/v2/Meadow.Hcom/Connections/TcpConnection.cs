@@ -160,6 +160,16 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task UartProfilerEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task UartProfilerDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public override Task EraseFlash(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();

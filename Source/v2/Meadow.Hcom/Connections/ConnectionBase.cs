@@ -40,6 +40,8 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
     public abstract Task UartTraceEnable(CancellationToken? cancellationToken = null);
     public abstract Task UartTraceDisable(CancellationToken? cancellationToken = null);
+    public abstract Task UartProfilerEnable(CancellationToken? cancellationToken = null);
+    public abstract Task UartProfilerDisable(CancellationToken? cancellationToken = null);
     public abstract Task EraseFlash(CancellationToken? cancellationToken = null);
     public abstract Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
     public abstract Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);

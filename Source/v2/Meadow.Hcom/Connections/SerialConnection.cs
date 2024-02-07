@@ -706,6 +706,29 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await WaitForConcluded(null, cancellationToken);
     }
 
+    public override async Task UartProfilerEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartProfilerEnableRequest>();
+
+        _lastRequestConcluded = null;
+
+        Console.WriteLine($"Command: {command}");
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task UartProfilerDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartProfilerDisableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
     public override async Task UartTraceDisable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<UartTraceDisableRequest>();
