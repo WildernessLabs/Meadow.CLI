@@ -49,14 +49,14 @@ public class Program
         services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
-
         services.AddSingleton<UserService>();
         services.AddSingleton<DeviceService>();
         services.AddSingleton<CollectionService>();
         services.AddSingleton<CommandService>();
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
-        services.AddSingleton<IdentityManager, IdentityManager>();
+        services.AddSingleton<IdentityManager>();
+        services.AddSingleton<JsonDocumentBindingConverter>();
 
         if (File.Exists("appsettings.json"))
         {
