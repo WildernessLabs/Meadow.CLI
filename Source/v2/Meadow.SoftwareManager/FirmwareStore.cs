@@ -1,9 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public class FirmwareStore : IEnumerable<IFirmwarePackageCollection>
 {

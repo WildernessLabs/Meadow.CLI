@@ -1,10 +1,4 @@
-﻿using System;
-using System.IO;
-using System.IO.Hashing;
-using System.Threading.Tasks;
-
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public static class CrcTools
 {

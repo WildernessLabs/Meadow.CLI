@@ -1,10 +1,4 @@
-﻿using Meadow.Cloud.Client;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public class FileManager
 {

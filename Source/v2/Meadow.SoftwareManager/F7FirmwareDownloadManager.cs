@@ -1,13 +1,4 @@
-﻿using Meadow.Cloud.Client;
-using System;
-using System.IO;
-using System.IO.Compression;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
