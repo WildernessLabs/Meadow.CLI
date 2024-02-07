@@ -39,7 +39,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Settings = settingsManager;
     }
 
-    private double _lastWriteProgress = -1;
+    private int _lastWriteProgress = 0;
 
     private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime()
     {
@@ -53,12 +53,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         connection.FileWriteProgress += (s, e) =>
         {
-            var p = (e.completed / (double)e.total) * 100d;
-            if (p == _lastWriteProgress) { return; }
+            var p = (int)((e.completed / (double)e.total) * 100d);
+            // don't report < 10% increments (decrease spew on large files)
+            if (p - _lastWriteProgress < 10) { return; }
 
             _lastWriteProgress = p;
 
-            Logger?.LogInformation($"Writing {e.fileName}: {p:0}%     {(p < 100 ? "\n" : "\r\n")}");
+            Logger?.LogInformation($"Writing {e.fileName}: {p:0}%     {(p < 100 ? string.Empty : "\r\n")}");
         };
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -75,8 +76,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             Logger?.LogInformation(message);
         };
 
-        Logger?.LogInformation("Disabling device runtime...");
-        await connection.Device.RuntimeDisable();
+        if (await connection.Device.IsRuntimeEnabled())
+        {
+            Logger?.LogInformation("Disabling device runtime...");
+            await connection.Device.RuntimeDisable();
+        }
 
         return connection;
     }
@@ -182,7 +186,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             {
                 connection = await GetConnectionAndDisableRuntime();
 
-                if (connection == null) return; // couldn't find a connected device
+                if (connection == null)
+                {
+                    // couldn't find a connected device
+                    Logger?.LogError($"Unable to detect a connected device");
+                    return;
+                }
                 deviceInfo = await connection.GetDeviceInfo(CancellationToken);
             }
 
@@ -196,8 +205,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 dfuDevice?.Dispose();
 
                 connection = await GetConnectionAndDisableRuntime();
-                await connection!.WaitForMeadowAttach();
 
+                if (connection == null)
+                {
+                    // couldn't find a connected device
+                    Logger?.LogError($"Unable to detect a connected device");
+                    return;
+                }
+                await connection.WaitForMeadowAttach();
             }
             else
             {
@@ -208,7 +223,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (FirmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
             connection = await WriteFirmware(connection, deviceInfo, package);
-            if (connection == null) return;
+            if (connection == null)
+            {
+                // couldn't find a connected device
+                Logger?.LogError($"Unable to detect a connected device");
+                return;
+            }
         }
 
         if (FirmwareFileTypes.Contains(FirmwareType.ESP)
@@ -228,7 +248,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (connection == null)
         {
             connection = await GetConnectionAndDisableRuntime();
-            if (connection == null) return null; // couldn't find a connected device
+            if (connection == null) { return null; } // couldn't find a connected device
         }
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
@@ -243,10 +263,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
-            await connection!.Device!.RuntimeDisable(CancellationToken);
+            await connection.Device!.RuntimeDisable(CancellationToken);
 
         write_runtime:
-            if (!await connection!.Device!.WriteRuntime(rtpath, CancellationToken))
+            if (!await connection.Device!.WriteRuntime(rtpath, CancellationToken))
             {
                 // TODO: implement a retry timeout
                 Logger?.LogInformation($"Error writing runtime - retrying");
@@ -255,7 +275,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await connection!.Device!.WriteFile(rtpath, $"/meadow0/update/os/{package.Runtime}");
+            await connection.Device!.WriteFile(rtpath, $"/meadow0/update/os/{package.Runtime}");
         }
 
         return connection;
