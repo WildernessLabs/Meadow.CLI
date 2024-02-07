@@ -13,16 +13,16 @@ public abstract class MeadowCloudClientBase
     private IReadOnlyDictionary<string, IEnumerable<string>> GetHeaders(HttpResponseMessage response)
     {
         var headers = new Dictionary<string, IEnumerable<string>>();
-        foreach (var (key, value) in response.Headers)
+        foreach (var header in response.Headers)
         {
-            headers[key] = value;
+            headers[header.Key] = header.Value;
         }
 
         if (response.Content != null && response.Content.Headers != null)
         {
-            foreach (var (key, value) in response.Content.Headers)
+            foreach (var header in response.Content.Headers)
             {
-                headers[key] = value;
+                headers[header.Key] = header.Value;
             }
         }
         return headers;

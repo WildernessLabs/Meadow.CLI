@@ -81,7 +81,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         var baseAddress = _httpClient.BaseAddress?.ToString();
         if (baseAddress != null && url.StartsWith(baseAddress))
         {
-            url = url[baseAddress.Length..];
+            url = url.Substring(baseAddress.Length);
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
