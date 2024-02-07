@@ -39,6 +39,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Settings = settingsManager;
     }
 
+    private double _lastWriteProgress = -1;
+
     private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime()
     {
         var connection = await GetCurrentConnection();
@@ -52,7 +54,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
-            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     {(p < 100 ? "\n" : "\r\n")}");
+            if (p == _lastWriteProgress) { return; }
+
+            _lastWriteProgress = p;
+
+            Logger?.LogInformation($"Writing {e.fileName}: {p:0}%     {(p < 100 ? "\n" : "\r\n")}");
         };
         connection.DeviceMessageReceived += (s, e) =>
         {
