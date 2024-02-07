@@ -20,8 +20,8 @@ internal class F7FirmwareDownloadManager
 
     public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
-        version = !string.IsNullOrWhiteSpace(version) ? version : "latest";
-        var response = await _meadowCloudClient.Firmware.GetVersion("Meadow_Beta", version, cancellationToken);
+        version = string.IsNullOrWhiteSpace(version) ? "latest" : version;
+        var response = await _meadowCloudClient.Firmware.GetVersion("Meadow_Beta", version!, cancellationToken);
 
         if (response == null)
         {
