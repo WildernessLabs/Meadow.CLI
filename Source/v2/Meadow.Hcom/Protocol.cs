@@ -5,7 +5,7 @@
         // There is no length field. Since the packet boundaries are delimited and the
         // header is fixed length. Therefore, any additional data length is easily
         // determined.
-        public const UInt16 HCOM_PROTOCOL_HCOM_VERSION_NUMBER = 0x0007;
+        public const UInt16 HCOM_PROTOCOL_HCOM_VERSION_NUMBER = 0x0008;
 
         // COBS needs a specific delimiter. Zero seems to be traditional.
         public const UInt16 HCOM_PROTOCOL_COBS_ENCODING_DELIMITER_VALUE = 0x00;
