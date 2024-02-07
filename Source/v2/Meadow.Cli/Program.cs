@@ -54,7 +54,6 @@ public class Program
         services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
-
         services.AddSingleton<UserService>();
         services.AddSingleton<DeviceService>();
         services.AddSingleton<CollectionService>();
@@ -62,7 +61,7 @@ public class Program
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager>();
-
+		services.AddSingleton<JsonDocumentBindingConverter>();
         services.AddSingleton<IMeadowCloudClient, MeadowCloudClient>();
         services.AddSingleton(MeadowCloudUserAgent.Cli);
 
