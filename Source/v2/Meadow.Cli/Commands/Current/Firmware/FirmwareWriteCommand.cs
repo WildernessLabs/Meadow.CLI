@@ -52,7 +52,21 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         connection.FileWriteProgress += (s, e) =>
         {
             var p = (e.completed / (double)e.total) * 100d;
-            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     {(p < 100 ? "\n" : "\r\n")}");
+        };
+        connection.DeviceMessageReceived += (s, e) =>
+        {
+            if (e.message.Contains("% downloaded"))
+            {   // don't echo this, as we're already reporting % written
+            }
+            else
+            {
+                Logger?.LogInformation(e.message);
+            }
+        };
+        connection.ConnectionMessage += (s, message) =>
+        {
+            Logger?.LogInformation(message);
         };
 
         Logger?.LogInformation("Disabling device runtime...");
@@ -156,6 +170,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             if (dfuDevice != null)
             {
                 Logger?.LogInformation($"DFU device detected.  Using DFU to write OS");
+                UseDfu = true;
             }
             else
             {
@@ -174,15 +189,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 dfuDevice?.Dispose();
 
-                connection = await GetCurrentConnection();
-
-                if (connection == null)
-                {
-                    Logger?.LogError("No device found");
-                    return;
-                }
-
-                await connection.WaitForMeadowAttach();
+                connection = await GetConnectionAndDisableRuntime();
+                await connection!.WaitForMeadowAttach();
 
             }
             else
@@ -194,7 +202,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (FirmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
             connection = await WriteFirmware(connection, deviceInfo, package);
-            if (connection == null) { return; }
+            if (connection == null) return;
         }
 
         if (FirmwareFileTypes.Contains(FirmwareType.ESP)
@@ -211,9 +219,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> WriteFirmware(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        connection ??= await GetConnectionAndDisableRuntime();
-
-        if (connection == null) { return null; } // couldn't find a connected device
+        if (connection == null)
+        {
+            connection = await GetConnectionAndDisableRuntime();
+            if (connection == null) return null; // couldn't find a connected device
+        }
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
 
@@ -227,6 +237,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
+            await connection!.Device!.RuntimeDisable(CancellationToken);
+
         write_runtime:
             if (!await connection!.Device!.WriteRuntime(rtpath, CancellationToken))
             {
@@ -245,24 +257,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        connection ??= await GetConnectionAndDisableRuntime();
-
-        if (connection == null) { return; }// couldn't find a connected device
-
-        connection.DeviceMessageReceived += (s, e) =>
+        if (connection == null)
         {
-            if (e.message.Contains("% downloaded"))
-            {   // don't echo this, as we're already reporting % written
-            }
-            else
-            {
-                Logger?.LogInformation(e.message);
-            }
-        };
-        connection.ConnectionMessage += (s, message) =>
-        {
-            Logger?.LogInformation(message);
-        };
+            connection = await GetConnectionAndDisableRuntime();
+            if (connection == null) return; // couldn't find a connected device
+        }
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
@@ -282,7 +281,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             };
         }
 
-        deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
+        if (deviceInfo == null)
+        {
+            deviceInfo = await connection.GetDeviceInfo(CancellationToken);
+        }
 
         if (UseDfu || RequiresDfuForEspUpdates(deviceInfo))
         {
