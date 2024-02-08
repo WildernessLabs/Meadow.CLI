@@ -56,7 +56,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (latest == null)
             {
-                Logger?.LogError($"Unable to get latest version information.");
+                Logger?.LogError($"Unable to get latest version information");
                 return;
             }
 
@@ -73,13 +73,13 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
         if (!isAvailable)
         {
-            Logger?.LogError($"Requested package version '{Version}' is not available.");
+            Logger?.LogError($"Requested package version '{Version}' is not available");
             return;
         }
 
         if (collection[Version] != null)
         {
-            Logger?.LogInformation($"Firmware package '{Version}' already exists locally.");
+            Logger?.LogInformation($"Firmware package '{Version}' already exists locally");
             return;
         }
 
@@ -93,11 +93,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
             if (!result)
             {
-                Logger?.LogError($"Unable to download package '{Version}'.");
+                Logger?.LogError($"Unable to download package '{Version}'");
             }
             else
             {
-                Logger?.LogInformation($"Firmware package '{Version}' downloaded.");
+                Logger?.LogInformation($"Firmware package '{Version}' downloaded");
 
                 if (explicitVersion == false)
                 {
