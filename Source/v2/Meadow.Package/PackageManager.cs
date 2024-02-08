@@ -5,6 +5,7 @@ using Meadow.Software;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -55,7 +56,7 @@ public partial class PackageManager : IPackageManager
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower().Contains("build failed"))
+                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;
@@ -106,7 +107,7 @@ public partial class PackageManager : IPackageManager
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower().Contains("build failed"))
+                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;
