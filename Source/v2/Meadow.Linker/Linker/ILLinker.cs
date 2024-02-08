@@ -74,8 +74,6 @@ namespace Meadow.Linker
                     _logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
                 }
 
-                //await process.WaitForExitAsync();
-
                 await Task.Run(() => process.WaitForExit());
 
                 if (process.ExitCode != 0)
