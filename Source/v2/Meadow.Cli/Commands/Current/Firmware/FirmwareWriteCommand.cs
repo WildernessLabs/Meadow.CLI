@@ -256,6 +256,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (connection == null)
         {
             connection = await GetConnectionAndDisableRuntime();
+
             if (connection == null) { return null; } // couldn't find a connected device
         }
 
@@ -271,7 +272,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
-            await connection.Device!.RuntimeDisable(CancellationToken);
 
         write_runtime:
             if (!await connection.Device!.WriteRuntime(rtpath, CancellationToken))
