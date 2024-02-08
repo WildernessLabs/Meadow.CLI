@@ -1,7 +1,4 @@
-﻿using Meadow.Cloud.Identity;
-using System.Text.Json;
-
-namespace Meadow.Cloud;
+﻿namespace Meadow.Cloud.Client;
 
 public class CollectionService : CloudServiceBase
 {

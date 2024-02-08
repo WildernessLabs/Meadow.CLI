@@ -1,37 +1,29 @@
 ﻿using CredentialManagement;
 using IdentityModel.Client;
 using IdentityModel.OidcClient;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
-using System.Diagnostics;
-using System.Net;
 using System.Runtime.InteropServices;
 
-namespace Meadow.Cloud.Identity;
+namespace Meadow.Cloud.Client.Identity;
 
 public class IdentityManager
 {
-    public readonly string WlRefreshCredentialName = "WL:Identity:Refresh";
-    private readonly string authority = "https://identity.wildernesslabs.co/oauth2/default";
-    private readonly string redirectUri = "http://localhost:8877/";
-    private readonly string clientId = "0oa3axsuyupb7J6E15d6";
-    private readonly ILogger? _logger;
+    public const string WlRefreshCredentialName = "WL:Identity:Refresh";
+    private const string authority = "https://identity.wildernesslabs.co/oauth2/default";
+    private const string redirectUri = "http://localhost:8877/";
+    private const string clientId = "0oa3axsuyupb7J6E15d6";
+    private readonly ILogger _logger;
 
-    public IdentityManager(ILoggerFactory loggerFactory)
-        : this(loggerFactory.CreateLogger("IdentityManager"))
+    public IdentityManager(ILogger<IdentityManager>? logger = default)
     {
-    }
-
-    public IdentityManager(ILogger? logger)
-    {
-        _logger = logger;
+        _logger = logger ?? NullLogger<IdentityManager>.Instance;
     }
 
     /// <summary>
     /// Kick off login
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> Login(string host, CancellationToken? cancellationToken = default)
+    public async Task<bool> Login(string host, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -43,7 +35,7 @@ public class IdentityManager
                 http.Start();
 
                 // generated login url with PKCE
-                var state = await client.PrepareLoginAsync(cancellationToken: cancellationToken ?? CancellationToken.None);
+                var state = await client.PrepareLoginAsync(cancellationToken: cancellationToken);
 
                 OpenBrowser(state.StartUrl);
 
@@ -53,7 +45,7 @@ public class IdentityManager
                 context.Response.AddHeader("Location", host);
                 context.Response.Close();
 
-                var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken ?? CancellationToken.None);
+                var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
 
                 if (result.IsError)
                 {
@@ -91,7 +83,7 @@ public class IdentityManager
     /// Get access token through a token refresh
     /// </summary>
     /// <returns></returns>
-    public async Task<string> GetAccessToken(CancellationToken? cancellationToken = null)
+    public async Task<string> GetAccessToken(CancellationToken cancellationToken = default)
     {
         string refreshToken = string.Empty;
 
@@ -108,7 +100,7 @@ public class IdentityManager
         if (!string.IsNullOrEmpty(refreshToken))
         {
             var client = await GetOidcClient();
-            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken ?? CancellationToken.None);
+            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
             return result.AccessToken;
         }
         else

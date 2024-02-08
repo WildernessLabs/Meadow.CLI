@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public class FileManager
 {
@@ -11,22 +6,13 @@ public class FileManager
                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                "WildernessLabs",
                "temp");
-    /*
-    public static readonly string OsFilename = "Meadow.OS.bin";
-    public static readonly string RuntimeFilename = "Meadow.OS.Runtime.bin";
-    public static readonly string NetworkBootloaderFilename = "bootloader.bin";
-    public static readonly string NetworkMeadowCommsFilename = "MeadowComms.bin";
-    public static readonly string NetworkPartitionTableFilename = "partition-table.bin";
-    internal static readonly string VersionCheckUrlRoot =
-        "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
-    */
 
     public FirmwareStore Firmware { get; }
 
-    public FileManager()
+    public FileManager(IMeadowCloudClient meadowCloudClient)
     {
         Firmware = new FirmwareStore();
-        var f7Collection = new F7FirmwarePackageCollection();
+        var f7Collection = new F7FirmwarePackageCollection(meadowCloudClient);
         Firmware.AddCollection("Meadow F7", f7Collection);
     }
 
@@ -37,22 +23,4 @@ public class FileManager
             await c.Refresh();
         }
     }
-
-    /*
-    private void GetAllLocalFirmwareVersions()
-    {
-    }
-
-    public bool DownloadRuntimeVersion(string version)
-    {
-    }
-
-    public static string? GetLocalPathToRuntimeVersion(string version)
-    {
-    }
-
-    public static string[] GetLocalRuntimeVersions()
-    {
-    }
-    */
 }

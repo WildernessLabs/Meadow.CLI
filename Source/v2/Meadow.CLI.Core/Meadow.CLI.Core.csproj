@@ -14,7 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
       <ProjectReference Include="..\Meadow.HCom\Meadow.HCom.csproj" />
       <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
       <ProjectReference Include="..\Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj" />

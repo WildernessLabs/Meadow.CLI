@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Meadow.Cloud.Identity;
+namespace Meadow.Cloud.Client.Identity;
 
 public class LibSecret : IDisposable
 {

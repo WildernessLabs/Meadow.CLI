@@ -1,0 +1,10 @@
+﻿global using Meadow.Cloud.Client.Identity;
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.Logging.Abstractions;
+global using System.Diagnostics;
+global using System.Net;
+global using System.Net.Http.Headers;
+global using System.Net.Http.Json;
+global using System.Text;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;

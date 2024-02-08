@@ -1,15 +1,27 @@
 ﻿using CliFx.Attributes;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Net.Http.Headers;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("firmware download", Description = "Download a firmware package")]
 public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 {
-    public FirmwareDownloadCommand(FileManager fileManager, ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+    private readonly IMeadowCloudClient _meadowCloudClient;
+
+    public FirmwareDownloadCommand(
+        FileManager fileManager,
+        IMeadowCloudClient meadowCloudClient, 
+        ISettingsManager settingsManager,
+        ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
-    { }
+    {
+        _meadowCloudClient = meadowCloudClient;
+    }
 
     [CommandOption("force", 'f', IsRequired = false)]
     public bool Force { get; init; }
@@ -17,8 +29,18 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
     [CommandOption("version", 'v', IsRequired = false)]
     public string? Version { get; set; }
 
+    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
+    public string? Host { get; set; }
+
     protected override async ValueTask ExecuteCommand()
     {
+        var isAuthenticated = await _meadowCloudClient.Authenticate(Host, CancellationToken);
+        if (!isAuthenticated)
+        {
+            Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            return;
+        }
+
         await FileManager.Refresh();
 
         // for now we only support F7
@@ -51,7 +73,13 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
         if (!isAvailable)
         {
-            Logger?.LogError($"Requested package version '{Version}' is not available.");
+            Logger?.LogError($"Requested package version '{Version}' is not available");
+            return;
+        }
+
+        if (collection[Version] != null)
+        {
+            Logger?.LogInformation($"Firmware package '{Version}' already exists locally");
             return;
         }
 

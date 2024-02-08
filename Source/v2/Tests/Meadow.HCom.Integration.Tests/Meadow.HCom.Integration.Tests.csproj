@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -22,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
+    <ProjectReference Include="..\..\Meadow.CLI\Meadow.CLI.csproj" />
+    <ProjectReference Include="..\..\Meadow.Hcom\Meadow.Hcom.csproj" />
   </ItemGroup>
 
 </Project>

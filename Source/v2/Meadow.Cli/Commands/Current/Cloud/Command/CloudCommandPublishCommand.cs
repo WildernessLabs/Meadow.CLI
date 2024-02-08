@@ -1,7 +1,7 @@
 ﻿using CliFx.Attributes;
 using CliFx.Exceptions;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 

@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud;
+using Meadow.Cloud.Client;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -112,7 +112,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         if (!valid)
         {
-            Logger?.LogError("Device returned an invali dpublic key");
+            Logger?.LogError("Device returned an invalid public key");
             return;
         }
 

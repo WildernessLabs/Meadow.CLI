@@ -1,14 +1,19 @@
 ﻿using CliFx;
 using Meadow.CLI;
 using Meadow.CLI.Commands.DeviceManagement;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Meadow.SoftwareManager")]
 
 public class Program
 {
@@ -56,7 +61,14 @@ public class Program
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager>();
-        services.AddSingleton<JsonDocumentBindingConverter>();
+		services.AddSingleton<JsonDocumentBindingConverter>();
+        services.AddSingleton<IMeadowCloudClient, MeadowCloudClient>();
+        services.AddSingleton(MeadowCloudUserAgent.Cli);
+
+        services.AddHttpClient<MeadowCloudClient>();
+
+        // Required to disable console logging of HttpClient
+        services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         if (File.Exists("appsettings.json"))
         {
