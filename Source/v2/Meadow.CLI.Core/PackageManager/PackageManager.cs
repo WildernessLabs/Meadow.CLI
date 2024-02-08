@@ -1,7 +1,6 @@
 ﻿using GlobExpressions;
-using LinkerTest;
-using Meadow.Cloud;
 using Meadow.Cloud.Client;
+using Meadow.Linker;
 using Meadow.Software;
 using System.Diagnostics;
 using System.IO.Compression;
