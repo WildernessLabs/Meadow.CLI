@@ -238,7 +238,7 @@ namespace Meadow.Hcom
                                             throw new Exception("Data received for unknown file");
                                         }
 
-                                        _readFileInfo.FileStream.Write(udp.FileData);
+                                        _readFileInfo.FileStream.Write(udp.FileData, 0, udp.FileData.Length);
                                     }
                                     else if (response is UploadCompletedResponse ucr)
                                     {

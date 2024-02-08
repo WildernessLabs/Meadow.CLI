@@ -11,10 +11,10 @@ internal class DeviceInfoSerialResponse : SerialResponse
     internal DeviceInfoSerialResponse(byte[] data, int length)
         : base(data, length)
     {
-        var rawFields = RawText.Split('~', StringSplitOptions.RemoveEmptyEntries);
+        var rawFields = RawText.Split('~', (char)StringSplitOptions.RemoveEmptyEntries);
         foreach (var f in rawFields)
         {
-            var pair = f.Split('|', StringSplitOptions.RemoveEmptyEntries);
+            var pair = f.Split('|', (char)StringSplitOptions.RemoveEmptyEntries);
 
             if ((pair.Length == 2) && !Fields.ContainsKey(pair[0]))
             {
