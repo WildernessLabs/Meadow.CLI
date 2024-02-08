@@ -1,15 +1,10 @@
 ﻿using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Meadow.CLI.Core.Internals.Dfu;
 

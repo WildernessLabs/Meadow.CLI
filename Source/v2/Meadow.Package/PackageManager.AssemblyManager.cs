@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
-namespace Meadow.Package;
+﻿namespace Meadow.Package;
 
 public partial class PackageManager
 {
