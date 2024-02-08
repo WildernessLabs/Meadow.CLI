@@ -99,7 +99,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     private async Task<bool> TrimApplication(string path, CancellationToken cancellationToken)
     {
         // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-        var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
         {
@@ -126,7 +126,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
-        var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
         {
