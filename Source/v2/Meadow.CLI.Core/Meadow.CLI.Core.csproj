@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Meadow.Dfu\Meadow.Dfu.csproj" />
       <ProjectReference Include="..\Meadow.HCom\Meadow.HCom.csproj" />
       <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
       <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
