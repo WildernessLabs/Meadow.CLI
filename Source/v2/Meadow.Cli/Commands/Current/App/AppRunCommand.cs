@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Hcom;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -98,7 +99,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     private async Task<bool> TrimApplication(string path, CancellationToken cancellationToken)
     {
         // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+        var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
         {
@@ -121,11 +122,11 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         return true;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken _)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+        var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
         {

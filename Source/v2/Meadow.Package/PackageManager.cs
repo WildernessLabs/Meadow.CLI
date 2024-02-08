@@ -1,21 +1,26 @@
 ﻿using GlobExpressions;
-using Meadow.Cloud.Client;
 using Meadow.Linker;
 using Meadow.Software;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
-namespace Meadow.CLI;
+namespace Meadow.Package;
 
 public partial class PackageManager : IPackageManager
 {
     public const string BuildOptionsFileName = "app.build.yaml";
 
-    private FileManager _fileManager;
-    private MeadowLinker _meadowLinker;
+    private readonly FileManager _fileManager;
+    private readonly MeadowLinker _meadowLinker;
 
     public PackageManager(FileManager fileManager)
     {
@@ -49,7 +54,7 @@ public partial class PackageManager : IPackageManager
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.Contains("Build FAILED", StringComparison.InvariantCultureIgnoreCase))
+                if (dataLine.Data.ToLower().Contains("build failed"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;
@@ -100,7 +105,7 @@ public partial class PackageManager : IPackageManager
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.Contains("Build FAILED", StringComparison.InvariantCultureIgnoreCase))
+                if (dataLine.Data.ToLower().Contains("build failed"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;

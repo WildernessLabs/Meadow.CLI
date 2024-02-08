@@ -3,6 +3,7 @@ using Meadow.CLI;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
+using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,7 +62,7 @@ public class Program
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
         services.AddSingleton<IdentityManager>();
-		services.AddSingleton<JsonDocumentBindingConverter>();
+        services.AddSingleton<JsonDocumentBindingConverter>();
         services.AddSingleton<IMeadowCloudClient, MeadowCloudClient>();
         services.AddSingleton(MeadowCloudUserAgent.Cli);
 

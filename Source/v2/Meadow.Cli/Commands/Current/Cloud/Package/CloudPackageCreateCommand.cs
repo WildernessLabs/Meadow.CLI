@@ -1,6 +1,7 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
+using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -50,7 +51,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
             return;
         }
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
+        var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
 
         if (candidates.Length == 0)
         {
@@ -67,9 +68,9 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
-        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
+        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Package.PackageManager.PackageOutputDirectoryName);
         //TODO - properly manage shared paths
-        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
+        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, Package.PackageManager.PostLinkDirectoryName);
 
         Logger?.LogInformation($"Assembling the MPAK...");
         var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, CancellationToken);

@@ -42,7 +42,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Meadow.CLI.Core\Meadow.CLI.Core.csproj" />
+	  <ProjectReference Include="..\Meadow.Dfu\Meadow.Dfu.csproj" />
+	  <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
+	  <ProjectReference Include="..\Meadow.Package\Meadow.Package.csproj" />
 	  <ProjectReference Include="..\Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj" />
 	  <ProjectReference Include="..\Meadow.UsbLib\Meadow.UsbLib.csproj" />
 	</ItemGroup>

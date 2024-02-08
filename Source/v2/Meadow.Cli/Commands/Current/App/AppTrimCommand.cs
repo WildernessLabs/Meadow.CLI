@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -37,7 +38,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             }
 
             // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-            var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+            var candidates = Package.PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
             if (candidates.Length == 0)
             {

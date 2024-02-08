@@ -1,4 +1,6 @@
-﻿namespace Meadow.CLI;
+﻿using System.Collections.Generic;
+
+namespace Meadow.Package;
 
 public partial class PackageManager
 {
