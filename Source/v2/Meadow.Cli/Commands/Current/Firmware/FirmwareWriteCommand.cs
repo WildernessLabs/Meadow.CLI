@@ -179,7 +179,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (dfuDevice != null)
             {
-                Logger?.LogInformation($"DFU device detected.  Using DFU to write OS");
+                Logger?.LogInformation($"DFU device detected - using DFU to write OS");
                 UseDfu = true;
             }
             else
@@ -417,6 +417,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             serialNumber,
             logger: Logger,
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
+        }
+        catch (ArgumentException ex)
+        {
+            Logger?.LogWarning("Unable to write firmware with Dfu - is Dfu-util installed? Run `meadow dfu install` to install");
+            return false;
         }
         catch (Exception ex)
         {
