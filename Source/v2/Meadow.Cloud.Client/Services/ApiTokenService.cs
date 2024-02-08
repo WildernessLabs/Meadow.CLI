@@ -16,7 +16,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         return await response.Content.ReadFromJsonAsync<IEnumerable<GetApiTokenResponse>>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None)
@@ -32,7 +32,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         var result = await response.Content.ReadFromJsonAsync<CreateApiTokenResponse>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None);
@@ -48,7 +48,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         var result = await response.Content.ReadFromJsonAsync<UpdateApiTokenResponse>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None);
@@ -63,7 +63,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 }

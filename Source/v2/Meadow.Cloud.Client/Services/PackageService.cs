@@ -58,7 +58,7 @@ public class PackageService : CloudServiceBase
         else
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException($"{response.StatusCode} {message}");
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 
@@ -106,7 +106,7 @@ public class PackageService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 

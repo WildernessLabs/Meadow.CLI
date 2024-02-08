@@ -2,12 +2,20 @@
 
 public class MeadowCloudException : Exception
 {
-    public MeadowCloudException(string message, HttpStatusCode statusCode, string? response, IReadOnlyDictionary<string, IEnumerable<string>> headers, Exception? innerException)
+    public MeadowCloudException(string message, HttpStatusCode statusCode, string? response, IReadOnlyDictionary<string, IEnumerable<string>> headers, Exception? innerException = null)
         : base(message + "\r\n\r\nStatus: " + statusCode + "\r\nResponse: \r\n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
     {
         StatusCode = statusCode;
         Response = response;
         Headers = headers;
+    }
+
+    internal MeadowCloudException(HttpStatusCode statusCode, string? response, Exception? innerException = null)
+        : base("Status: " + statusCode + "\r\nResponse: \r\n" + ((response == null) ? "(null)" : response.Substring(0, response.Length >= 512 ? 512 : response.Length)), innerException)
+    {
+        StatusCode = statusCode;
+        Response = response;
+        Headers = new Dictionary<string, IEnumerable<string>>();
     }
 
     public HttpStatusCode StatusCode { get; private set; }
@@ -31,11 +39,4 @@ public class MeadowCloudException<TResult> : MeadowCloudException
     }
 
     public TResult Result { get; private set; }
-}
-
-
-public class MeadowCloudClassicException : Exception
-{
-    public MeadowCloudClassicException(string message, Exception? innerException = null)
-        : base(message, innerException) { }
 }

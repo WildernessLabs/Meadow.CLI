@@ -28,7 +28,7 @@ public class CommandService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 
@@ -55,7 +55,7 @@ public class CommandService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudClassicException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 }
