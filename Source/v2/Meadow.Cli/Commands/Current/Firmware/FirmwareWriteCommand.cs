@@ -204,6 +204,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 dfuDevice?.Dispose();
 
+                await Task.Delay(1500);
+
                 connection = await GetConnectionAndDisableRuntime();
 
                 if (connection == null)
@@ -223,12 +225,15 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (FirmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
             connection = await WriteFirmware(connection, deviceInfo, package);
+
             if (connection == null)
             {
                 // couldn't find a connected device
                 Logger?.LogError($"Unable to detect a connected device");
                 return;
             }
+
+            await connection.WaitForMeadowAttach();
         }
 
         if (FirmwareFileTypes.Contains(FirmwareType.ESP)
@@ -240,7 +245,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
 
         // reset device
-        await connection!.Device!.Reset();
+        if (connection != null && connection.Device != null)
+        {
+            await connection.Device.Reset();
+        }
     }
 
     private async Task<IMeadowConnection?> WriteFirmware(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)

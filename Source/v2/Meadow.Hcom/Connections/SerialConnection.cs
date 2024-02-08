@@ -749,7 +749,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         EnqueueRequest(command);
 
         // we have to give time for the device to actually reset
-        await Task.Delay(500);
+        await Task.Delay(1500);
 
         await WaitForMeadowAttach(cancellationToken);
     }
