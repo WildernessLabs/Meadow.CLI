@@ -45,7 +45,7 @@ namespace Meadow.CLI.Core
         {
             var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
-            proc.StartInfo.Arguments = $"build {projectPath}";
+            proc.StartInfo.Arguments = $"build \"{projectPath}\"";
 
             proc.StartInfo.CreateNoWindow = true;
             proc.StartInfo.ErrorDialog = false;
