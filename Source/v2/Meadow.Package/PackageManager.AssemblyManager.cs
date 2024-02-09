@@ -1,4 +1,4 @@
-﻿namespace Meadow.CLI;
+﻿namespace Meadow.Package;
 
 public partial class PackageManager
 {

@@ -1,5 +1,4 @@
-﻿//using LibUsbDotNet.LibUsb;
-using Meadow.Hcom;
+﻿using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel;

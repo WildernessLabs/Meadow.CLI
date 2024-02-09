@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;

@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Hcom;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -121,7 +122,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         return true;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken _)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 

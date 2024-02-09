@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace LinkerTest
+namespace Meadow.Linker
 {
     internal class ILLinker
     {
@@ -71,7 +71,7 @@ namespace LinkerTest
                     _logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
                 }
 
-                await process.WaitForExitAsync();
+                await Task.Run(() => process.WaitForExit());
 
                 if (process.ExitCode != 0)
                 {

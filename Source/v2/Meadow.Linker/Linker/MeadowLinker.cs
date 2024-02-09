@@ -3,7 +3,7 @@ using Mono.Cecil;
 using Mono.Collections.Generic;
 using System.Reflection;
 
-namespace LinkerTest;
+namespace Meadow.Linker;
 
 public class MeadowLinker
 {
