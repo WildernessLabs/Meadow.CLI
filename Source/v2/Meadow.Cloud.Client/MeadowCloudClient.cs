@@ -8,19 +8,6 @@ using Meadow.Cloud.Client.Users;
 
 namespace Meadow.Cloud.Client;
 
-public interface IMeadowCloudClient
-{
-    IApiTokenClient ApiToken { get; }
-    ICollectionClient Collection { get; }
-    ICommandClient Command { get; }
-    IDeviceClient Device { get; }
-    IFirmwareClient Firmware { get; }
-    IPackageClient Package { get; }
-    IUserClient User { get; }
-
-    Task<bool> Authenticate(string? host = default, CancellationToken cancellationToken = default);
-}
-
 public class MeadowCloudClient : IMeadowCloudClient
 {
     public const string DefaultHost = "https://www.meadowcloud.co";
@@ -29,10 +16,15 @@ public class MeadowCloudClient : IMeadowCloudClient
     private readonly HttpClient _httpClient;
     private readonly IdentityManager _identityManager;
     private readonly ILogger _logger;
-    
+
     public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILogger<MeadowCloudClient>? logger = default)
     {
         _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(httpClient));
+
+        if (httpClient.BaseAddress == null)
+        {
+            httpClient.BaseAddress = new Uri(DefaultHost);
+        }
 
         _httpClient = httpClient;
         _identityManager = identityManager;
