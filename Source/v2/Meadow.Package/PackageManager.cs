@@ -80,7 +80,7 @@ public partial class PackageManager : IPackageManager
 
         var proc = new Process();
         proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"build {projectFilePath} -c {configuration}";
+        proc.StartInfo.Arguments = $"build \"{projectFilePath}\" -c {configuration}";
 
         proc.StartInfo.CreateNoWindow = true;
         proc.StartInfo.ErrorDialog = false;
