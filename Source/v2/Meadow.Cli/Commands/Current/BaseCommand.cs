@@ -1,4 +1,5 @@
 ﻿using CliFx;
+using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
 
@@ -31,12 +32,13 @@ public abstract class BaseCommand<T> : ICommand
         catch (Exception ex)
         {
             Logger?.LogError(ex.Message);
-            return;
+            throw new CliFxException(ex.Message, -1);
         }
 
         if (CancellationToken.IsCancellationRequested)
         {
             Logger?.LogInformation($"Cancelled");
+            throw new CliFxException("Cancelled", -2);
         }
     }
 }
