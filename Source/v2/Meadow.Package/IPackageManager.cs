@@ -16,10 +16,10 @@ public interface IPackageManager
         IList<string>? noLink = null,
         CancellationToken? cancellationToken = null);
 
-    Task<string> AssemblePackage(
-        string contentSourceFolder,
+    Task<string> AssemblePackage(string contentSourceFolder,
         string outputFolder,
         string osVersion,
+        string? mpakName = null,
         string filter = "*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null);
