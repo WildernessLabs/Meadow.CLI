@@ -32,13 +32,18 @@ public abstract class BaseCommand<T> : ICommand
         catch (Exception ex)
         {
             Logger?.LogError(ex.Message);
-            throw new CliFxException(ex.Message, -1);
+            throw new CommandException(
+                message: ex.Message,
+                exitCode: 1,
+                innerException: ex);
         }
 
         if (CancellationToken.IsCancellationRequested)
         {
             Logger?.LogInformation($"Cancelled");
-            throw new CliFxException("Cancelled", -2);
+            throw new CommandException(
+                message: "Cancelled",
+                exitCode: 2);
         }
     }
 }
