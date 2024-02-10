@@ -152,7 +152,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
         _f7Packages.Clear();
 
-        foreach (var directory in Directory.GetDirectories(PackageFileRoot))
+        var directories = Directory
+            .GetDirectories(PackageFileRoot)
+            .OrderByDescending(d => d);
+
+        foreach (var directory in directories)
         {
             var hasFiles = false;
 
