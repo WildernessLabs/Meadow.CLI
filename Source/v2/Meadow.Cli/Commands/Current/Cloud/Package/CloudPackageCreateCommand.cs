@@ -43,6 +43,11 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     protected override async ValueTask ExecuteCommand()
     {
         ProjectPath ??= AppDomain.CurrentDomain.BaseDirectory;
+        ProjectPath = Path.GetFullPath(ProjectPath);
+        if (!Directory.Exists(ProjectPath))
+        {
+            throw new DirectoryNotFoundException($"Directory not found '{ProjectPath}'. Check path to project file.");
+        }
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
