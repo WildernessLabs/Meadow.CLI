@@ -163,10 +163,10 @@ public partial class PackageManager : IPackageManager
 
     public const string PackageMetadataFileName = "info.json";
 
-    public Task<string> AssemblePackage(
-        string contentSourceFolder,
+    public Task<string> AssemblePackage(string contentSourceFolder,
         string outputFolder,
         string osVersion,
+        string? mpakName = null,
         string filter = "*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null)
@@ -177,7 +177,8 @@ public partial class PackageManager : IPackageManager
             di.Create();
         }
 
-        var mpakName = Path.Combine(outputFolder, $"{DateTime.UtcNow:yyyyMMddff}.mpak");
+        // uncomment to force ".mpak" extension. mpakName = Path.ChangeExtension(mpakName, ".mpak");
+        mpakName = Path.Combine(outputFolder, string.IsNullOrWhiteSpace(mpakName) ? $"{DateTime.UtcNow:yyyyMMddff}.mpak" : mpakName);
 
         if (File.Exists(mpakName))
         {
