@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Meadow.Hcom
 {
@@ -207,7 +208,7 @@ namespace Meadow.Hcom
                                         _state = ConnectionState.Disconnected;
                                         _reconnectInProgress = true;
 
-                                        if(System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                                        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                                         {
                                             if (_port.IsOpen)
                                             {
