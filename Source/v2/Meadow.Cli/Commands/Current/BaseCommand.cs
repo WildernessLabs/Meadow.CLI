@@ -29,12 +29,17 @@ public abstract class BaseCommand<T> : ICommand
 
             await ExecuteCommand();
         }
+        catch (CommandException ce)
+        {
+            Logger?.LogError(ce.Message);
+            throw;
+        }
         catch (Exception ex)
         {
             Logger?.LogError(ex.Message);
             throw new CommandException(
                 message: ex.Message,
-                exitCode: 1,
+                exitCode: (int)CommandErrors.GeneralError,
                 innerException: ex);
         }
 
@@ -43,7 +48,7 @@ public abstract class BaseCommand<T> : ICommand
             Logger?.LogInformation($"Cancelled");
             throw new CommandException(
                 message: "Cancelled",
-                exitCode: 2);
+                exitCode: (int)CommandErrors.UserCancelled);
         }
     }
 }
