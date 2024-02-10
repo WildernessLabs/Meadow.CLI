@@ -4,7 +4,9 @@ using Meadow.Linker;
 using Meadow.Software;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using YamlDotNet.Serialization;
@@ -227,7 +229,8 @@ public partial class PackageManager : IPackageManager
 
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
     {
-        if (!Directory.Exists(rootFolder)) { throw new FileNotFoundException(); }
+        rootFolder = Path.GetFullPath(rootFolder);
+        if (!Directory.Exists(rootFolder)) { throw new DirectoryNotFoundException($"Directory not found '{rootFolder}'. Check path to project file."); }
 
         //see if this is a fully qualified path to the app.dll
         if (File.Exists(Path.Combine(rootFolder, appName)))
@@ -237,7 +240,7 @@ public partial class PackageManager : IPackageManager
 
         // look for a 'bin' folder
         var path = Path.Combine(rootFolder, "bin");
-        if (!Directory.Exists(path)) throw new FileNotFoundException($"No 'bin' directory found under {rootFolder}. Have you compiled?");
+        if (!Directory.Exists(path)) throw new DirectoryNotFoundException($"No 'bin' directory found under '{rootFolder}'. Have you compiled?");
 
         var files = new List<FileInfo>();
         FindApp(path, files);
