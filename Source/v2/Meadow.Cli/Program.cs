@@ -74,7 +74,7 @@ public class Program
         if (File.Exists("appsettings.json"))
         {
             var config = new ConfigurationBuilder()
-                                   .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                                   .SetBasePath(Directory.GetCurrentDirectory())
                                    .AddJsonFile("appsettings.json")
                                    .Build();
 
