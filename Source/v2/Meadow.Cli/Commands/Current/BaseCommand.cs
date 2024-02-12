@@ -36,7 +36,6 @@ public abstract class BaseCommand<T> : ICommand
         }
         catch (Exception ex)
         {
-            Logger?.LogError(ex.Message);
             throw new CommandException(
                 message: ex.Message,
                 exitCode: (int)CommandErrors.GeneralError,
@@ -45,7 +44,6 @@ public abstract class BaseCommand<T> : ICommand
 
         if (CancellationToken.IsCancellationRequested)
         {
-            Logger?.LogInformation($"Cancelled");
             throw new CommandException(
                 message: "Cancelled",
                 exitCode: (int)CommandErrors.UserCancelled);
