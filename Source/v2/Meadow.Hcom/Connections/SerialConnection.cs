@@ -712,7 +712,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         _lastRequestConcluded = null;
 
-        Console.WriteLine($"Command: {command}");
         EnqueueRequest(command);
 
         await WaitForConcluded(null, cancellationToken);

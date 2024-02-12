@@ -3,28 +3,34 @@ using System.IO.Ports;
 using System.IO;
 using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
+using Meadow.Hcom;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("uart profiler enable", Description = "Enables profiling data output to UART")]
 public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCommand>
 {
+    [CommandOption("interface", 'i', Description = $"Set the serial interface to read the profiling data via COM1", IsRequired = true)]
+    public string? SerialInterface { get; set; }
+
+    [CommandOption("outputPath", 'o', Description = $"Set the profiling data output path", IsRequired = false)]
+    public string? OutputPath { get; set; }
+
     public UartProfilerEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
 
     void ReadSerial()
     {
-       // Define serial port and baudrate
-        string serialPort = "/dev/tty.usbserial-1120"; // TODO: Remove this hardcoded serial port
-        int baudRate = 115200; // TODO: Remove this hardcoded baud rate
-
-        // Define the header bytes
-        byte[] header = { 0x01, 0x5A, 0x50, 0x4D }; // TODO: Confirm if these header bytes are enough
+        // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
+        byte[] header = { 0x01, 0x5A, 0x50, 0x4D };
         byte[] buffer = new byte[header.Length];
         int headerIndex = 0;
+        string directory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        string defaultOutputPath = Path.Combine(directory, "output.mlpd");
+        OutputPath ??= defaultOutputPath;
 
-        SerialPort port = new SerialPort(serialPort, baudRate);
+        SerialPort port = new SerialPort(SerialInterface, SerialConnection.DefaultBaudRate);
 
         try
         {
@@ -47,7 +53,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                         // If the entire header sequence is found, set headerFound to true
                         if (headerIndex == header.Length)
                         {
-                            Logger?.LogInformation("Profiling data header found! Writing to the output.mlpd file..."); //
+                            Logger?.LogInformation($"Profiling data header found! Writing the {OutputPath}..."); //
                             headerFound = true;
                         }
                     }
@@ -65,8 +71,9 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
 
                 return;
             }
+
             // Step 2: After the header sequence is found, write the profiling data to the output file
-            using (FileStream outputFile = new FileStream("output.mlpd", FileMode.Create)) // TODO: Remove this hardcode path
+            using (FileStream outputFile = new FileStream(OutputPath, FileMode.Create))
             {
                 var totalBytesWritten = 0;
 
@@ -83,9 +90,9 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                         outputFile.WriteByte((byte)data);
                         totalBytesWritten++;
                     }
-                    if (totalBytesWritten % 1024 == 0)
+                    if (totalBytesWritten % (4 * 1024) == 0)
                     {
-                        Logger?.LogInformation($"{totalBytesWritten} bytes written..."); // TODO: Enhance it
+                        Logger?.LogInformation($"{totalBytesWritten} bytes written...");
                     }
                 }
             }
@@ -111,16 +118,15 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
             return;
         }
 
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
-
-        Logger?.LogInformation("Setting UART to output profiler binaries...");
+        Logger?.LogInformation("Setting UART to output profiling data...");
 
         await connection.Device.UartProfilerEnable(CancellationToken);
 
-        Logger?.LogInformation("Reading profiler binaries on UART...");
+        Logger?.LogInformation("Reseting Meadow device...");
+
+        await connection.ResetDevice();
+
+        Logger?.LogInformation($"Attempting to open a serial connection on {SerialInterface} UART interface...");
 
         ReadSerial();
     }
