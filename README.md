@@ -83,5 +83,5 @@ dotnet tool install WildernessLabs.Meadow.CLI --global
 
 If you need to find or clear out any of the OS download files retrieved by Meadow.CLI, they are located in a WildernessLabs folder in the user directory.
 
-macOS: `~/.local/share/WildernessLabs/Firmware/`
-Windows: `%LOCALAPPDATA%\WildernessLabs\Firmware`
+* macOS: `~/.local/share/WildernessLabs/Firmware/`
+* Windows: `%LOCALAPPDATA%\WildernessLabs\Firmware`
