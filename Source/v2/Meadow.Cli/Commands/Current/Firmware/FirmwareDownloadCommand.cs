@@ -1,10 +1,7 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
-using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using System.Net.Http.Headers;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -15,7 +12,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     public FirmwareDownloadCommand(
         FileManager fileManager,
-        IMeadowCloudClient meadowCloudClient, 
+        IMeadowCloudClient meadowCloudClient,
         ISettingsManager settingsManager,
         ILoggerFactory loggerFactory)
         : base(fileManager, settingsManager, loggerFactory)
@@ -61,6 +58,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             }
 
             Logger?.LogInformation($"Latest available version is '{latest}'...");
+            await collection.SetDefaultPackage(latest);
             Version = latest;
         }
         else
@@ -77,7 +75,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             return;
         }
 
-        if (collection[Version] != null)
+        if (collection[Version] != null && Force == false)
         {
             Logger?.LogInformation($"Firmware package '{Version}' already exists locally");
             return;
@@ -98,11 +96,6 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             else
             {
                 Logger?.LogInformation($"Firmware package '{Version}' downloaded");
-
-                if (explicitVersion == false)
-                {
-                    await collection.SetDefaultPackage(Version);
-                }
             }
         }
         catch (Exception ex)
