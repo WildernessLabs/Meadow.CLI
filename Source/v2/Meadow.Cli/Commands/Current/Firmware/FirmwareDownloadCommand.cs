@@ -58,7 +58,6 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             }
 
             Logger?.LogInformation($"Latest available version is '{latest}'...");
-            await collection.SetDefaultPackage(latest);
             Version = latest;
         }
         else
@@ -78,6 +77,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
         if (collection[Version] != null && Force == false)
         {
             Logger?.LogInformation($"Firmware package '{Version}' already exists locally");
+
+            if (explicitVersion == false)
+            {
+                await collection.SetDefaultPackage(Version);
+            }
             return;
         }
 
@@ -96,6 +100,11 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
             else
             {
                 Logger?.LogInformation($"Firmware package '{Version}' downloaded");
+
+                if (explicitVersion == false)
+                {
+                    await collection.SetDefaultPackage(Version);
+                }
             }
         }
         catch (Exception ex)
