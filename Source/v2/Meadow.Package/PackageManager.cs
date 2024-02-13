@@ -31,7 +31,7 @@ public partial class PackageManager : IPackageManager
     {
         var proc = new Process();
         proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"clean {projectFilePath} -c {configuration}";
+        proc.StartInfo.Arguments = $"clean \"{projectFilePath}\" -c {configuration}";
 
         proc.StartInfo.CreateNoWindow = true;
         proc.StartInfo.ErrorDialog = false;
@@ -230,7 +230,11 @@ public partial class PackageManager : IPackageManager
 
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
     {
-        rootFolder = Path.GetFullPath(rootFolder);
+        // check if we were give path to a project file, not the folder of the project file.
+        if (File.Exists(rootFolder))
+        {
+            rootFolder = Path.GetDirectoryName(rootFolder) ?? ""; // extreact the folder name or if invalid, use the current directory.
+        }
         if (!Directory.Exists(rootFolder)) { throw new DirectoryNotFoundException($"Directory not found '{rootFolder}'. Check path to project file."); }
 
         //see if this is a fully qualified path to the app.dll
