@@ -292,11 +292,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-            if (connection == null) return; // couldn't find a connected device
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
+
+        if (connection == null) { return; } // couldn't find a connected device
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
