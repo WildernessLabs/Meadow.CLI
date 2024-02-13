@@ -373,7 +373,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (existing == null)
             {
-                Logger?.LogError($"Requested version '{Version}' not found");
+                Logger?.LogError($"Requested firmware version '{Version}' not found");
                 return null;
             }
             package = existing;
