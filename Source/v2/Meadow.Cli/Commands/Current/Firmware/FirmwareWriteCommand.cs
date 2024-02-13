@@ -121,7 +121,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (package == null)
         {
-            Logger?.LogError($"Firmware write failed - No package selected");
             return;
         }
 
