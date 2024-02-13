@@ -241,6 +241,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
+            await connection.RuntimeDisable();
+
             await WriteEspFiles(connection, deviceInfo, package);
         }
 
