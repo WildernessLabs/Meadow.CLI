@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using CliFx.Exceptions;
 using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
 
-    [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
+    [CommandParameter(0, Name = "Path to folder containing the application to build.", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -28,6 +29,20 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        string path = Path ?? Directory.GetCurrentDirectory();
+
+        // is the path a file?
+        if (!File.Exists(path))
+        {
+            // is it a valid directory?
+            if (!Directory.Exists(path))
+            {
+                throw new CommandException($"Invalid application path '{path}'", (int)CommandErrors.FileNotFound);
+            }
+        }
+
+        Configuration ??= "Release";
+
         var connection = await GetCurrentConnection();
 
         if (connection == null)
@@ -35,13 +50,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             return;
         }
 
-        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
-
-        if (!Directory.Exists(path))
-        {
-            Logger?.LogError($"Target directory '{path}' not found");
-            return;
-        }
 
         var lastFile = string.Empty;
 
