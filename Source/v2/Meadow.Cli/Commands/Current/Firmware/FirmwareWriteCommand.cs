@@ -121,7 +121,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (package == null)
         {
-            Logger?.LogError($"Firmware write failed - No package selected");
             return;
         }
 
@@ -241,6 +240,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
+            await connection.RuntimeDisable();
+
             await WriteEspFiles(connection, deviceInfo, package);
         }
 
@@ -291,11 +292,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-            if (connection == null) return; // couldn't find a connected device
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
+
+        if (connection == null) { return; } // couldn't find a connected device
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
 
@@ -372,7 +371,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (existing == null)
             {
-                Logger?.LogError($"Requested version '{Version}' not found");
+                Logger?.LogError($"Requested firmware version '{Version}' not found");
                 return null;
             }
             package = existing;
