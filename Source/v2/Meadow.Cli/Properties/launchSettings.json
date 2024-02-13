@@ -262,6 +262,10 @@
     "legacy download os": {
       "commandName": "Project",
       "commandLineArgs": "download os"
+    },
+    "legacy flash os": {
+      "commandName": "Project",
+      "commandLineArgs": "flash os"
     }
   }
 }

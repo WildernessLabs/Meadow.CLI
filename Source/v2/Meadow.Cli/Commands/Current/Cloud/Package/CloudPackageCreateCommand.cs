@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using CliFx.Exceptions;
 using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
 using Meadow.Package;
@@ -42,26 +43,25 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
     protected override async ValueTask ExecuteCommand()
     {
-        ProjectPath ??= AppDomain.CurrentDomain.BaseDirectory;
+        ProjectPath ??= Directory.GetCurrentDirectory();
         ProjectPath = Path.GetFullPath(ProjectPath);
         if (!Directory.Exists(ProjectPath))
         {
-            throw new DirectoryNotFoundException($"Directory not found '{ProjectPath}'. Check path to project file.");
+            throw new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", (int)CommandErrors.DirectoryNotFound);
         }
 
         // build
         Logger?.LogInformation($"Building {Configuration} version of application...");
         if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
-            return;
+            throw new CommandException($"Build failed.", (int)CommandErrors.GeneralError);
         }
 
         var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
 
         if (candidates.Length == 0)
         {
-            Logger?.LogError($"Cannot find a compiled application at '{ProjectPath}'");
-            return;
+            throw new CommandException($"Cannot find a compiled application at '{ProjectPath}'", (int)CommandErrors.FileNotFound);
         }
 
         var store = _fileManager.Firmware["Meadow F7"];
@@ -86,7 +86,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         }
         else
         {
-            Logger?.LogError($"Package assembly failed.");
+            throw new CommandException($"Package assembly failed.", (int)CommandErrors.GeneralError);
         }
     }
 }
