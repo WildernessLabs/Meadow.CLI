@@ -9,18 +9,17 @@ public static class AppManager
 {
     private static bool MatchingDllExists(string file)
     {
-        var root = Path.GetFileNameWithoutExtension(file);
-        return File.Exists($"{root}.dll");
+        return File.Exists(Path.ChangeExtension(file, ".dll"));
     }
 
     private static bool IsPdb(string file)
     {
-        return string.Compare(Path.GetExtension(file), ".pdb", true) == 0;
+        return String.Compare(Path.GetExtension(file), ".pdb", StringComparison.OrdinalIgnoreCase) == 0;
     }
 
     private static bool IsXmlDoc(string file)
     {
-        if (string.Compare(Path.GetExtension(file), ".xml", true) == 0)
+        if (String.Compare(Path.GetExtension(file), ".xml", StringComparison.OrdinalIgnoreCase) == 0)
         {
             return MatchingDllExists(file);
         }
@@ -43,6 +42,13 @@ public static class AppManager
         // get a list of files to send
         var dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(localBinaryDirectory, "App.dll")));
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
+
+        var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(s => new FileInfo(s).Extension != ".dll")
+            .Where(s => new FileInfo(s).Extension != ".pdb")
+            .Where(s => !s.Contains(".DS_Store"));
+        dependencies.AddRange(binaries);
+
 
         logger?.LogInformation("Generating list of files to deploy...");
         foreach (var file in dependencies)
