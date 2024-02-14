@@ -53,8 +53,13 @@ public class MeadowCloudClient : IMeadowCloudClient
             return false;
         }
 
-        _httpClient.BaseAddress = new Uri(host);
+        if (_httpClient.BaseAddress == null)
+        {
+            _httpClient.BaseAddress = new Uri(host);
+        }
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
         return true;
     }
 }
