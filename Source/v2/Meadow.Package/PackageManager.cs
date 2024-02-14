@@ -4,9 +4,7 @@ using Meadow.Linker;
 using Meadow.Software;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.IO.Compression;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using YamlDotNet.Serialization;
@@ -230,10 +228,10 @@ public partial class PackageManager : IPackageManager
 
     public static FileInfo[] GetAvailableBuiltConfigurations(string rootFolder, string appName = "App.dll")
     {
-        // check if we were give path to a project file, not the folder of the project file.
+        // check if we were give path to a project file, not the folder of the project file
         if (File.Exists(rootFolder))
         {
-            rootFolder = Path.GetDirectoryName(rootFolder) ?? ""; // extreact the folder name or if invalid, use the current directory.
+            rootFolder = Path.GetDirectoryName(rootFolder) ?? ""; // extreact the folder name or if invalid, use the current directory
         }
         if (!Directory.Exists(rootFolder)) { throw new DirectoryNotFoundException($"Directory not found '{rootFolder}'. Check path to project file."); }
 
