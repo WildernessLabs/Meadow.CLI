@@ -36,9 +36,10 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-		<PackageReference Include="System.Management" Version="7.0.2" />
+		<PackageReference Include="System.Management" Version="8.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
+		<PackageReference Include="Terminal.Gui" Version="1.15.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -49,6 +50,9 @@
 	  <ProjectReference Include="..\Meadow.UsbLib\Meadow.UsbLib.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Remove="Commands\Current\Template\" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\icon.png" Pack="true" PackagePath="" />
 	</ItemGroup>
@@ -62,4 +66,7 @@
 	<ItemGroup>
 	    <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Commands\Current\Template\" />
+	</ItemGroup>
 </Project>
