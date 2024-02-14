@@ -1,5 +1,4 @@
-﻿using CliFx.Exceptions;
-using CliFx.Extensibility;
+﻿using CliFx.Extensibility;
 using System.Text.Json;
 
 namespace Meadow.CLI.Commands.DeviceManagement;

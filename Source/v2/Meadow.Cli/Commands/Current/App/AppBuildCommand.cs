@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Exceptions;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +31,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                throw new CommandException($"Invalid application path '{path}'", (int)CommandErrors.FileNotFound);
+                throw new CommandException($"Invalid application path '{path}'", CommandExitCode.FileNotFound);
             }
         }
 
@@ -45,7 +44,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
         if (!success)
         {
-            throw new CommandException($"Build failed.", (int)CommandErrors.GeneralError);
+            throw new CommandException("Build failed", CommandExitCode.GeneralError);
         }
         else
         {
