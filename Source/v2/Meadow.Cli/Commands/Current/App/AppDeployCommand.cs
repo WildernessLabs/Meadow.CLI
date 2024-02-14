@@ -95,6 +95,8 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (isRuntimeEnabled)
         {
+            await Task.Delay(1000);
+
             // restore runtime state
             Logger?.LogInformation("Enabling runtime...");
 

@@ -11,8 +11,8 @@ public class MeadowLinker
     private const string IL_LINKER_DLL = "illink.dll";
     private const string MEADOW_LINK_XML = "meadow_link.xml";
 
-    private const string PostLinkDirectoryName = "postlink_bin";
-    private const string PreLinkDirectoryName = "prelink_bin";
+    public const string PostLinkDirectoryName = "postlink_bin";
+    public const string PreLinkDirectoryName = "prelink_bin";
 
     readonly ILLinker _linker;
     readonly ILogger? _logger;

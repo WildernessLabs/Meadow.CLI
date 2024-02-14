@@ -29,9 +29,8 @@ public abstract class BaseCommand<T> : ICommand
 
             await ExecuteCommand();
         }
-        catch (CommandException ce)
+        catch (CommandException)
         {
-            Logger?.LogError(ce.Message);
             throw;
         }
         catch (Exception ex)
