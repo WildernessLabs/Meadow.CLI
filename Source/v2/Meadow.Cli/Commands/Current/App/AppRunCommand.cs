@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Exceptions;
 using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
@@ -37,7 +36,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                throw new CommandException($"Invalid application path '{path}'", (int)CommandErrors.FileNotFound);
+                throw new CommandException($"Invalid application path '{path}'", CommandExitCode.FileNotFound);
             }
         }
 

@@ -1,5 +1,4 @@
 ﻿using CliFx;
-using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
 
@@ -7,15 +6,17 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseCommand<T> : ICommand
 {
-    protected ILogger<T>? Logger { get; }
-    protected ILoggerFactory? LoggerFactory { get; }
-    protected IConsole? Console { get; private set; }
+    private IConsole? _console;
+
+    protected ILogger<T> Logger { get; }
+    protected ILoggerFactory LoggerFactory { get; }
+    protected IConsole Console => _console ?? throw new InvalidOperationException("The Console property has not yet been initialized. It can only be used within in the ExecuteCommand() method.");
     protected CancellationToken CancellationToken { get; private set; }
 
-    public BaseCommand(ILoggerFactory? loggerFactory)
+    public BaseCommand(ILoggerFactory loggerFactory)
     {
         LoggerFactory = loggerFactory;
-        Logger = loggerFactory?.CreateLogger<T>();
+        Logger = loggerFactory.CreateLogger<T>();
     }
 
     protected abstract ValueTask ExecuteCommand();
@@ -24,28 +25,19 @@ public abstract class BaseCommand<T> : ICommand
     {
         try
         {
-            Console = console;
-            CancellationToken = Console.RegisterCancellationHandler();
+            _console = console;
+            CancellationToken = _console.RegisterCancellationHandler();
 
             await ExecuteCommand();
         }
-        catch (CommandException)
+        catch (Exception ex) when (ex is not CommandException && ex is not CliFx.Exceptions.CommandException)
         {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new CommandException(
-                message: ex.Message,
-                exitCode: (int)CommandErrors.GeneralError,
-                innerException: ex);
+            throw new CommandException(ex.Message, ex);
         }
 
         if (CancellationToken.IsCancellationRequested)
         {
-            throw new CommandException(
-                message: "Cancelled",
-                exitCode: (int)CommandErrors.UserCancelled);
+            throw new CommandException("Cancelled", CommandExitCode.UserCancelled);
         }
     }
 }
