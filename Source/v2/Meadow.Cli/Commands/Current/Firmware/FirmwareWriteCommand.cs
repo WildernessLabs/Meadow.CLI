@@ -223,7 +223,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (FirmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
-            connection = await WriteFirmware(connection, deviceInfo, package);
+            if (string.IsNullOrEmpty(IndividualFile))
+            {
+                connection = await WriteRuntime(connection, deviceInfo, package);
+            }
+            else
+            {
+                connection = await WriteRuntime(connection, deviceInfo, IndividualFile, Path.GetFileName(IndividualFile));
+            }
 
             if (connection == null)
             {
@@ -252,7 +259,17 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
     }
 
-    private async Task<IMeadowConnection?> WriteFirmware(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
+    private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
+    {
+        Logger?.LogInformation($"{Environment.NewLine}Getting runtime for {package.Version}...");
+
+        // get the path to the runtime file
+        var rtpath = package.GetFullyQualifiedPath(package.Runtime);
+
+        return await WriteRuntime(connection, deviceInfo, rtpath, package.Runtime);
+    }
+
+    private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, string runtimePath, string destinationFilename)
     {
         if (connection == null)
         {
@@ -261,21 +278,15 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             if (connection == null) { return null; } // couldn't find a connected device
         }
 
-        Logger?.LogInformation($"{Environment.NewLine}Writing Runtime {package.Version}...");
+        Logger?.LogInformation($"{Environment.NewLine}Writing Runtime ...");
 
-        // get the path to the runtime file
-        var rtpath = package.GetFullyQualifiedPath(package.Runtime);
-
-        if (deviceInfo == null)
-        {
-            deviceInfo = await connection.GetDeviceInfo(CancellationToken);
-        }
+        deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
 
         write_runtime:
-            if (!await connection.Device!.WriteRuntime(rtpath, CancellationToken))
+            if (!await connection.Device!.WriteRuntime(runtimePath, CancellationToken))
             {
                 // TODO: implement a retry timeout
                 Logger?.LogInformation($"Error writing runtime - retrying");
@@ -284,7 +295,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await connection.Device!.WriteFile(rtpath, $"/meadow0/update/os/{package.Runtime}");
+            await connection.Device!.WriteFile(runtimePath, $"/meadow0/update/os/{destinationFilename}");
         }
 
         return connection;
