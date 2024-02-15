@@ -72,6 +72,7 @@ internal class F7FirmwareDownloadManager
         }
         catch
         {
+            Directory.Delete(local_path, true);
             throw new Exception($"Unable to download OS files for {version}");
         }
 
@@ -81,6 +82,7 @@ internal class F7FirmwareDownloadManager
         }
         catch
         {
+            Directory.Delete(local_path, true);
             throw new Exception($"Unable to download Coprocessor files for {version}");
         }
 

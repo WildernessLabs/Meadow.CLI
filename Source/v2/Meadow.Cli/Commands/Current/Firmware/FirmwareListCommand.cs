@@ -22,6 +22,9 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
     {
         await FileManager.Refresh();
 
+        //show the firmware path
+        Logger?.LogInformation($"Firmware location: {F7FirmwarePackageCollection.DefaultF7FirmwareStoreRoot}");
+
         if (Verbose)
         {
             await DisplayVerboseResults(FileManager);
