@@ -2,14 +2,13 @@
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using CliFx.Attributes;
-using Meadow.Peripherals.Sensors.Buttons;
 using Microsoft.Extensions.Logging;
 using NStack;
 using Terminal.Gui;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("template wizard", Description = "Gets the device's current runtime state")]
+[Command("project wizard", Description = "Launch a multi-device wizard to generate projects")]
 public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
 {
     Dictionary<string, string> projectTemplateMapping = new Dictionary<string, string>()
@@ -34,7 +33,7 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
         //await InstallDependencies();
 
         int width = 80;
-        int height = 20;
+        int height = 24;
 
         var wizard = new Wizard("Meadow Project Template Wizard")
         {
@@ -143,9 +142,9 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
         var lblProgress = new Label() { Text = "Project: ", X = 1, Y = 10 };
         var pbProgress = new ProgressBar()
         {
-            X = Pos.Right(lblProgress),
-            Y = Pos.Top(lblProgress),
-            Width = 40,
+            X = 1,
+            Y = Pos.Bottom(lblProgress),
+            Width = 50,
             Fraction = 0.0F
         };
 
@@ -207,10 +206,31 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
 
                     //while (installationInProgress)
                     {
+                        int progressCount = 0;
+                        if (cbxF7.Checked)
+                            progressCount++;
+                        if (cbxMac.Checked)
+                            progressCount++;
+                        if (cbxRaspberryPi.Checked)
+                            progressCount++;
+                        if (cbxProjectLab.Checked)
+                            progressCount++;
+                        if (cbxWin.Checked)
+                            progressCount++;
+
+                        // Increment for Sln Creation
+                        progressCount++;
+
+                        // Increment for Meadow Core Creation
+                        progressCount++;
+
+
+                        double progressIncrement = 1.0 / progressCount;
+
                         lblProgress.Text = "Creating Solution : " + txtProjectName.Text;
                         solutionOutputPath = Path.Combine((string)txtPath.Text, (string)txtProjectName.Text);
                         await CreateSolution(txtProjectName.Text, solutionOutputPath);
-                        pbProgress.Fraction = 0.33f;
+                        pbProgress.Fraction += (float)progressIncrement;
 
                         // When updating from a Thread/Task always use Invoke
                         Application.MainLoop.Invoke(() =>
@@ -220,13 +240,7 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
 
                         await Task.Delay(100);
 
-                        // We always need Core
-                        var coreProjectName = txtProjectName.Text + ".Core";
-                        lblProgress.Text = "Creating Project : " + coreProjectName;
-                        var coreOutputPath = Path.Combine(solutionOutputPath, (string)coreProjectName);
-                        await CreateTemplate("MeadowSKC", (string)txtProjectName.Text, coreOutputPath);
-
-                        pbProgress.Fraction = 0.66f;
+                        pbProgress.Fraction += (float)progressIncrement;
 
                         // When updating from a Thread/Task always use Invoke
                         Application.MainLoop.Invoke(() =>
@@ -241,6 +255,12 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
                             lblProgress.Text = "Creating Project : " + f7ProjectName;
                             var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
                             await CreateTemplate(projectTemplateMapping[(string)cbxF7.Text], (string)txtProjectName.Text, f7OutputPath);
+                            pbProgress.Fraction += (float)progressIncrement;
+
+                            Application.MainLoop.Invoke(() =>
+                            {
+                                wizard.SetNeedsDisplay();
+                            });
                         }
 
                         if (cbxMac.Checked)
@@ -250,15 +270,12 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
                             lblProgress.Text = "Creating Project : " + f7ProjectName;
                             var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
                             await CreateTemplate(projectTemplateMapping[(string)cbxMac.Text], (string)txtProjectName.Text, f7OutputPath);
-                        }
+                            pbProgress.Fraction += (float)progressIncrement;
 
-                        if (cbxMac.Checked)
-                        {
-                            // Now Create our hardware projects
-                            var f7ProjectName = txtProjectName.Text + "." + cbxMac.Text;
-                            lblProgress.Text = "Creating Project : " + f7ProjectName;
-                            var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
-                            await CreateTemplate(projectTemplateMapping[(string)cbxMac.Text], (string)txtProjectName.Text, f7OutputPath);
+                            Application.MainLoop.Invoke(() =>
+                            {
+                                wizard.SetNeedsDisplay();
+                            });
                         }
 
                         if (cbxRaspberryPi.Checked)
@@ -268,6 +285,12 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
                             lblProgress.Text = "Creating Project : " + f7ProjectName;
                             var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
                             await CreateTemplate(projectTemplateMapping[(string)cbxRaspberryPi.Text], (string)txtProjectName.Text, f7OutputPath);
+                            pbProgress.Fraction += (float)progressIncrement;
+
+                            Application.MainLoop.Invoke(() =>
+                            {
+                                wizard.SetNeedsDisplay();
+                            });
                         }
 
                         if (cbxProjectLab.Checked)
@@ -277,6 +300,12 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
                             lblProgress.Text = "Creating Project : " + f7ProjectName;
                             var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
                             await CreateTemplate(projectTemplateMapping[(string)cbxProjectLab.Text], (string)txtProjectName.Text, f7OutputPath);
+                            pbProgress.Fraction += (float)progressIncrement;
+
+                            Application.MainLoop.Invoke(() =>
+                            {
+                                wizard.SetNeedsDisplay();
+                            });
                         }
 
                         if (cbxWin.Checked)
@@ -286,11 +315,34 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
                             lblProgress.Text = "Creating Project : " + f7ProjectName;
                             var f7OutputPath = Path.Combine(solutionOutputPath, (string)f7ProjectName);
                             await CreateTemplate(projectTemplateMapping[(string)cbxWin.Text], (string)txtProjectName.Text, f7OutputPath);
+                            pbProgress.Fraction += (float)progressIncrement;
+
+                            Application.MainLoop.Invoke(() =>
+                            {
+                                wizard.SetNeedsDisplay();
+                            });
                         }
+
+                        // We always need Core
+                        var coreProjectName = txtProjectName.Text + ".Core";
+                        lblProgress.Text = "Creating Project : " + coreProjectName;
+                        var coreOutputPath = Path.Combine(solutionOutputPath, (string)coreProjectName);
+                        await CreateTemplate("MeadowSKC", (string)txtProjectName.Text, coreOutputPath);
+                        pbProgress.Fraction += (float)progressIncrement;
+
+                        Application.MainLoop.Invoke(() =>
+                        {
+                            wizard.SetNeedsDisplay();
+                        });
 
                         // Add all projects to the solution.
                         await AddProjectsToSolution(Path.Combine(solutionOutputPath, (string)txtProjectName.Text + ".sln"));
                         pbProgress.Fraction = 1.0f;
+
+                        Application.MainLoop.Invoke(() =>
+                        {
+                            wizard.SetNeedsDisplay();
+                        });
                     }
                 });
             }
