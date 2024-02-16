@@ -7,4 +7,7 @@ public enum CommandExitCode
     UserCancelled = 2,
     FileNotFound = 3,
     DirectoryNotFound = 4,
+    MeadowDeviceNotFound = 5,
+    InvalidParameter = 6,
+    NotAuthorized = 7,
 }

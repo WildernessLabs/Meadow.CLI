@@ -19,12 +19,12 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
         if (connection == null || connection.Device == null)
         {
-            return;
+            throw CommandException.MeadowDeviceNotFound;
         }
 
         if (Time == null)
         {
-            Logger?.LogInformation($"Getting device clock...");
+            Logger?.LogInformation(Strings.GettingDeviceClock);
             var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
             Logger?.LogInformation($"{deviceTime.Value:s}Z");
         }
@@ -32,17 +32,19 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
         {
             if (Time == "now")
             {
-                Logger?.LogInformation($"Setting device clock...");
+                Logger?.LogInformation(Strings.SettingDeviceClock);
                 await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
             }
             else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
             {
-                Logger?.LogInformation($"Setting device clock...");
+                Logger?.LogInformation(Strings.SettingDeviceClock);
                 await connection.Device.SetRtcTime(dto, CancellationToken);
             }
             else
             {
-                Logger?.LogInformation($"Unable to parse '{Time}' to a valid time.");
+                throw new CommandException(
+                    $"Unable to parse '{Time}' to a valid time.",
+                    CommandExitCode.InvalidParameter);
             }
         }
     }

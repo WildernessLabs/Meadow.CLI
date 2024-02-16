@@ -45,7 +45,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM10"
+      "commandLineArgs": "config route COM4"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",

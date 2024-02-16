@@ -3,6 +3,12 @@
 /// <inheritdoc/>
 public class CommandException : CliFx.Exceptions.CommandException
 {
+    public static CommandException MeadowDeviceNotFound
+        => new CommandException(Strings.ErrorNoMeadowFound, CommandExitCode.MeadowDeviceNotFound);
+
+    public static CommandException InvalidParameter
+        => new CommandException(Strings.InvalidParameter, CommandExitCode.MeadowDeviceNotFound);
+
     public CommandException(string message)
         : base(message, (int)CommandExitCode.GeneralError, showHelp: false, innerException: null)
     { }
