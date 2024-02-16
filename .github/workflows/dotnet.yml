@@ -1,7 +1,8 @@
 name: Meadow.CLI Packaging
 env:
-  CLI_RELEASE_VERSION: 2.0.6.0
-  IDE_TOOLS_RELEASE_VERSION: 2.0.0
+  CLI_RELEASE_VERSION_1: 1.9.0.0
+  CLI_RELEASE_VERSION_2: 2.0.6.0
+  IDE_TOOLS_RELEASE_VERSION: 1.9.0
   MEADOW_OS_VERSION: 2.0.0.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.6
@@ -57,23 +58,23 @@ jobs:
       name: Update CLI Version Numbers
       run: |
         $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
-        $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION }}</PackageVersion>'
+        $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION_1 }}</PackageVersion>'
         $newcontent | Set-Content main/Meadow.CLI/Meadow.CLI.csproj
 
         $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION }}</Version>'
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
         $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
 
         $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION }}</Version>'
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
         $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
 
         $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION }}</Version>'
+        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
         $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
 
         $content = Get-Content main/Meadow.CLI.Core/Constants.cs | Out-String
-        $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ ENV.CLI_RELEASE_VERSION }}";'
+        $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ ENV.CLI_RELEASE_VERSION_1 }}";'
         $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
 
     - name: Add MSBuild to Path
@@ -88,7 +89,7 @@ jobs:
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION }}
+        name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
 
     - name: Restore normal dependencies
@@ -100,7 +101,7 @@ jobs:
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION }}
+        name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
@@ -117,7 +118,7 @@ jobs:
     - name: Upload nuget Artifacts for internal testing
       uses: actions/upload-artifact@v2
       with:
-        name: Meadow.CLI.V2.nuget.2.0.0
+        name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}
         path: 'main\Source\v2\Meadow.CLI\bin\Release\*.nupkg'
 
     #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
