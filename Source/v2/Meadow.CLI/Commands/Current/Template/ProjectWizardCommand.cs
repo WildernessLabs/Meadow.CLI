@@ -9,7 +9,7 @@ using Terminal.Gui;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("project wizard", Description = "Launch a multi-device wizard to generate projects")]
-public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
+public class ProjectWizardCommand : BaseCommand<ProjectWizardCommand>
 {
     Dictionary<string, string> projectTemplateMapping = new Dictionary<string, string>()
     {
@@ -21,7 +21,7 @@ public class TemplateWizardCommand : BaseCommand<TemplateWizardCommand>
     };
     private string solutionOutputPath = string.Empty;
 
-    public TemplateWizardCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public ProjectWizardCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     { }
 
