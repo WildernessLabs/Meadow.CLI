@@ -4,6 +4,7 @@ using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -130,7 +131,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var fullPath = Path.GetFullPath(IndividualFile);
             if (!File.Exists(fullPath))
             {
-                throw new FileNotFoundException(fullPath);
+                throw new CommandException($"Invalid firmware path {fullPath}", CommandExitCode.FileNotFound);
             }
 
             // set the file type
@@ -142,7 +143,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile => new[] { FirmwareType.ESP },
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile => new[] { FirmwareType.ESP },
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocPartitionTableFile => new[] { FirmwareType.ESP },
-                _ => throw new ArgumentException($"Unknown firmware file {Path.GetFileName(IndividualFile)}")
+                _ => throw new CommandException($"Unknown firmware file {Path.GetFileName(IndividualFile)}")
             };
 
             Logger?.LogInformation($"Writing firmware file '{fullPath}'...");
@@ -364,7 +365,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             0 => null,
             1 => devices[0],
-            _ => throw new Exception("Multiple devices found in bootloader mode - only connect one device"),
+            _ => throw new CommandException("Multiple devices found in bootloader mode - only connect one device"),
         };
     }
 
@@ -389,8 +390,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            Version = collection.DefaultPackage?.Version ??
-                throw new Exception("No default version set");
+            Version = collection.DefaultPackage?.Version ?? throw new CommandException("No default version set");
 
             package = collection.DefaultPackage;
         }
@@ -463,7 +463,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             if (retryCount++ > 10)
             {
-                throw new Exception("New meadow device not found");
+                throw new CommandException("New meadow device not found");
             }
             await Task.Delay(500);
             ports = await MeadowConnectionManager.GetSerialPorts();
