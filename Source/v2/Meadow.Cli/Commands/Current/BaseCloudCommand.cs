@@ -29,8 +29,6 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 
     protected async Task<UserOrg?> ValidateOrg(string host, string? orgNameOrId = null, CancellationToken? cancellationToken = null)
     {
-        UserOrg? org = null;
-
         try
         {
             Logger?.LogInformation("Retrieving your user and organization information...");
@@ -39,23 +37,25 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             if (!userOrgs.Any())
             {
                 Logger?.LogInformation($"Please visit {host} to register your account.");
+                return null;
             }
             else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(orgNameOrId))
             {
                 Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
+                return null;
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
             {
                 orgNameOrId = userOrgs.First().Id;
             }
-            else
+
+            var org = userOrgs.FirstOrDefault(o => o.Id == orgNameOrId || o.Name == orgNameOrId);
+            if (org == null)
             {
-                org = userOrgs.FirstOrDefault(o => o.Id == orgNameOrId || o.Name == orgNameOrId);
-                if (org == null)
-                {
-                    Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{orgNameOrId}'");
-                }
+                Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{orgNameOrId}'");
             }
+
+            return org;
         }
         catch (MeadowCloudAuthException)
         {
@@ -63,6 +63,6 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             Logger?.LogError($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
         }
 
-        return org;
+        return null;
     }
 }
