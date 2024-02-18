@@ -83,6 +83,10 @@
       "commandName": "Project",
       "commandLineArgs": "file delete Juego.pdb"
     },
+    "File Delete All": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete all"
+    },
     "File Read": {
       "commandName": "Project",
       "commandLineArgs": "file read test.txt \"f:\\temp\\test2.txt\""

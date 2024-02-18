@@ -1,6 +1,5 @@
 ﻿using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
-using System.Linq;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -10,6 +9,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
     public const int FileSystemBlockSize = 4096;
 
     private const string MeadowRootFolder = "meadow0";
+    private const string FolderLabel = "[folder]";
 
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; init; }
@@ -38,11 +38,11 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             }
             if (Folder.StartsWith('/') == false)
             { 
-                Folder += "/"; 
+                Folder = $"/{Folder}"; 
             }
             if (Folder.Contains(MeadowRootFolder) == false)
             {
-                Folder += $"/{MeadowRootFolder}";
+                Folder = $"/{MeadowRootFolder}{Folder}";
             }
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
@@ -81,19 +81,27 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
                     totalBlocksUsed += ((file.Size ?? 0) / FileSystemBlockSize) + 1;
 
                     var line = $"{file.Name.PadRight(longestFileName)}";
-                    line = $"{line}\t{file.Crc:x8}";
 
-                    if (file.Size > 1000000)
+                    if(file.IsDirectory)
                     {
-                        line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
-                    }
-                    else if (file.Size > 1000)
-                    {
-                        line = $"{line}\t{file.Size / 1000,7:0} kB   ";
+                        line = $"{line}\t{FolderLabel}";
                     }
                     else
                     {
-                        line = $"{line}\t{file.Size,7} bytes";
+                        line = $"{line}\t{file.Crc:x8}";
+
+                        if (file.Size > 1000000)
+                        {
+                            line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
+                        }
+                        else if (file.Size > 1000)
+                        {
+                            line = $"{line}\t{file.Size / 1000,7:0} kB   ";
+                        }
+                        else
+                        {
+                            line = $"{line}\t{file.Size,7} bytes";
+                        }
                     }
 
                     Logger?.LogInformation(line);
@@ -110,7 +118,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 foreach (var file in files)
                 {
-                    Logger?.LogInformation(file.Name + (file.IsDirectory?" [folder]":string.Empty));
+                    Logger?.LogInformation(file.Name + (file.IsDirectory?FolderLabel:string.Empty));
                 }
 
                 Logger?.LogInformation($"\t{files.Length} file(s)");
