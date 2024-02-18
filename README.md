@@ -33,7 +33,22 @@ meadow firmware download
 meadow firmware write
 ```
 
+### List available Meadow devices
+
+```
+meadow list ports
+```
+
+You can then specify which port to use for future commands (replace `{port-name}` to your desired device port, such as `COM3` on Windows or `/dev/tty.usbmodem336F336D30361` on macOS).
+
+```
+meadow config route {port-name}
+```
+
 ### Listen for Meadow Console.WriteLine
+
+After configuring a route to the desired Meadow device.
+
 ```
 meadow listen
 ```
@@ -83,5 +98,7 @@ dotnet tool install WildernessLabs.Meadow.CLI --global
 
 If you need to find or clear out any of the OS download files retrieved by Meadow.CLI, they are located in a WildernessLabs folder in the user directory.
 
-* macOS: `~/.local/share/WildernessLabs/Firmware/`
 * Windows: `%LOCALAPPDATA%\WildernessLabs\Firmware`
+* macOS
+  * .NET 8 or newer: `~/Library/Application Support/WildernessLabs/Firmware`
+  * .NET 7 or earlier: `~/.local/share/WildernessLabs/Firmware/`
