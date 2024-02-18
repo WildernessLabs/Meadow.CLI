@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -51,7 +52,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await connection.Device.GetFileList(Folder ?? $"/{MeadowRootFolder}/ ", Verbose, CancellationToken);
+        var files = await connection.Device.GetFileList(Folder ?? $"/{MeadowRootFolder}/", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {
@@ -59,6 +60,12 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
         }
         else
         {
+            files = files.OrderBy(file =>
+            {
+                string prefix = file.IsDirectory ? "0" : "1";
+                return $"{prefix}_{file.Name}";
+            }).ToArray();
+
             if (Verbose)
             {
                 var longestFileName = files.Select(x => x.Name.Length)
@@ -103,7 +110,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 foreach (var file in files)
                 {
-                    Logger?.LogInformation(file.Name);
+                    Logger?.LogInformation(file.Name + (file.IsDirectory?" [folder]":string.Empty));
                 }
 
                 Logger?.LogInformation($"\t{files.Length} file(s)");
