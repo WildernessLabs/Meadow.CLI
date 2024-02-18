@@ -33,6 +33,14 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 Folder += "/";
             }
+            if (Folder.StartsWith('/') == false)
+            { 
+                Folder += "/"; 
+            }
+            if (Folder.Contains("meadow0") == false)
+            {
+                Folder += "/meadow0";
+            }
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
         }
