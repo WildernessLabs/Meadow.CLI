@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -8,6 +9,8 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 {
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
     public string MeadowFile { get; init; } = default!;
+
+    private const string MeadowRootFolder = "meadow0";
 
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
@@ -26,10 +29,10 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
         if (string.IsNullOrWhiteSpace(folder))
         {
-            folder = "/meadow0";
+            folder = MeadowRootFolder;
         }
 
-        var fileList = await connection.GetFileList($"{folder}/", false);
+        var fileList = await connection.GetFileList($"/{folder}/", false);
 
         if (fileList == null || fileList.Length == 0)
         {
@@ -39,11 +42,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (MeadowFile == "all")
         {
-            foreach (var f in fileList)
+            foreach (var file in fileList)
             {
-                var p = Path.GetFileName(f.Name);
-                Logger?.LogInformation($"Deleting file '{p}' from device...");
-                await connection.Device.DeleteFile(p, CancellationToken);
+                await DeleteFileRecursive(connection.Device, file, CancellationToken);
             }
         }
         else
@@ -70,5 +71,23 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 await connection.Device.DeleteFile(MeadowFile, CancellationToken);
             }
         }
+    }
+
+    private async Task DeleteFileRecursive(IMeadowDevice device, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
+    {
+        if (fileInfo.IsDirectory)
+        {
+            var subfolderFiles = await device.GetFileList(fileInfo.Name, false, cancellationToken);
+
+            foreach (var subfolderFile in subfolderFiles)
+            {
+                await DeleteFileRecursive(device, subfolderFile, cancellationToken);
+            }
+            return;
+        }
+
+        var fileName = Path.GetFileName(fileInfo.Name);
+        Logger?.LogInformation($"Deleting file '{fileName}' from device...");
+        await device.DeleteFile(fileName, cancellationToken);
     }
 }

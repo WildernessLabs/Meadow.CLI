@@ -38,11 +38,11 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             }
             if (Folder.StartsWith('/') == false)
             { 
-                Folder += "/"; 
+                Folder = $"/{Folder}"; 
             }
             if (Folder.Contains(MeadowRootFolder) == false)
             {
-                Folder += $"/{MeadowRootFolder}";
+                Folder = $"/{MeadowRootFolder}{Folder}";
             }
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
