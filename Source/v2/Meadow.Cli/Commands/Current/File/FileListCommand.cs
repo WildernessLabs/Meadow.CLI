@@ -8,6 +8,8 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
+    private const string MeadowRootFolder = "meadow0";
+
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; init; }
 
@@ -37,9 +39,9 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             { 
                 Folder += "/"; 
             }
-            if (Folder.Contains("meadow0") == false)
+            if (Folder.Contains(MeadowRootFolder) == false)
             {
-                Folder += "/meadow0";
+                Folder += $"/{MeadowRootFolder}";
             }
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
@@ -49,7 +51,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await connection.Device.GetFileList(Folder ?? "/meadow0/", Verbose, CancellationToken);
+        var files = await connection.Device.GetFileList(Folder ?? $"/{MeadowRootFolder}/ ", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {
