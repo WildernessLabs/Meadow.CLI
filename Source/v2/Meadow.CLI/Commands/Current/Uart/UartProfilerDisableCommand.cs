@@ -19,13 +19,12 @@ public class UartProfilerDisableCommand : BaseDeviceCommand<UartProfilerDisableC
             return;
         }
 
-        connection.DeviceMessageReceived += (s, e) =>
-        {
-            Logger?.LogInformation(e.message);
-        };
-
-        Logger?.LogInformation("Setting UART to application use...");
+        Logger?.LogInformation("Disabling UART output for profiling data...");
 
         await connection.Device.UartProfilerDisable(CancellationToken);
+
+        Logger?.LogInformation("Reseting Meadow device...");
+
+        await connection.ResetDevice();
     }
 }

@@ -25,7 +25,6 @@ private void ReadAndSaveSerialData()
     // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
     //  according to the Mono Profiler LOG_VERSION_MAJOR 3 LOG_VERSION_MINOR 0 LOG_DATA_VERSION 17
     byte[] header = { 0x01, 0x5A, 0x50, 0x4D };
-    byte[] buffer = new byte[header.Length];
     int headerIndex = 0;
     string defaultDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
     outputDirectory ??= defaultDirectory;
@@ -53,7 +52,6 @@ private void ReadAndSaveSerialData()
                     // Check if the received data matches the header sequence
                     if (data == header[headerIndex])
                     {
-                        buffer[headerIndex] = (byte)data;
                         headerIndex++;
                         // If the entire header sequence is found, start writing to a file
                         if (headerIndex == header.Length)
@@ -67,7 +65,6 @@ private void ReadAndSaveSerialData()
                             writingToFile = true;
                             totalBytesWritten += 4;
                             headerIndex = 0;
-                            buffer = new byte[header.Length];
                             headerFoundTimes++;
                         }
                     }
@@ -104,7 +101,6 @@ private void ReadAndSaveSerialData()
                                 outputFile.WriteByte((byte)headerByte);
                             }
                             totalBytesWritten = 4; 
-                            buffer = new byte[header.Length];
                         }
                     }
                     else
@@ -144,7 +140,7 @@ private void ReadAndSaveSerialData()
             return;
         }
 
-        Logger?.LogInformation("Setting UART to output profiling data...");
+        Logger?.LogInformation("Setting UART to only output profiling data...");
 
         await connection.Device.UartProfilerEnable(CancellationToken);
 
