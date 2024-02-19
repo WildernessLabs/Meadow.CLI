@@ -13,48 +13,62 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
     [CommandOption("interface", 'i', Description = $"Set the serial interface to read the profiling data via COM1", IsRequired = true)]
     public string? SerialInterface { get; set; }
 
-    [CommandOption("outputPath", 'o', Description = $"Set the profiling data output path", IsRequired = false)]
-    public string? OutputPath { get; set; }
+    [CommandOption("outputDirectory", 'o', Description = $"Set the profiling data output directory path", IsRequired = false)]
+    public string? outputDirectory { get; set; }
 
     public UartProfilerEnableCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
 
-    void ReadSerial()
+private void ReadAndSaveSerialData()
+{
+    // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
+    //  according to the Mono Profiler LOG_VERSION_MAJOR 3 LOG_VERSION_MINOR 0 LOG_DATA_VERSION 17
+    byte[] header = { 0x01, 0x5A, 0x50, 0x4D };
+    byte[] buffer = new byte[header.Length];
+    int headerIndex = 0;
+    string defaultDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+    outputDirectory ??= defaultDirectory;
+    string outputPath = Path.Combine(outputDirectory, "output.mlpd");
+
+    SerialPort port = new SerialPort(SerialInterface, SerialConnection.DefaultBaudRate);
+
+    FileStream outputFile = null;
+    bool writingToFile = false;
+    int totalBytesWritten = 0;
+    int headerFoundTimes = 0;
+
+    try
     {
-        // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
-        byte[] header = { 0x01, 0x5A, 0x50, 0x4D };
-        byte[] buffer = new byte[header.Length];
-        int headerIndex = 0;
-        string directory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-        string defaultOutputPath = Path.Combine(directory, "output.mlpd");
-        OutputPath ??= defaultOutputPath;
+        port.Open();
+        Logger?.LogInformation("Serial connection opened successfully.");
 
-        SerialPort port = new SerialPort(SerialInterface, SerialConnection.DefaultBaudRate);
-
-        try
+        while (true)
         {
-            port.Open();
-            Logger?.LogInformation("Serial connection opened successfully.");
-
-            // Step 1: Read until header sequence is found
-            bool headerFound = false;
-            while (!headerFound)
+            int data = port.ReadByte();
+            if (data != -1)
             {
-                int data = port.ReadByte();
-                if (data != -1)
+                if (!writingToFile)
                 {
-                    // Check if received byte matches the corresponding byte in the header sequence
+                    // Check if the received data matches the header sequence
                     if (data == header[headerIndex])
                     {
-                        Logger?.LogTrace($"Profiler data header index {headerIndex} has been found {(byte)data}");
                         buffer[headerIndex] = (byte)data;
                         headerIndex++;
-                        // If the entire header sequence is found, set headerFound to true
+                        // If the entire header sequence is found, start writing to a file
                         if (headerIndex == header.Length)
                         {
-                            Logger?.LogInformation($"Profiling data header found! Writing the {OutputPath}..."); //
-                            headerFound = true;
+                            Logger?.LogInformation($"Profiling data header found! Writing to {outputPath}...");
+                            outputFile = new FileStream(outputPath, FileMode.Create);
+                            foreach (var headerByte in header)
+                            {
+                                outputFile.WriteByte((byte)headerByte);
+                            }
+                            writingToFile = true;
+                            totalBytesWritten += 4;
+                            headerIndex = 0;
+                            buffer = new byte[header.Length];
+                            headerFoundTimes++;
                         }
                     }
                     else
@@ -63,33 +77,43 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                         headerIndex = 0;
                     }
                 }
-            }
-
-            if (!headerFound)
-            {
-                Logger?.LogError("Profiling data header hasn't been found!");
-
-                return;
-            }
-
-            // Step 2: After the header sequence is found, write the profiling data to the output file
-            using (FileStream outputFile = new FileStream(OutputPath, FileMode.Create))
-            {
-                var totalBytesWritten = 0;
-
-                foreach (byte b in buffer)
+                else
                 {
-                    outputFile.WriteByte(b);
+
+                    // Writing to file after header is found
+                    outputFile.WriteByte((byte)data);
                     totalBytesWritten++;
-                }
-                while (true)
-                {
-                    int data = port.ReadByte();
-                    if (data != -1)
+
+                    // Check for a new header while writing to a file
+                    if (data == header[headerIndex])
                     {
-                        outputFile.WriteByte((byte)data);
-                        totalBytesWritten++;
+                        headerIndex++;
+                        if (headerIndex == header.Length)
+                        {
+                            // Close the current file, start writing to a new file, and reset counters
+                            //  to avoid corrupted profiling data (e.g. device reset while profiling)
+                            outputFile.Close();
+                            outputFile.Dispose();
+                            headerFoundTimes++;
+                            var newOutputPath = outputDirectory + "output_" + headerFoundTimes + ".mlpd";
+                            outputFile = new FileStream(newOutputPath, FileMode.Create);
+                            Logger?.LogInformation($"New profiling data header found! Writing to {newOutputPath}...");
+                            headerIndex = 0;
+                            foreach (var headerByte in header)
+                            {
+                                outputFile.WriteByte((byte)headerByte);
+                            }
+                            totalBytesWritten = 4; 
+                            buffer = new byte[header.Length];
+                        }
                     }
+                    else
+                    {
+                        // Reset header index if received byte does not match
+                        headerIndex = 0;
+                    }
+
+                    // Log bytes written periodically to not spam the console
                     if (totalBytesWritten % (4 * 1024) == 0)
                     {
                         Logger?.LogInformation($"{totalBytesWritten} bytes written...");
@@ -97,17 +121,19 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                 }
             }
         }
-        catch (IOException ex)
-        {
-            Logger?.LogInformation("Failed to open serial port: " + ex.Message);
-        }
-        finally
-        {
-            // Ensure the serial port is closed
-            if (port.IsOpen)
-                port.Close();
-        }
     }
+    catch (IOException ex)
+    {
+        Logger?.LogError("Failed to open serial port: " + ex.Message);
+    }
+    finally
+    {
+        outputFile?.Close();
+        outputFile?.Dispose();
+        if (port.IsOpen)
+            port.Close();
+    }
+}
 
     protected override async ValueTask ExecuteCommand()
     {
@@ -128,6 +154,6 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
 
         Logger?.LogInformation($"Attempting to open a serial connection on {SerialInterface} UART interface...");
 
-        ReadSerial();
+        ReadAndSaveSerialData();
     }
 }
