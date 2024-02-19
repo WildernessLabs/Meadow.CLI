@@ -63,11 +63,13 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await BuildApplication(path, CancellationToken))
         {
+            Logger?.LogError("Build Failed.");
             return;
         }
 
         if (!await TrimApplication(path, CancellationToken))
         {
+            Logger?.LogError("Trim Failed.");
             return;
         }
 
@@ -76,6 +78,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await DeployApplication(connection, path, CancellationToken))
         {
+            Logger?.LogError("Deploy Application Failed.");
             return;
         }
 
