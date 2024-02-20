@@ -58,7 +58,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
         var token = await IdentityManager.GetAccessToken(CancellationToken);
         if (string.IsNullOrWhiteSpace(token))
         {
-            throw new CommandException("You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
         }
 
         try
