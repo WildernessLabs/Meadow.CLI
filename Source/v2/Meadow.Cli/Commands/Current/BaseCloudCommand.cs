@@ -59,8 +59,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         }
         catch (MeadowCloudAuthException)
         {
-            Logger?.LogError($"You must be signed in to execute this command.");
-            Logger?.LogError($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
+            Logger?.LogError($"You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
         }
 
         return null;

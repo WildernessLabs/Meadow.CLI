@@ -11,7 +11,7 @@ public static class Strings
     public const string MemberOfMoreThanOneOrg = "You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.";
     public const string UnableToFindMatchingOrg = "Unable to find an organization with a Name or ID matching '{0}'";
     public const string MustBeSignedInRunMeadowLogin = $"You must be signed in to execute this command.\n"
-         + "Please run \"meadow login\" to sign in to your Wilderness Labs account.";
+         + "Please run \"meadow cloud login\" to sign in to your Wilderness Labs account.";
     public const string RequestingDevicePublicKey = "Requesting device public key (this will take a minute)...";
     public const string CouldNotRetrievePublicKey = "Could not retrieve device's public key";
     public const string DeviceReturnedInvalidPublicKey = "Device returned an invalid public key";

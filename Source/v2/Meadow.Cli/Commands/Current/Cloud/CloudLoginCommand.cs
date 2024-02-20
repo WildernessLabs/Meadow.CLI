@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud login", Description = "Log in to Meadow.Cloud")]
+[Command("cloud login", Description = "Log in to your Wilderness Labs account")]
 public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
 {
     [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
@@ -24,7 +24,7 @@ public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
     {
         Host ??= DefaultHost;
 
-        Logger?.LogInformation($"Logging into {Host}...");
+        Logger?.LogInformation($"Logging into you Wilderness Labs account...");
 
         var loginResult = await IdentityManager.Login(Host, CancellationToken);
 

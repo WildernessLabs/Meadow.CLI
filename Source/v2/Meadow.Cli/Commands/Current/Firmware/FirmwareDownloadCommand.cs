@@ -34,7 +34,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
         var isAuthenticated = await _meadowCloudClient.Authenticate(Host, CancellationToken);
         if (!isAuthenticated)
         {
-            Logger?.LogError($"You must be signed into Meadow.Cloud to execute this command. Run 'meadow cloud login' to do so.");
+            Logger?.LogError($"You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
             return;
         }
 

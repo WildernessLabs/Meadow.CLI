@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("cloud logout", Description = "Log out of Meadow.Cloud")]
+[Command("cloud logout", Description = "Log out of your Wilderness Labs account")]
 public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
 {
     public CloudLogoutCommand(
@@ -19,7 +19,7 @@ public class CloudLogoutCommand : BaseCloudCommand<CloudLogoutCommand>
 
     protected override ValueTask ExecuteCommand()
     {
-        Logger?.LogInformation($"Logging out of Meadow.Cloud...");
+        Logger?.LogInformation($"Logging out of your Wilderness Labs account...");
 
         IdentityManager.Logout();
 
