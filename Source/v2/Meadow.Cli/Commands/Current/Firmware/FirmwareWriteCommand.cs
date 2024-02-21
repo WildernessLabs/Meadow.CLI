@@ -4,7 +4,6 @@ using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
-using System.IO;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -21,7 +20,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandOption("version", 'v', IsRequired = false)]
     public string? Version { get; set; }
 
-    [CommandOption("use-dfu", 'd', IsRequired = false, Description = "Force using DFU/HCOM for writing files.")]
+    [CommandOption("use-dfu", 'd', IsRequired = false, Description = "Force using DFU/HCOM for writing files")]
     public bool UseDfu { get; set; }
 
     [CommandOption("file", 'f', IsRequired = false, Description = "Send only the specified file")]
@@ -93,7 +92,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return version.Major switch
             {
                 0 => true,
-                1 => version.Minor < 8,
+                2 => version.Minor < 0,
                 _ => false,
             };
         }
@@ -108,7 +107,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return version.Major switch
             {
                 0 => true,
-                1 => version.Minor < 9,
+                2 => version.Minor < 0,
                 _ => false,
             };
         }
@@ -158,6 +157,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 FirmwareType.Runtime,
                 FirmwareType.ESP
             };
+        }
+        else if (FirmwareFileTypes.Length == 1 && FirmwareFileTypes[0] == FirmwareType.Runtime)
+        {   //use the "DFU" path when only writing the runtime
+            UseDfu = true;
         }
 
         IMeadowConnection? connection = null;
@@ -248,7 +251,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
-            if(connection == null)
+            if (connection == null)
             {
                 connection = await GetConnectionAndDisableRuntime();
             }
