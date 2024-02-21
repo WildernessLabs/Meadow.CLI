@@ -26,7 +26,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandOption("file", 'f', IsRequired = false, Description = "Send only the specified file")]
     public string? IndividualFile { get; set; }
 
-    [CommandParameter(0, Name = "Files to write", IsRequired = false)]
+    [CommandParameter(0, Description = "Files to write", IsRequired = false)]
     public FirmwareType[]? FirmwareFileTypes { get; set; } = default!;
 
     private FileManager FileManager { get; }

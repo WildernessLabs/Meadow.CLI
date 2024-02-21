@@ -12,7 +12,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
     public string? Configuration { get; init; }
 
-    [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
