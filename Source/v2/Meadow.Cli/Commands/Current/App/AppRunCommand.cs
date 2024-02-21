@@ -17,7 +17,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
 
-    [CommandParameter(0, Name = "Path to folder containing the application to build", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to folder containing the application to build", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)

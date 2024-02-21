@@ -11,7 +11,7 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
         : base(fileManager, settingsManager, loggerFactory)
     { }
 
-    [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
+    [CommandParameter(0, Description = "Version number to delete", IsRequired = true)]
     public string Version { get; init; } = default!;
 
     protected override async ValueTask ExecuteCommand()
