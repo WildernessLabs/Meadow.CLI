@@ -13,7 +13,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? ProjectPath { get; set; }
 
-    [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
+    [CommandOption("configuration", 'c', Description = "The build configuration to compile", IsRequired = false)]
     public string Configuration { get; init; } = "Release";
 
     [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
@@ -22,6 +22,9 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
         IsRequired = false)]
     public string Filter { get; init; } = "*";
+
+    [CommandOption("osVersion", 'v', Description = "Target OS version for the app", IsRequired = false)]
+    public string? OsVersion { get; init; } = default!;
 
     private readonly IPackageManager _packageManager;
     private readonly FileManager _fileManager;
@@ -46,14 +49,14 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         ProjectPath = Path.GetFullPath(ProjectPath);
         if (!Directory.Exists(ProjectPath))
         {
-            throw new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
+            new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
         }
 
         // build
-        Logger?.LogInformation($"Building {Configuration} version of application...");
+        Logger?.LogInformation(string.Format(Strings.BuildingSpecifiedConfiguration, Configuration));
         if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
-            throw new CommandException($"Build failed");
+            throw new CommandException(Strings.BuildFailed);
         }
 
         var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
@@ -65,10 +68,11 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
         var store = _fileManager.Firmware["Meadow F7"];
         await store.Refresh();
-        var osVersion = store?.DefaultPackage?.Version ?? "unknown";
+        var osVersion = OsVersion ?? store?.DefaultPackage?.Version ?? "unknown";
 
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();        // trim
-        Logger?.LogInformation($"Trimming application...");
+        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+        // trim
+        Logger?.LogInformation(string.Format(Strings.TrimmingApplicationForSpecifiedVersion, osVersion));
         await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
@@ -76,16 +80,16 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         //TODO - properly manage shared paths
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
-        Logger?.LogInformation($"Assembling the MPAK...");
+        Logger?.LogInformation(Strings.AssemblingCloudPackage);
         var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {
-            Logger?.LogInformation($"Done. Package is available at {packagePath}");
+            Logger?.LogInformation(string.Format(Strings.PackageAvailableAtSpecifiedPath, packagePath));
         }
         else
         {
-            throw new CommandException($"Package assembly failed");
+            throw new CommandException(Strings.PackageAssemblyFailed);
         }
     }
 }
