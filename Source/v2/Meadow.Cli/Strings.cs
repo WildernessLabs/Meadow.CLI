@@ -18,4 +18,10 @@ public static class Strings
     public const string ProvisioningWithCloud = "Provisioning device with Meadow.Cloud...";
     public const string ProvisioningSucceeded = "Device provisioned successfully";
     public const string ProvisioningFailed = "Failed to provision device: {0}";
+    public const string BuildingSpecifiedConfiguration = "Building {0} configuration of application...";
+    public const string BuildFailed = "Build failed";
+    public const string TrimmingApplicationForSpecifiedVersion = "Trimming application for OS version {0}...";
+    public const string AssemblingCloudPackage = "Assembling the MPAK...";
+    public const string PackageAssemblyFailed = "Package assembly failed";
+    public const string PackageAvailableAtSpecifiedPath = "Done. Package is available at {0}";
 }
