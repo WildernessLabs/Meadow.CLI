@@ -14,14 +14,10 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        var device = await GetCurrentDevice();
 
-        if (connection == null || connection.Device == null)
-        {
-            throw CommandException.MeadowDeviceNotFound;
-        }
+        var deviceInfo = await device.GetDeviceInfo(CancellationToken);
 
-        var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
         if (deviceInfo != null)
         {
             Logger?.LogInformation(deviceInfo.ToString());

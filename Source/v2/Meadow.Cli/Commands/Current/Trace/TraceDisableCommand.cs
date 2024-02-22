@@ -13,11 +13,7 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -26,6 +22,6 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
 
         Logger?.LogInformation("Disabling tracing...");
 
-        await connection.Device.TraceDisable(CancellationToken);
+        await device.TraceDisable(CancellationToken);
     }
 }

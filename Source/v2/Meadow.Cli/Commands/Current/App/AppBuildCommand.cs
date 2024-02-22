@@ -31,7 +31,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                throw new CommandException($"Invalid application path '{path}'", CommandExitCode.FileNotFound);
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
         }
 

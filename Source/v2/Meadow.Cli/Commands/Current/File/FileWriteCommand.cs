@@ -27,11 +27,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
@@ -65,7 +61,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
                 try
                 {
-                    await connection.Device.WriteFile(Files[i], targetFileName, CancellationToken);
+                    await device.WriteFile(Files[i], targetFileName, CancellationToken);
                 }
                 catch (Exception ex)
                 {

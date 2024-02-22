@@ -19,11 +19,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         // get a list of files in the target folder
         var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
@@ -44,7 +40,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         {
             foreach (var file in fileList)
             {
-                await DeleteFileRecursive(connection.Device, file, CancellationToken);
+                await DeleteFileRecursive(device, file, CancellationToken);
             }
         }
         else
@@ -59,7 +55,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             }
             else
             {
-                var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
+                var wasRuntimeEnabled = await device.IsRuntimeEnabled(CancellationToken);
 
                 if (wasRuntimeEnabled)
                 {
@@ -68,7 +64,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 }
 
                 Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await connection.Device.DeleteFile(MeadowFile, CancellationToken);
+                await device.DeleteFile(MeadowFile, CancellationToken);
             }
         }
     }

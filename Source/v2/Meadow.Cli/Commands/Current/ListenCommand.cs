@@ -34,11 +34,6 @@ public class ListenCommand : BaseDeviceCommand<ListenCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
-        {
-            return;
-        }
-
         connection.DeviceMessageReceived += OnDeviceMessageReceived;
         connection.ConnectionMessage += Connection_ConnectionMessage;
 

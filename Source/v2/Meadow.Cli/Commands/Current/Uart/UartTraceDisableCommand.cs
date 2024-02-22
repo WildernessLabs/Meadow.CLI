@@ -13,11 +13,7 @@ public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -26,6 +22,6 @@ public class UartTraceDisableCommand : BaseDeviceCommand<UartTraceDisableCommand
 
         Logger?.LogInformation("Setting UART to application use...");
 
-        await connection.Device.UartTraceDisable(CancellationToken);
+        await device.UartTraceDisable(CancellationToken);
     }
 }

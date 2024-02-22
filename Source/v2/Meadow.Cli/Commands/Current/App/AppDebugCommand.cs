@@ -20,11 +20,6 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
-        {
-            return;
-        }
-
         connection.DeviceMessageReceived += (s, e) =>
         {
             Logger?.LogInformation(e.message);

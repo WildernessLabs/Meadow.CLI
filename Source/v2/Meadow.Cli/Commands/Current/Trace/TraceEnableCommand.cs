@@ -16,11 +16,7 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -30,11 +26,11 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
         if (Level != null)
         {
             Logger?.LogInformation($"Setting trace level to {Level}...");
-            await connection.Device.SetTraceLevel(Level.Value, CancellationToken);
+            await device.SetTraceLevel(Level.Value, CancellationToken);
         }
 
         Logger?.LogInformation("Enabling tracing...");
 
-        await connection.Device.TraceEnable(CancellationToken);
+        await device.TraceEnable(CancellationToken);
     }
 }
