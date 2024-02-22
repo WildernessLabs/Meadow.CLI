@@ -1,4 +1,4 @@
-﻿using Meadow.Hcom;
+using Meadow.Hcom;
 using Meadow.Linker;
 using Meadow.Package;
 using Meadow.Software;

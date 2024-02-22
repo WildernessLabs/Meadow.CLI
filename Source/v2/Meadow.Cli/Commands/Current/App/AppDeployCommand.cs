@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Hcom;
+using Meadow.Hcom.Deployment;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
 

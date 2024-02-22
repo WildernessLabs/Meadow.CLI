@@ -231,6 +231,11 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
+    public override Task DeployApp(string folderPath, bool isDebugging, ILogger? logger, CancellationToken? cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
     public override Task TraceDisable(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
