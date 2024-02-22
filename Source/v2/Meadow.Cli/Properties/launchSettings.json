@@ -121,7 +121,7 @@
     },
     "Firmware Delete": {
       "commandName": "Project",
-      "commandLineArgs": "firmware delete 1.2.0.1"
+      "commandLineArgs": "firmware delete 1.9.0.0"
     },
     "Firmware Write all": {
       "commandName": "Project",
