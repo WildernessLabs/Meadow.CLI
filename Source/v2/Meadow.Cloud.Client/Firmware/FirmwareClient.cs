@@ -1,6 +1,3 @@
-using System.Net;
-using Microsoft.Extensions.Logging;
-
 namespace Meadow.Cloud.Client.Firmware;
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient

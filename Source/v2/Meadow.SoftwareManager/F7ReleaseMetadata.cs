@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public class F7ReleaseMetadata
 {

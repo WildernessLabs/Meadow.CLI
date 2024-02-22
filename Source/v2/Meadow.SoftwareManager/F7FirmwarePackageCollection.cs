@@ -1,6 +1,3 @@
-using Meadow.Cloud.Client;
-using System.Collections;
-
 namespace Meadow.Software;
 
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection

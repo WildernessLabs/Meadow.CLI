@@ -24,11 +24,13 @@
     <Compile Include="..\Meadow.Cloud.Client\Firmware\GetFirmwareVersionResponse.cs" Link="Cloud.Client\GetFirmwareVersionResponse.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Firmware\GetFirmwareVersionsResponse.cs" Link="Cloud.Client\GetFirmwareVersionsResponse.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Firmware\IFirmwareClient.cs" Link="Cloud.Client\IFirmwareClient.cs" />
+    <Compile Include="..\Meadow.Cloud.Client\Identity\LibSecret.cs" Link="Cloud.Client\LibSecret.cs" />
     <Compile Include="..\Meadow.Cloud.Client\IMeadowCloudClient.cs" Link="IMeadowCloudClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\MeadowCloudClientBase.cs" Link="Cloud.Client\MeadowCloudClientBase.cs" />
     <Compile Include="..\Meadow.Cloud.Client\MeadowCloudException.cs" Link="Cloud.Client\MeadowCloudException.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Packages\PackageClient.cs" Link="Cloud.Client\PackageClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Users\UserClient.cs" Link="Cloud.Client\UserClient.cs" />
+    <Compile Include="..\Meadow.Cloud.Client\Usings.cs" Link="Cloud.Client\Usings.cs" />
     <Compile Include="..\Meadow.SoftwareManager\DownloadFileStream.cs" Link="DownloadFileStream.cs" />
     <Compile Include="..\Meadow.SoftwareManager\F7FirmwareDownloadManager.cs" Link="F7FirmwareDownloadManager.cs" />
     <Compile Include="..\Meadow.SoftwareManager\F7FirmwarePackageCollection.cs" Link="F7FirmwarePackageCollection.cs" />
@@ -76,6 +78,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="System.IO.Ports" Version="7.0.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
