@@ -16,23 +16,12 @@ public class MeadowCloudClient : IMeadowCloudClient
     private readonly Lazy<FirmwareClient> _firmwareClient;
     private readonly MeadowCloudContext _meadowCloudContext;
     private readonly IdentityManager _identityManager;
-    private readonly ILogger _logger;
-
-    public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILogger<MeadowCloudClient>? logger = default)
-    {
-        _meadowCloudContext = new(httpClient, userAgent);
-        _logger = logger ?? NullLogger<MeadowCloudClient>.Instance;
-
-        _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, _logger)); 
-        _identityManager = identityManager;
-    }
 
     public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILoggerFactory? loggerFactory = default)
     {
         loggerFactory ??= NullLoggerFactory.Instance;
 
         _meadowCloudContext = new(httpClient, userAgent);
-        _logger = loggerFactory.CreateLogger<MeadowCloudClient>();
  
         _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, loggerFactory.CreateLogger<FirmwareClient>()));
         _identityManager = identityManager;
