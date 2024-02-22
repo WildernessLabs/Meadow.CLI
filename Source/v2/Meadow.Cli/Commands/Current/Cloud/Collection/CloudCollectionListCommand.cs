@@ -15,11 +15,10 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
 
     public CloudCollectionListCommand(
         IMeadowCloudClient meadowCloudClient,
-        IdentityManager identityManager,
         UserService userService,
         CollectionService collectionService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         _collectionService = collectionService;
     }

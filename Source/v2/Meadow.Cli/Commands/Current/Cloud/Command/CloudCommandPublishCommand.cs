@@ -28,11 +28,10 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
     public CloudCommandPublishCommand(
         IMeadowCloudClient meadowCloudClient,
-        IdentityManager identityManager,
         UserService userService,
         CommandService commandService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         CommandService = commandService;
     }

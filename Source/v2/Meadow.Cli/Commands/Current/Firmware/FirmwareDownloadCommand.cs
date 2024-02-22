@@ -14,10 +14,9 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
     public FirmwareDownloadCommand(
         FileManager fileManager,
         IMeadowCloudClient meadowCloudClient,
-        IdentityManager identityManager,
         UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         _fileManager = fileManager;
     }

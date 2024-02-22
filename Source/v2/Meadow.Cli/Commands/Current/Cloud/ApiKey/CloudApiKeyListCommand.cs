@@ -13,10 +13,9 @@ public class CloudApiKeyListCommand : BaseCloudCommand<CloudApiKeyListCommand>
     public CloudApiKeyListCommand(
         IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        IdentityManager identityManager,
         UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }

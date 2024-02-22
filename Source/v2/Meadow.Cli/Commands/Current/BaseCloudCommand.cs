@@ -7,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseCloudCommand<T> : BaseCommand<T>
 {
-    [CommandOption("host", Description = $"Set the Meadow.Cloud host.", IsRequired = false)]
+    [CommandOption("host", Description = $"The Meadow.Cloud endpoint.", IsRequired = false)]
     public string Host { get; set; } = DefaultHost;
 
     protected const string DefaultHost = Meadow.Cloud.Client.MeadowCloudClient.DefaultHost;
@@ -15,19 +15,16 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
     protected bool RequiresAuthentication { get; set; } = true;
 
     protected IMeadowCloudClient MeadowCloudClient { get; }
-    protected IdentityManager IdentityManager { get; }
     protected UserService UserService { get; }
     
 
     public BaseCloudCommand(
         IMeadowCloudClient meadowCloudClient,
-        IdentityManager identityManager,
         UserService userService,
         ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         MeadowCloudClient = meadowCloudClient;
-        IdentityManager = identityManager;
         UserService = userService;
     }
 
@@ -44,14 +41,11 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 
         if (RequiresAuthentication)
         {
-            var token = await IdentityManager.GetAccessToken(CancellationToken);
-            if (string.IsNullOrWhiteSpace(token))
+            var result = await MeadowCloudClient.Authenticate(CancellationToken);
+            if (!result)
             {
                 throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.");
             }
-
-            // IdentityManager caches the access token, so this will simply set the Authorization header
-            await MeadowCloudClient.Authenticate(CancellationToken);
 
             // If the user does not yet exist in Meadow.Cloud, this creates them and sets up their initial org
             var _ = await UserService.GetMe(Host, CancellationToken)

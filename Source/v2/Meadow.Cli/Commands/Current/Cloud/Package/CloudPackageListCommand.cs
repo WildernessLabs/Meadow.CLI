@@ -15,11 +15,10 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
 
     public CloudPackageListCommand(
         IMeadowCloudClient meadowCloudClient,
-        IdentityManager identityManager,
         UserService userService,
         PackageService packageService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         _packageService = packageService;
     }

@@ -9,8 +9,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("download os", Description = "** Deprecated ** Use `firmware download` instead")]
 public class DownloadOsCommand : FirmwareDownloadCommand
 {
-    public DownloadOsCommand(FileManager fileManager, IMeadowCloudClient meadowCloudClient, IdentityManager identityManager, UserService userService, ILoggerFactory loggerFactory)
-        : base(fileManager, meadowCloudClient, identityManager, userService, loggerFactory)
+    public DownloadOsCommand(FileManager fileManager, IMeadowCloudClient meadowCloudClient, UserService userService, ILoggerFactory loggerFactory)
+        : base(fileManager, meadowCloudClient, userService, loggerFactory)
     {
         Logger.LogWarning($"Deprecated command - use `firmware download` instead");
     }

@@ -22,10 +22,9 @@ public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateComman
     public CloudApiKeyUpdateCommand(
         IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        IdentityManager identityManager,
         UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, identityManager, userService, loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
