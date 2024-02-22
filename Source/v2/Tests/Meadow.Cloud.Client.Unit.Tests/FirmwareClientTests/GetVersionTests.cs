@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
 
 public class GetVersionTests
 {
@@ -8,13 +10,14 @@ public class GetVersionTests
     public GetVersionTests()
     {
         _handler = A.Fake<FakeableHttpMessageHandler>();
-        var httpClient = new HttpClient(_handler) { BaseAddress = new Uri("https://example.org") };
+        var httpClient = new HttpClient(_handler);
 
         A.CallTo(() => _handler
            .FakeSendAsync(A<HttpRequestMessage>.Ignored, A<CancellationToken>.Ignored))
            .Returns(new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        _firmwareClient = new FirmwareClient(httpClient);
+        var context = new MeadowCloudContext(httpClient, new Uri("https://example.org"), new MeadowCloudUserAgent("Meadow.Cloud.Client.Unit.Tests"));
+        _firmwareClient = new FirmwareClient(context, NullLogger.Instance);
     }
 
     [Theory]

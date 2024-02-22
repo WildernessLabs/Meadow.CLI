@@ -2,15 +2,59 @@
 
 public abstract class MeadowCloudClientBase
 {
-    protected HttpRequestMessage CreateHttpRequestMessage(HttpMethod httpMethod, string requestUriFormat, params string[] args)
+    protected HttpClient HttpClient => MeadowCloudContext.HttpClient;
+    protected MeadowCloudContext MeadowCloudContext { get; }
+    protected ILogger Logger { get; }
+
+    public MeadowCloudClientBase(MeadowCloudContext meadowCloudContext, ILogger logger)
+    {
+        MeadowCloudContext = meadowCloudContext;
+        Logger = logger;
+    }
+
+    private void SetHeaders(HttpRequestMessage request)
+    {
+        request.Headers.TryAddWithoutValidation("User-Agent", MeadowCloudContext.UserAgent);
+
+        if (MeadowCloudContext.Authorization != null)
+        {
+            request.Headers.TryAddWithoutValidation("Authorization", MeadowCloudContext.Authorization.ToString());
+        }
+    }
+
+    protected HttpRequestMessage CreateHttpRequestMessage()
+    {
+        var request = new HttpRequestMessage();
+        SetHeaders(request);
+
+        return request;
+    }
+
+    protected HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUri)
+    {
+        var request = new HttpRequestMessage(method, new Uri(MeadowCloudContext.BaseAddress, requestUri));
+        SetHeaders(request);
+
+        return request;
+    }
+
+    protected HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, Uri requestUri)
+    {
+        var request = new HttpRequestMessage(method, new Uri(MeadowCloudContext.BaseAddress, requestUri));
+        SetHeaders(request);
+
+        return request;
+    }
+
+    protected HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUriFormat, params string[] args)
     {
         var urlBuilder = new StringBuilder();
         urlBuilder.AppendFormat(requestUriFormat, args.Select(arg => Uri.EscapeDataString(arg)).ToArray());
 
-        return new HttpRequestMessage(httpMethod, new Uri(urlBuilder.ToString(), UriKind.Relative));
+        return CreateHttpRequestMessage(method, new Uri(urlBuilder.ToString(), UriKind.Relative));
     }
 
-    private IReadOnlyDictionary<string, IEnumerable<string>> GetHeaders(HttpResponseMessage response)
+    private static IReadOnlyDictionary<string, IEnumerable<string>> GetHeaders(HttpResponseMessage response)
     {
         var headers = new Dictionary<string, IEnumerable<string>>();
         foreach (var header in response.Headers)
@@ -28,7 +72,7 @@ public abstract class MeadowCloudClientBase
         return headers;
     }
 
-    protected async Task EnsureSuccessfulStatusCode(HttpResponseMessage response, CancellationToken cancellationToken = default)
+    protected static async Task EnsureSuccessfulStatusCode(HttpResponseMessage response, CancellationToken cancellationToken = default)
     {
         if (response is null)
         {
@@ -39,7 +83,7 @@ public abstract class MeadowCloudClientBase
         {
             return;
         }
-      
+
         var headers = GetHeaders(response);
         var message = response.StatusCode switch
         {
@@ -52,7 +96,7 @@ public abstract class MeadowCloudClientBase
         throw new MeadowCloudException(message, response.StatusCode, content, headers, null);
     }
 
-    protected async Task<TResult> ProcessResponse<TResult>(HttpResponseMessage response, CancellationToken cancellationToken = default)
+    protected static async Task<TResult> ProcessResponse<TResult>(HttpResponseMessage response, CancellationToken cancellationToken = default)
     {
         if (response is null)
         {

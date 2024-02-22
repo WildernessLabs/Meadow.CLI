@@ -31,7 +31,7 @@ public class FirmwareDownloadCommand : BaseFileCommand<FirmwareDownloadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var isAuthenticated = await _meadowCloudClient.Authenticate(Host, CancellationToken);
+        var isAuthenticated = await _meadowCloudClient.Authenticate(CancellationToken);
         if (!isAuthenticated)
         {
             Logger?.LogError($"You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");

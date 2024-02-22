@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
 
 public class GetDownloadResponseTests
 {
@@ -8,17 +10,48 @@ public class GetDownloadResponseTests
     public GetDownloadResponseTests()
     {
         _handler = A.Fake<FakeableHttpMessageHandler>();
-        var httpClient = new HttpClient(_handler) { BaseAddress = new Uri("https://example.org") };
+        var httpClient = new HttpClient(_handler);
 
         A.CallTo(() => _handler
            .FakeSendAsync(A<HttpRequestMessage>.Ignored, A<CancellationToken>.Ignored))
            .Returns(new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        _firmwareClient = new FirmwareClient(httpClient);
-
+        var context = new MeadowCloudContext(httpClient, new Uri("https://example.org"), new MeadowCloudUserAgent("Meadow.Cloud.Client.Unit.Tests"));
+        _firmwareClient = new FirmwareClient(context, NullLogger.Instance);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("Meadow.OS_1.8.0.0")]
+    [InlineData("/api/v1/firmware/Meadow_Cloud/")]
+    [InlineData("https://example.org/api/v1/firmware/Meadow_Cloud/Meadow.OS_1.8.0.0.txt")]
+    public async Task GetDownloadReponse_WithNullOrWhiteSpaceUrlOrInvalidUrl_ShouldThrowException(string url)
+    {
+        // Act/Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _firmwareClient.GetDownloadResponse(url));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    public async Task GetDownloadReponse_WithUnsuccessfulResponse_ShouldThrowException(HttpStatusCode httpStatusCode)
+    {
+        // Arrange
+        A.CallTo(() => _handler
+            .FakeSendAsync(
+                A<HttpRequestMessage>.That.Matches(r => r.RequestUri!.AbsolutePath == $"/api/v1/firmware/Meadow_Cloud/Meadow.OS_1.8.0.0.zip"),
+                A<CancellationToken>.Ignored))
+            .Returns(new HttpResponseMessage(httpStatusCode));
+
+        // Act/Assert
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _firmwareClient.GetDownloadResponse("https://example.org/api/v1/firmware/Meadow_Cloud/Meadow.OS_1.8.0.0.zip"));
+        Assert.Equal(httpStatusCode, ex.StatusCode);
+    }
+
     [Fact]
-    public async Task Playground()
+    public async Task GetDownloadReponse_WithResponse_ShouldReturnResult()
     {
         // Arrange
         using var memoryStream = new MemoryStream();

@@ -23,7 +23,7 @@ public class IdentityManager
     /// Kick off login
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> Login(string host, CancellationToken cancellationToken = default)
+    public async Task<bool> Login(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,7 +42,7 @@ public class IdentityManager
                 var context = await http.GetContextAsync();
                 var raw = context.Request.RawUrl;
                 context.Response.StatusCode = 302;
-                context.Response.AddHeader("Location", host);
+                context.Response.AddHeader("Location", "https://wldrn.es/cliauthed");
                 context.Response.Close();
 
                 var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
