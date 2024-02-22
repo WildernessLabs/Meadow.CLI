@@ -3,6 +3,7 @@ using IdentityModel.Client;
 using IdentityModel.OidcClient;
 using Microsoft.IdentityModel.Logging;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Meadow.Cloud.Client.Identity;
 
@@ -26,7 +27,7 @@ public class IdentityManager
     /// Kick off login
     /// </summary>
     /// <returns></returns>
-    public async Task<(bool IsSuccessful, string? Email)> Login(CancellationToken cancellationToken = default)
+    public async Task<bool> Login(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -50,14 +51,13 @@ public class IdentityManager
 
                 var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
 
-                string? email = null;
                 if (result.IsError)
                 {
                     _logger.LogError(result.Error);
                 }
                 else
                 {
-                    email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
+                    var email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
                     if (string.IsNullOrWhiteSpace(email))
                     {
                         _logger.LogWarning("Unable to get email address");
@@ -66,21 +66,40 @@ public class IdentityManager
                     {
                         // saving only the refresh token since the access token is too large
                         SaveCredential(WlRefreshCredentialName, email!, result.RefreshToken);
+                        await AccessTokenLock.WaitAsync(cancellationToken);
+                        try
+                        {
+                            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.TokenResponse.ExpiresIn), email!);
+                        }
+                        finally
+                        {
+                            AccessTokenLock.Release();
+                        }
                     }
                 }
-                return (!result.IsError, email);
+                return !result.IsError;
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "An error occurred");
-            return (false, null);
+            return false;
         }
     }
 
     public void Logout()
     {
         DeleteCredential(WlRefreshCredentialName);
+
+        AccessTokenLock.Wait();
+        try
+        {
+            CachedAccessToken = null;
+        }
+        finally
+        {
+            AccessTokenLock.Release();
+        }
     }
 
     /// <summary>
@@ -110,7 +129,7 @@ public class IdentityManager
                 return CachedAccessToken.Token;
             }
 
-            var refreshToken = GetCredentials(WlRefreshCredentialName).password;
+            var (emailAddress, refreshToken) = GetCredentials(WlRefreshCredentialName);
             if (string.IsNullOrEmpty(refreshToken))
             {
                 return string.Empty;
@@ -118,13 +137,22 @@ public class IdentityManager
 
             var client = GetOidcClient();
             var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn));
+            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn), emailAddress);
             return CachedAccessToken.Token;
         }
         finally
         {
             AccessTokenLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Gets the email address of the current logged in user, null otherwise.
+    /// </summary>
+    /// <returns>The email address of the current logged in user, null otherwise.</returns>
+    public string? GetEmailAddress()
+    {
+        return CachedAccessToken?.EmailAddress;
     }
 
     /// <summary>
@@ -286,10 +314,12 @@ public class IdentityManager
         }
     }
 
-    private class AccessToken(string token, DateTimeOffset expiresAt)
+    private class AccessToken(string token, DateTimeOffset expiresAt, string emailAddress)
     {
+
         public string Token { get; } = token;
         public DateTimeOffset ExpiresAtUtc { get; } = expiresAt;
+        public string EmailAddress { get; } = emailAddress;
 
         public bool IsValid => !string.IsNullOrWhiteSpace(Token) && ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(30);
     }

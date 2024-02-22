@@ -22,12 +22,12 @@ public class LoginCommand : BaseCommand<LoginCommand>
     {
         Logger.LogInformation($"Logging into your Wilderness Labs account...");
 
-        var (result, email) = await _identityManager.Login(CancellationToken);
-        if (!result)
+        if (!await _identityManager.Login(CancellationToken))
         {
             throw new CommandException("There was a problem logging into your Wilderness Labs account.");
         }
 
-        Logger.LogInformation($"Signed in as {email}");
+        var emailAddress = _identityManager.GetEmailAddress();
+        Logger.LogInformation($"Signed in as {emailAddress}");
     }
 }
