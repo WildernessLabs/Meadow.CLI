@@ -63,6 +63,7 @@ public class MeadowConnectionManager
         {
             uri = $"http://{route}:5000";
         }
+<<<<<<< HEAD:Source/v2/Meadow.Tooling.Core/Connection/MeadowConnectionManager.cs
         else
         {
             var parts = route.Split(':');
@@ -71,6 +72,12 @@ public class MeadowConnectionManager
                 uri = $"http://{parts[0]}:{port}"; // Construct URI with specified IP and port
             }
         }
+=======
+        /* TODO else if (IPEndPoint.TryParse(route, out var endpoint))
+        {
+            uri = $"http://{route}";
+        }*/
+>>>>>>> 211da1b (CLI changes required to at least build for VS2022):Source/v2/Meadow.Cli/MeadowConnectionManager.cs
 
         if (uri != null)
         {

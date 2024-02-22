@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client;
+﻿using System.Net;
+
+namespace Meadow.Cloud.Client;
 
 public class MeadowCloudException : Exception
 {

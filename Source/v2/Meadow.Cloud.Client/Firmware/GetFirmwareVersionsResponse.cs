@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Firmware;
+﻿using System.Text.Json.Serialization;
+
+namespace Meadow.Cloud.Client.Firmware;
 
 public class GetFirmwareVersionsResponse
 {
