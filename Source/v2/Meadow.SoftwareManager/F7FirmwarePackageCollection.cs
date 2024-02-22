@@ -83,7 +83,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         {
             FirmwarePackage? newDefault = null;
 
-            foreach (var package in _f7Packages)
+            foreach (var package in _f7Packages.OrderByDescending(p => new Version(p.Version)))
             {
                 if (DefaultPackage?.Version != package.Version)
                 {
