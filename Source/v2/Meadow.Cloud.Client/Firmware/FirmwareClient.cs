@@ -2,11 +2,9 @@
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
 {
-    private readonly HttpClient _httpClient;
-
-    public FirmwareClient(HttpClient httpClient)
+    public FirmwareClient(MeadowCloudContext meadowCloudContext, ILogger logger) 
+        : base(meadowCloudContext, logger)
     {
-        _httpClient = httpClient;
     }
 
     public async Task<IEnumerable<GetFirmwareVersionsResponse>> GetVersions(string type, CancellationToken cancellationToken = default)
@@ -17,7 +15,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         }
 
         using var request = CreateHttpRequestMessage(HttpMethod.Get, "api/v1/firmware/{0}", type);
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await HttpClient.SendAsync(request, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
@@ -45,7 +43,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
         }
 
         using var request = CreateHttpRequestMessage(HttpMethod.Get, "api/v1/firmware/{0}/{1}", type, version);
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await HttpClient.SendAsync(request, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
@@ -67,14 +65,8 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
             throw new ArgumentException($"'{nameof(url)}' must be a URL that ends with '.zip'.", nameof(url));
         }
 
-        var baseAddress = _httpClient.BaseAddress?.ToString();
-        if (baseAddress != null && url.StartsWith(baseAddress))
-        {
-            url = url.Substring(baseAddress.Length);
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var request = CreateHttpRequestMessage(HttpMethod.Get, url);
+        var response = await HttpClient.SendAsync(request, cancellationToken);
 
         try
         {

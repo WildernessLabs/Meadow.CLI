@@ -11,26 +11,31 @@ namespace Meadow.Cloud.Client;
 public class MeadowCloudClient : IMeadowCloudClient
 {
     public const string DefaultHost = "https://www.meadowcloud.co";
+    public static readonly Uri DefaultHostUri = new(DefaultHost);
 
     private readonly Lazy<FirmwareClient> _firmwareClient;
-    private readonly HttpClient _httpClient;
+    private readonly MeadowCloudContext _meadowCloudContext;
     private readonly IdentityManager _identityManager;
     private readonly ILogger _logger;
 
     public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILogger<MeadowCloudClient>? logger = default)
     {
-        _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(httpClient));
-
-        if (httpClient.BaseAddress == null)
-        {
-            httpClient.BaseAddress = new Uri(DefaultHost);
-        }
-
-        _httpClient = httpClient;
-        _identityManager = identityManager;
+        _meadowCloudContext = new(httpClient, userAgent);
         _logger = logger ?? NullLogger<MeadowCloudClient>.Instance;
 
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+        _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, _logger)); 
+        _identityManager = identityManager;
+    }
+
+    public MeadowCloudClient(HttpClient httpClient, IdentityManager identityManager, MeadowCloudUserAgent userAgent, ILoggerFactory? loggerFactory = default)
+    {
+        loggerFactory ??= NullLoggerFactory.Instance;
+
+        _meadowCloudContext = new(httpClient, userAgent);
+        _logger = loggerFactory.CreateLogger<MeadowCloudClient>();
+ 
+        _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, loggerFactory.CreateLogger<FirmwareClient>()));
+        _identityManager = identityManager;
     }
 
     public IApiTokenClient ApiToken => throw new NotImplementedException("This client is not implemented yet. Please use the 'ApiTokenService' instead.");
@@ -41,25 +46,33 @@ public class MeadowCloudClient : IMeadowCloudClient
     public IPackageClient Package => throw new NotImplementedException("This client is not implemented yet. Please use the 'PackageService' instead.");
     public IUserClient User => throw new NotImplementedException("This client is not implemented yet. Please use the 'UserService' instead.");
 
-    public async Task<bool> Authenticate(string? host = default, CancellationToken cancellationToken = default)
+    public async Task<bool> Authenticate(CancellationToken cancellationToken = default)
     {
-        host ??= DefaultHost;
-
-        _logger.LogInformation($"Authenticating with Meadow.Cloud{(host != DefaultHost ? $" ({host.ToLowerInvariant()})" : string.Empty)}...");
-
         var token = await _identityManager.GetAccessToken(cancellationToken);
         if (string.IsNullOrWhiteSpace(token))
         {
             return false;
         }
 
-        if (_httpClient.BaseAddress == null)
-        {
-            _httpClient.BaseAddress = new Uri(host);
-        }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        Authorization = new AuthenticationHeaderValue("Bearer", token);
         return true;
+    }
+
+    public AuthenticationHeaderValue? Authorization
+    {
+        get => _meadowCloudContext.Authorization;
+        set => _meadowCloudContext.Authorization = value;
+    }
+
+    public Uri BaseAddress
+    {
+        get => _meadowCloudContext.BaseAddress;
+        set => _meadowCloudContext.BaseAddress = value;
+    }
+
+    public MeadowCloudUserAgent UserAgent
+    {
+        get => _meadowCloudContext.UserAgent;
+        set => _meadowCloudContext.UserAgent = value;
     }
 }

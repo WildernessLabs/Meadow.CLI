@@ -1,34 +1,31 @@
-﻿using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
-using System.Net;
-using System.Net.Mail;
+﻿using Microsoft.Extensions.Logging;
 using System.Text;
 
 namespace Meadow.Cloud.Client.Unit.Tests;
 
 public class MeadowCloudClientBaseTests
 {
-    public class MeadowCloudClientBaseUnderTest : MeadowCloudClientBase
+    public class MeadowCloudClientBaseUnderTest(MeadowCloudContext meadowCloudContext, ILogger logger) 
+        : MeadowCloudClientBase(meadowCloudContext, logger)
     {
-        public new Task EnsureSuccessfulStatusCode(HttpResponseMessage response, CancellationToken cancellationToken = default)
+        public static new Task EnsureSuccessfulStatusCode(HttpResponseMessage response, CancellationToken cancellationToken = default)
         {
-            return base.EnsureSuccessfulStatusCode(response, cancellationToken);
+            return MeadowCloudClientBase.EnsureSuccessfulStatusCode(response, cancellationToken);
         }
 
-        public new Task<TResult> ProcessResponse<TResult>(HttpResponseMessage response, CancellationToken cancellationToken = default)
+        public static new Task<TResult> ProcessResponse<TResult>(HttpResponseMessage response, CancellationToken cancellationToken = default)
         {
-            return base.ProcessResponse<TResult>(response, cancellationToken);
+            return MeadowCloudClientBase.ProcessResponse<TResult>(response, cancellationToken);
         }
     }
 
     public class TestResult { public string PropertyOne { get; set; } = string.Empty; }
 
-    private readonly MeadowCloudClientBaseUnderTest _clientBase = new();
-
     [Fact]
     public async Task EnsureSuccessfulStatusCode_WithNullResponse_ShouldThrowException()
     {
         // Act/Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _clientBase.EnsureSuccessfulStatusCode(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => MeadowCloudClientBaseUnderTest.EnsureSuccessfulStatusCode(null!));
     }
 
     [Theory]
@@ -40,7 +37,7 @@ public class MeadowCloudClientBaseTests
         var response = new HttpResponseMessage(httpStatusCode);
 
         // Act
-        await _clientBase.EnsureSuccessfulStatusCode(response);
+        await MeadowCloudClientBaseUnderTest.EnsureSuccessfulStatusCode(response);
     }
 
     [Theory]
@@ -54,7 +51,7 @@ public class MeadowCloudClientBaseTests
         var response = new HttpResponseMessage(httpStatusCode) { Content = null };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.EnsureSuccessfulStatusCode(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.EnsureSuccessfulStatusCode(response));
 
         // Assert
         Assert.NotNull(ex.Response);
@@ -79,7 +76,7 @@ Response:
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.EnsureSuccessfulStatusCode(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.EnsureSuccessfulStatusCode(response));
 
         // Assert
         Assert.Equal("This is a string.", ex.Response);
@@ -93,7 +90,7 @@ Response:
         response.Headers.TryAddWithoutValidation("X-Test-Header", "TestValue");
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.EnsureSuccessfulStatusCode(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.EnsureSuccessfulStatusCode(response));
 
         // Assert
         Assert.Equal(response.Headers.ToDictionary(x => x.Key, x => x.Value), ex.Headers);
@@ -103,7 +100,7 @@ Response:
     public async Task ProcessResponse_WithNullResponse_ShouldThrowException()
     {
         // Act/Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _clientBase.ProcessResponse<object>(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(null!));
     }
 
     [Fact]
@@ -116,7 +113,7 @@ Response:
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.ProcessResponse<object>(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(response));
 
         // Assert
         Assert.Equal(@"Response was null which was not expected.
@@ -136,7 +133,7 @@ Response:
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.ProcessResponse<object>(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(response));
 
         // Assert
         Assert.Equal(@"Content-Type of response is 'text/plain' which is not supported for deserialization of the response body stream as System.Object. Content-Type must be 'application/json.'
@@ -156,7 +153,7 @@ This is a string.", ex.Message);
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.ProcessResponse<object>(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(response));
 
         // Assert
         Assert.Equal(@"Could not deserialize the response body stream as System.Object.
@@ -176,7 +173,7 @@ This is a string.", ex.Message);
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.ProcessResponse<object>(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(response));
 
         // Assert
         Assert.Equal(@"Response was null which was not expected.
@@ -199,7 +196,7 @@ Response:
         };
 
         // Act
-        var result = await _clientBase.ProcessResponse<TestResult>(response);
+        var result = await MeadowCloudClientBaseUnderTest.ProcessResponse<TestResult>(response);
 
         // Assert
         Assert.NotNull(result);
@@ -220,7 +217,7 @@ Response:
         };
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => _clientBase.ProcessResponse<object>(response));
+        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => MeadowCloudClientBaseUnderTest.ProcessResponse<object>(response));
 
         // Assert
         Assert.Equal(@$"{message}

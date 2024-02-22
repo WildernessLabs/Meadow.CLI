@@ -26,7 +26,7 @@ public class CloudLoginCommand : BaseCloudCommand<CloudLoginCommand>
 
         Logger?.LogInformation($"Logging into you Wilderness Labs account...");
 
-        var loginResult = await IdentityManager.Login(Host, CancellationToken);
+        var loginResult = await IdentityManager.Login(CancellationToken);
 
         if (loginResult)
         {

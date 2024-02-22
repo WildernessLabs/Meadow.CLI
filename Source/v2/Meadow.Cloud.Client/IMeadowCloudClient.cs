@@ -18,5 +18,9 @@ public interface IMeadowCloudClient
     IPackageClient Package { get; }
     IUserClient User { get; }
 
-    Task<bool> Authenticate(string? host = default, CancellationToken cancellationToken = default);
+    Task<bool> Authenticate(CancellationToken cancellationToken = default);
+
+    public AuthenticationHeaderValue? Authorization { get; set; }
+    public Uri BaseAddress { get; set; }
+    public MeadowCloudUserAgent UserAgent { get; set; }
 }
