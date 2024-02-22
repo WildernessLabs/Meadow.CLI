@@ -1,10 +1,14 @@
-﻿using Meadow.Cloud.Client.ApiTokens;
+﻿using System.Net.Http.Headers;
+using Meadow.Cloud.Client.ApiTokens;
 using Meadow.Cloud.Client.Collections;
 using Meadow.Cloud.Client.Commands;
 using Meadow.Cloud.Client.Devices;
 using Meadow.Cloud.Client.Firmware;
+using Meadow.Cloud.Client.Identity;
 using Meadow.Cloud.Client.Packages;
 using Meadow.Cloud.Client.Users;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.Cloud.Client;
 

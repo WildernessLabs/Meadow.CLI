@@ -1,4 +1,7 @@
-﻿namespace Meadow.Cloud.Client.Users;
+﻿using System.Net;
+using Microsoft.Extensions.Logging;
+
+namespace Meadow.Cloud.Client.Users;
 
 public class UserClient : MeadowCloudClientBase, IUserClient
 {

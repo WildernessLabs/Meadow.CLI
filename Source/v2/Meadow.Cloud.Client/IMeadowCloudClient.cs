@@ -1,4 +1,5 @@
-﻿using Meadow.Cloud.Client.ApiTokens;
+﻿using System.Net.Http.Headers;
+using Meadow.Cloud.Client.ApiTokens;
 using Meadow.Cloud.Client.Collections;
 using Meadow.Cloud.Client.Commands;
 using Meadow.Cloud.Client.Devices;

@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client;
+﻿using System.Net.Http.Headers;
+
+namespace Meadow.Cloud.Client;
 
 public class MeadowCloudContext
 {

@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Users;
+﻿using System.Text.Json.Serialization;
+
+namespace Meadow.Cloud.Client.Users;
 
 public class GetUserResponse
 {

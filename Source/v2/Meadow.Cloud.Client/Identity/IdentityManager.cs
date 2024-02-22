@@ -1,7 +1,11 @@
 ﻿using CredentialManagement;
 using IdentityModel.Client;
 using IdentityModel.OidcClient;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Logging;
+using System.Diagnostics;
+using System.Net;
 using System.Runtime.InteropServices;
 
 namespace Meadow.Cloud.Client.Identity;

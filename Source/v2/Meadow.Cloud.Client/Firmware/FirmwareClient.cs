@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Net;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.Cloud.Client.Firmware;
 
