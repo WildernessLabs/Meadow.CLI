@@ -1,5 +1,3 @@
-using System.Collections;
-
 namespace Meadow.Software;
 
 public class FirmwareStore : IEnumerable<IFirmwarePackageCollection>
