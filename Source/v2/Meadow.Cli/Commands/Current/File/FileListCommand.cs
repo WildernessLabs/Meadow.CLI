@@ -23,12 +23,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         if (Folder != null)
         {
@@ -37,8 +32,8 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
                 Folder += "/";
             }
             if (Folder.StartsWith('/') == false)
-            { 
-                Folder = $"/{Folder}"; 
+            {
+                Folder = $"/{Folder}";
             }
             if (Folder.Contains(MeadowRootFolder) == false)
             {
@@ -52,7 +47,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await connection.Device.GetFileList(Folder ?? $"/{MeadowRootFolder}/", Verbose, CancellationToken);
+        var files = await device.GetFileList(Folder ?? $"/{MeadowRootFolder}/", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {
@@ -82,7 +77,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
                     var line = $"{file.Name.PadRight(longestFileName)}";
 
-                    if(file.IsDirectory)
+                    if (file.IsDirectory)
                     {
                         line = $"{line}\t{FolderLabel}";
                     }
@@ -118,7 +113,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 foreach (var file in files)
                 {
-                    Logger?.LogInformation(file.Name + (file.IsDirectory?FolderLabel:string.Empty));
+                    Logger?.LogInformation(file.Name + (file.IsDirectory ? FolderLabel : string.Empty));
                 }
 
                 Logger?.LogInformation($"\t{files.Length} file(s)");

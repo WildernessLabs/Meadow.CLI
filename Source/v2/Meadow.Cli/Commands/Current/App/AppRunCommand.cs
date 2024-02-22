@@ -36,19 +36,13 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                throw new CommandException($"Invalid application path '{path}'", CommandExitCode.FileNotFound);
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
         }
 
         Configuration ??= "Release";
 
         var connection = await GetCurrentConnection();
-
-        if (connection == null)
-        {
-            return;
-        }
-
 
         var lastFile = string.Empty;
 
@@ -63,12 +57,12 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await BuildApplication(path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application build failed", CommandExitCode.GeneralError);
         }
 
         if (!await TrimApplication(path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application trimming failed", CommandExitCode.GeneralError);
         }
 
         // illink returns before all files are written - attempt a delay of 1s
@@ -76,7 +70,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await DeployApplication(connection, path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
         }
 
         Logger?.LogInformation("Enabling the runtime...");
@@ -95,7 +89,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private Task<bool> BuildApplication(string path, CancellationToken cancellationToken)
     {
-        if (Configuration == null) { Configuration = "Debug"; }
+        Configuration ??= "Debug";
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -110,7 +104,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (candidates.Length == 0)
         {
-            Logger?.LogError($"Cannot find a compiled application at '{path}'");
+            Logger?.LogError($"{Strings.NoCompiledApplicationFound} at '{path}'");
             return false;
         }
 
@@ -118,7 +112,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName}");
-        Logger?.LogInformation("This may take a few seconds...");
 
         var cts = new CancellationTokenSource();
         ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);

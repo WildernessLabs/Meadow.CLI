@@ -12,18 +12,13 @@ public class RuntimeEnableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         Logger?.LogInformation($"Enabling runtime...");
 
-        await connection.Device.RuntimeEnable(CancellationToken);
+        await device.RuntimeEnable(CancellationToken);
 
-        var state = await connection.Device.IsRuntimeEnabled(CancellationToken);
+        var state = await device.IsRuntimeEnabled(CancellationToken);
 
         Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
     }

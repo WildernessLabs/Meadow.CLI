@@ -22,11 +22,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     {
         var connection = await GetCurrentConnection();
 
-        if (connection == null)
-        {
-            return;
-        }
-
         string path = Path ?? Environment.CurrentDirectory;
 
         // is the path a file?
@@ -63,8 +58,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
 
             // does the directory have an App.dll in it?
@@ -76,8 +70,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
                 if (candidates.Length == 0)
                 {
-                    Logger?.LogError($"Cannot find a compiled application at '{path}'");
-                    return;
+                    throw new CommandException($"Cannot find a compiled application at '{path}'", CommandExitCode.FileNotFound);
                 }
 
                 file = candidates.OrderByDescending(c => c.LastWriteTime).First();

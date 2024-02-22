@@ -76,17 +76,12 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
                 CommandExitCode.NotAuthorized);
         }
 
-        var connection = await GetCurrentConnection();
+        var device = await GetCurrentDevice();
 
-        if (connection == null || connection.Device == null)
-        {
-            throw CommandException.MeadowDeviceNotFound;
-        }
-
-        var info = await connection.Device.GetDeviceInfo(CancellationToken);
+        var info = await device.GetDeviceInfo(CancellationToken);
 
         Logger?.LogInformation(Strings.RequestingDevicePublicKey);
-        var publicKey = await connection.Device.GetPublicKey(CancellationToken);
+        var publicKey = await device.GetPublicKey(CancellationToken);
 
         if (string.IsNullOrWhiteSpace(publicKey))
         {

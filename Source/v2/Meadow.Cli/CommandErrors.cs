@@ -10,4 +10,5 @@ public enum CommandExitCode
     MeadowDeviceNotFound = 5,
     InvalidParameter = 6,
     NotAuthorized = 7,
+    ConnectionNotFound = 8,
 }

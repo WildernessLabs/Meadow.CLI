@@ -5,6 +5,7 @@ public static class Strings
     public const string ErrorNoMeadowFound = "No connected meadow device found";
     public const string GettingDeviceClock = "Getting device clock...";
     public const string SettingDeviceClock = "Setting device clock...";
+    public const string InvalidApplicationPath = "Invalid application path";
     public const string InvalidParameter = "Invalid parameter";
     public const string GettingDeviceInfo = "Getting device info...";
     public const string RetrievingUserAndOrgInfo = "Retrieving your user and organization information...";
@@ -24,4 +25,5 @@ public static class Strings
     public const string AssemblingCloudPackage = "Assembling the MPAK...";
     public const string PackageAssemblyFailed = "Package assembly failed";
     public const string PackageAvailableAtSpecifiedPath = "Done. Package is available at {0}";
+    public const string NoCompiledApplicationFound = "No compiled application found";
 }
