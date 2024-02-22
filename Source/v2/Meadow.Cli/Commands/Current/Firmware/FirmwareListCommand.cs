@@ -12,7 +12,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 
     private FileManager FileManager { get; }
 
-    public FirmwareListCommand(FileManager fileManager, ILoggerFactory? loggerFactory)
+    public FirmwareListCommand(FileManager fileManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         FileManager = fileManager;

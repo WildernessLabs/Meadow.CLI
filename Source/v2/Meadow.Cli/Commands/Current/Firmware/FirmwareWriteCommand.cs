@@ -446,7 +446,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             logger: Logger,
             format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
             Logger?.LogWarning("Unable to write firmware with Dfu - is Dfu-util installed? Run `meadow dfu install` to install");
             return false;

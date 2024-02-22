@@ -17,52 +17,40 @@ public class CloudApiKeyCreateCommand : BaseCloudCommand<CloudApiKeyCreateComman
     [CommandOption("scopes", 's', Description = "The list of scopes (permissions) to grant the API key", IsRequired = true)]
     public string[] Scopes { get; init; } = default!;
 
-    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
-    public string? Host { get; set; }
-
     private ApiTokenService ApiTokenService { get; }
 
     public CloudApiKeyCreateCommand(
+        IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        CollectionService collectionService,
-        DeviceService deviceService,
         IdentityManager identityManager,
         UserService userService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, identityManager, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
 
-    protected async override ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
         if (Duration < 1 || Duration > 90)
         {
             throw new CommandException("Duration (-d|--duration) must be between 1 and 90 days.", showHelp: true);
         }
 
-        Host ??= DefaultHost;
+        Logger.LogInformation($"Creating an API key on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        return ValueTask.CompletedTask;
+    }
 
-        Logger?.LogInformation($"Creating an API key on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
-
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
-        }
-
+    protected async override ValueTask ExecuteCloudCommand()
+    {
         try
         {
-            var request = new CreateApiTokenRequest(Name!, Duration, Scopes!);
+            var request = new CreateApiTokenRequest(Name, Duration, Scopes);
             var response = await ApiTokenService.CreateApiToken(request, Host, CancellationToken);
 
-            Logger?.LogInformation($"Your API key '{response.Name}' (expiring {response.ExpiresAt:G} UTC) is:");
-            Logger?.LogInformation($"\n{response.Token}\n");
-            Logger?.LogInformation("Make sure to copy this key now as you will not be able to see this again.");
-        }
-        catch (MeadowCloudAuthException ex)
-        {
-            throw new CommandException("You must be signed in to execute this command.", innerException: ex);
+            Logger.LogInformation($"Your API key '{response.Name}' (expiring {response.ExpiresAt:G} UTC) is:");
+            Logger.LogInformation($"\n{response.Token}\n");
+            Logger.LogInformation("Make sure to copy this key now as you will not be able to see this again.");
         }
         catch (MeadowCloudException ex)
         {

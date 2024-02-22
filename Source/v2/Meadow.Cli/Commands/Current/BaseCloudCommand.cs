@@ -1,4 +1,5 @@
-﻿using Meadow.Cloud.Client;
+﻿using CliFx.Attributes;
+using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -6,62 +7,88 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseCloudCommand<T> : BaseCommand<T>
 {
-    public const string DefaultHost = "https://www.meadowcloud.co";
+    [CommandOption("host", Description = $"Set the Meadow.Cloud host.", IsRequired = false)]
+    public string Host { get; set; } = DefaultHost;
 
+    protected const string DefaultHost = Meadow.Cloud.Client.MeadowCloudClient.DefaultHost;
+
+    protected bool RequiresAuthentication { get; set; } = true;
+
+    protected IMeadowCloudClient MeadowCloudClient { get; }
     protected IdentityManager IdentityManager { get; }
     protected UserService UserService { get; }
-    protected DeviceService DeviceService { get; }
-    protected CollectionService CollectionService { get; }
+    
 
     public BaseCloudCommand(
+        IMeadowCloudClient meadowCloudClient,
         IdentityManager identityManager,
         UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
-        ILoggerFactory? loggerFactory)
+        ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
+        MeadowCloudClient = meadowCloudClient;
         IdentityManager = identityManager;
         UserService = userService;
-        DeviceService = deviceService;
-        CollectionService = collectionService;
     }
 
-    protected async Task<UserOrg?> ValidateOrg(string host, string? orgNameOrId = null, CancellationToken? cancellationToken = null)
+    protected virtual ValueTask PreAuthenticatedValidation()
     {
+        return ValueTask.CompletedTask;
+    }
+
+    protected abstract ValueTask ExecuteCloudCommand();
+
+    protected sealed override async ValueTask ExecuteCommand()
+    {
+        await PreAuthenticatedValidation();
+
+        if (RequiresAuthentication)
+        {
+            var token = await IdentityManager.GetAccessToken(CancellationToken);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.");
+            }
+
+            // IdentityManager caches the access token, so this will simply set the Authorization header
+            await MeadowCloudClient.Authenticate(CancellationToken);
+
+            // If the user does not yet exist in Meadow.Cloud, this creates them and sets up their initial org
+            var _ = await UserService.GetMe(Host, CancellationToken)
+                ?? throw new CommandException("There was a problem retrieving your account information.");
+        }
+
         try
         {
-            Logger?.LogInformation("Retrieving your user and organization information...");
-
-            var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
-            if (!userOrgs.Any())
-            {
-                Logger?.LogInformation($"Please visit {host} to register your account.");
-                return null;
-            }
-            else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(orgNameOrId))
-            {
-                Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
-                return null;
-            }
-            else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
-            {
-                orgNameOrId = userOrgs.First().Id;
-            }
-
-            var org = userOrgs.FirstOrDefault(o => o.Id == orgNameOrId || o.Name == orgNameOrId);
-            if (org == null)
-            {
-                Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{orgNameOrId}'");
-            }
-
-            return org;
+            await ExecuteCloudCommand();
         }
-        catch (MeadowCloudAuthException)
+        catch (MeadowCloudAuthException ex)
         {
-            Logger?.LogError($"You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
+            throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.", ex);
+        }
+    }
+
+    protected async Task<UserOrg?> GetOrg(string host, string? orgNameOrId = null, CancellationToken? cancellationToken = null)
+    {
+        Logger.LogInformation("Retrieving your user and organization information...");
+
+        var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
+        if (userOrgs.Count > 1 && string.IsNullOrEmpty(orgNameOrId))
+        {
+            Logger.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
+            return null;
+        }
+        else if (userOrgs.Count == 1 && string.IsNullOrEmpty(orgNameOrId))
+        {
+            orgNameOrId = userOrgs[0].Id;
         }
 
-        return null;
+        var org = userOrgs.FirstOrDefault(o => o.Id == orgNameOrId || o.Name == orgNameOrId);
+        if (org == null)
+        {
+            Logger.LogInformation($"Unable to find an organization with a Name or ID matching '{orgNameOrId}'");
+        }
+
+        return org;
     }
 }

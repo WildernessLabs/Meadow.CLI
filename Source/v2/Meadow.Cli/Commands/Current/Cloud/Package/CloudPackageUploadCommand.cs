@@ -17,33 +17,31 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
     [CommandOption("description", 'd', Description = "Description of the package", IsRequired = false)]
     public string? Description { get; init; }
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     private readonly PackageService _packageService;
 
     public CloudPackageUploadCommand(
+        IMeadowCloudClient meadowCloudClient,
         IdentityManager identityManager,
         UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         PackageService packageService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, identityManager, userService, loggerFactory)
     {
         _packageService = packageService;
     }
-
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
         if (!File.Exists(MpakPath))
         {
-            Logger?.LogError($"Package {MpakPath} does not exist");
-            return;
+            throw new CommandException($"Package {MpakPath} does not exist");
         }
 
-        Host ??= DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, CancellationToken);
+        return ValueTask.CompletedTask;
+    }
+
+    protected override async ValueTask ExecuteCloudCommand()
+    {
+        var org = await GetOrg(Host, OrgId, CancellationToken);
 
         if (org == null) { return; }
 

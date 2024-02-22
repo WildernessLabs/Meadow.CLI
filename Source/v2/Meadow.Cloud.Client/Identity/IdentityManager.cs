@@ -14,6 +14,9 @@ public class IdentityManager
     private const string clientId = "0oa3axsuyupb7J6E15d6";
     private readonly ILogger _logger;
 
+    private static AccessToken? CachedAccessToken;
+    private static readonly SemaphoreSlim AccessTokenLock = new(1);
+
     public IdentityManager(ILogger<IdentityManager>? logger = default)
     {
         _logger = logger ?? NullLogger<IdentityManager>.Instance;
@@ -23,11 +26,11 @@ public class IdentityManager
     /// Kick off login
     /// </summary>
     /// <returns></returns>
-    public async Task<bool> Login(CancellationToken cancellationToken = default)
+    public async Task<(bool IsSuccessful, string? Email)> Login(CancellationToken cancellationToken = default)
     {
         try
         {
-            var client = await GetOidcClient();
+            var client = GetOidcClient();
 
             using (var http = new HttpListener())
             {
@@ -47,16 +50,17 @@ public class IdentityManager
 
                 var result = await client.ProcessResponseAsync(raw, state, cancellationToken: cancellationToken);
 
+                string? email = null;
                 if (result.IsError)
                 {
-                    _logger?.LogError(result.Error);
+                    _logger.LogError(result.Error);
                 }
                 else
                 {
-                    var email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
+                    email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
                     if (string.IsNullOrWhiteSpace(email))
                     {
-                        _logger?.LogWarning("Unable to get email address");
+                        _logger.LogWarning("Unable to get email address");
                     }
                     else
                     {
@@ -64,13 +68,13 @@ public class IdentityManager
                         SaveCredential(WlRefreshCredentialName, email!, result.RefreshToken);
                     }
                 }
-                return !result.IsError;
+                return (!result.IsError, email);
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "An error occurred");
-            return false;
+            return (false, null);
         }
     }
 
@@ -85,27 +89,41 @@ public class IdentityManager
     /// <returns></returns>
     public async Task<string> GetAccessToken(CancellationToken cancellationToken = default)
     {
-        string refreshToken = string.Empty;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            !RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
+            !RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            refreshToken = GetCredentials(WlRefreshCredentialName).password;
-        }
-        else
-        {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
 
-        if (!string.IsNullOrEmpty(refreshToken))
+        if (CachedAccessToken?.IsValid == true)
         {
-            var client = await GetOidcClient();
-            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-            return result.AccessToken;
+            return CachedAccessToken.Token;
         }
-        else
+
+        await AccessTokenLock.WaitAsync(cancellationToken);
+        try
         {
-            return string.Empty;
+            if (CachedAccessToken?.IsValid == true)
+            {
+                return CachedAccessToken.Token;
+            }
+
+            var refreshToken = GetCredentials(WlRefreshCredentialName).password;
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return string.Empty;
+            }
+
+            var client = GetOidcClient();
+            var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
+            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn));
+            return CachedAccessToken.Token;
+        }
+        finally
+        {
+            AccessTokenLock.Release();
         }
     }
 
@@ -136,7 +154,7 @@ public class IdentityManager
                 var secret = libSecret.GetSecret();
                 if (!string.IsNullOrEmpty(secret))
                 {
-                    return secret.Split(' ') switch { var a => (a[0], a[1]) };
+                    return secret!.Split(' ') switch { var a => (a[0], a[1]) };
                 }
                 else
                 {
@@ -150,12 +168,12 @@ public class IdentityManager
         }
         else
         {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
     }
 
-    private Task<OidcClient> GetOidcClient()
+    private OidcClient GetOidcClient()
     {
         var options = new OidcClientOptions
         {
@@ -174,7 +192,7 @@ public class IdentityManager
             ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
         };
         IdentityModelEventSource.ShowPII = true;
-        return Task.FromResult(new OidcClient(options));
+        return new OidcClient(options);
     }
 
     public void DeleteCredential(string credentialName)
@@ -233,7 +251,7 @@ public class IdentityManager
         }
         else
         {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
     }
@@ -266,5 +284,13 @@ public class IdentityManager
                 throw new NotSupportedException();
             }
         }
+    }
+
+    private class AccessToken(string token, DateTimeOffset expiresAt)
+    {
+        public string Token { get; } = token;
+        public DateTimeOffset ExpiresAtUtc { get; } = expiresAt;
+
+        public bool IsValid => !string.IsNullOrWhiteSpace(Token) && ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(30);
     }
 }

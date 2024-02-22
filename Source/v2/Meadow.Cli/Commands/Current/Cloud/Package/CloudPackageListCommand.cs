@@ -13,25 +13,20 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
     [CommandOption("orgId", 'o', Description = "Optional organization ID", IsRequired = false)]
     public string? OrgId { get; init; }
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     public CloudPackageListCommand(
+        IMeadowCloudClient meadowCloudClient,
         IdentityManager identityManager,
         UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         PackageService packageService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, identityManager, userService, loggerFactory)
     {
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override async ValueTask ExecuteCloudCommand()
     {
-        Host ??= DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, CancellationToken);
+        var org = await GetOrg(Host, OrgId, CancellationToken);
 
         if (org == null) { return; }
 

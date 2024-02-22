@@ -43,8 +43,8 @@
 | package publish | cloud package publish | - |
 | package upload | cloud package upload | - |
 | collection list | cloud collection list | - |
-| cloud login | cloud login | - |
-| cloud logout | cloud logout | - |
+| cloud login | login | - |
+| cloud logout | logout | - |
 | cloud command publish | cloud command publish | - |
 
 

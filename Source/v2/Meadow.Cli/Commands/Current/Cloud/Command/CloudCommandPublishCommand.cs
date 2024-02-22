@@ -24,24 +24,20 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
     [CommandOption("qos", 'q', Description = "The MQTT-defined quality of service for the command", IsRequired = false)]
     public QualityOfService QualityOfService { get; init; } = QualityOfService.AtLeastOnce;
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     private CommandService CommandService { get; }
 
     public CloudCommandPublishCommand(
+        IMeadowCloudClient meadowCloudClient,
         IdentityManager identityManager,
         UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         CommandService commandService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, identityManager, userService, loggerFactory)
     {
         CommandService = commandService;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
         if (string.IsNullOrWhiteSpace(CollectionId) && (DeviceIds == null || DeviceIds.Length == 0))
         {
@@ -53,14 +49,11 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.", showHelp: true);
         }
 
-        Host ??= DefaultHost;
+        return ValueTask.CompletedTask;
+    }
 
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
-        }
-
+    protected override async ValueTask ExecuteCloudCommand()
+    {
         try
         {
             if (!string.IsNullOrWhiteSpace(CollectionId))
@@ -76,10 +69,6 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
                 throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
             }
             Logger?.LogInformation("Publish command successful.");
-        }
-        catch (MeadowCloudAuthException ex)
-        {
-            throw new CommandException("You must be signed in to execute this command.", innerException: ex);
         }
         catch (MeadowCloudException ex)
         {

@@ -17,35 +17,27 @@ public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateComman
     [CommandOption("scopes", 's', Description = "The list of scopes (permissions) to grant the API key", IsRequired = false)]
     public string[]? Scopes { get; set; }
 
-    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
-    public string? Host { get; set; }
-
     private ApiTokenService ApiTokenService { get; }
 
     public CloudApiKeyUpdateCommand(
+        IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        CollectionService collectionService,
-        DeviceService deviceService,
         IdentityManager identityManager,
         UserService userService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, identityManager, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
 
-    protected async override ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
-        Host ??= DefaultHost;
-
         Logger?.LogInformation($"Updating API key `{NameOrId}` on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        return ValueTask.CompletedTask;
+    }
 
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new CommandException("You must be signed your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
-        }
-
+    protected async override ValueTask ExecuteCloudCommand()
+    {
         try
         {
             var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
@@ -61,10 +53,6 @@ public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateComman
 
             var updateRequest = new UpdateApiTokenRequest(NewName!, Scopes!);
             await ApiTokenService.UpdateApiToken(apiKey.Id, updateRequest, Host, CancellationToken);
-        }
-        catch (MeadowCloudAuthException ex)
-        {
-            throw new CommandException("You must be signed in to execute this command.", innerException: ex);
         }
         catch (MeadowCloudException ex)
         {
