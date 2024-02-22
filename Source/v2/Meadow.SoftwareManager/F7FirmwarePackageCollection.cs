@@ -67,30 +67,40 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
     public async Task DeletePackage(string version)
     {
-        var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
+        var packageToDelete = _f7Packages.FirstOrDefault(p => p.Version == version);
 
-        if (existing == null)
+        if (packageToDelete == null)
         {
-            throw new ArgumentException($"Version '{version}' not found locally.");
+            throw new ArgumentException($"Firmware '{version}' not found locally");
         }
 
-        // if we're deleting the default, we need to det another default
-        var i = _f7Packages.Count - 1;
-        while (DefaultPackage?.Version == _f7Packages[i].Version)
+        _f7Packages.Remove(packageToDelete);
+
+        Directory.Delete(Path.Combine(PackageFileRoot, version), true);
+
+        //are we deleting the default package
+        if (DefaultPackage != null && DefaultPackage.Version == version)
         {
-            i--;
+            FirmwarePackage? newDefault = null;
+
+            foreach (var package in _f7Packages.OrderByDescending(p => new Version(p.Version)))
+            {
+                if (DefaultPackage?.Version != package.Version)
+                {
+                    newDefault = package;
+                    break;
+                }
+            }
+
+            if (newDefault != null)
+            {
+                await SetDefaultPackage(newDefault.Version);
+            }
+            else
+            {
+                ClearDefaultPackage();
+            }
         }
-        var newDefault = _f7Packages[i].Version;
-
-        if (DefaultPackage != null)
-        {
-            _f7Packages.Remove(DefaultPackage);
-        }
-        await SetDefaultPackage(newDefault);
-
-        var path = Path.Combine(PackageFileRoot, version);
-
-        Directory.Delete(path, true);
     }
 
     public async Task SetDefaultPackage(string version)
@@ -99,20 +109,34 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
+        _defaultPackage = existing;
+
         if (existing == null)
         {
-            throw new ArgumentException($"Version '{version}' not found locally.");
+            throw new ArgumentException($"Version '{version}' not found locally");
         }
 
         _downloadManager.SetDefaultVersion(PackageFileRoot, version);
+    }
+
+    public void ClearDefaultPackage()
+    {
+        _defaultPackage = null;
     }
 
     public async Task<bool> IsVersionAvailableForDownload(string version)
     {
         var meta = await _downloadManager.GetReleaseMetadata(version);
 
-        if (meta == null) return false;
-        if (meta.Version != string.Empty) return true;
+        if (meta == null)
+        {
+            return false;
+        }
+
+        if (meta.Version != string.Empty)
+        {
+            return true;
+        }
 
         return false;
     }
@@ -121,8 +145,15 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
         var meta = await _downloadManager.GetReleaseMetadata();
 
-        if (meta == null) return null;
-        if (meta.Version == string.Empty) return null;
+        if (meta == null)
+        {
+            return null;
+        }
+
+        if (meta.Version == string.Empty)
+        {
+            return null;
+        }
 
         return meta.Version;
     }
@@ -138,7 +169,10 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         try
         {
             var meta = await _downloadManager.GetReleaseMetadata(version);
-            if (meta == null) return false;
+            if (meta == null)
+            {
+                return false;
+            }
 
             return await _downloadManager.DownloadRelease(PackageFileRoot, version, overwrite);
         }

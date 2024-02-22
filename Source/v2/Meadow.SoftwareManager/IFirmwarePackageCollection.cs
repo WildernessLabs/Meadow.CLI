@@ -13,6 +13,7 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
 
     FirmwarePackage? DefaultPackage { get; }
     Task SetDefaultPackage(string version);
+    void ClearDefaultPackage();
     Task DeletePackage(string version);
     Task Refresh();
     Task<string?> GetLatestAvailableVersion();
