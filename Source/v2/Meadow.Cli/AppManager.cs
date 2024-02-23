@@ -146,5 +146,8 @@ public static class AppManager
                 goto send_file;
             }
         }
+
+        //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
+        logger?.LogInformation(string.Empty);
     }
 }
