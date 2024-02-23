@@ -20,22 +20,39 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
         : base(connectionManager, loggerFactory)
     { }
 
+private void StartNewFile(string outputPath, ref FileStream outputFile, byte[] header, ref int headerIndex, ref int totalBytesWritten, ref int headerFileCount)
+{
+    if (outputFile != null)
+    {
+        outputFile.Close();
+        outputFile.Dispose();
+    }
+    outputFile = new FileStream(outputPath, FileMode.Create);
+    totalBytesWritten = 0;
+    headerIndex = 0;
+    headerFileCount++;
+    foreach (var headerByte in header)
+    {
+        outputFile.WriteByte(headerByte);
+        totalBytesWritten++;
+    }
+}
+
 private void ReadAndSaveSerialData()
 {
     // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
     //  according to the Mono Profiler LOG_VERSION_MAJOR 3 LOG_VERSION_MINOR 0 LOG_DATA_VERSION 17
-    byte[] header = { 0x01, 0x5A, 0x50, 0x4D };
-    int headerIndex = 0;
-    string defaultDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+    var header = new byte[] { 0x01, 0x5A, 0x50, 0x4D };
+    var headerIndex = 0;
+    var totalBytesWritten = 0;
+    var headerFileCount = 0;
+
+    var defaultDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
     outputDirectory ??= defaultDirectory;
-    string outputPath = Path.Combine(outputDirectory, "output.mlpd");
+    var outputPath = Path.Combine(outputDirectory, "output.mlpd");
 
     SerialPort port = new SerialPort(SerialInterface, SerialConnection.DefaultBaudRate);
-
     FileStream outputFile = null;
-    bool writingToFile = false;
-    int totalBytesWritten = 0;
-    int headerFoundTimes = 0;
 
     try
     {
@@ -47,7 +64,7 @@ private void ReadAndSaveSerialData()
             int data = port.ReadByte();
             if (data != -1)
             {
-                if (!writingToFile)
+                if (headerFileCount == 0)
                 {
                     // Check if the received data matches the header sequence
                     if (data == header[headerIndex])
@@ -57,15 +74,7 @@ private void ReadAndSaveSerialData()
                         if (headerIndex == header.Length)
                         {
                             Logger?.LogInformation($"Profiling data header found! Writing to {outputPath}...");
-                            outputFile = new FileStream(outputPath, FileMode.Create);
-                            foreach (var headerByte in header)
-                            {
-                                outputFile.WriteByte((byte)headerByte);
-                            }
-                            writingToFile = true;
-                            totalBytesWritten += 4;
-                            headerIndex = 0;
-                            headerFoundTimes++;
+                            StartNewFile(outputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                         }
                     }
                     else
@@ -76,8 +85,7 @@ private void ReadAndSaveSerialData()
                 }
                 else
                 {
-
-                    // Writing to file after header is found
+                    // Writing to file after a header is found
                     outputFile.WriteByte((byte)data);
                     totalBytesWritten++;
 
@@ -89,18 +97,9 @@ private void ReadAndSaveSerialData()
                         {
                             // Close the current file, start writing to a new file, and reset counters
                             //  to avoid corrupted profiling data (e.g. device reset while profiling)
-                            outputFile.Close();
-                            outputFile.Dispose();
-                            headerFoundTimes++;
-                            var newOutputPath = outputDirectory + "output_" + headerFoundTimes + ".mlpd";
-                            outputFile = new FileStream(newOutputPath, FileMode.Create);
+                            var newOutputPath = outputDirectory + "output_" + headerFileCount + ".mlpd";
                             Logger?.LogInformation($"New profiling data header found! Writing to {newOutputPath}...");
-                            headerIndex = 0;
-                            foreach (var headerByte in header)
-                            {
-                                outputFile.WriteByte((byte)headerByte);
-                            }
-                            totalBytesWritten = 4; 
+                            StartNewFile(newOutputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                         }
                     }
                     else
