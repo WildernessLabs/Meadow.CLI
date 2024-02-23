@@ -17,7 +17,7 @@ namespace Meadow.Hcom
                 if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
                 if (timeout <= 0) throw new TimeoutException();
 
-                if (State == ConnectionState.MeadowAttached)
+                if (State == ConnectionState.Connected)
                 {
                     if (Device == null)
                     {
