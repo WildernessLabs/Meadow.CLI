@@ -295,6 +295,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
+            var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
         write_runtime:
             if (!await connection.Device!.WriteRuntime(runtimePath, CancellationToken))
@@ -302,6 +303,23 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 // TODO: implement a retry timeout
                 Logger?.LogInformation($"Error writing runtime - retrying");
                 goto write_runtime;
+            }
+
+            connection = await GetCurrentConnection(true);
+
+            if (connection == null)
+            {
+                var newPort = await WaitForNewSerialPort(initialPorts);
+
+                if (newPort != null)
+                {
+                    throw CommandException.MeadowDeviceNotFound;
+                }
+
+                Logger?.LogInformation($"Meadow found at {newPort}");
+
+                // configure the route to that port for the user
+                Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
             }
         }
         else
@@ -463,11 +481,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return false;
         }
 
-        // now wait for a new serial port to appear
+        var newPort = await WaitForNewSerialPort(initialPorts);
+
+        Logger?.LogInformation($"Meadow found at {newPort}");
+
+        // configure the route to that port for the user
+        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+        return true;
+    }
+
+    async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
+    {
         var ports = await MeadowConnectionManager.GetSerialPorts();
         var retryCount = 0;
 
-        var newPort = ports.Except(initialPorts).FirstOrDefault();
+        var newPort = ports.Except(ignorePorts).FirstOrDefault();
 
         while (newPort == null)
         {
@@ -477,14 +506,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             await Task.Delay(500);
             ports = await MeadowConnectionManager.GetSerialPorts();
-            newPort = ports.Except(initialPorts).FirstOrDefault();
+            newPort = ports.Except(ignorePorts).FirstOrDefault();
         }
 
-        Logger?.LogInformation($"Meadow found at {newPort}");
-
-        // configure the route to that port for the user
-        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
-        return true;
+        return newPort;
     }
 }
