@@ -45,10 +45,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         var connection = await GetCurrentConnection(true);
 
-        if (connection == null || connection.Device == null)
-        {
-            throw CommandException.MeadowDeviceNotFound;
-        }
+        _lastWriteProgress = 0;
 
         connection.FileWriteProgress += (s, e) =>
         {
@@ -86,31 +83,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private bool RequiresDfuForRuntimeUpdates(DeviceInfo info)
     {
+        return true;
+
         if (System.Version.TryParse(info.OsVersion, out var version))
         {
-            return version.Major switch
-            {
-                0 => true,
-                2 => version.Minor < 0,
-                _ => false,
-            };
+            return version.Major >= 2;
         }
-
-        return true;
     }
 
     private bool RequiresDfuForEspUpdates(DeviceInfo info)
     {
-        if (System.Version.TryParse(info.OsVersion, out var version))
-        {
-            return version.Major switch
-            {
-                0 => true,
-                2 => version.Minor < 0,
-                _ => false,
-            };
-        }
-
         return true;
     }
 
@@ -250,14 +232,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(IndividualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
-            if (connection == null)
-            {
-                connection = await GetConnectionAndDisableRuntime();
-            }
-            else
-            {
-                await connection.RuntimeDisable();
-            }
+            connection = await GetConnectionAndDisableRuntime();
+            //    else
+            //  {
+            //      await connection.RuntimeDisable();
+            // }
 
             await WriteEspFiles(connection, deviceInfo, package);
         }
