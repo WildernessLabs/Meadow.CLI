@@ -43,12 +43,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime()
     {
-        var connection = await GetCurrentConnection();
+        var connection = await GetCurrentConnection(true);
 
         if (connection == null || connection.Device == null)
         {
-            // can't find a device
-            return null;
+            throw CommandException.MeadowDeviceNotFound;
         }
 
         connection.FileWriteProgress += (s, e) =>
