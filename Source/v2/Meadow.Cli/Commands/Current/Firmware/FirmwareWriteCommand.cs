@@ -268,6 +268,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             await connection.Device.Reset();
         }
+
+        Logger?.LogInformation("Firmware updated successfully");
     }
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
