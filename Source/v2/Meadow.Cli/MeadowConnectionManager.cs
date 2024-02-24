@@ -35,6 +35,7 @@ public class MeadowConnectionManager
             return _currentConnection;
         }
         _currentConnection?.Detach();
+        _currentConnection?.Dispose();
 
         // try to determine what the route is
         string? uri = null;
