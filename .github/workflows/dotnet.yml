@@ -79,7 +79,7 @@ jobs:
         $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Restore Classic dependencies
       run: dotnet restore main/MeadowCLI.Classic.sln /p:Configuration=Release
@@ -88,7 +88,7 @@ jobs:
       run: dotnet build main/MeadowCLI.Classic.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
@@ -100,7 +100,7 @@ jobs:
       run: dotnet build main/MeadowCLI.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
@@ -117,7 +117,7 @@ jobs:
       run: dotnet build main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}
         path: 'main\Source\v2\Meadow.CLI\bin\Release\*.nupkg'
@@ -234,7 +234,7 @@ jobs:
       uses: NuGet/setup-nuget@v2
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
       with:
         vs-version: '[17.0, 18.0)'
 
@@ -254,7 +254,7 @@ jobs:
         DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
         
     - name: Upload VS2022 VSIX Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.Win.VS2022.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
@@ -435,7 +435,7 @@ jobs:
         dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
     
     - name: Upload VS2022 mpack Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.Mac.2022.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
@@ -548,7 +548,7 @@ jobs:
         npm i -g @vscode/vsce
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VSCode Version Numbers
@@ -584,7 +584,7 @@ jobs:
         vsce package
 
     - name: Upload VSIX Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.VSCode.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-code/*.vsix'
