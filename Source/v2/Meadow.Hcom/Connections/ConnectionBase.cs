@@ -46,7 +46,6 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
     public abstract Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     public abstract Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
-    public abstract Task DeployApp(string folderPath, bool isDebugging, ILogger? logger, CancellationToken? cancellationToken);
 
     public ConnectionBase()
     {

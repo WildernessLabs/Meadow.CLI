@@ -1,4 +1,3 @@
-
 using System.Buffers;
 using System.IO.Ports;
 using System.Net;
@@ -1244,20 +1243,5 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             return false;
         }, cancellationToken);
-    }
-
-    public override async Task DeployApp(string folderPath, bool isDebugging, ILogger? logger, CancellationToken? cancellationToken)
-    {
-        var app = new FileInfo(Path.Combine(folderPath, "App.dll"));
-
-        if (!app.Exists)
-        {
-            logger?.LogError($"Cannot find a compiled application at '{folderPath}'");
-            return;
-        }
-
-        logger?.LogInformation($"Deploying app from {app.DirectoryName}...");
-
-        // await AppManager.DeployApplication(_packageManager, this, app.DirectoryName!, isDebugging, false, logger, cancellationToken);
     }
 }

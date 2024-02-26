@@ -49,5 +49,4 @@ public interface IMeadowConnection : IDisposable
     Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
     Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
-    Task DeployApp(string folderPath, bool isDebugging, ILogger? logger, CancellationToken? cancellationToken);
 }
