@@ -30,16 +30,13 @@ namespace Meadow.Hcom
 
                 await Task.Delay(500);
 
-                if (!_port.IsOpen)
+                try
                 {
-                    try
-                    {
-                        Open();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Unable to open port: {ex.Message}");
-                    }
+                    Open();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Unable to open port: {ex.Message}");
                 }
             }
 

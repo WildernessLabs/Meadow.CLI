@@ -196,11 +196,6 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task DeployApp(string folderPath, bool isDebugging, ILogger? logger, CancellationToken? cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
-
     public override void Detach()
     {
         throw new NotImplementedException();
