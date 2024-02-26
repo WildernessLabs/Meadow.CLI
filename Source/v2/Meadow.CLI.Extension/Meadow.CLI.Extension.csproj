@@ -16,6 +16,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+<<<<<<< HEAD
+=======
+    <Compile Include="..\Meadow.Cli\Deployment\AppManager.cs" Link="Deployment\AppManager.cs" />
+    <Compile Include="..\Meadow.Cli\ISettingsManager.cs" Link="ISettingsManager.cs" />
+    <Compile Include="..\Meadow.Cli\MeadowConnectionManager.cs" Link="MeadowConnectionManager.cs" />
+    <Compile Include="..\Meadow.Cli\SettingsManager.cs" Link="SettingsManager.cs" />
+>>>>>>> 8fd6a11 (Move AppManager Back. Make disabling and enabling the runtime part of AppDeploy.)
     <Compile Include="..\Meadow.Cloud.Client\ApiTokens\ApiTokenClient.cs" Link="Cloud.Client\ApiTokenClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Collections\CollectionClient.cs" Link="Cloud.Client\CollectionClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Commands\CommandClient.cs" Link="Cloud.Client\CommandClient.cs" />
@@ -31,6 +38,10 @@
     <Compile Include="..\Meadow.Cloud.Client\Packages\PackageClient.cs" Link="Cloud.Client\PackageClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Users\UserClient.cs" Link="Cloud.Client\UserClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Usings.cs" Link="Cloud.Client\Usings.cs" />
+    <Compile Include="..\Meadow.Linker\Linker\ILLinker.cs" Link="Linker\ILLinker.cs" />
+    <Compile Include="..\Meadow.Linker\Linker\MeadowLinker.cs" Link="Linker\MeadowLinker.cs" />
+    <Compile Include="..\Meadow.Package\IPackageManager.cs" Link="Package\IPackageManager.cs" />
+    <Compile Include="..\Meadow.SoftwareManager\CrcTools.cs" Link="SoftwareManager\CrcTools.cs" />
     <Compile Include="..\Meadow.SoftwareManager\DownloadFileStream.cs" Link="DownloadFileStream.cs" />
     <Compile Include="..\Meadow.SoftwareManager\F7FirmwareDownloadManager.cs" Link="F7FirmwareDownloadManager.cs" />
     <Compile Include="..\Meadow.SoftwareManager\F7FirmwarePackageCollection.cs" Link="F7FirmwarePackageCollection.cs" />
@@ -80,10 +91,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.2" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,5 +105,9 @@
 
   <ItemGroup>
     <Folder Include="Cloud.Client\" />
+    <Folder Include="Linker\" />
+    <Folder Include="SoftwareManager\" />
+    <Folder Include="Package\" />
+    <Folder Include="Deployment" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Hcom;
-using Meadow.Hcom.Deployment;
+using Meadow.Deployment;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
@@ -32,8 +32,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         var connection = await GetCurrentConnection();
 
-        await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
-
         if (!await DeployApplication(connection, file.FullName, CancellationToken))
         {
             throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
@@ -44,6 +42,8 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     {
         // is the path a file?
         FileInfo file;
+
+        var lastFile = string.Empty;
 
         if (!File.Exists(path))
         {
