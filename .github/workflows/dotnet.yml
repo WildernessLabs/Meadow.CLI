@@ -45,7 +45,7 @@ jobs:
         ref: main
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -223,7 +223,7 @@ jobs:
         path: vs-win
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x, 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -411,7 +411,7 @@ jobs:
         path: vs-mac
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -522,7 +522,7 @@ jobs:
         submodules: true
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
