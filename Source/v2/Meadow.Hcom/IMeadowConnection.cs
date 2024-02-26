@@ -2,7 +2,7 @@
 
 namespace Meadow.Hcom
 {
-    public interface IMeadowConnection
+    public interface IMeadowConnection : IDisposable
     {
         event EventHandler<(string message, string? source)> DeviceMessageReceived;
         event EventHandler<Exception> ConnectionError;

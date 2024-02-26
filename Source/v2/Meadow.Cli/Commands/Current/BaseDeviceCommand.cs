@@ -17,9 +17,9 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         return (await GetCurrentConnection()).Device ?? throw CommandException.MeadowDeviceNotFound;
     }
 
-    protected async Task<IMeadowConnection> GetCurrentConnection()
+    protected async Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
     {
-        var connection = ConnectionManager.GetCurrentConnection();
+        var connection = ConnectionManager.GetCurrentConnection(forceReconnect);
 
         if (connection != null)
         {
