@@ -13,6 +13,8 @@ public class MeadowCloudClient : IMeadowCloudClient
     public const string DefaultHost = "https://www.meadowcloud.co";
     public static readonly Uri DefaultHostUri = new(DefaultHost);
 
+    private readonly Lazy<UserClient> _userClient;
+    private readonly Lazy<DeviceClient> _deviceClient;
     private readonly Lazy<FirmwareClient> _firmwareClient;
     private readonly MeadowCloudContext _meadowCloudContext;
     private readonly IdentityManager _identityManager;
@@ -22,18 +24,21 @@ public class MeadowCloudClient : IMeadowCloudClient
         loggerFactory ??= NullLoggerFactory.Instance;
 
         _meadowCloudContext = new(httpClient, userAgent);
- 
+
         _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, loggerFactory.CreateLogger<FirmwareClient>()));
+        _userClient = new Lazy<UserClient>(() => new UserClient(identityManager));
+        _deviceClient = new Lazy<DeviceClient>(() => new DeviceClient(this, identityManager));
+
         _identityManager = identityManager;
     }
 
     public IApiTokenClient ApiToken => throw new NotImplementedException("This client is not implemented yet. Please use the 'ApiTokenService' instead.");
     public ICollectionClient Collection => throw new NotImplementedException("This client is not implemented yet. Please use the 'CollectionService' instead.");
     public ICommandClient Command => throw new NotImplementedException("This client is not implemented yet. Please use the 'CommandService' instead.");
-    public IDeviceClient Device => throw new NotImplementedException("This client is not implemented yet. Please use the 'DeviceService' instead.");
+    public IDeviceClient Device => _deviceClient.Value;
     public IFirmwareClient Firmware => _firmwareClient.Value;
     public IPackageClient Package => throw new NotImplementedException("This client is not implemented yet. Please use the 'PackageService' instead.");
-    public IUserClient User => throw new NotImplementedException("This client is not implemented yet. Please use the 'UserService' instead.");
+    public IUserClient User => _userClient.Value;
 
     public async Task<bool> Authenticate(CancellationToken cancellationToken = default)
     {
