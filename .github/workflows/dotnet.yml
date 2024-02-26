@@ -53,7 +53,7 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update CLI Version Numbers
@@ -231,7 +231,7 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - name: Add MSBuild to Path
       uses: microsoft/setup-msbuild@v1.1
@@ -419,7 +419,7 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2022 Version Numbers
@@ -530,7 +530,7 @@ jobs:
           8.0.x
 
     - name: Setup Nuget
-      uses: Nuget/setup-nuget@v1.0.5
+      uses: Nuget/setup-nuget@v2
 
     - name: Setup Node.js 16
       uses: actions/setup-node@v2
