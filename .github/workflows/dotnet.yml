@@ -1,8 +1,8 @@
 name: Meadow.CLI Packaging
 env:
-  CLI_RELEASE_VERSION_1: 1.9.0.0
+  CLI_RELEASE_VERSION_1: 1.9.2.0
   CLI_RELEASE_VERSION_2: 2.0.17.0
-  IDE_TOOLS_RELEASE_VERSION: 1.9.0
+  IDE_TOOLS_RELEASE_VERSION: 2.0.0
   MEADOW_OS_VERSION: 1.9.0.0
   VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.6
@@ -19,26 +19,26 @@ jobs:
       
     steps:
     - name: Checkout Meadow.CLI
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: main
 
     - name: Checkout Meadow.Contracts side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Contracts
         path: Meadow.Contracts
         ref: main
 
     - name: Checkout Meadow.Logging side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Logging
         path: Meadow.Logging
         ref: main
 
     - name: Checkout Meadow.Units side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Units
         path: Meadow.Units
@@ -202,14 +202,14 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
@@ -217,7 +217,7 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
@@ -391,13 +391,13 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
@@ -405,7 +405,7 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
@@ -500,13 +500,13 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
@@ -515,7 +515,7 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
