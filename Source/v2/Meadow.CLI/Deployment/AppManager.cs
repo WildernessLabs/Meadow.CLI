@@ -2,6 +2,7 @@
 using Meadow.Linker;
 using Meadow.Package;
 using Meadow.Software;
+using Microsoft.Extensions.Logging;
 
 namespace Meadow.Deployment;
 
@@ -49,8 +50,6 @@ public static class AppManager
 
         try
         {
-
-
             // TODO: add sub-folder support when HCOM supports it
             var localFiles = new Dictionary<string, uint>();
 
