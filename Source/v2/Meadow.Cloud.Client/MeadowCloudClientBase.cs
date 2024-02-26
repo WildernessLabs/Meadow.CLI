@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client;
+﻿using System.Net.Http;
+
+namespace Meadow.Cloud.Client;
 
 public abstract class MeadowCloudClientBase
 {
@@ -52,6 +54,21 @@ public abstract class MeadowCloudClientBase
         urlBuilder.AppendFormat(requestUriFormat, args.Select(arg => Uri.EscapeDataString(arg)).ToArray());
 
         return CreateHttpRequestMessage(method, new Uri(urlBuilder.ToString(), UriKind.Relative));
+    }
+
+    protected HttpRequestMessage CreateHttpRequestMessage<T>(HttpMethod method, string requestUri, T request)
+    {
+        var json = JsonSerializer.SerializeToUtf8Bytes(request);
+        var content = new ByteArrayContent(json);
+        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+
+        var httpRequest = new HttpRequestMessage(method, new Uri(MeadowCloudContext.BaseAddress, requestUri))
+        {
+            Content = content
+        };
+        SetHeaders(httpRequest);
+
+        return httpRequest;
     }
 
     private static IReadOnlyDictionary<string, IEnumerable<string>> GetHeaders(HttpResponseMessage response)
