@@ -19,25 +19,18 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
     [CommandOption("metadata", 'm', Description = "Pass through metadata", IsRequired = false)]
     public string? Metadata { get; init; }
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     public CloudPackagePublishCommand(
-        IdentityManager identityManager,
+        IMeadowCloudClient meadowCloudClient,
         UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         PackageService packageService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override async ValueTask ExecuteCloudCommand()
     {
-        Host ??= DefaultHost;
-
         try
         {
             Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");

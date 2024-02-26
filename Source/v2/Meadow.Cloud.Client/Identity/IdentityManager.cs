@@ -3,6 +3,7 @@ using IdentityModel.Client;
 using IdentityModel.OidcClient;
 using Microsoft.IdentityModel.Logging;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Meadow.Cloud.Client.Identity;
 
@@ -13,6 +14,9 @@ public class IdentityManager
     private const string redirectUri = "http://localhost:8877/";
     private const string clientId = "0oa3axsuyupb7J6E15d6";
     private readonly ILogger _logger;
+
+    private static AccessToken? CachedAccessToken;
+    private static readonly SemaphoreSlim AccessTokenLock = new(1);
 
     public IdentityManager(ILogger<IdentityManager>? logger = default)
     {
@@ -27,7 +31,7 @@ public class IdentityManager
     {
         try
         {
-            var client = await GetOidcClient();
+            var client = GetOidcClient();
 
             using (var http = new HttpListener())
             {
@@ -49,19 +53,28 @@ public class IdentityManager
 
                 if (result.IsError)
                 {
-                    _logger?.LogError(result.Error);
+                    _logger.LogError(result.Error);
                 }
                 else
                 {
                     var email = result.User.Claims.SingleOrDefault(x => x.Type == "email")?.Value;
                     if (string.IsNullOrWhiteSpace(email))
                     {
-                        _logger?.LogWarning("Unable to get email address");
+                        _logger.LogWarning("Unable to get email address");
                     }
                     else
                     {
                         // saving only the refresh token since the access token is too large
                         SaveCredential(WlRefreshCredentialName, email!, result.RefreshToken);
+                        await AccessTokenLock.WaitAsync(cancellationToken);
+                        try
+                        {
+                            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.TokenResponse.ExpiresIn), email!);
+                        }
+                        finally
+                        {
+                            AccessTokenLock.Release();
+                        }
                     }
                 }
                 return !result.IsError;
@@ -77,6 +90,16 @@ public class IdentityManager
     public void Logout()
     {
         DeleteCredential(WlRefreshCredentialName);
+
+        AccessTokenLock.Wait();
+        try
+        {
+            CachedAccessToken = null;
+        }
+        finally
+        {
+            AccessTokenLock.Release();
+        }
     }
 
     /// <summary>
@@ -85,28 +108,51 @@ public class IdentityManager
     /// <returns></returns>
     public async Task<string> GetAccessToken(CancellationToken cancellationToken = default)
     {
-        string refreshToken = string.Empty;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            !RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
+            !RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            refreshToken = GetCredentials(WlRefreshCredentialName).password;
-        }
-        else
-        {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
 
-        if (!string.IsNullOrEmpty(refreshToken))
+        if (CachedAccessToken?.IsValid == true)
         {
-            var client = await GetOidcClient();
+            return CachedAccessToken.Token;
+        }
+
+        await AccessTokenLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (CachedAccessToken?.IsValid == true)
+            {
+                return CachedAccessToken.Token;
+            }
+
+            var (emailAddress, refreshToken) = GetCredentials(WlRefreshCredentialName);
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return string.Empty;
+            }
+
+            var client = GetOidcClient();
             var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-            return result.AccessToken;
+            CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn), emailAddress);
+            return CachedAccessToken.Token;
         }
-        else
+        finally
         {
-            return string.Empty;
+            AccessTokenLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Gets the email address of the current logged in user, null otherwise.
+    /// </summary>
+    /// <returns>The email address of the current logged in user, null otherwise.</returns>
+    public string? GetEmailAddress()
+    {
+        return CachedAccessToken?.EmailAddress;
     }
 
     /// <summary>
@@ -136,7 +182,7 @@ public class IdentityManager
                 var secret = libSecret.GetSecret();
                 if (!string.IsNullOrEmpty(secret))
                 {
-                    return secret.Split(' ') switch { var a => (a[0], a[1]) };
+                    return secret!.Split(' ') switch { var a => (a[0], a[1]) };
                 }
                 else
                 {
@@ -150,12 +196,12 @@ public class IdentityManager
         }
         else
         {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
     }
 
-    private Task<OidcClient> GetOidcClient()
+    private OidcClient GetOidcClient()
     {
         var options = new OidcClientOptions
         {
@@ -174,7 +220,7 @@ public class IdentityManager
             ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
         };
         IdentityModelEventSource.ShowPII = true;
-        return Task.FromResult(new OidcClient(options));
+        return new OidcClient(options);
     }
 
     public void DeleteCredential(string credentialName)
@@ -233,7 +279,7 @@ public class IdentityManager
         }
         else
         {
-            _logger?.LogWarning("Unsupported OS detected.");
+            _logger.LogWarning("Unsupported OS detected.");
             throw new NotSupportedException();
         }
     }
@@ -266,5 +312,15 @@ public class IdentityManager
                 throw new NotSupportedException();
             }
         }
+    }
+
+    private class AccessToken(string token, DateTimeOffset expiresAt, string emailAddress)
+    {
+
+        public string Token { get; } = token;
+        public DateTimeOffset ExpiresAtUtc { get; } = expiresAt;
+        public string EmailAddress { get; } = emailAddress;
+
+        public bool IsValid => !string.IsNullOrWhiteSpace(Token) && ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(30);
     }
 }

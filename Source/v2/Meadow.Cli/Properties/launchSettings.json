@@ -215,13 +215,13 @@
       "commandName": "Project",
       "commandLineArgs": "device provision"
     },
-    "Cloud login": {
+    "Login": {
       "commandName": "Project",
-      "commandLineArgs": "cloud login"
+      "commandLineArgs": "login"
     },
-    "Cloud logout": {
+    "Logout": {
       "commandName": "Project",
-      "commandLineArgs": "cloud logout"
+      "commandLineArgs": "logout"
     },
     "Cloud collection list": {
       "commandName": "Project",

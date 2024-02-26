@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("cloud package create", Description = "Create a Meadow Package (MPAK)")]
-public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
+public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? ProjectPath { get; set; }
@@ -30,14 +30,10 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
     private readonly FileManager _fileManager;
 
     public CloudPackageCreateCommand(
-        IdentityManager identityManager,
-        UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         IPackageManager packageManager,
         FileManager fileManager,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
         _fileManager = fileManager;
@@ -49,7 +45,7 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         ProjectPath = Path.GetFullPath(ProjectPath);
         if (!Directory.Exists(ProjectPath))
         {
-            new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
+            throw new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
         }
 
         // build

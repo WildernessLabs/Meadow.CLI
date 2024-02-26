@@ -8,35 +8,26 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud apikey list", Description = "List your Meadow.Cloud API keys")]
 public class CloudApiKeyListCommand : BaseCloudCommand<CloudApiKeyListCommand>
 {
-    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
-    public string? Host { get; set; }
-
     private ApiTokenService ApiTokenService { get; }
 
     public CloudApiKeyListCommand(
+        IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        CollectionService collectionService,
-        DeviceService deviceService,
-        IdentityManager identityManager,
         UserService userService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
-        Host ??= DefaultHost;
+        Logger.LogInformation($"Retrieving your API keys from Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        return ValueTask.CompletedTask;
+    }
 
-        Logger?.LogInformation($"Retrieving your API keys from Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
-
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new CommandException("You must be signed your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
-        }
-
+    protected override async ValueTask ExecuteCloudCommand()
+    {
         try
         {
             var response = await ApiTokenService.GetApiTokens(Host, CancellationToken);
@@ -44,7 +35,7 @@ public class CloudApiKeyListCommand : BaseCloudCommand<CloudApiKeyListCommand>
 
             if (!apiTokens.Any())
             {
-                Logger?.LogInformation("You have no API keys.");
+                Logger.LogInformation("You have no API keys.");
                 return;
             }
 
@@ -54,11 +45,7 @@ public class CloudApiKeyListCommand : BaseCloudCommand<CloudApiKeyListCommand>
                 table.AddRow(apiToken.Id, apiToken.Name, $"{apiToken.ExpiresAt:G}", string.Join(", ", apiToken.Scopes.OrderBy(t => t)));
             }
 
-            Logger?.LogInformation(table);
-        }
-        catch (MeadowCloudAuthException ex)
-        {
-            throw new CommandException("You must be signed in to execute this command.", innerException: ex);
+            Logger.LogInformation(table);
         }
         catch (MeadowCloudException ex)
         {

@@ -11,35 +11,26 @@ public class CloudApiKeyDeleteCommand : BaseCloudCommand<CloudApiKeyDeleteComman
     [CommandParameter(0, Description = "The name or ID of the API key", IsRequired = true, Name = "NAME_OR_ID")]
     public string NameOrId { get; init; } = default!;
 
-    [CommandOption("host", Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
-    public string? Host { get; set; }
-
     private ApiTokenService ApiTokenService { get; }
 
     public CloudApiKeyDeleteCommand(
+        IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        CollectionService collectionService,
-        DeviceService deviceService,
-        IdentityManager identityManager,
         UserService userService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
 
-    protected async override ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
-        Host ??= DefaultHost;
+        Logger.LogInformation($"Deleting API key `{NameOrId}` on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        return ValueTask.CompletedTask;
+    }
 
-        Logger?.LogInformation($"Deleting API key `{NameOrId}` on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
-
-        var token = await IdentityManager.GetAccessToken(CancellationToken);
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow cloud login' to do so.");
-        }
-
+    protected async override ValueTask ExecuteCloudCommand()
+    {
         try
         {
             var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
@@ -51,10 +42,6 @@ public class CloudApiKeyDeleteCommand : BaseCloudCommand<CloudApiKeyDeleteComman
             }
 
             await ApiTokenService.DeleteApiToken(apiKey.Id, Host, CancellationToken);
-        }
-        catch (MeadowCloudAuthException ex)
-        {
-            throw new CommandException("You must be signed in to execute this command.", innerException: ex);
         }
         catch (MeadowCloudException ex)
         {

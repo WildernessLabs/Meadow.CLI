@@ -8,30 +8,28 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("cloud collection list", Description = "List Meadow Collections")]
 public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCommand>
 {
-    [CommandOption("host", 'h', Description = $"Optionally set a host (default is {DefaultHost})", IsRequired = false)]
-    public string? Host { get; set; }
-
     [CommandOption("orgId", 'o', Description = "Organization Id", IsRequired = false)]
     public string? OrgId { get; init; }
 
+    private readonly CollectionService _collectionService;
+
     public CloudCollectionListCommand(
-        IdentityManager identityManager,
+        IMeadowCloudClient meadowCloudClient,
         UserService userService,
-        DeviceService deviceService,
         CollectionService collectionService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
-    { }
-
-    protected override async ValueTask ExecuteCommand()
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, userService, loggerFactory)
     {
-        Host ??= DefaultHost;
+        _collectionService = collectionService;
+    }
 
-        var org = await ValidateOrg(Host, OrgId, CancellationToken);
+    protected override async ValueTask ExecuteCloudCommand()
+    {
+        var org = await GetOrg(Host, OrgId, CancellationToken);
 
         if (org == null) return;
 
-        var collections = await CollectionService.GetOrgCollections(org.Id, Host, CancellationToken);
+        var collections = await _collectionService.GetOrgCollections(org.Id, Host, CancellationToken);
 
         if (collections == null || collections.Count == 0)
         {

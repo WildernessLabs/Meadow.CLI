@@ -82,7 +82,7 @@ public class Program
         }
         else
         {
-            services.AddScoped<IConfiguration>(_ => null);
+            services.AddScoped<IConfiguration>(_ => null!);
         }
 
         AddCommandsAsServices(services);
