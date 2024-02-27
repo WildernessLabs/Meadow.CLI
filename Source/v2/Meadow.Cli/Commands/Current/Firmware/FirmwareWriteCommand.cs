@@ -382,15 +382,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             {
                 return devices[0];
             }
-            else
-            {
-                throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
-            }
         }
-        else
-        {
-            throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
-        }
+        throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
