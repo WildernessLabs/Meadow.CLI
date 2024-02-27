@@ -72,7 +72,7 @@ public static class DfuUtils
 
         logger.LogInformation($"Flashing OS with {fileName}");
 
-        var dfuUtilVersion = new System.Version(GetDfuUtilVersion());
+        var dfuUtilVersion = new Version(GetDfuUtilVersion());
         logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
 
         if (dfuUtilVersion == null)
@@ -91,7 +91,7 @@ public static class DfuUtils
             }
             return false;
         }
-        else if (dfuUtilVersion.CompareTo(new System.Version("0.11")) < 0)
+        else if (dfuUtilVersion.CompareTo(new Version("0.11")) < 0)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -113,7 +113,7 @@ public static class DfuUtils
 
         try
         {
-            var args = $"-a 0 -S {dfuSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
+            var args = $"-a 0 -D \"{fileName}\" -s {_osAddress}:leave";
 
             await RunDfuUtil(args, logger, format);
         }
