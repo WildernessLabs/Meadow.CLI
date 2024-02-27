@@ -19,7 +19,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return Enumerable.Empty<GetFirmwareVersionsResponse>();
+            return [];
         }
 
         return await ProcessResponse<IEnumerable<GetFirmwareVersionsResponse>>(response, cancellationToken);
