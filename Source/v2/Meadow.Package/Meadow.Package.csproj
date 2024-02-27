@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
+    <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
   </ItemGroup>
 </Project>
