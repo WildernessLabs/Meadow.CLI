@@ -16,9 +16,8 @@ public class CloudApiKeyDeleteCommand : BaseCloudCommand<CloudApiKeyDeleteComman
     public CloudApiKeyDeleteCommand(
         IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }

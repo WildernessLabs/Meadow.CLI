@@ -21,10 +21,9 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
 
     public CloudPackageUploadCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         PackageService packageService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _packageService = packageService;
     }
@@ -40,20 +39,20 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        var org = await GetOrg(Host, OrgId, CancellationToken);
+        var org = await GetOrganization(OrgId, CancellationToken);
 
         if (org == null) { return; }
 
         try
         {
-            Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
+            Logger.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
             var package = await _packageService.UploadPackage(MpakPath, org.Id, Description ?? string.Empty, Host, CancellationToken);
-            Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
+            Logger.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)
         {
-            Logger?.LogError($"Upload failed: {mex.Message}");
+            Logger.LogError($"Upload failed: {mex.Message}");
         }
     }
 }

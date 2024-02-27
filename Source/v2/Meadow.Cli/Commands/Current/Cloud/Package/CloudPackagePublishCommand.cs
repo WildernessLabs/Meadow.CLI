@@ -21,10 +21,9 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
 
     public CloudPackagePublishCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         PackageService packageService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _packageService = packageService;
     }
@@ -33,14 +32,14 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
     {
         try
         {
-            Logger?.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
+            Logger.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
             await _packageService.PublishPackage(PackageId, CollectionId, Metadata ?? string.Empty, Host, CancellationToken);
-            Logger?.LogInformation("Publish successful.");
+            Logger.LogInformation("Publish successful.");
         }
         catch (MeadowCloudException mex)
         {
-            Logger?.LogError($"Publish failed: {mex.Message}");
+            Logger.LogError($"Publish failed: {mex.Message}");
         }
     }
 }

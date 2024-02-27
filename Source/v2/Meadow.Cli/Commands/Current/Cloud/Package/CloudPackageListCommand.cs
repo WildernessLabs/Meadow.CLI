@@ -15,17 +15,16 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
 
     public CloudPackageListCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         PackageService packageService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _packageService = packageService;
     }
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        var org = await GetOrg(Host, OrgId, CancellationToken);
+        var org = await GetOrganization(OrgId, CancellationToken);
 
         if (org == null) { return; }
 
@@ -33,14 +32,14 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
 
         if (packages == null || packages.Count == 0)
         {
-            Logger?.LogInformation("No packages found");
+            Logger.LogInformation("No packages found");
         }
         else
         {
-            Logger?.LogInformation("packages:");
+            Logger.LogInformation("packages:");
             foreach (var package in packages)
             {
-                Logger?.LogInformation($" {package.Id} | {package.Name}");
+                Logger.LogInformation($" {package.Id} | {package.Name}");
             }
         }
     }

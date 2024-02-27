@@ -1,7 +1,9 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
+using Meadow.Cloud.Client.Users;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -15,17 +17,13 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
     protected bool RequiresAuthentication { get; set; } = true;
 
     protected IMeadowCloudClient MeadowCloudClient { get; }
-    protected UserService UserService { get; }
     
-
     public BaseCloudCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         MeadowCloudClient = meadowCloudClient;
-        UserService = userService;
     }
 
     protected virtual ValueTask PreAuthenticatedValidation()
@@ -48,7 +46,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
             }
 
             // If the user does not yet exist in Meadow.Cloud, this creates them and sets up their initial org
-            var _ = await UserService.GetMe(Host, CancellationToken)
+            var _ = await MeadowCloudClient.User.GetUser(CancellationToken)
                 ?? throw new CommandException("There was a problem retrieving your account information.");
         }
 
@@ -62,22 +60,22 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         }
     }
 
-    protected async Task<UserOrg?> GetOrg(string host, string? orgNameOrId = null, CancellationToken? cancellationToken = null)
+    protected async Task<GetOrganizationResponse?> GetOrganization(string? orgNameOrId = null, CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Retrieving your user and organization information...");
 
-        var userOrgs = await UserService.GetUserOrgs(host, cancellationToken).ConfigureAwait(false);
-        if (userOrgs.Count > 1 && string.IsNullOrEmpty(orgNameOrId))
+        var orgs = await MeadowCloudClient.User.GetOrganizations(cancellationToken).ConfigureAwait(false);
+        if (orgs.Count() > 1 && string.IsNullOrEmpty(orgNameOrId))
         {
             Logger.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
             return null;
         }
-        else if (userOrgs.Count == 1 && string.IsNullOrEmpty(orgNameOrId))
+        else if (orgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
         {
-            orgNameOrId = userOrgs[0].Id;
+            orgNameOrId = orgs.Single().Id;
         }
 
-        var org = userOrgs.FirstOrDefault(o => o.Id == orgNameOrId || o.Name == orgNameOrId);
+        var org = orgs.FirstOrDefault(o => o.Id == orgNameOrId || string.Equals(o.Name, orgNameOrId, StringComparison.OrdinalIgnoreCase));
         if (org == null)
         {
             Logger.LogInformation($"Unable to find an organization with a Name or ID matching '{orgNameOrId}'");

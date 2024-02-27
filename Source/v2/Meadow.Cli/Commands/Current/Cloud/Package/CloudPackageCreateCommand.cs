@@ -49,7 +49,7 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
         }
 
         // build
-        Logger?.LogInformation(string.Format(Strings.BuildingSpecifiedConfiguration, Configuration));
+        Logger.LogInformation(string.Format(Strings.BuildingSpecifiedConfiguration, Configuration));
         if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
             throw new CommandException(Strings.BuildFailed);
@@ -68,7 +68,7 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
         // trim
-        Logger?.LogInformation(string.Format(Strings.TrimmingApplicationForSpecifiedVersion, osVersion));
+        Logger.LogInformation(string.Format(Strings.TrimmingApplicationForSpecifiedVersion, osVersion));
         await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
@@ -76,12 +76,12 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
         //TODO - properly manage shared paths
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
-        Logger?.LogInformation(Strings.AssemblingCloudPackage);
+        Logger.LogInformation(Strings.AssemblingCloudPackage);
         var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {
-            Logger?.LogInformation(string.Format(Strings.PackageAvailableAtSpecifiedPath, packagePath));
+            Logger.LogInformation(string.Format(Strings.PackageAvailableAtSpecifiedPath, packagePath));
         }
         else
         {

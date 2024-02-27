@@ -15,6 +15,7 @@ public class MeadowCloudClient : IMeadowCloudClient
 
     private readonly Lazy<DeviceClient> _deviceClient;
     private readonly Lazy<FirmwareClient> _firmwareClient;
+    private readonly Lazy<UserClient> _userClient;
     private readonly MeadowCloudContext _meadowCloudContext;
     private readonly IdentityManager _identityManager;
 
@@ -26,6 +27,7 @@ public class MeadowCloudClient : IMeadowCloudClient
 
         _deviceClient = new Lazy<DeviceClient>(() => new DeviceClient(_meadowCloudContext, loggerFactory.CreateLogger<DeviceClient>()));
         _firmwareClient = new Lazy<FirmwareClient>(() => new FirmwareClient(_meadowCloudContext, loggerFactory.CreateLogger<FirmwareClient>()));
+        _userClient = new Lazy<UserClient>(() => new UserClient(_meadowCloudContext, loggerFactory.CreateLogger<UserClient>()));
         _identityManager = identityManager;
     }
 
@@ -35,7 +37,7 @@ public class MeadowCloudClient : IMeadowCloudClient
     public IDeviceClient Device => _deviceClient.Value;
     public IFirmwareClient Firmware => _firmwareClient.Value;
     public IPackageClient Package => throw new NotImplementedException("This client is not implemented yet. Please use the 'PackageService' instead.");
-    public IUserClient User => throw new NotImplementedException("This client is not implemented yet. Please use the 'UserService' instead.");
+    public IUserClient User => _userClient.Value;
 
     public async Task<bool> Authenticate(CancellationToken cancellationToken = default)
     {

@@ -28,10 +28,9 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
     public CloudCommandPublishCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         CommandService commandService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         CommandService = commandService;
     }
@@ -67,7 +66,7 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
             {
                 throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
             }
-            Logger?.LogInformation("Publish command successful.");
+            Logger.LogInformation("Publish command successful.");
         }
         catch (MeadowCloudException ex)
         {
