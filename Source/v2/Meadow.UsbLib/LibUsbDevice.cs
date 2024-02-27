@@ -29,7 +29,7 @@ public class LibUsbProvider : ILibUsbProvider
 
     public class LibUsbDevice : ILibUsbDevice
     {
-        private IUsbDevice _device;
+        private readonly IUsbDevice _device;
 
         public LibUsbDevice(IUsbDevice usbDevice)
         {
@@ -51,7 +51,6 @@ public class LibUsbProvider : ILibUsbProvider
                 serialNumber = _device.Info?.SerialNumber ?? string.Empty;
                 _device.Close();
             }
-
 
             return serialNumber;
         }
