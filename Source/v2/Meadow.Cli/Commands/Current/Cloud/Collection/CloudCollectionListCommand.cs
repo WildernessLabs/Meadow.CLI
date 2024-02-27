@@ -15,17 +15,16 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
 
     public CloudCollectionListCommand(
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         CollectionService collectionService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _collectionService = collectionService;
     }
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        var org = await GetOrg(Host, OrgId, CancellationToken);
+        var org = await GetOrganization(OrgId, CancellationToken);
 
         if (org == null) return;
 
@@ -33,14 +32,14 @@ public class CloudCollectionListCommand : BaseCloudCommand<CloudCollectionListCo
 
         if (collections == null || collections.Count == 0)
         {
-            Logger?.LogInformation("No collections found.");
+            Logger.LogInformation("No collections found.");
         }
         else
         {
-            Logger?.LogInformation("Collections:");
+            Logger.LogInformation("Collections:");
             foreach (var collection in collections)
             {
-                Logger?.LogInformation($" {collection.Id} | {collection.Name}");
+                Logger.LogInformation($" {collection.Id} | {collection.Name}");
             }
         }
     }

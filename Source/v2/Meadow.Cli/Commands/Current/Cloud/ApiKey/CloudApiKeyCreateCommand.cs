@@ -22,9 +22,8 @@ public class CloudApiKeyCreateCommand : BaseCloudCommand<CloudApiKeyCreateComman
     public CloudApiKeyCreateCommand(
         IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }

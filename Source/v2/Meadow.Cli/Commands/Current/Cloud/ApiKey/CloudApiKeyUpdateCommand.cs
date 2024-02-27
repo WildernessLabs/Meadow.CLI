@@ -22,16 +22,15 @@ public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateComman
     public CloudApiKeyUpdateCommand(
         IMeadowCloudClient meadowCloudClient,
         ApiTokenService apiTokenService,
-        UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         ApiTokenService = apiTokenService;
     }
 
     protected override ValueTask PreAuthenticatedValidation()
     {
-        Logger?.LogInformation($"Updating API key `{NameOrId}` on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
+        Logger.LogInformation($"Updating API key `{NameOrId}` on Meadow.Cloud{(Host != DefaultHost ? $" ({Host.ToLowerInvariant()})" : string.Empty)}...");
         return ValueTask.CompletedTask;
     }
 

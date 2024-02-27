@@ -14,9 +14,8 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
     public FirmwareDownloadCommand(
         FileManager fileManager,
         IMeadowCloudClient meadowCloudClient,
-        UserService userService,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, userService, loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _fileManager = fileManager;
     }
@@ -48,26 +47,26 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
                 return;
             }
 
-            Logger?.LogInformation($"Latest available version is '{latest}'...");
+            Logger.LogInformation($"Latest available version is '{latest}'...");
             Version = latest;
         }
         else
         {
             explicitVersion = true;
-            Logger?.LogInformation($"Checking for firmware package '{Version}'...");
+            Logger.LogInformation($"Checking for firmware package '{Version}'...");
         }
 
         var isAvailable = await collection.IsVersionAvailableForDownload(Version);
 
         if (!isAvailable)
         {
-            Logger?.LogError($"Requested package version '{Version}' is not available");
+            Logger.LogError($"Requested package version '{Version}' is not available");
             return;
         }
 
         if (collection[Version] != null && Force == false)
         {
-            Logger?.LogInformation($"Firmware package '{Version}' already exists locally");
+            Logger.LogInformation($"Firmware package '{Version}' already exists locally");
 
             if (explicitVersion == false)
             {
@@ -76,7 +75,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
             return;
         }
 
-        Logger?.LogInformation($"Downloading firmware package '{Version}'...");
+        Logger.LogInformation($"Downloading firmware package '{Version}'...");
 
         try
         {
@@ -86,11 +85,11 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
 
             if (!result)
             {
-                Logger?.LogError($"Unable to download package '{Version}'");
+                Logger.LogError($"Unable to download package '{Version}'");
             }
             else
             {
-                Logger?.LogInformation($"Firmware package '{Version}' downloaded");
+                Logger.LogInformation($"Firmware package '{Version}' downloaded");
 
                 if (explicitVersion == false)
                 {
@@ -100,13 +99,13 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
         }
         catch (Exception ex)
         {
-            Logger?.LogError($"Unable to download package '{Version}': {ex.Message}");
+            Logger.LogError($"Unable to download package '{Version}': {ex.Message}");
         }
     }
 
     private void OnDownloadProgress(object? sender, long e)
     {
         // use Console so we can Write instead of Logger which only supports WriteLine
-        Console?.Output.Write($"Retrieved {e} bytes...                    \r");
+        Console.Output.Write($"Retrieved {e} bytes...                    \r");
     }
 }
