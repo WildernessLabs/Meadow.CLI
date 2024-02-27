@@ -60,7 +60,7 @@ public static class DfuUtils
         }
     }
 
-    public static async Task<bool> FlashFile(string fileName, string dfuSerialNumber, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
+    public static async Task<bool> FlashFile(string fileName, string? dfuSerialNumber, ILogger? logger = null, DfuFlashFormat format = DfuFlashFormat.Percent)
     {
         logger ??= NullLogger.Instance;
 
@@ -113,7 +113,16 @@ public static class DfuUtils
 
         try
         {
-            var args = $"-a 0 -D \"{fileName}\" -s {_osAddress}:leave";
+            string args;
+
+            if (string.IsNullOrWhiteSpace(dfuSerialNumber))
+            {
+                args = $"-a 0 -D \"{fileName}\" -s {_osAddress}:leave";
+            }
+            else
+            {
+                args = $"-a 0 -S {dfuSerialNumber} -D \"{fileName}\" -s {_osAddress}:leave";
+            }
 
             await RunDfuUtil(args, logger, format);
         }
