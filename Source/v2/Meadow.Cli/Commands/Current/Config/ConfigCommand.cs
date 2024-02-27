@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using CliFx.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;

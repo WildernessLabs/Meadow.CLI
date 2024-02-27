@@ -1,41 +1,34 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
     /// <inheritdoc/>
     public event EventHandler<long> DownloadProgress = default!;
-
     public event EventHandler<FirmwarePackage?> DefaultVersionChanged = default!;
-
-    public string PackageFileRoot { get; }
-
-    private readonly List<FirmwarePackage> _f7Packages = new();
 
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "WildernessLabs",
         "Firmware");
-    private FirmwarePackage? _defaultPackage;
 
-    internal F7FirmwarePackageCollection()
-        : this(DefaultF7FirmwareStoreRoot)
+    private readonly List<FirmwarePackage> _f7Packages = new();
+    private FirmwarePackage? _defaultPackage;
+    private F7FirmwareDownloadManager _downloadManager;
+
+    public string PackageFileRoot { get; }
+
+    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
+    public FirmwarePackage this[int index] => _f7Packages[index];
+
+    internal F7FirmwarePackageCollection(IMeadowCloudClient meadowCloudClient)
+        : this(DefaultF7FirmwareStoreRoot, meadowCloudClient)
     {
     }
 
-    public FirmwarePackage? this[string version] => _f7Packages.FirstOrDefault(p => p.Version == version);
-
-    public FirmwarePackage this[int index] => _f7Packages[index];
-
-    internal F7FirmwarePackageCollection(string rootPath)
+    internal F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
     {
+        _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
+
         if (!Directory.Exists(rootPath))
         {
             Directory.CreateDirectory(rootPath);
@@ -60,9 +53,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// <returns>A version number if an update is available, otherwise null</returns>
     public async Task<string?> UpdateAvailable()
     {
-        var downloadManager = new F7FirmwareDownloadManager();
-
-        var latestVersion = await downloadManager.GetLatestAvailableVersion();
+        var latestVersion = await _downloadManager.GetLatestAvailableVersion();
 
         var existing = _f7Packages.FirstOrDefault(p => p.Version == latestVersion);
 
@@ -76,30 +67,40 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
     public async Task DeletePackage(string version)
     {
-        var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
+        var packageToDelete = _f7Packages.FirstOrDefault(p => p.Version == version);
 
-        if (existing == null)
+        if (packageToDelete == null)
         {
-            throw new ArgumentException($"Version '{version}' not found locally.");
+            throw new ArgumentException($"Firmware '{version}' not found locally");
         }
 
-        // if we're deleting the default, we need to det another default
-        var i = _f7Packages.Count - 1;
-        while (DefaultPackage?.Version == _f7Packages[i].Version)
+        _f7Packages.Remove(packageToDelete);
+
+        Directory.Delete(Path.Combine(PackageFileRoot, version), true);
+
+        //are we deleting the default package
+        if (DefaultPackage != null && DefaultPackage.Version == version)
         {
-            i--;
+            FirmwarePackage? newDefault = null;
+
+            foreach (var package in _f7Packages.OrderByDescending(p => new Version(p.Version)))
+            {
+                if (DefaultPackage?.Version != package.Version)
+                {
+                    newDefault = package;
+                    break;
+                }
+            }
+
+            if (newDefault != null)
+            {
+                await SetDefaultPackage(newDefault.Version);
+            }
+            else
+            {
+                ClearDefaultPackage();
+            }
         }
-        var newDefault = _f7Packages[i].Version;
-
-        if (DefaultPackage != null)
-        {
-            _f7Packages.Remove(DefaultPackage);
-        }
-        await SetDefaultPackage(newDefault);
-
-        var path = Path.Combine(PackageFileRoot, version);
-
-        Directory.Delete(path, true);
     }
 
     public async Task SetDefaultPackage(string version)
@@ -108,59 +109,76 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
         var existing = _f7Packages.FirstOrDefault(p => p.Version == version);
 
+        _defaultPackage = existing;
+
         if (existing == null)
         {
-            throw new ArgumentException($"Version '{version}' not found locally.");
+            throw new ArgumentException($"Version '{version}' not found locally");
         }
 
-        var downloadManager = new F7FirmwareDownloadManager();
-        downloadManager.SetDefaultVersion(PackageFileRoot, version);
+        _downloadManager.SetDefaultVersion(PackageFileRoot, version);
+    }
+
+    public void ClearDefaultPackage()
+    {
+        _defaultPackage = null;
     }
 
     public async Task<bool> IsVersionAvailableForDownload(string version)
     {
-        var downloadManager = new F7FirmwareDownloadManager();
+        var meta = await _downloadManager.GetReleaseMetadata(version);
 
-        var meta = await downloadManager.GetReleaseMetadata(version);
+        if (meta == null)
+        {
+            return false;
+        }
 
-        if (meta == null) return false;
-        if (meta.Version != string.Empty) return true;
+        if (meta.Version != string.Empty)
+        {
+            return true;
+        }
 
         return false;
     }
 
     public async Task<string?> GetLatestAvailableVersion()
     {
-        var downloadManager = new F7FirmwareDownloadManager();
+        var meta = await _downloadManager.GetReleaseMetadata();
 
-        var meta = await downloadManager.GetReleaseMetadata();
+        if (meta == null)
+        {
+            return null;
+        }
 
-        if (meta == null) return null;
-        if (meta.Version == string.Empty) return null;
+        if (meta.Version == string.Empty)
+        {
+            return null;
+        }
 
         return meta.Version;
     }
 
     public async Task<bool> RetrievePackage(string version, bool overwrite = false)
     {
-        var downloadManager = new F7FirmwareDownloadManager();
-
         void ProgressHandler(object sender, long e)
         {
             DownloadProgress?.Invoke(this, e);
         }
 
-        downloadManager.DownloadProgress += ProgressHandler;
+        _downloadManager.DownloadProgress += ProgressHandler;
         try
         {
-            var meta = await downloadManager.GetReleaseMetadata(version);
-            if (meta == null) return false;
+            var meta = await _downloadManager.GetReleaseMetadata(version);
+            if (meta == null)
+            {
+                return false;
+            }
 
-            return await downloadManager.DownloadRelease(PackageFileRoot, version, overwrite);
+            return await _downloadManager.DownloadRelease(PackageFileRoot, version, overwrite);
         }
         finally
         {
-            downloadManager.DownloadProgress -= ProgressHandler;
+            _downloadManager.DownloadProgress -= ProgressHandler;
         }
     }
 
@@ -168,7 +186,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
         _f7Packages.Clear();
 
-        foreach (var directory in Directory.GetDirectories(PackageFileRoot))
+        var directories = Directory
+            .GetDirectories(PackageFileRoot)
+            .OrderByDescending(d => d);
+
+        foreach (var directory in directories)
         {
             var hasFiles = false;
 
@@ -244,7 +266,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return GetEnumerator();
     }
 
-    internal static class F7FirmwareFiles
+    public static class F7FirmwareFiles
     {
         public const string CoprocBootloaderFile = "bootloader.bin";
         public const string CoprocPartitionTableFile = "partition-table.bin";

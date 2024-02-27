@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -9,6 +10,8 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
     public string MeadowFile { get; init; } = default!;
 
+    private const string MeadowRootFolder = "meadow0";
+
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
@@ -16,20 +19,16 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         // get a list of files in the target folder
         var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
         if (string.IsNullOrWhiteSpace(folder))
         {
-            folder = "/meadow0";
+            folder = MeadowRootFolder;
         }
 
-        var fileList = await connection.GetFileList($"{folder}/", false);
+        var fileList = await connection.GetFileList($"/{folder}/", false);
 
         if (fileList == null || fileList.Length == 0)
         {
@@ -39,11 +38,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
         if (MeadowFile == "all")
         {
-            foreach (var f in fileList)
+            foreach (var file in fileList)
             {
-                var p = Path.GetFileName(f.Name);
-                Logger?.LogInformation($"Deleting file '{p}' from device...");
-                await connection.Device.DeleteFile(p, CancellationToken);
+                await DeleteFileRecursive(device, file, CancellationToken);
             }
         }
         else
@@ -58,7 +55,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             }
             else
             {
-                var wasRuntimeEnabled = await connection.Device.IsRuntimeEnabled(CancellationToken);
+                var wasRuntimeEnabled = await device.IsRuntimeEnabled(CancellationToken);
 
                 if (wasRuntimeEnabled)
                 {
@@ -67,8 +64,26 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 }
 
                 Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await connection.Device.DeleteFile(MeadowFile, CancellationToken);
+                await device.DeleteFile(MeadowFile, CancellationToken);
             }
         }
+    }
+
+    private async Task DeleteFileRecursive(IMeadowDevice device, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
+    {
+        if (fileInfo.IsDirectory)
+        {
+            var subfolderFiles = await device.GetFileList(fileInfo.Name, false, cancellationToken);
+
+            foreach (var subfolderFile in subfolderFiles)
+            {
+                await DeleteFileRecursive(device, subfolderFile, cancellationToken);
+            }
+            return;
+        }
+
+        var fileName = Path.GetFileName(fileInfo.Name);
+        Logger?.LogInformation($"Deleting file '{fileName}' from device...");
+        await device.DeleteFile(fileName, cancellationToken);
     }
 }

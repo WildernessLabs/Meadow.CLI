@@ -1,4 +1,4 @@
-﻿namespace Meadow.Cloud;
+﻿namespace Meadow.Cloud.Client;
 
 public static class Constants
 {

@@ -45,7 +45,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM10"
+      "commandLineArgs": "config route COM4"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -83,6 +83,10 @@
       "commandName": "Project",
       "commandLineArgs": "file delete Juego.pdb"
     },
+    "File Delete All": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete all"
+    },
     "File Read": {
       "commandName": "Project",
       "commandLineArgs": "file read test.txt \"f:\\temp\\test2.txt\""
@@ -117,7 +121,7 @@
     },
     "Firmware Delete": {
       "commandName": "Project",
-      "commandLineArgs": "firmware delete 1.2.0.1"
+      "commandLineArgs": "firmware delete 1.9.0.0"
     },
     "Firmware Write all": {
       "commandName": "Project",
@@ -125,7 +129,7 @@
     },
     "Firmware Write version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write -v 1.8.0.0"
+      "commandLineArgs": "firmware write -v 1.8.1.16"
     },
     "Firmware Write runtime": {
       "commandName": "Project",
@@ -134,6 +138,10 @@
     "Firmware Write esp": {
       "commandName": "Project",
       "commandLineArgs": "firmware write esp"
+    },
+    "Firmware Write esp with file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write esp -f C:\\Users\\ctack\\AppData\\Local\\WildernessLabs\\Firmware\\1.6.0.1\\MeadowComms.bin"
     },
     "Firmware Write os DFU": {
       "commandName": "Project",
@@ -207,13 +215,13 @@
       "commandName": "Project",
       "commandLineArgs": "device provision"
     },
-    "Cloud login": {
+    "Login": {
       "commandName": "Project",
-      "commandLineArgs": "cloud login"
+      "commandLineArgs": "login"
     },
-    "Cloud logout": {
+    "Logout": {
       "commandName": "Project",
-      "commandLineArgs": "cloud logout"
+      "commandLineArgs": "logout"
     },
     "Cloud collection list": {
       "commandName": "Project",
@@ -258,6 +266,10 @@
     "legacy download os": {
       "commandName": "Project",
       "commandLineArgs": "download os"
+    },
+    "legacy flash os": {
+      "commandName": "Project",
+      "commandLineArgs": "flash os"
     }
   }
 }

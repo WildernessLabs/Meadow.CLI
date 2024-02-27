@@ -23,6 +23,8 @@ namespace Meadow.Hcom
         Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
         Task UartTraceEnable(CancellationToken? cancellationToken = null);
         Task UartTraceDisable(CancellationToken? cancellationToken = null);
+        Task UartProfilerEnable(CancellationToken? cancellationToken = null);
+        Task UartProfilerDisable(CancellationToken? cancellationToken = null);
         Task EraseFlash(CancellationToken? cancellationToken = null);
         Task<string?> ReadFileString(string fileName, CancellationToken? cancellationToken = null);
         Task<string> GetPublicKey(CancellationToken? cancellationToken = null);

@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -11,7 +12,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     [CommandOption('c', Description = "The build configuration to trim", IsRequired = false)]
     public string? Configuration { get; init; }
 
-    [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
@@ -32,8 +33,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
 
             // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
@@ -41,8 +41,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
             if (candidates.Length == 0)
             {
-                Logger?.LogError($"Cannot find a compiled application at '{path}'");
-                return;
+                throw new CommandException($"{Strings.NoCompiledApplicationFound}", CommandExitCode.FileNotFound);
             }
 
             file = candidates.OrderByDescending(c => c.LastWriteTime).First();
@@ -54,7 +53,6 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName}");
-        Logger?.LogInformation("This may take a few seconds...");
 
         var cts = new CancellationTokenSource();
         ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);

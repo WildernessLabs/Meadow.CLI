@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
 {
@@ -18,6 +13,7 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
 
     FirmwarePackage? DefaultPackage { get; }
     Task SetDefaultPackage(string version);
+    void ClearDefaultPackage();
     Task DeletePackage(string version);
     Task Refresh();
     Task<string?> GetLatestAvailableVersion();

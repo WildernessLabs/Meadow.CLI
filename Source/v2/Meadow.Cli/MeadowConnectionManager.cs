@@ -20,17 +20,22 @@ public class MeadowConnectionManager
         _settingsManager = settingsManager;
     }
 
-    public IMeadowConnection? GetCurrentConnection()
+    public IMeadowConnection? GetCurrentConnection(bool forceReconnect = false)
     {
         var route = _settingsManager.GetSetting(SettingsManager.PublicSettings.Route);
 
         if (route == null)
         {
-            throw new Exception("No 'route' configuration set");
+            throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
-        if (_currentConnection != null) return _currentConnection;
+        if (_currentConnection != null && forceReconnect == false)
+        {
+            return _currentConnection;
+        }
+        _currentConnection?.Detach();
+        _currentConnection?.Dispose();
 
         // try to determine what the route is
         string? uri = null;
@@ -109,7 +114,9 @@ public class MeadowConnectionManager
     public static async Task<IList<string>> GetMeadowSerialPortsForOsx()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
+        {
             throw new PlatformNotSupportedException("This method is only supported on macOS");
+        }
 
         return await Task.Run(() =>
         {
@@ -203,7 +210,9 @@ public class MeadowConnectionManager
     public static IList<string> GetMeadowSerialPortsForWindows()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+        {
             throw new PlatformNotSupportedException("This method is only supported on Windows");
+        }
 
         try
         {

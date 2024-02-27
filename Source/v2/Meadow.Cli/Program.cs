@@ -1,14 +1,20 @@
 ﻿using CliFx;
 using Meadow.CLI;
 using Meadow.CLI.Commands.DeviceManagement;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
+using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Meadow.SoftwareManager")]
 
 public class Program
 {
@@ -49,19 +55,26 @@ public class Program
         services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
-
         services.AddSingleton<UserService>();
         services.AddSingleton<DeviceService>();
         services.AddSingleton<CollectionService>();
         services.AddSingleton<CommandService>();
         services.AddSingleton<PackageService>();
         services.AddSingleton<ApiTokenService>();
-        services.AddSingleton<IdentityManager, IdentityManager>();
+        services.AddSingleton<IdentityManager>();
+        services.AddSingleton<JsonDocumentBindingConverter>();
+        services.AddSingleton<IMeadowCloudClient, MeadowCloudClient>();
+        services.AddSingleton(MeadowCloudUserAgent.Cli);
+
+        services.AddHttpClient<MeadowCloudClient>();
+
+        // Required to disable console logging of HttpClient
+        services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         if (File.Exists("appsettings.json"))
         {
             var config = new ConfigurationBuilder()
-                                   .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                                   .SetBasePath(Directory.GetCurrentDirectory())
                                    .AddJsonFile("appsettings.json")
                                    .Build();
 
@@ -69,7 +82,7 @@ public class Program
         }
         else
         {
-            services.AddScoped<IConfiguration>(_ => null);
+            services.AddScoped<IConfiguration>(_ => null!);
         }
 
         AddCommandsAsServices(services);

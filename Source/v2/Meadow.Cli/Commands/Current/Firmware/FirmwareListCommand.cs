@@ -12,7 +12,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
 
     private FileManager FileManager { get; }
 
-    public FirmwareListCommand(FileManager fileManager, ILoggerFactory? loggerFactory)
+    public FirmwareListCommand(FileManager fileManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         FileManager = fileManager;
@@ -21,6 +21,9 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
     protected override async ValueTask ExecuteCommand()
     {
         await FileManager.Refresh();
+
+        //show the firmware path
+        Logger?.LogInformation($"Firmware location: {F7FirmwarePackageCollection.DefaultF7FirmwareStoreRoot}");
 
         if (Verbose)
         {
@@ -44,7 +47,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(p => new Version(p.Version)))
             {
                 if (package == collection.DefaultPackage)
                 {
@@ -85,7 +88,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
-            foreach (var package in collection)
+            foreach (var package in collection.OrderByDescending(p => new Version(p.Version)))
             {
                 if (package == collection.DefaultPackage)
                 {

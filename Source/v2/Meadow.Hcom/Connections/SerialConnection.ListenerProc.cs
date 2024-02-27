@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Meadow.Hcom
 {
@@ -65,7 +66,7 @@ namespace Meadow.Hcom
                     read:
                         try
                         {
-                            receivedLength = _port.BaseStream.Read(readBuffer, 0, readBuffer.Length);
+                            receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
                         }
                         catch (OperationCanceledException)
                         {
@@ -92,7 +93,6 @@ namespace Meadow.Hcom
                                     Debug.WriteLine($"Failed to re-open port");
                                 }
                             }
-
                             goto read;
                         }
 
@@ -207,6 +207,16 @@ namespace Meadow.Hcom
                                         // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
                                         _state = ConnectionState.Disconnected;
                                         _reconnectInProgress = true;
+
+                                        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                                        {
+                                            if (_port.IsOpen)
+                                            {
+                                                _port.Close();
+                                                Thread.Sleep(2000);
+                                                _port.Open();
+                                            }
+                                        }
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {
@@ -238,7 +248,7 @@ namespace Meadow.Hcom
                                             throw new Exception("Data received for unknown file");
                                         }
 
-                                        _readFileInfo.FileStream.Write(udp.FileData);
+                                        _readFileInfo.FileStream.Write(udp.FileData, 0, udp.FileData.Length);
                                     }
                                     else if (response is UploadCompletedResponse ucr)
                                     {

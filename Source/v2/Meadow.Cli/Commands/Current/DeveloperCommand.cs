@@ -19,11 +19,7 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         Logger?.LogInformation($"Setting developer parameter {Parameter} to {Value}");
 
@@ -36,6 +32,6 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
             Logger?.LogError(e.Message);
         };
 
-        await connection.Device.SetDeveloperParameter(Parameter, Value, CancellationToken);
+        await device.SetDeveloperParameter(Parameter, Value, CancellationToken);
     }
 }

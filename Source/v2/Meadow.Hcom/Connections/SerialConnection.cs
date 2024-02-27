@@ -706,6 +706,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await WaitForConcluded(null, cancellationToken);
     }
 
+    public override async Task UartProfilerEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartProfilerEnableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task UartProfilerDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<UartProfilerDisableRequest>();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
     public override async Task UartTraceDisable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<UartTraceDisableRequest>();
@@ -749,7 +771,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         EnqueueRequest(command);
 
         // we have to give time for the device to actually reset
-        await Task.Delay(500);
+        await Task.Delay(1500);
 
         await WaitForMeadowAttach(cancellationToken);
     }

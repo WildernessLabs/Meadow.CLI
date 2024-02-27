@@ -18,16 +18,11 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
 
-        var success = await connection.Device.ReadFile(MeadowFile, LocalFile, CancellationToken);
+        var success = await device.ReadFile(MeadowFile, LocalFile, CancellationToken);
 
         if (success)
         {

@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -13,25 +13,18 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
     [CommandOption("orgId", 'o', Description = "Optional organization ID", IsRequired = false)]
     public string? OrgId { get; init; }
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     public CloudPackageListCommand(
-        IdentityManager identityManager,
-        UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
+        IMeadowCloudClient meadowCloudClient,
         PackageService packageService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _packageService = packageService;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override async ValueTask ExecuteCloudCommand()
     {
-        Host ??= DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, CancellationToken);
+        var org = await GetOrganization(OrgId, CancellationToken);
 
         if (org == null) { return; }
 
@@ -39,14 +32,14 @@ public class CloudPackageListCommand : BaseCloudCommand<CloudPackageListCommand>
 
         if (packages == null || packages.Count == 0)
         {
-            Logger?.LogInformation("No packages found");
+            Logger.LogInformation("No packages found");
         }
         else
         {
-            Logger?.LogInformation("packages:");
+            Logger.LogInformation("packages:");
             foreach (var package in packages)
             {
-                Logger?.LogInformation($" {package.Id} | {package.Name}");
+                Logger.LogInformation($" {package.Id} | {package.Name}");
             }
         }
     }

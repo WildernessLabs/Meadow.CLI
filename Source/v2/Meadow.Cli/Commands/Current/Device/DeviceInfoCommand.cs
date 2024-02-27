@@ -9,19 +9,15 @@ public class DeviceInfoCommand : BaseDeviceCommand<DeviceInfoCommand>
     public DeviceInfoCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        Logger?.LogInformation($"Getting device info...");
+        Logger?.LogInformation(Strings.GettingDeviceInfo);
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        var device = await GetCurrentDevice();
 
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var deviceInfo = await device.GetDeviceInfo(CancellationToken);
 
-        var deviceInfo = await connection.Device.GetDeviceInfo(CancellationToken);
         if (deviceInfo != null)
         {
             Logger?.LogInformation(deviceInfo.ToString());

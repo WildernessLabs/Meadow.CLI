@@ -7,9 +7,9 @@ namespace Meadow.CLI.Core
 {
     public static class Constants
     {
-        public const string CLI_VERSION = "1.5.0.0";
-        public const ushort HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER = 0x0006;
-        public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0007;         // Used for transmission
+        public const string CLI_VERSION = "1.9.0.0";
+        public const ushort HCOM_PROTOCOL_PREVIOUS_VERSION_NUMBER = 0x0007;
+        public const ushort HCOM_PROTOCOL_CURRENT_VERSION_NUMBER = 0x0008;         // Used for transmission
         public const string WILDERNESS_LABS_USB_VID = "2E6A";
         public const string MEADOW_CLOUD_HOST_CONFIG_NAME = "meadowCloudHost";
     }

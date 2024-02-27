@@ -1,11 +1,7 @@
-﻿using Meadow.Cloud.Identity;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.IO.Hashing;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 
-namespace Meadow.Cloud;
+namespace Meadow.Cloud.Client;
 
 public class PackageService : CloudServiceBase
 {
@@ -62,7 +58,7 @@ public class PackageService : CloudServiceBase
         else
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException($"{response.StatusCode} {message}");
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 
@@ -110,7 +106,7 @@ public class PackageService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 

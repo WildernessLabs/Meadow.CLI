@@ -15,34 +15,31 @@ public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         if (Time == null)
         {
-            Logger?.LogInformation($"Getting device clock...");
-            var deviceTime = await connection.Device.GetRtcTime(CancellationToken);
+            Logger?.LogInformation(Strings.GettingDeviceClock);
+            var deviceTime = await device.GetRtcTime(CancellationToken);
             Logger?.LogInformation($"{deviceTime.Value:s}Z");
         }
         else
         {
             if (Time == "now")
             {
-                Logger?.LogInformation($"Setting device clock...");
-                await connection.Device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
+                Logger?.LogInformation(Strings.SettingDeviceClock);
+                await device.SetRtcTime(DateTimeOffset.UtcNow, CancellationToken);
             }
             else if (DateTimeOffset.TryParse(Time, out DateTimeOffset dto))
             {
-                Logger?.LogInformation($"Setting device clock...");
-                await connection.Device.SetRtcTime(dto, CancellationToken);
+                Logger?.LogInformation(Strings.SettingDeviceClock);
+                await device.SetRtcTime(dto, CancellationToken);
             }
             else
             {
-                Logger?.LogInformation($"Unable to parse '{Time}' to a valid time.");
+                throw new CommandException(
+                    $"Unable to parse '{Time}' to a valid time.",
+                    CommandExitCode.InvalidParameter);
             }
         }
     }

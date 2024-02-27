@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud;
+using Meadow.Cloud.Client;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -39,19 +39,21 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         {
             Host ??= DefaultHost;
 
-            Logger?.LogInformation("Retrieving your user and organization information...");
+            Logger?.LogInformation(Strings.RetrievingUserAndOrgInfo);
 
             var userOrgs = await _userService.GetUserOrgs(Host, CancellationToken).ConfigureAwait(false);
 
             if (userOrgs == null || !userOrgs.Any())
             {
-                Logger?.LogInformation($"Please visit {Host} to register your account.");
-                return;
+                throw new CommandException(
+                    $"Please visit {Host} to register your account.",
+                    CommandExitCode.InvalidParameter);
             }
             else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
             {
-                Logger?.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
-                return;
+                throw new CommandException(
+                    Strings.MemberOfMoreThanOneOrg,
+                    CommandExitCode.InvalidParameter);
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
             {
@@ -62,33 +64,30 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
             if (org == null)
             {
-                Logger?.LogInformation($"Unable to find an organization with a Name or ID matching '{OrgId}'");
-                return;
+                throw new CommandException(
+                    string.Format(Strings.UnableToFindMatchingOrg, OrgId),
+                    CommandExitCode.InvalidParameter);
             }
         }
         catch (MeadowCloudAuthException)
         {
-            Logger?.LogError($"You must be signed in to execute this command.");
-            Logger?.LogError($"Please run \"meadow cloud login\" to sign in to Meadow.Cloud.");
-            return;
+            throw new CommandException(
+                Strings.MustBeSignedInRunMeadowLogin,
+                CommandExitCode.NotAuthorized);
         }
 
-        var connection = await GetCurrentConnection();
+        var device = await GetCurrentDevice();
 
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var info = await device.GetDeviceInfo(CancellationToken);
 
-        var info = await connection.Device.GetDeviceInfo(CancellationToken);
-
-        Logger?.LogInformation("Requesting device public key (this will take a minute)...");
-        var publicKey = await connection.Device.GetPublicKey(CancellationToken);
+        Logger?.LogInformation(Strings.RequestingDevicePublicKey);
+        var publicKey = await device.GetPublicKey(CancellationToken);
 
         if (string.IsNullOrWhiteSpace(publicKey))
         {
-            Logger?.LogError("Could not retrieve device's public key.");
-            return;
+            throw new CommandException(
+                Strings.CouldNotRetrievePublicKey,
+                CommandExitCode.GeneralError);
         }
 
         var delimiters = new string[]
@@ -112,11 +111,12 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         if (!valid)
         {
-            Logger?.LogError("Device returned an invali dpublic key");
-            return;
+            throw new CommandException(
+                Strings.DeviceReturnedInvalidPublicKey,
+                CommandExitCode.GeneralError);
         }
 
-        Logger?.LogInformation("Provisioning device with Meadow.Cloud...");
+        Logger?.LogInformation(Strings.ProvisioningWithCloud);
         var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
         var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 
@@ -124,11 +124,13 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         if (result.isSuccess)
         {
-            Logger?.LogInformation("Device provisioned successfully");
+            Logger?.LogInformation(Strings.ProvisioningSucceeded);
         }
         else
         {
-            Logger?.LogError($"Failed to provision device: {result.message}");
+            throw new CommandException(
+                string.Format(Strings.ProvisioningFailed, result.message),
+                CommandExitCode.GeneralError);
         }
     }
 }

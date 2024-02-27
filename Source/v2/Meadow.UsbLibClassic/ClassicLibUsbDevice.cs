@@ -32,6 +32,11 @@ public class ClassicLibUsbDevice : ILibUsbDevice
         _device = usbDevice;
     }
 
+    public void Dispose()
+    {
+        _device.Device.Close();
+    }
+
     public string GetDeviceSerialNumber()
     {
         if (_device != null && _device.DeviceProperties != null)

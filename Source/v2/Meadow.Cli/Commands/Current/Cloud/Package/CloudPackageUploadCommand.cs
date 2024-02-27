@@ -1,6 +1,6 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -17,46 +17,42 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
     [CommandOption("description", 'd', Description = "Description of the package", IsRequired = false)]
     public string? Description { get; init; }
 
-    [CommandOption("host", Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
-    public string? Host { get; set; }
-
     private readonly PackageService _packageService;
 
     public CloudPackageUploadCommand(
-        IdentityManager identityManager,
-        UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
+        IMeadowCloudClient meadowCloudClient,
         PackageService packageService,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(meadowCloudClient, loggerFactory)
     {
         _packageService = packageService;
     }
-
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask PreAuthenticatedValidation()
     {
         if (!File.Exists(MpakPath))
         {
-            Logger?.LogError($"Package {MpakPath} does not exist");
-            return;
+            throw new CommandException($"Package {MpakPath} does not exist");
         }
 
-        Host ??= DefaultHost;
-        var org = await ValidateOrg(Host, OrgId, CancellationToken);
+        return ValueTask.CompletedTask;
+    }
+
+    protected override async ValueTask ExecuteCloudCommand()
+    {
+        var org = await GetOrganization(OrgId, CancellationToken);
 
         if (org == null) { return; }
 
         try
         {
-            Logger?.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
+            Logger.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
             var package = await _packageService.UploadPackage(MpakPath, org.Id, Description ?? string.Empty, Host, CancellationToken);
-            Logger?.LogInformation($"Upload complete. Package Id: {package.Id}");
+            Logger.LogInformation($"Upload complete. Package Id: {package.Id}");
         }
         catch (MeadowCloudException mex)
         {
-            Logger?.LogError($"Upload failed: {mex.Message}");
+            Logger.LogError($"Upload failed: {mex.Message}");
         }
     }
 }

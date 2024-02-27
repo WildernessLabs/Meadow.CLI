@@ -1,18 +1,19 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud;
-using Meadow.Cloud.Identity;
+using Meadow.Cloud.Client;
+using Meadow.Cloud.Client.Identity;
+using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 [Command("cloud package create", Description = "Create a Meadow Package (MPAK)")]
-public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateCommand>
+public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 {
-    [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? ProjectPath { get; set; }
 
-    [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
+    [CommandOption("configuration", 'c', Description = "The build configuration to compile", IsRequired = false)]
     public string Configuration { get; init; } = "Release";
 
     [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
@@ -22,18 +23,17 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         IsRequired = false)]
     public string Filter { get; init; } = "*";
 
+    [CommandOption("osVersion", 'v', Description = "Target OS version for the app", IsRequired = false)]
+    public string? OsVersion { get; init; } = default!;
+
     private readonly IPackageManager _packageManager;
     private readonly FileManager _fileManager;
 
     public CloudPackageCreateCommand(
-        IdentityManager identityManager,
-        UserService userService,
-        DeviceService deviceService,
-        CollectionService collectionService,
         IPackageManager packageManager,
         FileManager fileManager,
-        ILoggerFactory? loggerFactory)
-        : base(identityManager, userService, deviceService, collectionService, loggerFactory)
+        ILoggerFactory loggerFactory)
+        : base(loggerFactory)
     {
         _packageManager = packageManager;
         _fileManager = fileManager;
@@ -41,29 +41,34 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
 
     protected override async ValueTask ExecuteCommand()
     {
-        ProjectPath ??= AppDomain.CurrentDomain.BaseDirectory;
+        ProjectPath ??= Directory.GetCurrentDirectory();
+        ProjectPath = Path.GetFullPath(ProjectPath);
+        if (!Directory.Exists(ProjectPath))
+        {
+            throw new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
+        }
 
         // build
-        Logger?.LogInformation($"Building {Configuration} version of application...");
+        Logger.LogInformation(string.Format(Strings.BuildingSpecifiedConfiguration, Configuration));
         if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
         {
-            return;
+            throw new CommandException(Strings.BuildFailed);
         }
 
         var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
 
         if (candidates.Length == 0)
         {
-            Logger?.LogError($"Cannot find a compiled application at '{ProjectPath}'");
-            return;
+            throw new CommandException($"Cannot find a compiled application at '{ProjectPath}'", CommandExitCode.FileNotFound);
         }
 
         var store = _fileManager.Firmware["Meadow F7"];
         await store.Refresh();
-        var osVersion = store?.DefaultPackage?.Version ?? "unknown";
+        var osVersion = OsVersion ?? store?.DefaultPackage?.Version ?? "unknown";
 
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();        // trim
-        Logger?.LogInformation($"Trimming application...");
+        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+        // trim
+        Logger.LogInformation(string.Format(Strings.TrimmingApplicationForSpecifiedVersion, osVersion));
         await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
 
         // package
@@ -71,16 +76,16 @@ public class CloudPackageCreateCommand : BaseCloudCommand<CloudPackageCreateComm
         //TODO - properly manage shared paths
         var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
 
-        Logger?.LogInformation($"Assembling the MPAK...");
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, Filter, true, CancellationToken);
+        Logger.LogInformation(Strings.AssemblingCloudPackage);
+        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {
-            Logger?.LogInformation($"Done. Package is available at {packagePath}");
+            Logger.LogInformation(string.Format(Strings.PackageAvailableAtSpecifiedPath, packagePath));
         }
         else
         {
-            Logger?.LogError($"Package assembly failed.");
+            throw new CommandException(Strings.PackageAssemblyFailed);
         }
     }
 }

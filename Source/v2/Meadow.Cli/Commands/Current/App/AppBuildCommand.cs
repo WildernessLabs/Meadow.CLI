@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -11,7 +12,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
 
-    [CommandParameter(0, Name = "Path to project file", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppBuildCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
@@ -22,7 +23,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
     protected override ValueTask ExecuteCommand()
     {
-        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
+        string path = Path ?? Directory.GetCurrentDirectory();
 
         // is the path a file?
         if (!File.Exists(path))
@@ -30,8 +31,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger?.LogError($"Invalid application path '{path}'");
-                return ValueTask.CompletedTask;
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
         }
 
@@ -44,7 +44,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
         if (!success)
         {
-            Logger?.LogError($"Build failed!");
+            throw new CommandException("Build failed", CommandExitCode.GeneralError);
         }
         else
         {

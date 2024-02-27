@@ -11,7 +11,7 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
         : base(fileManager, settingsManager, loggerFactory)
     { }
 
-    [CommandParameter(0, Name = "Version number to delete", IsRequired = true)]
+    [CommandParameter(0, Description = "Version number to delete", IsRequired = true)]
     public string Version { get; init; } = default!;
 
     protected override async ValueTask ExecuteCommand()
@@ -22,8 +22,27 @@ public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>
         // TODO: add switch and support for other platforms
         var collection = FileManager.Firmware["Meadow F7"];
 
+        bool isDefault = false;
+
+        if (collection.DefaultPackage != null && collection.DefaultPackage.Version == Version)
+        {
+            isDefault = true;
+        }
+
         Logger?.LogInformation($"Deleting firmware '{Version}'...");
 
         await collection.DeletePackage(Version);
+
+        if (isDefault)
+        {
+            if (collection.DefaultPackage == null)
+            {
+                Logger?.LogInformation("Default firmware deleted - no default package set");
+            }
+            else
+            {
+                Logger?.LogInformation($"Default firmware deleted - default package set to {collection.DefaultPackage.Version}");
+            }
+        }
     }
 }

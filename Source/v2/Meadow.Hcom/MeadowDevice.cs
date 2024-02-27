@@ -84,6 +84,16 @@ namespace Meadow.Hcom
             await _connection.UartTraceDisable(cancellationToken);
         }
 
+        public async Task UartProfilerEnable(CancellationToken? cancellationToken = null)
+        {
+            await _connection.UartProfilerEnable(cancellationToken);
+        }
+
+        public async Task UartProfilerDisable(CancellationToken? cancellationToken = null)
+        {
+            await _connection.UartProfilerDisable(cancellationToken);
+        }
+
         private int GetFileTargetAddress(string fileName)
         {
             // TODO: determine device type so we can map the file names to target locations

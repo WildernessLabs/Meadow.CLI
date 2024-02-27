@@ -1,5 +1,5 @@
 ﻿using CliFx.Attributes;
-
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -9,7 +9,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;
 
-    [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to folder containing the built application", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -21,11 +21,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var connection = await GetCurrentConnection();
-
-        if (connection == null)
-        {
-            return;
-        }
 
         string path = Path ?? Environment.CurrentDirectory;
 
@@ -63,8 +58,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                Logger?.LogError($"Invalid application path '{path}'");
-                return;
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
             }
 
             // does the directory have an App.dll in it?
@@ -76,8 +70,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
                 if (candidates.Length == 0)
                 {
-                    Logger?.LogError($"Cannot find a compiled application at '{path}'");
-                    return;
+                    throw new CommandException($"Cannot find a compiled application at '{path}'", CommandExitCode.FileNotFound);
                 }
 
                 file = candidates.OrderByDescending(c => c.LastWriteTime).First();
@@ -95,6 +88,8 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (isRuntimeEnabled)
         {
+            await Task.Delay(1000);
+
             // restore runtime state
             Logger?.LogInformation("Enabling runtime...");
 

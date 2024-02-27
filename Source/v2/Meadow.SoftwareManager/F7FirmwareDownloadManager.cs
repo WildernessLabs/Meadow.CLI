@@ -1,24 +1,15 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Meadow.Software;
+﻿namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
+    private readonly IMeadowCloudClient _meadowCloudClient;
+
     public event EventHandler<long> DownloadProgress = default!;
 
-    private const string VersionCheckUrlRoot =
-           "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
-
-    private readonly HttpClient Client = new()
+    public F7FirmwareDownloadManager(IMeadowCloudClient meadowCloudClient)
     {
-        Timeout = TimeSpan.FromMinutes(5)
-    };
+        _meadowCloudClient = meadowCloudClient;
+    }
 
     public async Task<string> GetLatestAvailableVersion()
     {
@@ -27,39 +18,23 @@ internal class F7FirmwareDownloadManager
         return contents?.Version ?? string.Empty;
     }
 
-    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null)
+    public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
-        string versionCheckUrl;
-        if (version is null || string.IsNullOrWhiteSpace(version))
-        {
-            versionCheckUrl = VersionCheckUrlRoot + "latest.json";
-        }
-        else
-        {
-            versionCheckUrl = VersionCheckUrlRoot + version + ".json";
-        }
+        version = string.IsNullOrWhiteSpace(version) ? "latest" : version;
+        var response = await _meadowCloudClient.Firmware.GetVersion("Meadow_Beta", version!, cancellationToken);
 
-        string versionCheckFile;
-
-        try
-        {
-            versionCheckFile = await DownloadFile(new Uri(versionCheckUrl));
-        }
-        catch
+        if (response == null)
         {
             return null;
         }
 
-        try
+        return new F7ReleaseMetadata()
         {
-            var content = JsonSerializer.Deserialize<F7ReleaseMetadata>(File.ReadAllText(versionCheckFile));
-
-            return content;
-        }
-        catch
-        {
-            return null;
-        }
+            Version = response.Version,
+            MinCLIVersion = response.MinCLIVersion,
+            DownloadURL = response.DownloadUrl,
+            NetworkDownloadURL = response.NetworkDownloadUrl
+        };
     }
 
     public void SetDefaultVersion(string destinationRoot, string version)
@@ -69,8 +44,7 @@ internal class F7FirmwareDownloadManager
 
     public async Task<bool> DownloadRelease(string destinationRoot, string version, bool overwrite = false)
     {
-        var downloadManager = new F7FirmwareDownloadManager();
-        var meta = await downloadManager.GetReleaseMetadata(version);
+        var meta = await GetReleaseMetadata(version);
         if (meta == null) return false;
 
         CreateFolder(destinationRoot, false);
@@ -98,6 +72,7 @@ internal class F7FirmwareDownloadManager
         }
         catch
         {
+            Directory.Delete(local_path, true);
             throw new Exception($"Unable to download OS files for {version}");
         }
 
@@ -107,6 +82,7 @@ internal class F7FirmwareDownloadManager
         }
         catch
         {
+            Directory.Delete(local_path, true);
             throw new Exception($"Unable to download Coprocessor files for {version}");
         }
 
@@ -159,10 +135,7 @@ internal class F7FirmwareDownloadManager
 
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = await Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-        response.EnsureSuccessStatusCode();
+        using var response = await _meadowCloudClient.Firmware.GetDownloadResponse(uri, cancellationToken);
 
         var downloadFileName = Path.GetTempFileName();
 

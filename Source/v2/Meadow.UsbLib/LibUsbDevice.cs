@@ -29,11 +29,16 @@ public class LibUsbProvider : ILibUsbProvider
 
     public class LibUsbDevice : ILibUsbDevice
     {
-        private IUsbDevice _device;
+        private readonly IUsbDevice _device;
 
         public LibUsbDevice(IUsbDevice usbDevice)
         {
             _device = usbDevice;
+        }
+
+        public void Dispose()
+        {
+            _device?.Dispose();
         }
 
         public string GetDeviceSerialNumber()
@@ -46,7 +51,6 @@ public class LibUsbProvider : ILibUsbProvider
                 serialNumber = _device.Info?.SerialNumber ?? string.Empty;
                 _device.Close();
             }
-
 
             return serialNumber;
         }

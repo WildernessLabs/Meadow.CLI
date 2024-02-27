@@ -11,7 +11,7 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
         : base(fileManager, settingsManager, loggerFactory)
     { }
 
-    [CommandParameter(0, Name = "Version number to use as default", IsRequired = false)]
+    [CommandParameter(0, Description = "Version number to use as default", IsRequired = false)]
     public string? Version { get; init; }
 
     protected override async ValueTask ExecuteCommand()

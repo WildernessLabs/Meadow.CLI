@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<LangVersion>10</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Dfu\Meadow.Dfu.csproj" />
+    <ProjectReference Include="..\Meadow.HCom\Meadow.HCom.csproj" />
+    <ProjectReference Include="..\Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj" />
+    <ProjectReference Include="..\Meadow.UsbLibClassic\Meadow.UsbLibClassic.csproj" />
+    <ProjectReference Include="..\Meadow.UsbLib\Meadow.UsbLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>

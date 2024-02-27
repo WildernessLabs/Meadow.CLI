@@ -8,6 +8,9 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
+    private const string MeadowRootFolder = "meadow0";
+    private const string FolderLabel = "[folder]";
+
     [CommandOption("verbose", 'v', IsRequired = false)]
     public bool Verbose { get; init; }
 
@@ -20,18 +23,21 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
+        var device = await GetCurrentDevice();
 
         if (Folder != null)
         {
             if (Folder.EndsWith('/') == false)
             {
                 Folder += "/";
+            }
+            if (Folder.StartsWith('/') == false)
+            {
+                Folder = $"/{Folder}";
+            }
+            if (Folder.Contains(MeadowRootFolder) == false)
+            {
+                Folder = $"/{MeadowRootFolder}{Folder}";
             }
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
@@ -41,7 +47,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await connection.Device.GetFileList(Folder ?? "/meadow0/", Verbose, CancellationToken);
+        var files = await device.GetFileList(Folder ?? $"/{MeadowRootFolder}/", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {
@@ -49,6 +55,12 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
         }
         else
         {
+            files = files.OrderBy(file =>
+            {
+                string prefix = file.IsDirectory ? "0" : "1";
+                return $"{prefix}_{file.Name}";
+            }).ToArray();
+
             if (Verbose)
             {
                 var longestFileName = files.Select(x => x.Name.Length)
@@ -64,19 +76,27 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
                     totalBlocksUsed += ((file.Size ?? 0) / FileSystemBlockSize) + 1;
 
                     var line = $"{file.Name.PadRight(longestFileName)}";
-                    line = $"{line}\t{file.Crc:x8}";
 
-                    if (file.Size > 1000000)
+                    if (file.IsDirectory)
                     {
-                        line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
-                    }
-                    else if (file.Size > 1000)
-                    {
-                        line = $"{line}\t{file.Size / 1000,7:0} kB   ";
+                        line = $"{line}\t{FolderLabel}";
                     }
                     else
                     {
-                        line = $"{line}\t{file.Size,7} bytes";
+                        line = $"{line}\t{file.Crc:x8}";
+
+                        if (file.Size > 1000000)
+                        {
+                            line = $"{line}\t{file.Size / 1000000d,7:0.0} MB   ";
+                        }
+                        else if (file.Size > 1000)
+                        {
+                            line = $"{line}\t{file.Size / 1000,7:0} kB   ";
+                        }
+                        else
+                        {
+                            line = $"{line}\t{file.Size,7} bytes";
+                        }
                     }
 
                     Logger?.LogInformation(line);
@@ -93,7 +113,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 foreach (var file in files)
                 {
-                    Logger?.LogInformation(file.Name);
+                    Logger?.LogInformation(file.Name + (file.IsDirectory ? FolderLabel : string.Empty));
                 }
 
                 Logger?.LogInformation($"\t{files.Length} file(s)");

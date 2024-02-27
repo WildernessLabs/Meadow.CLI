@@ -12,9 +12,14 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         ConnectionManager = connectionManager;
     }
 
-    protected async Task<IMeadowConnection?> GetCurrentConnection()
+    protected async Task<IMeadowDevice> GetCurrentDevice()
     {
-        var connection = ConnectionManager.GetCurrentConnection();
+        return (await GetCurrentConnection()).Device ?? throw CommandException.MeadowDeviceNotFound;
+    }
+
+    protected async Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
+    {
+        var connection = ConnectionManager.GetCurrentConnection(forceReconnect);
 
         if (connection != null)
         {
@@ -26,34 +31,20 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
             try
             {
                 await connection.Attach(CancellationToken);
-
-                if (CancellationToken.IsCancellationRequested)
-                {
-                    Logger?.LogInformation($"Cancelled");
-                    return null;
-                }
-
-                if (connection.Device == null)
-                {
-                    Logger?.LogError("No device found");
-                }
-
                 return connection;
             }
             catch (TimeoutException)
             {
-                Logger?.LogError($"Timeout attempting to attach to device on {connection?.Name}");
+                throw new CommandException("Timeout attempting to attach to device on {connection?.Name}", CommandExitCode.ConnectionNotFound);
             }
             catch (Exception ex)
             {
-                Logger?.LogError($"Failed: {ex.Message}");
+                throw new CommandException($"No device found: {ex.Message}", CommandExitCode.ConnectionNotFound);
             }
         }
         else
         {
-            Logger?.LogError("Current Connnection Unavailable");
+            throw new CommandException("Connection to Meadow unavailable", CommandExitCode.ConnectionNotFound);
         }
-
-        return null;
     }
 }

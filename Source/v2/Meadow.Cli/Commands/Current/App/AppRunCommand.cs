@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Hcom;
+using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -16,7 +17,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
     public string? Configuration { get; set; }
 
-    [CommandParameter(0, Name = "Path to folder containing the built application", IsRequired = false)]
+    [CommandParameter(0, Description = "Path to folder containing the application to build", IsRequired = false)]
     public string? Path { get; init; }
 
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -27,20 +28,21 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        string path = Path ?? Directory.GetCurrentDirectory();
+
+        // is the path a file?
+        if (!File.Exists(path))
+        {
+            // is it a valid directory?
+            if (!Directory.Exists(path))
+            {
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
+            }
+        }
+
+        Configuration ??= "Release";
+
         var connection = await GetCurrentConnection();
-
-        if (connection == null)
-        {
-            return;
-        }
-
-        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
-
-        if (!Directory.Exists(path))
-        {
-            Logger?.LogError($"Target directory '{path}' not found");
-            return;
-        }
 
         var lastFile = string.Empty;
 
@@ -55,12 +57,12 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await BuildApplication(path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application build failed", CommandExitCode.GeneralError);
         }
 
         if (!await TrimApplication(path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application trimming failed", CommandExitCode.GeneralError);
         }
 
         // illink returns before all files are written - attempt a delay of 1s
@@ -68,7 +70,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!await DeployApplication(connection, path, CancellationToken))
         {
-            return;
+            throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
         }
 
         Logger?.LogInformation("Enabling the runtime...");
@@ -87,7 +89,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private Task<bool> BuildApplication(string path, CancellationToken cancellationToken)
     {
-        if (Configuration == null) { Configuration = "Debug"; }
+        Configuration ??= "Debug";
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
@@ -102,7 +104,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (candidates.Length == 0)
         {
-            Logger?.LogError($"Cannot find a compiled application at '{path}'");
+            Logger?.LogError($"{Strings.NoCompiledApplicationFound} at '{path}'");
             return false;
         }
 
@@ -110,7 +112,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         // if no configuration was provided, find the most recently built
         Logger?.LogInformation($"Trimming {file.FullName}");
-        Logger?.LogInformation("This may take a few seconds...");
 
         var cts = new CancellationTokenSource();
         ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);
@@ -121,7 +122,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         return true;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken _)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 

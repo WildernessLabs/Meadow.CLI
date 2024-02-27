@@ -1,10 +1,4 @@
-﻿﻿using Meadow.Cloud;
-using Meadow.Cloud.Identity;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-
-namespace Meadow.Cloud;
+﻿namespace Meadow.Cloud.Client;
 
 public class ApiTokenService : CloudServiceBase
 {
@@ -13,7 +7,7 @@ public class ApiTokenService : CloudServiceBase
     public ApiTokenService(IdentityManager identityManager) : base(identityManager)
     {
     }
-
+    
     public async Task<IEnumerable<GetApiTokenResponse>> GetApiTokens(string host, CancellationToken? cancellationToken)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
@@ -22,7 +16,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         return await response.Content.ReadFromJsonAsync<IEnumerable<GetApiTokenResponse>>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None)
@@ -38,7 +32,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         var result = await response.Content.ReadFromJsonAsync<CreateApiTokenResponse>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None);
@@ -54,7 +48,7 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
 
         var result = await response.Content.ReadFromJsonAsync<UpdateApiTokenResponse>(JsonSerializerOptions, cancellationToken ?? CancellationToken.None);
@@ -69,49 +63,45 @@ public class ApiTokenService : CloudServiceBase
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
-            throw new MeadowCloudException(message);
+            throw new MeadowCloudException(response.StatusCode, response: message);
         }
     }
 }
 
-public record GetApiTokenResponse(
-    string Id,
-    string Name,
-    DateTimeOffset ExpiresAt,
-    string[] Scopes
-)
-{ }
+public class GetApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+{
+    public string Id { get; set; } = id;
+    public string Name { get; set; } = name;
+    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
+    public string[] Scopes { get; set; } = scopes;
+}
 
-public record CreateApiTokenRequest
-(
-    string Name,
-    int Duration,
-    string[] Scopes
-)
-{ }
+public class CreateApiTokenRequest(string name, int duration, string[] scopes)
+{
+    public string Name { get; set; } = name;
+    public int Duration { get; set; } = duration;
+    public string[] Scopes { get; set; } = scopes;
+}
 
-public record CreateApiTokenResponse
-(
-    string Id,
-    string Name,
-    DateTimeOffset ExpiresAt,
-    string[] Scopes,
-    string Token
-)
-{ }
+public class CreateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes, string token)
+{
+    public string Id { get; set; } = id;
+    public string Name { get; set; } = name;
+    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
+    public string[] Scopes { get; set; } = scopes;
+    public string Token { get; set; } = token;
+}
 
-public record UpdateApiTokenRequest
-(
-    string Name,
-    string[] Scopes
-)
-{ }
+public class UpdateApiTokenRequest(string name, string[] scopes)
+{
+    public string Name { get; set; } = name;
+    public string[] Scopes { get; set; } = scopes;
+}
 
-public record UpdateApiTokenResponse
-(
-    string Id,
-    string Name,
-    DateTimeOffset ExpiresAt,
-    string[] Scopes
-)
-{ }
+public class UpdateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+{
+    public string Id { get; set; } = id;
+    public string Name { get; set; } = name;
+    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
+    public string[] Scopes { get; set; } = scopes;
+}

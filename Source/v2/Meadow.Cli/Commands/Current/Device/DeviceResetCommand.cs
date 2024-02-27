@@ -14,13 +14,6 @@ public class DeviceResetCommand : BaseDeviceCommand<DeviceResetCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
-
-        if (connection == null || connection.Device == null)
-        {
-            return;
-        }
-
-        await connection.Device.Reset();
+        await (await GetCurrentDevice()).Reset();
     }
 }

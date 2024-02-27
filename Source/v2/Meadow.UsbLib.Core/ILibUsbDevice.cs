@@ -5,7 +5,7 @@ public interface ILibUsbProvider
     List<ILibUsbDevice> GetDevicesInBootloaderMode();
 }
 
-public interface ILibUsbDevice
+public interface ILibUsbDevice : IDisposable
 {
     string GetDeviceSerialNumber();
 }
