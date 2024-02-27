@@ -441,10 +441,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
         }
 
-        string serialNumber;
         try
-        {
-            serialNumber = libUsbDevice.GetDeviceSerialNumber();
+        {   //validate device
+            var serialNumber = libUsbDevice.GetDeviceSerialNumber();
         }
         catch
         {
@@ -456,7 +455,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             await DfuUtils.FlashFile(
                 osFile,
-                serialNumber,
+                string.Empty, //serial number isn't needed to flash the OS and may cause issues on MacOS
                 logger: Logger,
                 format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
