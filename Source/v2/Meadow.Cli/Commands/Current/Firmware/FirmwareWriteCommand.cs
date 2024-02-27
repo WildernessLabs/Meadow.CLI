@@ -365,12 +365,32 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         var devices = provider.GetDevicesInBootloaderMode();
 
-        return devices.Count switch
+        if (devices.Count == 0)
         {
-            0 => null,
-            1 => devices[0],
-            _ => throw new CommandException("Multiple devices found in bootloader mode - only connect one device"),
-        };
+            return null;
+        }
+        else if (devices.Count == 1)
+        {
+            return devices[0];
+        }
+        else if (devices.Count == 2)
+        {   //this is a workaround for a specific case when a bad 2nd device is returned by the libusb provider on MacOS
+            //this fix is constrained to the known reproducible case
+            var serial2 = devices[1].GetDeviceSerialNumber();
+
+            if (serial2.Length > 12)
+            {
+                return devices[0];
+            }
+            else
+            {
+                throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
+            }
+        }
+        else
+        {
+            throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
+        }
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
@@ -435,10 +455,10 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         try
         {
             await DfuUtils.FlashFile(
-            osFile,
-            serialNumber,
-            logger: Logger,
-            format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                osFile,
+                serialNumber,
+                logger: Logger,
+                format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
         catch (ArgumentException)
         {
