@@ -21,7 +21,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     public string? Version { get; set; }
 
     [CommandOption("use-dfu", 'd', IsRequired = false, Description = "Force using DFU/HCOM for writing files")]
-    public bool UseDfu { get; set; }
+    public bool UseDfu { get; set; } = true;
 
     [CommandOption("file", 'f', IsRequired = false, Description = "Send only the specified file")]
     public string? IndividualFile { get; set; }
@@ -55,7 +55,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             _lastWriteProgress = p;
 
-            Logger?.LogInformation($"Writing {e.fileName}: {p:0}%     {(p < 100 ? string.Empty : "\r\n")}");
+            Logger?.LogInformation($"{Strings.Writing} {e.fileName}: {p:0}%     {(p < 100 ? string.Empty : "\r\n")}");
         };
         connection.DeviceMessageReceived += (s, e) =>
         {
@@ -74,7 +74,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (await connection.Device.IsRuntimeEnabled())
         {
-            Logger?.LogInformation("Disabling device runtime...");
+            Logger?.LogInformation($"{Strings.DisablingDeviceRuntime}...");
             await connection.Device.RuntimeDisable();
         }
 
@@ -111,7 +111,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var fullPath = Path.GetFullPath(IndividualFile);
             if (!File.Exists(fullPath))
             {
-                throw new CommandException($"Invalid firmware path {fullPath}", CommandExitCode.FileNotFound);
+                throw new CommandException(string.Format(Strings.InvalidFirmwareForSpecifiedPath, fullPath), CommandExitCode.FileNotFound);
             }
 
             // set the file type
@@ -123,14 +123,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile => new[] { FirmwareType.ESP },
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile => new[] { FirmwareType.ESP },
                 F7FirmwarePackageCollection.F7FirmwareFiles.CoprocPartitionTableFile => new[] { FirmwareType.ESP },
-                _ => throw new CommandException($"Unknown firmware file {Path.GetFileName(IndividualFile)}")
+                _ => throw new CommandException(string.Format(Strings.UnknownSpecifiedFirmwareFile, Path.GetFileName(IndividualFile)))
             };
 
-            Logger?.LogInformation($"Writing firmware file '{fullPath}'...");
+            Logger?.LogInformation(string.Format($"{Strings.WritingSpecifiedFirmwareFile}...", fullPath));
         }
         else if (FirmwareFileTypes == null)
         {
-            Logger?.LogInformation($"Writing all firmware for version '{package.Version}'...");
+            Logger?.LogInformation(string.Format(Strings.WritingAllFirmwareForSpecifiedVersion, package.Version));
 
             FirmwareFileTypes = new FirmwareType[]
             {
@@ -154,8 +154,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (osFileWithBootloader == null && osFileWithoutBootloader == null)
             {
-                Logger?.LogError($"OS file not found for version '{package.Version}'");
-                return;
+                throw new CommandException(string.Format(Strings.OsFileNotFoundForSpecifiedVersion, package.Version));
             }
 
             // do we have a dfu device attached, or is DFU specified?
@@ -163,19 +162,18 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (dfuDevice != null)
             {
-                Logger?.LogInformation($"DFU device detected - using DFU to write OS");
+                Logger?.LogInformation($"{Strings.DfuDeviceDetected} - {Strings.UsingDfuToWriteOs}");
                 UseDfu = true;
             }
             else
             {
+                if (UseDfu)
+                {
+                    throw new CommandException(Strings.NoDfuDeviceDetected);
+                }
+
                 connection = await GetConnectionAndDisableRuntime();
 
-                if (connection == null)
-                {
-                    // couldn't find a connected device
-                    Logger?.LogError($"Unable to detect a connected device");
-                    return;
-                }
                 deviceInfo = await connection.GetDeviceInfo(CancellationToken);
             }
 
@@ -183,7 +181,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             {
                 if (await WriteOsWithDfu(dfuDevice, osFileWithBootloader) == false)
                 {
-                    return;
+                    throw new CommandException(Strings.DfuWriteFailed);
                 }
 
                 dfuDevice?.Dispose();
@@ -192,12 +190,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 connection = await GetConnectionAndDisableRuntime();
 
-                if (connection == null)
-                {
-                    // couldn't find a connected device
-                    Logger?.LogError($"Unable to detect a connected device");
-                    return;
-                }
                 await connection.WaitForMeadowAttach();
             }
             else
@@ -219,9 +211,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (connection == null)
             {
-                // couldn't find a connected device
-                Logger?.LogError($"Unable to detect a connected device");
-                return;
+                throw CommandException.MeadowDeviceNotFound;
             }
 
             await connection.WaitForMeadowAttach();
@@ -243,7 +233,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             await connection.Device.Reset();
         }
 
-        Logger?.LogInformation("Firmware updated successfully");
+        Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
     }
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
@@ -261,8 +251,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         if (connection == null)
         {
             connection = await GetConnectionAndDisableRuntime();
-
-            if (connection == null) { return null; } // couldn't find a connected device
         }
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime ...");
@@ -274,7 +262,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
         write_runtime:
-            if (!await connection.Device!.WriteRuntime(runtimePath, CancellationToken))
+            if (!await connection!.Device!.WriteRuntime(runtimePath, CancellationToken))
             {
                 // TODO: implement a retry timeout
                 Logger?.LogInformation($"Error writing runtime - retrying");
@@ -479,7 +467,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return true;
     }
 
-    async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
+    private async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
     {
         var ports = await MeadowConnectionManager.GetSerialPorts();
         var retryCount = 0;
