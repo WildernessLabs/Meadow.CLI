@@ -136,7 +136,7 @@ namespace Meadow.CLI.Core.Devices
             if (port.IsOpen)
                 port.Close();
 
-            int retries = 15;
+            int retries = 10;
 
             for (int i = 0; i < retries; i++)
             {
@@ -146,9 +146,18 @@ namespace Meadow.CLI.Core.Devices
                     port.BaseStream.ReadTimeout = 0;
                     break;
                 }
-                catch
+                catch (UnauthorizedAccessException uae)
                 {
+                    if (i == retries - 1)
+                    {
+                        throw new Exception($"{uae.Message} Another application may have access to '{portName}'. ");
+                    }
                     Thread.Sleep(500);
+                }
+                catch (Exception ex)
+                {
+                    // We don't know what happened, best to bail and let the user know.
+                    throw new Exception($"Unable to open port '{portName}'. {ex.Message}");
                 }
             }
 
