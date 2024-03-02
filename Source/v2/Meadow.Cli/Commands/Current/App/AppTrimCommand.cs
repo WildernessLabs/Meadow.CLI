@@ -23,7 +23,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        string path = Path ?? AppDomain.CurrentDomain.BaseDirectory;
+        string path = Path ?? Directory.GetCurrentDirectory();
 
         // is the path a file?
         FileInfo file;
