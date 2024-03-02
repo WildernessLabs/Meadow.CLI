@@ -25,7 +25,7 @@ public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
 
         if (Level <= 0)
         {
-            Logger?.LogInformation($"{DisablingTracing}...");
+            Logger?.LogInformation($"{Strings.DisablingTracing}...");
 
             await device.SetTraceLevel(Level, CancellationToken);
         }
