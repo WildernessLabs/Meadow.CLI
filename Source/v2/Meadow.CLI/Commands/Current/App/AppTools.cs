@@ -33,7 +33,7 @@ internal static class AppTools
 
         if (isRuntimeEnabled)
         {
-            logger?.LogInformation("Disabling runtime...");
+            logger?.LogInformation($"{Strings.DisablingRuntime}...");
 
             await connection.RuntimeDisable(cancellationToken);
         }
@@ -79,13 +79,13 @@ internal static class AppTools
             ConsoleSpinner.Spin(console, cancellationToken: cts.Token);
         }
 
-        logger?.LogInformation($"Trimming application '{file.FullName}'...");
+        logger?.LogInformation($"Trimming application {file.FullName}...");
 
         await packageManager.TrimApplication(file, false, null, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s
-        await Task.Delay(1000);
+        await Task.Delay(1000, cancellationToken);
 
         return true;
     }

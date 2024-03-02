@@ -14,7 +14,7 @@ public class RuntimeEnableCommand : BaseDeviceCommand<RuntimeEnableCommand>
     {
         var device = await GetCurrentDevice();
 
-        Logger?.LogInformation($"Enabling runtime...");
+        Logger?.LogInformation($"{Strings.EnablingRuntime}...");
 
         await device.RuntimeEnable(CancellationToken);
 

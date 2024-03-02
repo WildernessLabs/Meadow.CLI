@@ -74,7 +74,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (await connection.Device.IsRuntimeEnabled())
         {
-            Logger?.LogInformation($"{Strings.DisablingDeviceRuntime}...");
+            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
             await connection.Device.RuntimeDisable();
         }
 

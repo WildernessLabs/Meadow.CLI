@@ -20,7 +20,7 @@ public class TraceDisableCommand : BaseDeviceCommand<TraceDisableCommand>
             Logger?.LogInformation(e.message);
         };
 
-        Logger?.LogInformation("Disabling tracing...");
+        Logger?.LogInformation($"{Strings.DisablingTracing}...");
 
         await device.TraceDisable(CancellationToken);
     }

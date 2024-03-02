@@ -30,7 +30,10 @@ public static class Strings
     public const string NoDfuDeviceDetected = "No DFU Device Detected. Power the device with the BOOT button pressed.";
     public const string OsFileNotFoundForSpecifiedVersion = "OS file not found for version '{0}'";
     public const string WritingAllFirmwareForSpecifiedVersion = "Writing all firmware for version '{0}'";
-    public const string DisablingDeviceRuntime = "Disabling device runtime";
+    public const string DisablingRuntime = "Disabling runtime";
+    public const string DisablingTracing = "Disabling tracing";
+    public const string EnablingRuntime = "Enabling runtime";
+    public const string EnablingTracing = "Enabling tracing";
     public const string Writing = "Writing";
     public const string InvalidFirmwareForSpecifiedPath = "Invalid firmware path '{0}'";
     public const string UnknownSpecifiedFirmwareFile = "Unknown firmware file '{0}'";
