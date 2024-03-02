@@ -173,7 +173,7 @@
     },
     "App Build": {
       "commandName": "Project",
-      "commandLineArgs": "app build F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app build H:\\AS\\BlockPuzzleGenerator\\src\\MeadowBoulderScape\\"
     },
     "App Build Debug": {
       "commandName": "Project",
@@ -181,7 +181,7 @@
     },
     "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "app trim H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\"
+      "commandLineArgs": "app trim \"H:\\AS\\BlockPuzzleGenerator\\src\\MeadowBoulderScape\\\""
     },
     "Dfu Install": {
       "commandName": "Project",
