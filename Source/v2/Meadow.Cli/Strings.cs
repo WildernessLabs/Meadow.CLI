@@ -27,7 +27,7 @@ public static class Strings
     public const string NoCompiledApplicationFound = "No compiled application found";
     public const string DfuDeviceDetected = "DFU Device Detected";
     public const string UsingDfuToWriteOs = "using DFU to write OS";
-    public const string NoDfuDeviceDetected = "No DFU Device Detected.  Power the device with the BOOT button pressed.";
+    public const string NoDfuDeviceDetected = "No DFU Device Detected. Power the device with the BOOT button pressed.";
     public const string OsFileNotFoundForSpecifiedVersion = "OS file not found for version '{0}'";
     public const string WritingAllFirmwareForSpecifiedVersion = "Writing all firmware for version '{0}'";
     public const string DisablingDeviceRuntime = "Disabling device runtime";
@@ -37,5 +37,7 @@ public static class Strings
     public const string WritingSpecifiedFirmwareFile = "Writing firmware file '{0}'";
     public const string DfuWriteFailed = "DFU write failed";
     public const string FirmwareUpdatedSuccessfully = "Firmware updated successfully";
-
+    public const string BuildConfiguration = "The build configuration";
+    public const string PathMeadowApplication = "Path to the Meadow application";
+    public const string PathToMeadowProject = "Path to the Meadow project file";
 }

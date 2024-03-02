@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app run", Description = "Builds, trims and deploys a Meadow application to a target device")]
+[Command("app run", Description = "Build, trim and deploy a Meadow application to a target device")]
 public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 {
     private readonly IPackageManager _packageManager;
@@ -14,10 +14,10 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     [CommandOption("no-prefix", 'n', Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'", IsRequired = false)]
     public bool NoPrefix { get; init; }
 
-    [CommandOption('c', Description = "The build configuration to compile", IsRequired = false)]
-    public string? Configuration { get; set; }
+    [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
+    public string? Configuration { get; private set; }
 
-    [CommandParameter(0, Description = "Path to folder containing the application to build", IsRequired = false)]
+    [CommandParameter(0, Description = Strings.PathMeadowApplication, IsRequired = false)]
     public string? Path { get; init; }
 
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -28,17 +28,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        string path = Path ?? Directory.GetCurrentDirectory();
-
-        // is the path a file?
-        if (!File.Exists(path))
-        {
-            // is it a valid directory?
-            if (!Directory.Exists(path))
-            {
-                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
-            }
-        }
+        var path = AppTools.ValidateAndSanitizeAppPath(Path);
 
         Configuration ??= "Release";
 
@@ -47,26 +37,17 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         var lastFile = string.Empty;
 
         // in order to deploy, the runtime must be disabled
-        var wasRuntimeEnabled = await connection.IsRuntimeEnabled();
-        if (wasRuntimeEnabled)
-        {
-            Logger?.LogInformation("Disabling runtime...");
+        await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
-            await connection.RuntimeDisable(CancellationToken);
-        }
-
-        if (!await BuildApplication(path, CancellationToken))
+        if (!_packageManager.BuildApplication(path, Configuration))
         {
             throw new CommandException("Application build failed", CommandExitCode.GeneralError);
         }
 
-        if (!await TrimApplication(path, CancellationToken))
+        if (!await AppTools.TrimApplication(path, _packageManager, Configuration, Logger, Console, CancellationToken))
         {
             throw new CommandException("Application trimming failed", CommandExitCode.GeneralError);
         }
-
-        // illink returns before all files are written - attempt a delay of 1s
-        await Task.Delay(1000);
 
         if (!await DeployApplication(connection, path, CancellationToken))
         {
@@ -87,42 +68,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         Logger?.LogInformation("Listen cancelled...");
     }
 
-    private Task<bool> BuildApplication(string path, CancellationToken cancellationToken)
-    {
-        Configuration ??= "Debug";
-
-        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
-
-        // TODO: enable cancellation of this call
-        return Task.FromResult(_packageManager.BuildApplication(path, Configuration));
-    }
-
-    private async Task<bool> TrimApplication(string path, CancellationToken cancellationToken)
-    {
-        // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
-
-        if (candidates.Length == 0)
-        {
-            Logger?.LogError($"{Strings.NoCompiledApplicationFound} at '{path}'");
-            return false;
-        }
-
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
-
-        // if no configuration was provided, find the most recently built
-        Logger?.LogInformation($"Trimming {file.FullName}");
-
-        var cts = new CancellationTokenSource();
-        ConsoleSpinner.Spin(Console, cancellationToken: cts.Token);
-
-        await _packageManager.TrimApplication(file, false, null, CancellationToken);
-        cts.Cancel();
-
-        return true;
-    }
-
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken _)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken cancellationToken)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
@@ -138,7 +84,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, CancellationToken);
+        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

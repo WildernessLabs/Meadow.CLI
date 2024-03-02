@@ -110,11 +110,6 @@ public static class AppManager
             .Except(localFiles.Keys
                 .Select(f => Path.GetFileName(f))).ToList();
 
-        if (removeFiles.Count == 0)
-        {
-            logger?.LogInformation($"No files to delete");
-        }
-
         // delete those files
         foreach (var file in removeFiles)
         {

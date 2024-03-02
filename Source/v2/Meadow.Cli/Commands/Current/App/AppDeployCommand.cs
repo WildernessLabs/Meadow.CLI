@@ -1,15 +1,20 @@
 ﻿using CliFx.Attributes;
+using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app deploy", Description = "Deploy a built Meadow application to a target device")]
+[Command("app deploy", Description = "Deploy a compiled Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;
+    private string? _lastFile;
 
-    [CommandParameter(0, Description = "Path to folder containing the built application", IsRequired = false)]
+    [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
+    public string? Configuration { get; private set; }
+
+    [CommandParameter(0, Description = Strings.PathMeadowApplication, IsRequired = false)]
     public string? Path { get; init; }
 
     public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
@@ -20,38 +25,24 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        string path = AppTools.ValidateAndSanitizeAppPath(Path);
+
+        var file = GetMeadowAppFile(path);
+
         var connection = await GetCurrentConnection();
 
-        string path = Path ?? Environment.CurrentDirectory;
+        await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
+        if (!await DeployApplication(connection, file.FullName, CancellationToken))
+        {
+            throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
+        }
+    }
+
+    private FileInfo GetMeadowAppFile(string path)
+    {
         // is the path a file?
         FileInfo file;
-
-        var lastFile = string.Empty;
-
-        // in order to deploy, the runtime must be disabled
-        var isRuntimeEnabled = await connection.IsRuntimeEnabled();
-
-        if (isRuntimeEnabled)
-        {
-            Logger?.LogInformation("Disabling runtime...");
-
-            await connection.RuntimeDisable(CancellationToken);
-        }
-
-        connection.FileWriteProgress += (s, e) =>
-        {
-            var p = (e.completed / (double)e.total) * 100d;
-
-            if (e.fileName != lastFile)
-            {
-                Console?.Output.WriteAsync("\n");
-                lastFile = e.fileName;
-            }
-
-            // Console instead of Logger due to line breaking for progress bar
-            Console?.Output.WriteAsync($"Writing {e.fileName}: {p:0}%         \r");
-        };
 
         if (!File.Exists(path))
         {
@@ -78,22 +69,50 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         }
         else
         {
-            // TODO: only deploy if it's App.dll
+            if (System.IO.Path.GetFileName(path) != "App.dll")
+            {
+                throw new CommandException($"The file '{path}' is not a compiled Meadow application", CommandExitCode.FileNotFound);
+            }
+
             file = new FileInfo(path);
         }
+        return file;
+    }
 
-        var targetDirectory = file.DirectoryName!;
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken GetAvailableBuiltConfigurations)
+    {
+        connection.FileWriteProgress += OnFileWriteProgress;
 
-        await AppManager.DeployApplication(_packageManager, connection, targetDirectory, true, false, Logger, CancellationToken);
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
-        if (isRuntimeEnabled)
+        if (candidates.Length == 0)
         {
-            await Task.Delay(1000);
-
-            // restore runtime state
-            Logger?.LogInformation("Enabling runtime...");
-
-            await connection.RuntimeEnable(CancellationToken);
+            Logger?.LogError($"Cannot find a compiled application at '{path}'");
+            return false;
         }
+
+        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+
+        Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
+
+        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, GetAvailableBuiltConfigurations);
+
+        connection.FileWriteProgress -= OnFileWriteProgress;
+
+        return true;
+    }
+
+    private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)
+    {
+        var p = e.completed / (double)e.total * 100d;
+
+        if (e.fileName != _lastFile)
+        {
+            Console?.Output.Write("\n");
+            _lastFile = e.fileName;
+        }
+
+        // Console instead of Logger due to line breaking for progress bar
+        Console?.Output.Write($"Writing {e.fileName}: {p:0}%         \r");
     }
 }

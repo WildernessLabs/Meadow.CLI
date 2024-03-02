@@ -97,11 +97,11 @@ public partial class PackageManager : IPackageManager
         };
         proc.OutputDataReceived += (sendingProcess, dataLine) =>
         {
-            // look for "Build FAILED"
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
+                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed") ||
+                    dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("does not exist"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;
