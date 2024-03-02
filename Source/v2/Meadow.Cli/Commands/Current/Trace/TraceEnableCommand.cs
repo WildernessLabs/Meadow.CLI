@@ -29,7 +29,7 @@ public class TraceEnableCommand : BaseDeviceCommand<TraceEnableCommand>
             await device.SetTraceLevel(Level.Value, CancellationToken);
         }
 
-        Logger?.LogInformation("Enabling tracing...");
+        Logger?.LogInformation($"{Strings.EnablingTracing}...");
 
         await device.TraceEnable(CancellationToken);
     }
