@@ -116,7 +116,7 @@ namespace Meadow.CLI.Core.Devices
         {
             if (string.IsNullOrEmpty(portName))
             {
-                throw new ArgumentException("Serial Port name cannot be empty");
+                throw new ArgumentException("Serial Port name cannot be empty", nameof(portName));
             }
 
             // Create a new SerialPort object with default settings
@@ -169,3 +169,4 @@ namespace Meadow.CLI.Core.Devices
             return port;
         }
     }
+}
