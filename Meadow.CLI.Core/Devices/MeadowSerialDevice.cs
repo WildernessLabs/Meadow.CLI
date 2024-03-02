@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using System;
+using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (SerialPort != null)
                 {
-                    lock(lockObject)
+                    lock (lockObject)
                     {
                         if (SerialPort.IsOpen)
                         {
@@ -52,7 +53,7 @@ namespace Meadow.CLI.Core.Devices
                         SerialPort.Dispose();
                         SerialPort = null;
                     }
-				}
+                }
             }
         }
 
@@ -146,6 +147,10 @@ namespace Meadow.CLI.Core.Devices
                     port.BaseStream.ReadTimeout = 0;
                     break;
                 }
+                catch (FileNotFoundException)
+                {
+                    throw new Exception($"Serial port '{portName}' not found");
+                }
                 catch (UnauthorizedAccessException uae)
                 {
                     if (i == retries - 1)
@@ -164,4 +169,3 @@ namespace Meadow.CLI.Core.Devices
             return port;
         }
     }
-}

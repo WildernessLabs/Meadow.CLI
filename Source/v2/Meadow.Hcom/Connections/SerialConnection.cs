@@ -96,7 +96,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 try
                 {
                     Debug.WriteLine("Opening COM port...");
-                    _port.Open();
+                    Open();
                     Debug.WriteLine("Opened COM port");
                 }
                 catch (Exception ex)
@@ -159,8 +159,18 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 throw new Exception($"Serial port '{_port.PortName}' not found");
             }
+            catch (UnauthorizedAccessException uae)
+            {
+                throw new Exception($"{uae.Message} Another application may have access to '{_port.PortName}'. ");
+            }
+            catch (Exception ex)
+            {
+                // We don't know what happened, best to bail and let the user know.
+                throw new Exception($"Unable to open port '{_port.PortName}'. {ex.Message}");
+            }
+
+            State = ConnectionState.Connected;
         }
-        State = ConnectionState.Connected;
     }
 
     private void Close()
