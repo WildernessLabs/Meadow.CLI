@@ -16,13 +16,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-<<<<<<< HEAD
-=======
     <Compile Include="..\Meadow.Cli\Deployment\AppManager.cs" Link="Deployment\AppManager.cs" />
     <Compile Include="..\Meadow.Cli\ISettingsManager.cs" Link="ISettingsManager.cs" />
     <Compile Include="..\Meadow.Cli\MeadowConnectionManager.cs" Link="MeadowConnectionManager.cs" />
     <Compile Include="..\Meadow.Cli\SettingsManager.cs" Link="SettingsManager.cs" />
->>>>>>> 8fd6a11 (Move AppManager Back. Make disabling and enabling the runtime part of AppDeploy.)
     <Compile Include="..\Meadow.Cloud.Client\ApiTokens\ApiTokenClient.cs" Link="Cloud.Client\ApiTokenClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Collections\CollectionClient.cs" Link="Cloud.Client\CollectionClient.cs" />
     <Compile Include="..\Meadow.Cloud.Client\Commands\CommandClient.cs" Link="Cloud.Client\CommandClient.cs" />
@@ -64,9 +61,14 @@
     </Compile>
     <Compile Include="..\Meadow.Cloud.Client\Users\IUserClient.cs">
       <Link>Cloud.Client\IUserClient.cs</Link>
+    <Compile Include="..\Meadow.Cloud.Client\MeadowCloudContext.cs">
+      <Link>Cloud.Client\MeadowCloudContext.cs</Link>
     </Compile>
     <Compile Include="..\Meadow.Cloud.Client\MeadowCloudUserAgent.cs">
       <Link>Cloud.Client\MeadowCloudUserAgent.cs</Link>
+    </Compile>
+    <Compile Include="..\Meadow.Cloud.Client\Users\IUserClient.cs">
+      <Link>Cloud.Client\IUserClient.cs</Link>
     </Compile>
     <Compile Include="..\Meadow.Cloud.Client\Users\GetUserResponse.cs">
       <Link>Cloud.Client\GetUserResponse.cs</Link>
@@ -96,6 +98,8 @@
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.2" />
     <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+    <PackageReference Include="CredentialManagement" Version="1.0.2" />
+    <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
   </ItemGroup>
 
   <ItemGroup>
