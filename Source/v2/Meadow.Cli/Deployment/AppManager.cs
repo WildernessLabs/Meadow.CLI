@@ -36,17 +36,17 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-		// in order to deploy, the runtime must be disabled
-		var isRuntimeEnabled = await connection.IsRuntimeEnabled();
+        // in order to deploy, the runtime must be disabled
+        var isRuntimeEnabled = await connection.IsRuntimeEnabled();
 
-		if (isRuntimeEnabled)
-		{
-			logger?.LogInformation("Disabling runtime...");
+        if (isRuntimeEnabled)
+        {
+            logger?.LogInformation("Disabling runtime...");
 
-			await connection.RuntimeDisable(cancellationToken);
+            await connection.RuntimeDisable(cancellationToken);
 
-			await Task.Delay(5000);
-		}
+            await Task.Delay(5000);
+        }
 
         try
         {
@@ -92,8 +92,9 @@ public static class AppManager
 
             logger?.LogInformation("Generating list of files to deploy...");
 
-            foreach (var file in dependencies)
+            for (int i = 0; i < dependencies?.Count; i++)
             {
+                string? file = dependencies[i];
                 // TODO: add any other filtering capability here
                 if (!includePdbs && IsPdb(file)) { continue; }
                 if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
@@ -163,16 +164,16 @@ public static class AppManager
         }
         finally
         {
-			isRuntimeEnabled = await connection.IsRuntimeEnabled();
-			if (!isRuntimeEnabled)
-			{
-				await Task.Delay(1000);
+            isRuntimeEnabled = await connection.IsRuntimeEnabled();
+            if (!isRuntimeEnabled)
+            {
+                await Task.Delay(1000);
 
-				// restore runtime state
-				logger?.LogInformation("Enabling runtime...");
+                // restore runtime state
+                logger?.LogInformation("Enabling runtime...");
 
-				await connection.RuntimeEnable(cancellationToken);
-			}
-		}
-	}
+                await connection.RuntimeEnable(cancellationToken);
+            }
+        }
+    }
 }
