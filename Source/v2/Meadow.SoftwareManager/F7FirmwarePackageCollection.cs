@@ -1,4 +1,10 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Meadow.Software;
 
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 {
@@ -13,7 +19,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
 
     private readonly List<FirmwarePackage> _f7Packages = new();
     private FirmwarePackage? _defaultPackage;
-    private F7FirmwareDownloadManager _downloadManager;
+    private readonly F7FirmwareDownloadManager _downloadManager;
 
     public string PackageFileRoot { get; }
 

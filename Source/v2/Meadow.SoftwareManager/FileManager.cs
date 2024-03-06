@@ -1,4 +1,8 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace Meadow.Software;
 
 public class FileManager
 {

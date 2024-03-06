@@ -1,4 +1,7 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.IO;
+
+namespace Meadow.Software;
 
 internal class DownloadFileStream : Stream, IDisposable
 {

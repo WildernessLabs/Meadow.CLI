@@ -1,4 +1,9 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
