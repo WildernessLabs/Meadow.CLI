@@ -129,7 +129,7 @@
     },
     "Firmware Write version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware write -v 1.8.1.16"
+      "commandLineArgs": "firmware write -v 1.9.1.7"
     },
     "Firmware Write runtime": {
       "commandName": "Project",

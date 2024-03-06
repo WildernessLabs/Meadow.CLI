@@ -49,7 +49,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         connection.FileWriteProgress += (s, e) =>
         {
-            var p = (int)((e.completed / (double)e.total) * 100d);
+            var p = (int)(e.completed / (double)e.total * 100d);
             // don't report < 10% increments (decrease spew on large files)
             if (p - _lastWriteProgress < 10) { return; }
 
@@ -179,6 +179,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (UseDfu || dfuDevice != null || osFileWithoutBootloader == null || RequiresDfuForRuntimeUpdates(deviceInfo!))
             {
+                // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
+                var initialPorts = await MeadowConnectionManager.GetSerialPorts();
+
                 if (await WriteOsWithDfu(dfuDevice, osFileWithBootloader) == false)
                 {
                     throw new CommandException(Strings.DfuWriteFailed);
@@ -188,9 +191,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 await Task.Delay(1500);
 
+                var newPort = await WaitForNewSerialPort(initialPorts);
+
+                Logger?.LogInformation($"Meadow found at {newPort}");
+
                 connection = await GetConnectionAndDisableRuntime();
 
                 await connection.WaitForMeadowAttach();
+
+                // configure the route to that port for the user
+                Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
             }
             else
             {
@@ -401,9 +411,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<bool> WriteOsWithDfu(ILibUsbDevice? libUsbDevice, string osFile)
     {
-        // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
-        var initialPorts = await MeadowConnectionManager.GetSerialPorts();
-
         // get the device's serial number via DFU - we'll need it to find the device after it resets
         if (libUsbDevice == null)
         {
@@ -438,7 +445,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         catch (ArgumentException)
         {
-            Logger?.LogWarning("Unable to write firmware with Dfu - is Dfu-util installed? Run `meadow dfu install` to install");
+            Logger?.LogWarning("Unable to write firmware - is Dfu-util installed? Run `meadow dfu install` to install");
             return false;
         }
         catch (Exception ex)
@@ -452,14 +459,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             Logger?.LogWarning("This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.");
             return false;
         }
-
-        var newPort = await WaitForNewSerialPort(initialPorts);
-
-        Logger?.LogInformation($"Meadow found at {newPort}");
-
-        // configure the route to that port for the user
-        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
         return true;
     }
 
