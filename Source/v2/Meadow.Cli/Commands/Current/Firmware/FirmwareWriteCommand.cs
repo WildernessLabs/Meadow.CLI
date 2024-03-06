@@ -248,10 +248,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, string runtimePath, string destinationFilename)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime ...");
 
@@ -279,6 +276,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 {
                     throw CommandException.MeadowDeviceNotFound;
                 }
+
+                connection = await GetCurrentConnection(true);
 
                 Logger?.LogInformation($"Meadow found at {newPort}");
 
@@ -318,10 +317,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             };
         }
 
-        if (deviceInfo == null)
-        {
-            deviceInfo = await connection.GetDeviceInfo(CancellationToken);
-        }
+        deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
         if (UseDfu || RequiresDfuForEspUpdates(deviceInfo))
         {
