@@ -372,10 +372,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             try
             {
                 // Send the data to Meadow
-                //                Debug.Write($"Sending {encodedToSend} bytes...");
-                //await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                // DO NOT USE _port.BaseStream.  It disables port timeouts!
                 _port.Write(encodedBytes, 0, encodedToSend);
-                //                Debug.WriteLine($"sent");
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
@@ -410,7 +408,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw;
         }
     }
-
 
     private class SerialMessage
     {
@@ -462,20 +459,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var decodedSize = CobsTools.CobsDecoding(packetBuffer.ToArray(), packetLength, ref decodedBuffer);
 
-        /*
-        // If a message is too short it is ignored
-        if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
-        {
-            return false;
-        }
-
-        Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
-
-        // Process the received packet
-        ParseAndProcessReceivedPacket(decodedBuffer.AsSpan(0, decodedSize).ToArray(),
-                                      cancellationToken);
-
-        */
         ArrayPool<byte>.Shared.Return(decodedBuffer);
         return true;
     }
@@ -506,10 +489,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> StdErr { get; } = new List<string>();
     private List<string> InfoMessages { get; } = new List<string>();
 
-    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
-    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
-    private const string RuntimeStateToken = "Mono is";
-    private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string MonoStateToken = "Mono is";
+    private const string RuntimeStateToken = "Runtime is";
+    private const string MonoIsEnabledToken = "Mono is enabled";
+    private const string RuntimeIsEnabledToken = "Runtime is enabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
@@ -641,10 +624,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             if (InfoMessages.Count > 0)
             {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
+                var m = InfoMessages.FirstOrDefault(i =>
+                    i.Contains(RuntimeStateToken) ||
+                    i.Contains(MonoStateToken));
                 if (m != null)
                 {
-                    return m == RuntimeIsEnabledToken;
+                    return (m == RuntimeIsEnabledToken) || (m == MonoIsEnabledToken);
                 }
             }
 
@@ -867,54 +852,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 0,
                 cancellationToken);
 
-
-            /*
-            RaiseConnectionMessage("\nErasing runtime flash blocks...");
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    // happens on error
-                    return true;
-                }
-
-                var m = string.Join('\n', InfoMessages);
-                return m.Contains("Mono memory erase success");
-            },
-            cancellationToken);
-
-            InfoMessages.Clear();
-
-            RaiseConnectionMessage("Moving runtime to flash...");
-
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    // happens on error
-                    return true;
-                }
-
-                var m = string.Join('\n', InfoMessages);
-                return m.Contains("Verifying runtime flash operation.");
-            },
-            cancellationToken);
-
-            InfoMessages.Clear();
-
-            RaiseConnectionMessage("Verifying...");
-
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    return true;
-                }
-
-                return false;
-            },
-            cancellationToken);
-            */
 
             if (status)
             {
