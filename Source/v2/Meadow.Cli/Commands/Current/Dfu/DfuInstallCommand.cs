@@ -7,7 +7,7 @@ using System.Security.Principal;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("dfu install", Description = "Deploys a built Meadow application to a target device")]
+[Command("dfu install", Description = "Install dfu-util to the host operating system")]
 public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
 {
     public const string DefaultVersion = "0.11";
@@ -44,11 +44,19 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
         {
             if (IsAdministrator())
             {
-                await DfuUtils.InstallDfuUtil(FileManager.WildernessTempFolderPath, Version, CancellationToken);
+                try
+                {
+                    await DfuUtils.InstallDfuUtil(FileManager.WildernessTempFolderPath, Version, CancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    throw new CommandException($"Failed to install DFU {Version}: " + ex.Message);
+                }
+                Logger?.LogInformation($"DFU {Version} installed successfully");
             }
             else
             {
-                Logger?.LogError("To install DFU on Windows, you'll need to re-run the command from as an Administrator");
+                Logger?.LogError("To install DFU on Windows, you'll need to run the command as an Administrator");
             }
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
