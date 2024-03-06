@@ -630,8 +630,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var timeout = CommandTimeoutSeconds * 2;
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (timeout <= 0) throw new TimeoutException();
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                return false;
+            }
+            if (timeout <= 0)
+            {
+                throw new TimeoutException();
+            }
 
             if (InfoMessages.Count > 0)
             {

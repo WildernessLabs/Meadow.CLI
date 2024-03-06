@@ -29,6 +29,11 @@ public class MeadowConnectionManager
             throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
+        return GetConnectionForRoute(route, forceReconnect);
+    }
+
+    public IMeadowConnection? GetConnectionForRoute(string route, bool forceReconnect = false)
+    {
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
         if (_currentConnection != null && forceReconnect == false)
         {

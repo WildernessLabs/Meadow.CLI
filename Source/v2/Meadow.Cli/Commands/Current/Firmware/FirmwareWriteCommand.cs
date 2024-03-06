@@ -41,15 +41,30 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private int _lastWriteProgress = 0;
 
-    private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime()
+    private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime(string? route = null)
     {
-        var connection = await GetCurrentConnection(true);
+        IMeadowConnection? connection = null;
+
+        if (route != null)
+        {
+            connection = await GetConnectionForRoute(route, true);
+        }
+        else
+        {
+            connection = await GetCurrentConnection(true);
+        }
+
+        if (await connection.Device.IsRuntimeEnabled())
+        {
+            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
+            await connection.Device.RuntimeDisable();
+        }
 
         _lastWriteProgress = 0;
 
         connection.FileWriteProgress += (s, e) =>
         {
-            var p = (int)((e.completed / (double)e.total) * 100d);
+            var p = (int)(e.completed / (double)e.total * 100d);
             // don't report < 10% increments (decrease spew on large files)
             if (p - _lastWriteProgress < 10) { return; }
 
@@ -71,12 +86,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             Logger?.LogInformation(message);
         };
-
-        if (await connection.Device.IsRuntimeEnabled())
-        {
-            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
-            await connection.Device.RuntimeDisable();
-        }
 
         return connection;
     }
@@ -179,6 +188,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (UseDfu || dfuDevice != null || osFileWithoutBootloader == null || RequiresDfuForRuntimeUpdates(deviceInfo!))
             {
+                // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
+                var initialPorts = await MeadowConnectionManager.GetSerialPorts();
+
                 if (await WriteOsWithDfu(dfuDevice, osFileWithBootloader) == false)
                 {
                     throw new CommandException(Strings.DfuWriteFailed);
@@ -188,7 +200,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 await Task.Delay(1500);
 
-                connection = await GetConnectionAndDisableRuntime();
+                connection = await FindMeadowConnection(initialPorts);
 
                 await connection.WaitForMeadowAttach();
             }
@@ -236,6 +248,52 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
     }
 
+    async Task<IMeadowConnection> FindMeadowConnection(IList<string> portsToIgnore)
+    {
+        IMeadowConnection? connection = null;
+
+        var newPorts = await WaitForNewSerialPorts(portsToIgnore);
+        string newPort = string.Empty;
+
+        if (newPorts == null)
+        {
+            throw CommandException.MeadowDeviceNotFound;
+        }
+
+        if (newPorts.Count == 1)
+        {
+            connection = await GetConnectionAndDisableRuntime(newPorts[0]);
+            newPort = newPorts[0];
+        }
+        else
+        {
+            foreach (var port in newPorts)
+            {
+                try
+                {
+                    connection = await GetConnectionAndDisableRuntime(port);
+                    newPort = port;
+                    break;
+                }
+                catch
+                {
+                    throw CommandException.MeadowDeviceNotFound;
+                }
+            }
+        }
+
+        Logger?.LogInformation($"Meadow found at {newPort}");
+
+        connection = await GetConnectionAndDisableRuntime();
+
+        await connection.WaitForMeadowAttach();
+
+        // configure the route to that port for the user
+        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+
+        return connection;
+    }
+
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
         Logger?.LogInformation($"{Environment.NewLine}Getting runtime for {package.Version}...");
@@ -248,10 +306,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, string runtimePath, string destinationFilename)
     {
-        if (connection == null)
-        {
-            connection = await GetConnectionAndDisableRuntime();
-        }
+        connection ??= await GetConnectionAndDisableRuntime();
 
         Logger?.LogInformation($"{Environment.NewLine}Writing Runtime ...");
 
@@ -279,6 +334,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 {
                     throw CommandException.MeadowDeviceNotFound;
                 }
+
+                connection = await GetCurrentConnection(true);
 
                 Logger?.LogInformation($"Meadow found at {newPort}");
 
@@ -318,10 +375,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             };
         }
 
-        if (deviceInfo == null)
-        {
-            deviceInfo = await connection.GetDeviceInfo(CancellationToken);
-        }
+        deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
         if (UseDfu || RequiresDfuForEspUpdates(deviceInfo))
         {
@@ -405,9 +459,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<bool> WriteOsWithDfu(ILibUsbDevice? libUsbDevice, string osFile)
     {
-        // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
-        var initialPorts = await MeadowConnectionManager.GetSerialPorts();
-
         // get the device's serial number via DFU - we'll need it to find the device after it resets
         if (libUsbDevice == null)
         {
@@ -442,7 +493,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         catch (ArgumentException)
         {
-            Logger?.LogWarning("Unable to write firmware with Dfu - is Dfu-util installed? Run `meadow dfu install` to install");
+            Logger?.LogWarning("Unable to write firmware - is Dfu-util installed? Run `meadow dfu install` to install");
             return false;
         }
         catch (Exception ex)
@@ -456,25 +507,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             Logger?.LogWarning("This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.");
             return false;
         }
-
-        var newPort = await WaitForNewSerialPort(initialPorts);
-
-        Logger?.LogInformation($"Meadow found at {newPort}");
-
-        // configure the route to that port for the user
-        Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
-
         return true;
     }
 
-    private async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
+    private async Task<IList<string>> WaitForNewSerialPorts(IList<string> ignorePorts)
     {
         var ports = await MeadowConnectionManager.GetSerialPorts();
+
         var retryCount = 0;
 
-        var newPort = ports.Except(ignorePorts).FirstOrDefault();
-
-        while (newPort == null)
+        while (ports.Count == 0)
         {
             if (retryCount++ > 10)
             {
@@ -482,9 +524,15 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             await Task.Delay(500);
             ports = await MeadowConnectionManager.GetSerialPorts();
-            newPort = ports.Except(ignorePorts).FirstOrDefault();
         }
 
-        return newPort;
+        return ports.Except(ignorePorts).ToList();
+    }
+
+    private async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
+    {
+        var ports = await WaitForNewSerialPorts(ignorePorts);
+
+        return ports.FirstOrDefault();
     }
 }
