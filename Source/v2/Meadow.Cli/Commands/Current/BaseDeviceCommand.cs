@@ -17,9 +17,24 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         return (await GetCurrentConnection()).Device ?? throw CommandException.MeadowDeviceNotFound;
     }
 
-    protected async Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
+    protected Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
+        => GetConnection(null, forceReconnect);
+
+    protected Task<IMeadowConnection> GetConnectionForRoute(string route, bool forceReconnect = false)
+        => GetConnection(route, forceReconnect);
+
+    private async Task<IMeadowConnection> GetConnection(string? route, bool forceReconnect = false)
     {
-        var connection = ConnectionManager.GetCurrentConnection(forceReconnect);
+        IMeadowConnection? connection = null;
+
+        if (route != null)
+        {
+            connection = ConnectionManager.GetConnectionForRoute(route, forceReconnect);
+        }
+        else
+        {
+            connection = ConnectionManager.GetCurrentConnection(forceReconnect);
+        }
 
         if (connection != null)
         {
