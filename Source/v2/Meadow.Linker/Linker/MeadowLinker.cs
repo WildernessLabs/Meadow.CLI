@@ -1,7 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using Mono.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Meadow.Linker;
 

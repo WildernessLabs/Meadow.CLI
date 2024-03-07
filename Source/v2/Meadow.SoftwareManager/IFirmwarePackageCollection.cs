@@ -1,4 +1,8 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace Meadow.Software;
 
 public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
 {

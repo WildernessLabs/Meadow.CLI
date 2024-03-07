@@ -1,4 +1,6 @@
-﻿namespace Meadow.Software;
+﻿using System.IO;
+
+namespace Meadow.Software;
 
 public class FirmwarePackage
 {

@@ -1,9 +1,15 @@
 ﻿using Meadow.Hcom;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -52,9 +58,13 @@ public class MeadowConnectionManager
         {
             uri = $"http://{route}:5000";
         }
-        else if (IPEndPoint.TryParse(route, out var endpoint))
+        else
         {
-            uri = $"http://{route}";
+            var parts = route.Split(':');
+            if (parts.Length == 2 && IPAddress.TryParse(parts[0], out ipAddress) && int.TryParse(parts[1], out var port))
+            {
+                uri = $"http://{parts[0]}:{port}"; // Construct URI with specified IP and port
+            }
         }
 
         if (uri != null)
