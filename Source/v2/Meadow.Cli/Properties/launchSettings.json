@@ -109,7 +109,7 @@
     },
     "Firmware Download version": {
       "commandName": "Project",
-      "commandLineArgs": "firmware download -v 1.7.1.4 --force"
+      "commandLineArgs": "firmware download -v 1.9.1.8 --force"
     },
     "Firmware Default get": {
       "commandName": "Project",
