@@ -209,6 +209,11 @@ public class MeadowConnectionManager
             _ = proc?.WaitForExit(1000);
             var output = proc?.StandardOutput.ReadToEnd();
 
+            if (output == null)
+            {
+                return Array.Empty<string>();
+            }
+
             return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                   .Where(x => x.Contains("Wilderness_Labs"))
                   .Select(

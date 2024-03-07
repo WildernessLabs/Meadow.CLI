@@ -18,17 +18,19 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
         : base(connectionManager, loggerFactory)
     { }
 
-    private void StartNewFile(string outputPath, ref FileStream outputFile, byte[] header, ref int headerIndex, ref int totalBytesWritten, ref int headerFileCount)
+    private void StartNewFile(string outputPath, FileStream? outputFile, byte[] header, ref int headerIndex, ref int totalBytesWritten, ref int headerFileCount)
     {
         if (outputFile != null)
         {
             outputFile.Close();
             outputFile.Dispose();
         }
+
         outputFile = new FileStream(outputPath, FileMode.Create);
         totalBytesWritten = 0;
         headerIndex = 0;
         headerFileCount++;
+
         foreach (var headerByte in header)
         {
             outputFile.WriteByte(headerByte);
@@ -50,7 +52,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
         var outputPath = Path.Combine(outputDirectory, "output.mlpd");
 
         SerialPort port = new SerialPort(SerialInterface, SerialConnection.DefaultBaudRate);
-        FileStream outputFile = null;
+        FileStream? outputFile = null;
 
         try
         {
@@ -72,7 +74,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                             if (headerIndex == header.Length)
                             {
                                 Logger?.LogInformation($"Profiling data header found! Writing to {outputPath}...");
-                                StartNewFile(outputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
+                                StartNewFile(outputPath, outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                             }
                         }
                         else
@@ -84,7 +86,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                     else
                     {
                         // Writing to file after a header is found
-                        outputFile.WriteByte((byte)data);
+                        outputFile?.WriteByte((byte)data);
                         totalBytesWritten++;
 
                         // Check for a new header while writing to a file
@@ -97,7 +99,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                                 //  to avoid corrupted profiling data (e.g. device reset while profiling)
                                 var newOutputPath = outputDirectory + "output_" + headerFileCount + ".mlpd";
                                 Logger?.LogInformation($"New profiling data header found! Writing to {newOutputPath}...");
-                                StartNewFile(newOutputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
+                                StartNewFile(newOutputPath, outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                             }
                         }
                         else
