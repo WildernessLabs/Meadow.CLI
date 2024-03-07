@@ -20,6 +20,9 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     [CommandParameter(0, Description = Strings.PathMeadowApplication, IsRequired = false)]
     public string? Path { get; init; }
 
+    [CommandOption("nolink", Description = Strings.NoLinkAssemblies, IsRequired = false)]
+    public string[]? NoLink { get; private set; }
+
     public AppRunCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -46,7 +49,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             throw new CommandException("Application build failed", CommandExitCode.GeneralError);
         }
 
-        if (!await AppTools.TrimApplication(path, _packageManager, Configuration, Logger, Console, CancellationToken))
+        if (!await AppTools.TrimApplication(path, _packageManager, Configuration, NoLink, Logger, Console, CancellationToken))
         {
             throw new CommandException("Application trimming failed", CommandExitCode.GeneralError);
         }

@@ -43,4 +43,5 @@ public static class Strings
     public const string BuildConfiguration = "The build configuration";
     public const string PathMeadowApplication = "Path to the Meadow application";
     public const string PathToMeadowProject = "Path to the Meadow project file";
+    public const string NoLinkAssemblies = "Assemblies to skip during linking";
 }

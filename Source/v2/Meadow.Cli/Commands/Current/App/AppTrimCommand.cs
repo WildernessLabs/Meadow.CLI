@@ -15,6 +15,9 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     [CommandParameter(0, Description = Strings.PathToMeadowProject, IsRequired = false)]
     public string? Path { get; init; }
 
+    [CommandOption("nolink", Description = Strings.NoLinkAssemblies, IsRequired = false)]
+    public string[]? NoLink { get; private set; }
+
     public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
@@ -34,7 +37,7 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
             }
         }
 
-        await AppTools.TrimApplication(path, _packageManager, Configuration, Logger, Console, CancellationToken);
+        await AppTools.TrimApplication(path, _packageManager, Configuration, NoLink, Logger, Console, CancellationToken);
         Logger.LogInformation("Application trimmed successfully");
     }
 }
