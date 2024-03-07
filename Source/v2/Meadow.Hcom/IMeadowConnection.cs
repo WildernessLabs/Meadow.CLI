@@ -9,6 +9,7 @@ namespace Meadow.Hcom
         event EventHandler<string> ConnectionMessage;
         event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
         event EventHandler FileWriteFailed;
+        event EventHandler<byte[]> DebuggerMessage;
 
         string Name { get; }
         IMeadowDevice? Device { get; }

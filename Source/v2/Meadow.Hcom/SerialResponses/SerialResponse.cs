@@ -45,6 +45,7 @@ internal class SerialResponse
             ResponseType.HCOM_HOST_REQUEST_SEND_INITIAL_FILE_BYTES => new TextPayloadSerialResponse(data, length),
             ResponseType.HCOM_MDOW_REQUEST_OTA_REGISTER_DEVICE => new TextPayloadSerialResponse(data, length),
             ResponseType.HCOM_HOST_REQUEST_DNLD_FAIL_RESEND => new FileDownloadFailedResponse(data, length),
+            ResponseType.HCOM_HOST_REQUEST_DEBUGGING_MONO_DATA => new DebuggingDataResponse(data, length),
             _ => new SerialResponse(data, length),
         };
     }

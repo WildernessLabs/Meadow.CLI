@@ -293,6 +293,10 @@ namespace Meadow.Hcom
                                     {
                                         RaiseFileWriteFailed();
                                     }
+                                    else if (response is DebuggingDataResponse ddr)
+                                    {
+                                        RaiseDebuggerMessage(ddr.Data);
+                                    }
                                     else
                                     {
                                         Debug.WriteLine($"{response?.GetType().Name} for: {response?.RequestType}");

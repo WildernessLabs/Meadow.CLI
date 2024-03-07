@@ -1191,7 +1191,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await ReInitializeMeadow(cancellationToken); */
 
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-        var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+        var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         await debuggingServer.StartListening(cancellationToken);
