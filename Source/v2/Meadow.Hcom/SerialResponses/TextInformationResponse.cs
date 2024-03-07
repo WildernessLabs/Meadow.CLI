@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 /// <summary>
 /// An unsolicited text response sent by HCOM (i.e. typically a Console.Write)

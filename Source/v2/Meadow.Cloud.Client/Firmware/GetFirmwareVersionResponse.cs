@@ -1,16 +1,24 @@
 ﻿namespace Meadow.Cloud.Client.Firmware;
 
-public class GetFirmwareVersionResponse(string version, string minCLIVersion, string downloadUrl, string networkDownloadUrl)
+public class GetFirmwareVersionResponse
 {
+    public GetFirmwareVersionResponse(string version, string minCLIVersion, string downloadUrl, string networkDownloadUrl)
+    {
+        Version = version;
+        MinCLIVersion = minCLIVersion;
+        DownloadUrl = downloadUrl;
+        NetworkDownloadUrl = networkDownloadUrl;
+    }
+
     [JsonPropertyName("version")]
-    public string Version { get; set; } = version;
+    public string Version { get; set; }
 
     [JsonPropertyName("minCLIVersion")]
-    public string MinCLIVersion { get; set; } = minCLIVersion;
+    public string MinCLIVersion { get; set; }
 
     [JsonPropertyName("downloadUrl")]
-    public string DownloadUrl { get; set; } = downloadUrl;
+    public string DownloadUrl { get; set; }
 
     [JsonPropertyName("networkDownloadUrl")]
-    public string NetworkDownloadUrl { get; set; } = networkDownloadUrl;
+    public string NetworkDownloadUrl { get; set; }
 }

@@ -1,9 +1,8 @@
-﻿namespace Meadow.Hcom
+﻿namespace Meadow.Hcom;
+
+public enum ConnectionState
 {
-    public enum ConnectionState
-    {
-        Disconnected,
-        Connected,
-        MeadowAttached
-    }
+    Disconnected,
+    Connected,
+    MeadowAttached
 }

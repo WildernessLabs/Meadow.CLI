@@ -313,12 +313,18 @@ public class IdentityManager
         }
     }
 
-    private class AccessToken(string token, DateTimeOffset expiresAt, string emailAddress)
+    private class AccessToken
     {
+        public AccessToken(string token, DateTimeOffset expiresAt, string emailAddress)
+        {
+            Token = token; 
+            ExpiresAtUtc = expiresAt; 
+            EmailAddress = emailAddress;
+        }
 
-        public string Token { get; } = token;
-        public DateTimeOffset ExpiresAtUtc { get; } = expiresAt;
-        public string EmailAddress { get; } = emailAddress;
+        public string Token { get; }
+        public DateTimeOffset ExpiresAtUtc { get; }
+        public string EmailAddress { get; }
 
         public bool IsValid => !string.IsNullOrWhiteSpace(Token) && ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(30);
     }

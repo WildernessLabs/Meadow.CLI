@@ -1,7 +1,6 @@
-﻿namespace Meadow.Hcom
+﻿namespace Meadow.Hcom;
+
+public class DeviceNotFoundException : Exception
 {
-    public class DeviceNotFoundException : Exception
-    {
-        internal DeviceNotFoundException() : base() { }
-    }
+    internal DeviceNotFoundException() : base() { }
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {

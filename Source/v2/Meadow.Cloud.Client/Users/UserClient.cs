@@ -14,7 +14,7 @@ public class UserClient : MeadowCloudClientBase, IUserClient
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return [];
+            return Enumerable.Empty<GetOrganizationResponse>();
         }
 
         return await ProcessResponse<IEnumerable<GetOrganizationResponse>>(response, cancellationToken);
