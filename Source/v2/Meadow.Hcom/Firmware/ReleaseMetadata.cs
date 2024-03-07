@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public class ReleaseMetadata
 {

@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Buffers;
-using System.Diagnostics;
+﻿using System.Buffers;
 using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Meadow.Hcom;
 

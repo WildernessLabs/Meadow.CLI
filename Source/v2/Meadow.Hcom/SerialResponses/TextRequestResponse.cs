@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 /// <summary>
 /// A text response to a solicited host request
