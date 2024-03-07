@@ -18,9 +18,8 @@ public class MeadowLinker
 
     public const string PostLinkDirectoryName = "postlink_bin";
     public const string PreLinkDirectoryName = "prelink_bin";
-
-    readonly ILLinker _linker;
-    readonly ILogger? _logger;
+    private readonly ILLinker _linker;
+    private readonly ILogger? _logger;
 
     //ToDo ... might need to make this a property or pass it in when used
     private readonly string _meadowAssembliesPath;
@@ -35,7 +34,7 @@ public class MeadowLinker
     public async Task Trim(
         FileInfo meadowAppFile,
         bool includePdbs = false,
-        IList<string>? noLink = null)
+        IEnumerable<string>? noLink = null)
     {
         var dependencies = MapDependencies(meadowAppFile);
 
@@ -89,7 +88,7 @@ public class MeadowLinker
 
     private async Task<IEnumerable<string>> TrimMeadowApp(
         FileInfo file,
-        IList<string>? noLink)
+        IEnumerable<string>? noLink)
     {
         //set up the paths
         var prelink_dir = Path.Combine(file.DirectoryName!, PreLinkDirectoryName);
@@ -146,7 +145,7 @@ public class MeadowLinker
         return dependencyMap.Where(x => x.Contains("App.") == false).ToList();
     }
 
-    static string? FindAssemblyFullPath(string fileName, string localPath, string meadowAssembliesPath)
+    private static string? FindAssemblyFullPath(string fileName, string localPath, string meadowAssembliesPath)
     {
         //Assembly may not have a file extension, add .dll if it doesn't
         if (Path.GetExtension(fileName) != ".exe" &&

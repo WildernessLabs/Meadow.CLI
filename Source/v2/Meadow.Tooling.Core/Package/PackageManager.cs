@@ -131,7 +131,7 @@ public partial class PackageManager : IPackageManager
     public Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
-        IList<string>? noLink = null,
+        IEnumerable<string>? noLink = null,
         CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)

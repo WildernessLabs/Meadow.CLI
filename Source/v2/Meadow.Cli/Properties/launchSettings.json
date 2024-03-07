@@ -181,7 +181,7 @@
     },
     "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "app trim \"H:\\AS\\BlockPuzzleGenerator\\src\\MeadowBoulderScape\\\""
+      "commandLineArgs": "app trim C:\\repos\\wilderness\\Meadow.Core.Samples\\Source\\Blinky\\BlinkyCS --nolink Meadow.Core Meadow.Contracts"
     },
     "Dfu Install": {
       "commandName": "Project",
