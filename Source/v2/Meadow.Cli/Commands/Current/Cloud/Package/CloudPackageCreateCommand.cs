@@ -1,6 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Cloud.Client;
-using Meadow.Cloud.Client.Identity;
 using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;

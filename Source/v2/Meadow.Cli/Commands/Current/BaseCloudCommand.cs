@@ -1,9 +1,7 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
-using Meadow.Cloud.Client.Identity;
 using Meadow.Cloud.Client.Users;
 using Microsoft.Extensions.Logging;
-using System.Linq;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -17,7 +15,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
     protected bool RequiresAuthentication { get; set; } = true;
 
     protected IMeadowCloudClient MeadowCloudClient { get; }
-    
+
     public BaseCloudCommand(
         IMeadowCloudClient meadowCloudClient,
         ILoggerFactory loggerFactory)

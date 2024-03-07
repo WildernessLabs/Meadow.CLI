@@ -5,7 +5,7 @@ namespace Meadow.CLI;
 public class ConsoleTable
 {
     private readonly string[] _columns;
-    private IList<string[]> _rows;
+    private readonly IList<string[]> _rows;
 
     public ConsoleTable(params string[] columns)
     {

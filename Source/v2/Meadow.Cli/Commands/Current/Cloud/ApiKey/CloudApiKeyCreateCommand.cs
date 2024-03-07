@@ -1,6 +1,5 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
-using Meadow.Cloud.Client.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
