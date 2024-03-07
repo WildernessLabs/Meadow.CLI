@@ -1,4 +1,6 @@
-﻿namespace Meadow.CLI;
+﻿using System.Collections.Generic;
+
+namespace Meadow.CLI;
 
 public interface ISettingsManager
 {
