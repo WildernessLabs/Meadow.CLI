@@ -4,7 +4,7 @@ namespace Meadow.HCom.Integration.Tests
 {
     public class InMemorySettingsManager : ISettingsManager
     {
-        private Dictionary<string, string> _publicSettings = new();
+        private readonly Dictionary<string, string> _publicSettings = new();
 
         public void DeleteSetting(string setting)
         {

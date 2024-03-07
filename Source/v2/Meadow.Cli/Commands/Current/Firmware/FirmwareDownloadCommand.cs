@@ -1,6 +1,5 @@
 ﻿using CliFx.Attributes;
 using Meadow.Cloud.Client;
-using Meadow.Cloud.Client.Identity;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("firmware download", Description = "Download a firmware package")]
 public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
 {
-    private readonly FileManager _fileManager;  
+    private readonly FileManager _fileManager;
 
     public FirmwareDownloadCommand(
         FileManager fileManager,
@@ -89,7 +88,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
             }
             else
             {
-                Logger.LogInformation($"Firmware package '{Version}' downloaded");
+                Logger.LogInformation($"Firmware package '{Version}' downloaded to {collection.PackageFileRoot}");
 
                 if (explicitVersion == false)
                 {

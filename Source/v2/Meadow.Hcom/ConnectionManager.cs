@@ -2,7 +2,7 @@
 {
     public class ConnectionManager
     {
-        private static List<IMeadowConnection> _connections = new List<IMeadowConnection>();
+        private static readonly List<IMeadowConnection> _connections = new List<IMeadowConnection>();
 
         public static TConnection GetConnection<TConnection>(string connectionName)
             where TConnection : class, IMeadowConnection

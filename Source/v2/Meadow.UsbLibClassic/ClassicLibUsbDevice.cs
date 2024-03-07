@@ -25,7 +25,7 @@ public class ClassicLibUsbProvider : ILibUsbProvider
 
 public class ClassicLibUsbDevice : ILibUsbDevice
 {
-    private UsbRegistry _device;
+    private readonly UsbRegistry _device;
 
     public ClassicLibUsbDevice(UsbRegistry usbDevice)
     {

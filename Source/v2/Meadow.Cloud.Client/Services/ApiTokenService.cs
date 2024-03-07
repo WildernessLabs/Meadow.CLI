@@ -7,7 +7,7 @@ public class ApiTokenService : CloudServiceBase
     public ApiTokenService(IdentityManager identityManager) : base(identityManager)
     {
     }
-    
+
     public async Task<IEnumerable<GetApiTokenResponse>> GetApiTokens(string host, CancellationToken? cancellationToken)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);

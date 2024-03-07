@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
-
-namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
+﻿namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
 
 public class GetVersionTests
 {

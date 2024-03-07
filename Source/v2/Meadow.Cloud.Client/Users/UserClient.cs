@@ -1,8 +1,4 @@
-﻿using Meadow.Cloud.Client.Firmware;
-using System;
-using System.Threading;
-
-namespace Meadow.Cloud.Client.Users;
+﻿namespace Meadow.Cloud.Client.Users;
 
 public class UserClient : MeadowCloudClientBase, IUserClient
 {

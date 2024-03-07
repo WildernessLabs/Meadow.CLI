@@ -242,7 +242,7 @@ public class LocalConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
-    
+
     public override Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
