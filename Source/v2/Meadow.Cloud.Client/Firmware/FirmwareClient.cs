@@ -2,7 +2,7 @@
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
 {
-    public FirmwareClient(MeadowCloudContext meadowCloudContext, ILogger logger) 
+    public FirmwareClient(MeadowCloudContext meadowCloudContext, ILogger logger)
         : base(meadowCloudContext, logger)
     {
     }

@@ -5,7 +5,7 @@ namespace Meadow.Cloud.Client.Unit.Tests;
 
 public class MeadowCloudClientBaseTests
 {
-    public class MeadowCloudClientBaseUnderTest(MeadowCloudContext meadowCloudContext, ILogger logger) 
+    public class MeadowCloudClientBaseUnderTest(MeadowCloudContext meadowCloudContext, ILogger logger)
         : MeadowCloudClientBase(meadowCloudContext, logger)
     {
         public static new Task EnsureSuccessfulStatusCode(HttpResponseMessage response, CancellationToken cancellationToken = default)

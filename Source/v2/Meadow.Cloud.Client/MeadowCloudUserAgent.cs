@@ -2,8 +2,8 @@
 
 public class MeadowCloudUserAgent
 {
-    public static readonly MeadowCloudUserAgent Cli = new ("Meadow.Cli");
-    public static readonly MeadowCloudUserAgent Workbench = new ("Meadow.Workbench");
+    public static readonly MeadowCloudUserAgent Cli = new("Meadow.Cli");
+    public static readonly MeadowCloudUserAgent Workbench = new("Meadow.Workbench");
 
     public string UserAgent { get; }
 
@@ -21,5 +21,5 @@ public class MeadowCloudUserAgent
     public override int GetHashCode() => UserAgent.GetHashCode();
 
     public static implicit operator string(MeadowCloudUserAgent userAgent) => userAgent.UserAgent;
-    public static implicit operator MeadowCloudUserAgent(string userAgent) => new (userAgent);
+    public static implicit operator MeadowCloudUserAgent(string userAgent) => new(userAgent);
 }
