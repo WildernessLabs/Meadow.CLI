@@ -21,7 +21,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         _packageManager = packageManager;
     }
 
-    protected override async ValueTask ExecuteCommand()
+    protected override ValueTask ExecuteCommand()
     {
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
 
@@ -39,5 +39,7 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
         {
             Logger?.LogInformation($"Build successful");
         }
+
+        return default;
     }
 }
