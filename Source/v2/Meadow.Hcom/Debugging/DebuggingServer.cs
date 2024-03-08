@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -14,11 +15,11 @@ public class DebuggingServer : IDisposable
     // VS 2017 - 4022
     // VS 2015 - 4020
     public IPEndPoint LocalEndpoint { get; private set; }
-
     private readonly object _lck = new();
     private CancellationTokenSource? _cancellationTokenSource;
     private readonly ILogger? _logger;
     private readonly IMeadowDevice _meadow;
+    private readonly IMeadowConnection _connection;
     private ActiveClient? _activeClient;
     private int _activeClientCount = 0;
     private readonly TcpListener _listener;
@@ -33,9 +34,11 @@ public class DebuggingServer : IDisposable
     /// <param name="meadow">The <see cref="IMeadowDevice"/> to debug</param>
     /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
     /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
-    public DebuggingServer(IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger? logger)
+    public DebuggingServer(IMeadowConnection connection, IMeadowDevice meadow, IPEndPoint localEndpoint, ILogger? logger)
     {
         LocalEndpoint = localEndpoint;
+        _connection = connection;
+
         _meadow = meadow;
         _logger = logger;
         _listener = new TcpListener(LocalEndpoint);
@@ -123,7 +126,7 @@ public class DebuggingServer : IDisposable
                     CloseActiveClient();
                 }
 
-                _activeClient = new ActiveClient(_meadow, tcpClient, _logger, _cancellationTokenSource?.Token);
+                _activeClient = new ActiveClient(_connection, tcpClient, _logger, _cancellationTokenSource?.Token);
                 _activeClientCount++;
             }
         }
@@ -158,7 +161,7 @@ public class DebuggingServer : IDisposable
     // Embedded class
     private class ActiveClient : IDisposable
     {
-        private readonly IMeadowDevice _meadow;
+        private readonly IMeadowConnection _connection;
         private readonly TcpClient _tcpClient;
         private readonly NetworkStream _networkStream;
 
@@ -167,9 +170,10 @@ public class DebuggingServer : IDisposable
         private readonly Task _receiveMeadowDebugDataTask;
         private readonly ILogger? _logger;
         public bool Disposed = false;
+        private BlockingCollection<byte[]> _debuggerMessages = new();
 
         // Constructor
-        internal ActiveClient(IMeadowDevice meadow, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
+        internal ActiveClient(IMeadowConnection connection, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
         {
             if (cancellationToken != null)
             {
@@ -181,12 +185,14 @@ public class DebuggingServer : IDisposable
             }
 
             _logger = logger;
-            _meadow = meadow;
+            _connection = connection;
             _tcpClient = tcpClient;
             _networkStream = tcpClient.GetStream();
             _logger?.LogDebug("Starting receive task");
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, TaskCreationOptions.LongRunning);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
+
+            _connection.DebuggerMessageReceived += (s, e) => _debuggerMessages.Add(e);
         }
 
         private const int RECEIVE_BUFFER_SIZE = 256;
@@ -225,7 +231,7 @@ public class DebuggingServer : IDisposable
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
 
-                            await _meadow.SendDebuggerData(meadowBuffer, 0, _cts.Token);
+                            await _connection.SendDebuggerData(meadowBuffer, 0, _cts.Token);
                             meadowBuffer = Array.Empty<byte>();
 
                             // Ensure we read all the data in this message before passing it along
@@ -259,7 +265,7 @@ public class DebuggingServer : IDisposable
             }
         }
 
-        private Task SendToVisualStudio()
+        private async Task SendToVisualStudio()
         {
             try
             {
@@ -267,9 +273,9 @@ public class DebuggingServer : IDisposable
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        /* TODO while (_meadow.DataProcessor.DebuggerMessages.Count > 0)
+                        while (_debuggerMessages.Count > 0)
                         {
-                            var byteData = _meadow.DataProcessor.DebuggerMessages.Take(_cts.Token);
+                            var byteData = _debuggerMessages.Take(_cts.Token);
                             _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
                             if (!_tcpClient.Connected)
                             {
@@ -279,7 +285,7 @@ public class DebuggingServer : IDisposable
 
                             await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
                             _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
-                        }*/
+                        }
                     }
                     else
                     {
@@ -304,7 +310,6 @@ public class DebuggingServer : IDisposable
                     throw;
                 }
             }
-            return Task.CompletedTask;
         }
 
         public void Dispose()
