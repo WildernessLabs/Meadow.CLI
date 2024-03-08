@@ -8,6 +8,7 @@ public static class Strings
     public const string InvalidApplicationPath = "Invalid application path";
     public const string InvalidParameter = "Invalid parameter";
     public const string GettingDeviceInfo = "Getting device info...";
+    public const string UnableToGetDeviceInfo = "Unable to get device info";
     public const string RetrievingUserAndOrgInfo = "Retrieving your user and organization information...";
     public const string MemberOfMoreThanOneOrg = "You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.";
     public const string UnableToFindMatchingOrg = "Unable to find an organization with a Name or ID matching '{0}'";
@@ -43,4 +44,21 @@ public static class Strings
     public const string BuildConfiguration = "The build configuration";
     public const string PathMeadowApplication = "Path to the Meadow application";
     public const string PathToMeadowProject = "Path to the Meadow project file";
+    public const string NoLinkAssemblies = "Assemblies to skip during linking";
+    public const string WritingCoprocessorFiles = "Writing Coprocessor files";
+    public const string MeadowFoundAt = "Meadow found at";
+    public const string GettingRuntimeFor = "Getting runtime for";
+    public const string WritingRuntime = "Writing runtime for";
+    public const string ErrorWritingRuntime = "Error writing runtime for";
+    public const string Retrying = "retrying";
+    public const string MultipleDfuDevicesFound = "Multiple devices found in bootloader mode - only connect one device";
+    public const string SpecifiedFirmwareVersionNotFound = "Requested firmware version '{0}' not found";
+    public const string NoDefaultVersionSet = "No default version set";
+    public const string UseCommandFirmwareDefault = "Use 'meadow firmare default' to set a default version";
+    public const string FirmwareWriteFailed = "Firmware write failed";
+    public const string UnableToReadSerialNumber = "unable to read device serial number";
+    public const string MakeSureDeviceisConnected = "make sure a device is connected";
+    public const string IsDfuUtilInstalled = "Is dfu-util installed?";
+    public const string RunMeadowDfuInstall = "Run 'meadow dfu install' to install";
+    public const string NewMeadowDeviceNotFound = "New Meadow device not found";
 }

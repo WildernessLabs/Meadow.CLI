@@ -1,29 +1,28 @@
-﻿namespace Meadow.Hcom
+﻿namespace Meadow.Hcom;
+
+public class ConnectionManager
 {
-    public class ConnectionManager
+    private static readonly List<IMeadowConnection> _connections = new List<IMeadowConnection>();
+
+    public static TConnection GetConnection<TConnection>(string connectionName)
+        where TConnection : class, IMeadowConnection
     {
-        private static readonly List<IMeadowConnection> _connections = new List<IMeadowConnection>();
+        // see if it already is known
+        var existing = _connections.FirstOrDefault(c => c.Name == connectionName) as TConnection;
+        if (existing != null) return existing;
 
-        public static TConnection GetConnection<TConnection>(string connectionName)
-            where TConnection : class, IMeadowConnection
+        // otherwise create
+        switch (typeof(TConnection))
         {
-            // see if it already is known
-            var existing = _connections.FirstOrDefault(c => c.Name == connectionName) as TConnection;
-            if (existing != null) return existing;
-
-            // otherwise create
-            switch (typeof(TConnection))
-            {
-                case Type t when t == typeof(SerialConnection):
-                    var c = new SerialConnection(connectionName);
-                    _connections.Add(c);
+            case Type t when t == typeof(SerialConnection):
+                var c = new SerialConnection(connectionName);
+                _connections.Add(c);
 #pragma warning disable 8603
-                    return c as TConnection;
+                return c as TConnection;
 #pragma warning restore
-                default:
-                    throw new NotSupportedException();
-            };
+            default:
+                throw new NotSupportedException();
+        };
 
-        }
     }
 }

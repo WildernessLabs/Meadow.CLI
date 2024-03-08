@@ -12,7 +12,7 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
     [CommandParameter(0, Name = "Settings", IsRequired = false)]
     public string[]? Settings { get; init; }
 
-    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory? loggerFactory)
+    public ConfigCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
         : base(settingsManager, loggerFactory)
     { }
 

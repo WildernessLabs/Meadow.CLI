@@ -41,9 +41,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private int _lastWriteProgress = 0;
 
-    private async Task<IMeadowConnection?> GetConnectionAndDisableRuntime(string? route = null)
+    private async Task<IMeadowConnection> GetConnectionAndDisableRuntime(string? route = null)
     {
-        IMeadowConnection? connection = null;
+        IMeadowConnection connection;
 
         if (route != null)
         {
@@ -54,7 +54,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             connection = await GetCurrentConnection(true);
         }
 
-        if (await connection.Device.IsRuntimeEnabled())
+        if (await connection.Device!.IsRuntimeEnabled())
         {
             Logger?.LogInformation($"{Strings.DisablingRuntime}...");
             await connection.Device.RuntimeDisable();
@@ -93,11 +93,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private bool RequiresDfuForRuntimeUpdates(DeviceInfo info)
     {
         return true;
-
+        /*
+        restore this when we support OtA-style updates again
         if (System.Version.TryParse(info.OsVersion, out var version))
         {
             return version.Major >= 2;
         }
+        */
     }
 
     private bool RequiresDfuForEspUpdates(DeviceInfo info)
@@ -191,12 +193,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
                 var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
-                if (await WriteOsWithDfu(dfuDevice, osFileWithBootloader) == false)
+                try
                 {
-                    throw new CommandException(Strings.DfuWriteFailed);
+                    await WriteOsWithDfu(dfuDevice, osFileWithBootloader!);
                 }
-
-                dfuDevice?.Dispose();
+                finally
+                {
+                    dfuDevice?.Dispose();
+                }
 
                 await Task.Delay(1500);
 
@@ -248,7 +252,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
     }
 
-    async Task<IMeadowConnection> FindMeadowConnection(IList<string> portsToIgnore)
+    private async Task<IMeadowConnection> FindMeadowConnection(IList<string> portsToIgnore)
     {
         IMeadowConnection? connection = null;
 
@@ -282,7 +286,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
         }
 
-        Logger?.LogInformation($"Meadow found at {newPort}");
+        Logger?.LogInformation($"{Strings.MeadowFoundAt} {newPort}");
 
         connection = await GetConnectionAndDisableRuntime();
 
@@ -296,7 +300,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        Logger?.LogInformation($"{Environment.NewLine}Getting runtime for {package.Version}...");
+        Logger?.LogInformation($"{Environment.NewLine}{Strings.GettingRuntimeFor} {package.Version}...");
+
+        if (package.Runtime == null) { return null; }
 
         // get the path to the runtime file
         var rtpath = package.GetFullyQualifiedPath(package.Runtime);
@@ -308,9 +314,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         connection ??= await GetConnectionAndDisableRuntime();
 
-        Logger?.LogInformation($"{Environment.NewLine}Writing Runtime ...");
+        Logger?.LogInformation($"{Environment.NewLine}{Strings.WritingRuntime} ...");
 
         deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
+
+        if (deviceInfo == null)
+        {
+            throw new CommandException(Strings.UnableToGetDeviceInfo);
+        }
 
         if (UseDfu || RequiresDfuForRuntimeUpdates(deviceInfo))
         {
@@ -320,7 +331,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             if (!await connection!.Device!.WriteRuntime(runtimePath, CancellationToken))
             {
                 // TODO: implement a retry timeout
-                Logger?.LogInformation($"Error writing runtime - retrying");
+                Logger?.LogInformation($"{Strings.ErrorWritingRuntime} - {Strings.Retrying}");
                 goto write_runtime;
             }
 
@@ -330,14 +341,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             {
                 var newPort = await WaitForNewSerialPort(initialPorts);
 
-                if (newPort != null)
+                if (newPort == null)
                 {
                     throw CommandException.MeadowDeviceNotFound;
                 }
 
                 connection = await GetCurrentConnection(true);
 
-                Logger?.LogInformation($"Meadow found at {newPort}");
+                Logger?.LogInformation($"{Strings.MeadowFoundAt} {newPort}");
 
                 // configure the route to that port for the user
                 Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
@@ -357,7 +368,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (connection == null) { return; } // couldn't find a connected device
 
-        Logger?.LogInformation($"{Environment.NewLine}Writing Coprocessor files...");
+        Logger?.LogInformation($"{Environment.NewLine}{Strings.WritingCoprocessorFiles}...");
 
         string[] fileList;
 
@@ -376,6 +387,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
 
         deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
+
+        if (deviceInfo == null) { throw new CommandException(Strings.UnableToGetDeviceInfo); }
 
         if (UseDfu || RequiresDfuForEspUpdates(deviceInfo))
         {
@@ -425,7 +438,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
                 return devices[0];
             }
         }
-        throw new CommandException("Multiple devices found in bootloader mode - only connect one device");
+        throw new CommandException(Strings.MultipleDfuDevicesFound);
     }
 
     private async Task<FirmwarePackage?> GetSelectedPackage()
@@ -442,14 +455,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (existing == null)
             {
-                Logger?.LogError($"Requested firmware version '{Version}' not found");
+                Logger?.LogError(string.Format(Strings.SpecifiedFirmwareVersionNotFound, Version));
                 return null;
             }
             package = existing;
         }
         else
         {
-            Version = collection.DefaultPackage?.Version ?? throw new CommandException("No default version set");
+            Version = collection.DefaultPackage?.Version ?? throw new CommandException($"{Strings.NoDefaultVersionSet}. {Strings.UseCommandFirmwareDefault}.");
 
             package = collection.DefaultPackage;
         }
@@ -457,19 +470,16 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async Task<bool> WriteOsWithDfu(ILibUsbDevice? libUsbDevice, string osFile)
+    private async Task WriteOsWithDfu(ILibUsbDevice? libUsbDevice, string osFile)
     {
         // get the device's serial number via DFU - we'll need it to find the device after it resets
         if (libUsbDevice == null)
         {
-            try
+            libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
+
+            if (libUsbDevice == null)
             {
-                libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
-            }
-            catch (Exception ex)
-            {
-                Logger?.LogError(ex.Message);
-                return false;
+                throw new CommandException(Strings.NoDfuDeviceDetected);
             }
         }
 
@@ -479,8 +489,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         catch
         {
-            Logger?.LogError("Firmware write failed - unable to read device serial number (make sure device is connected)");
-            return false;
+            throw new CommandException($"{Strings.FirmwareWriteFailed} - {Strings.UnableToReadSerialNumber} ({Strings.MakeSureDeviceisConnected})");
         }
 
         try
@@ -493,8 +502,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         catch (ArgumentException)
         {
-            Logger?.LogWarning("Unable to write firmware - is Dfu-util installed? Run `meadow dfu install` to install");
-            return false;
+            throw new CommandException($"{Strings.FirmwareWriteFailed} - {Strings.IsDfuUtilInstalled} {Strings.RunMeadowDfuInstall}");
         }
         catch (Exception ex)
         {
@@ -504,13 +512,11 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             // TODO: catch the Win10 DFU error here and change the global provider configuration to "classic"
             Settings.SaveSetting(SettingsManager.PublicSettings.LibUsb, "classic");
 
-            Logger?.LogWarning("This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.");
-            return false;
+            throw new CommandException("This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.");
         }
-        return true;
     }
 
-    private async Task<IList<string>> WaitForNewSerialPorts(IList<string> ignorePorts)
+    private async Task<IList<string>> WaitForNewSerialPorts(IList<string>? ignorePorts)
     {
         var ports = await MeadowConnectionManager.GetSerialPorts();
 
@@ -520,16 +526,20 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             if (retryCount++ > 10)
             {
-                throw new CommandException("New meadow device not found");
+                throw new CommandException(Strings.NewMeadowDeviceNotFound);
             }
             await Task.Delay(500);
             ports = await MeadowConnectionManager.GetSerialPorts();
         }
 
-        return ports.Except(ignorePorts).ToList();
+        if (ignorePorts != null)
+        {
+            return ports.Except(ignorePorts).ToList();
+        }
+        return ports.ToList();
     }
 
-    private async Task<string> WaitForNewSerialPort(IList<string>? ignorePorts)
+    private async Task<string?> WaitForNewSerialPort(IList<string>? ignorePorts)
     {
         var ports = await WaitForNewSerialPorts(ignorePorts);
 

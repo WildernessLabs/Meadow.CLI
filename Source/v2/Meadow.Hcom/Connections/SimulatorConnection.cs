@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public class SimulatorConnection : ConnectionBase
 {
