@@ -7,6 +7,7 @@ public interface IMeadowConnection : IDisposable
     event EventHandler<string> ConnectionMessage;
     event EventHandler<(string fileName, long completed, long total)> FileWriteProgress;
     event EventHandler FileWriteFailed;
+    event EventHandler<byte[]> DebuggerMessageReceived;
 
     string Name { get; }
     IMeadowDevice? Device { get; }

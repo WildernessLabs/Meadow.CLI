@@ -1,7 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -194,7 +192,7 @@ public class DebuggingServer : IDisposable
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, TaskCreationOptions.LongRunning);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
 
-            _connection.DebuggerMessage += (s, e) => _debuggerMessages.Add(e);
+            _connection.DebuggerMessageReceived += (s, e) => _debuggerMessages.Add(e);
         }
 
         private const int RECEIVE_BUFFER_SIZE = 256;
