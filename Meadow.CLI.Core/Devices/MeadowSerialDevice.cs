@@ -1,6 +1,7 @@
 ﻿using Meadow.CLI.Core.Exceptions;
 using Meadow.CLI.Core.Internals.MeadowCommunication;
 using System;
+using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace Meadow.CLI.Core.Devices
 
                 if (SerialPort != null)
                 {
-                    lock(lockObject)
+                    lock (lockObject)
                     {
                         if (SerialPort.IsOpen)
                         {
@@ -52,7 +53,7 @@ namespace Meadow.CLI.Core.Devices
                         SerialPort.Dispose();
                         SerialPort = null;
                     }
-				}
+                }
             }
         }
 
@@ -115,7 +116,7 @@ namespace Meadow.CLI.Core.Devices
         {
             if (string.IsNullOrEmpty(portName))
             {
-                throw new ArgumentException("Serial Port name cannot be empty");
+                throw new ArgumentException("Serial Port name cannot be empty", nameof(portName));
             }
 
             // Create a new SerialPort object with default settings
@@ -136,7 +137,7 @@ namespace Meadow.CLI.Core.Devices
             if (port.IsOpen)
                 port.Close();
 
-            int retries = 15;
+            int retries = 10;
 
             for (int i = 0; i < retries; i++)
             {
@@ -146,9 +147,22 @@ namespace Meadow.CLI.Core.Devices
                     port.BaseStream.ReadTimeout = 0;
                     break;
                 }
-                catch
+                catch (FileNotFoundException)
                 {
+                    throw new Exception($"Serial port '{portName}' not found");
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    if (i == retries - 1)
+                    {
+                        throw new Exception($"{uae.Message} Another application may have access to '{portName}'. ");
+                    }
                     Thread.Sleep(500);
+                }
+                catch (Exception ex)
+                {
+                    // We don't know what happened, best to bail and let the user know.
+                    throw new Exception($"Unable to open port '{portName}'. {ex.Message}");
                 }
             }
 
