@@ -48,7 +48,7 @@ public static class Strings
     public const string WritingCoprocessorFiles = "Writing Coprocessor files";
     public const string MeadowFoundAt = "Meadow found at";
     public const string GettingRuntimeFor = "Getting runtime for";
-    public const string WritingRuntime = "Writing runtime for";
+    public const string WritingRuntime = "Writing runtime";
     public const string ErrorWritingRuntime = "Error writing runtime for";
     public const string Retrying = "retrying";
     public const string MultipleDfuDevicesFound = "Multiple devices found in bootloader mode - only connect one device";
