@@ -288,9 +288,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         Logger?.LogInformation($"{Strings.MeadowFoundAt} {newPort}");
 
-        connection = await GetConnectionAndDisableRuntime();
-
-        await connection.WaitForMeadowAttach();
+        await connection!.WaitForMeadowAttach();
 
         // configure the route to that port for the user
         Settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
@@ -314,7 +312,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     {
         connection ??= await GetConnectionAndDisableRuntime();
 
-        Logger?.LogInformation($"{Environment.NewLine}{Strings.WritingRuntime} ...");
+        Logger?.LogInformation($"{Environment.NewLine}{Strings.WritingRuntime}...");
 
         deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
