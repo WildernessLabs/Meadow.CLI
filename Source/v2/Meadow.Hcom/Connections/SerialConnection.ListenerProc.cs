@@ -10,22 +10,22 @@ namespace Meadow.Hcom
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
-            var timeout = 20;
+            var timeout = 10; // 5 seconds due to 500ms Task.Delay
 
             while (timeout-- > 0)
             {
                 if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
                 if (timeout <= 0) throw new TimeoutException();
 
-                if (State == ConnectionState.Connected)
+                if (Device != null
+                    && State == ConnectionState.MeadowAttached)
                 {
-                    if (Device == null)
-                    {
-                        // no device set - this happens when we are waiting for attach from DFU mode
-                        await Attach(cancellationToken, 5);
-                    }
-
                     return;
+                }
+                else
+                {
+                    // no device set - this happens when we are waiting for attach from DFU mode
+                    await Attach(cancellationToken, 5);
                 }
 
                 await Task.Delay(500);
