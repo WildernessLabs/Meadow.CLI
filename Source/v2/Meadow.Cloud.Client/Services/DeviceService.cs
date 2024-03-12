@@ -2,7 +2,7 @@
 
 public class DeviceService : CloudServiceBase
 {
-    public DeviceService(IdentityManager identityManager) : base(identityManager)
+    public DeviceService(IMeadowCloudClient meadowCloudClient) : base(meadowCloudClient)
     {
     }
 

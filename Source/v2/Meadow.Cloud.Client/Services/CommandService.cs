@@ -2,7 +2,7 @@
 
 public class CommandService : CloudServiceBase
 {
-    public CommandService(IdentityManager identityManager) : base(identityManager)
+    public CommandService(IMeadowCloudClient meadowCloudClient) : base(meadowCloudClient)
     {
     }
 
@@ -12,7 +12,7 @@ public class CommandService : CloudServiceBase
         JsonDocument? arguments = null,
         int qualityOfService = 0,
         string? host = null,
-        CancellationToken? cancellationToken = null)
+        CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
@@ -23,7 +23,7 @@ public class CommandService : CloudServiceBase
             qos = qualityOfService
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        var response = await httpClient.PostAsync($"{host}/api/collections/{collectionId}/commands", content, cancellationToken ?? CancellationToken.None);
+        var response = await httpClient.PostAsync($"{host}/api/collections/{collectionId}/commands", content, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -38,7 +38,7 @@ public class CommandService : CloudServiceBase
         JsonDocument? arguments = null,
         int qualityOfService = 0,
         string? host = null,
-        CancellationToken? cancellationToken = null)
+        CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
@@ -50,7 +50,7 @@ public class CommandService : CloudServiceBase
             qos = qualityOfService
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        var response = await httpClient.PostAsync($"{host}/api/devices/commands", content, cancellationToken ?? CancellationToken.None);
+        var response = await httpClient.PostAsync($"{host}/api/devices/commands", content, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

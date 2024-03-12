@@ -29,16 +29,9 @@ public class CloudPackagePublishCommand : BaseCloudCommand<CloudPackagePublishCo
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        try
-        {
-            Logger.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
+        Logger.LogInformation($"Publishing package {PackageId} to collection {CollectionId}...");
 
-            await _packageService.PublishPackage(PackageId, CollectionId, Metadata ?? string.Empty, Host, CancellationToken);
-            Logger.LogInformation("Publish successful.");
-        }
-        catch (MeadowCloudException mex)
-        {
-            Logger.LogError($"Publish failed: {mex.Message}");
-        }
+        await _packageService.PublishPackage(PackageId, CollectionId, Metadata ?? string.Empty, Host, CancellationToken);
+        Logger.LogInformation("Publish successful.");
     }
 }

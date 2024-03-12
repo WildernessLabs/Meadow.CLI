@@ -2,11 +2,11 @@
 
 public class CollectionService : CloudServiceBase
 {
-    public CollectionService(IdentityManager identityManager) : base(identityManager)
+    public CollectionService(IMeadowCloudClient meadowCloudClient) : base(meadowCloudClient)
     {
     }
 
-    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken? cancellationToken)
+    public async Task<List<Collection>> GetOrgCollections(string orgId, string host, CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 

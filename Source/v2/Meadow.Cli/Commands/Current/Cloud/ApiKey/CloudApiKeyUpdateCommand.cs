@@ -35,25 +35,18 @@ public class CloudApiKeyUpdateCommand : BaseCloudCommand<CloudApiKeyUpdateComman
 
     protected async override ValueTask ExecuteCloudCommand()
     {
-        try
+        var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
+        var apiKey = getRequest.FirstOrDefault(x => x.Id == NameOrId || string.Equals(x.Name, NameOrId, StringComparison.OrdinalIgnoreCase));
+
+        if (apiKey == null)
         {
-            var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
-            var apiKey = getRequest.FirstOrDefault(x => x.Id == NameOrId || string.Equals(x.Name, NameOrId, StringComparison.OrdinalIgnoreCase));
-
-            if (apiKey == null)
-            {
-                throw new CommandException($"API key `{NameOrId}` not found.");
-            }
-
-            NewName ??= apiKey.Name;
-            Scopes ??= apiKey.Scopes;
-
-            var updateRequest = new UpdateApiTokenRequest(NewName!, Scopes!);
-            await ApiTokenService.UpdateApiToken(apiKey.Id, updateRequest, Host, CancellationToken);
+            throw new CommandException($"API key `{NameOrId}` not found.");
         }
-        catch (MeadowCloudException ex)
-        {
-            throw new CommandException($"Create API key command failed: {ex.Message}", innerException: ex);
-        }
+
+        NewName ??= apiKey.Name;
+        Scopes ??= apiKey.Scopes;
+
+        var updateRequest = new UpdateApiTokenRequest(NewName!, Scopes!);
+        await ApiTokenService.UpdateApiToken(apiKey.Id, updateRequest, Host, CancellationToken);
     }
 }

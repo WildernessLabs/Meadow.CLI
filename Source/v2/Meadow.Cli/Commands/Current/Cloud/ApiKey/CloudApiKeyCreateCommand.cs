@@ -40,18 +40,11 @@ public class CloudApiKeyCreateCommand : BaseCloudCommand<CloudApiKeyCreateComman
 
     protected async override ValueTask ExecuteCloudCommand()
     {
-        try
-        {
-            var request = new CreateApiTokenRequest(Name, Duration, Scopes);
-            var response = await ApiTokenService.CreateApiToken(request, Host, CancellationToken);
+        var request = new CreateApiTokenRequest(Name, Duration, Scopes);
+        var response = await ApiTokenService.CreateApiToken(request, Host, CancellationToken);
 
-            Logger.LogInformation($"Your API key '{response.Name}' (expiring {response.ExpiresAt:G} UTC) is:");
-            Logger.LogInformation($"\n{response.Token}\n");
-            Logger.LogInformation("Make sure to copy this key now as you will not be able to see this again.");
-        }
-        catch (MeadowCloudException ex)
-        {
-            throw new CommandException($"Create API key command failed: {ex.Message}", innerException: ex);
-        }
+        Logger.LogInformation($"Your API key '{response.Name}' (expiring {response.ExpiresAt:G} UTC) is:");
+        Logger.LogInformation($"\n{response.Token}\n");
+        Logger.LogInformation("Make sure to copy this key now as you will not be able to see this again.");
     }
 }
