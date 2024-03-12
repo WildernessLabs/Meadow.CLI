@@ -3,6 +3,7 @@ using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Users;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
+using System.Text;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -71,8 +72,14 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         {
             if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                throw new CommandException($"You are not authorized to perform this action. Please check that you have appropriate access"
-                    + (!string.IsNullOrWhiteSpace(ApiKey) ? ", your API key has the correct scope(s)," : "") + " and try again.", ex);
+                var sb = new StringBuilder("You are not authorized to perform this action. Please check that you have sufficient access");
+                if (!string.IsNullOrWhiteSpace(ApiKey))
+                {
+                    sb.Append(", that your API keys is valid with the correct scopes,");
+                }
+                sb.Append(" and try again.");
+
+                throw new CommandException(sb.ToString(), ex);
             }
 
             throw new CommandException($@"There was a problem executing the command. Meadow.Cloud returned a non-successful response.
