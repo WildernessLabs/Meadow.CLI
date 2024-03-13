@@ -38,6 +38,18 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 
     protected sealed override async ValueTask ExecuteCommand()
     {
+        if (!Host.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !Host.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CommandException("Host (--host) must be a valid URL that starts with http:// or https://.");
+        }
+
+        if (!Uri.TryCreate(Host, UriKind.Absolute, out Uri? baseAddress) || baseAddress == null)
+        {
+            throw new CommandException("Host (--host) must be a valid URL.", showHelp: true);
+        }
+        
+        MeadowCloudClient.BaseAddress = baseAddress;
+
         await PreAuthenticatedValidation();
 
         if (RequiresAuthentication)
