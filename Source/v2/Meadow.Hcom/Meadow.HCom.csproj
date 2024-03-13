@@ -6,6 +6,11 @@
     <LangVersion>10</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\..\..\..\Meadow.Contracts\Source\Meadow.Contracts\CircularBuffer.cs" Link="CircularBuffer.cs" />
   </ItemGroup>
