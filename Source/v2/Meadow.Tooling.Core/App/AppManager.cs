@@ -77,10 +77,11 @@ public static class AppManager
 
             var processedAppPath = localBinaryDirectory;
 
-            //check if there's a post link folder
-            if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
+            var postLinkDirectory = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+			//check if there's a post link folder
+			if (Directory.Exists(postLinkDirectory))
             {
-                processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+                processedAppPath = postLinkDirectory;
 
                 //add all dlls from the postlink_bin folder to the dependencies
                 dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
