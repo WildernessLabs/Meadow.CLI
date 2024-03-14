@@ -426,14 +426,18 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             return devices[0];
         }
-        else if (devices.Count == 2)
-        {   //this is a workaround for a specific case when a bad 2nd device is returned by the libusb provider on MacOS
-            //this fix is constrained to the known reproducible case
-            var serial2 = devices[1].GetDeviceSerialNumber();
+        else
+        {
+            var meadowsInDFU = devices.Where(device => device.IsMeadow()).ToList();
 
-            if (serial2.Length > 12)
+            if (meadowsInDFU.Count == 0)
             {
-                return devices[0];
+                return null;
+            }
+
+            if (meadowsInDFU.Count == 1)
+            {
+                return meadowsInDFU.FirstOrDefault();
             }
         }
         throw new CommandException(Strings.MultipleDfuDevicesFound);
