@@ -90,7 +90,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             {
                 throw new CommandException("If a public key is provided, an `id` must also be provided");
             }
-            provisioningID = SerialNumber;
+            provisioningID = SerialNumber.ToUpper();
             provisioningName = Name ?? string.Empty;
         }
         else
