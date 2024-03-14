@@ -1,4 +1,7 @@
-﻿namespace Meadow.LibUsb;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Meadow.LibUsb;
 
 public interface ILibUsbProvider
 {
