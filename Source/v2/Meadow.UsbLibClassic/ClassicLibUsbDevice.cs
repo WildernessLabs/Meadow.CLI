@@ -8,8 +8,8 @@ namespace Meadow.LibUsb;
 
 public class ClassicLibUsbProvider : ILibUsbProvider
 {
-    //    private const int _osAddress = 0x08000000;
     private const string UsbStmName = "STM32  BOOTLOADER";
+    private const int UsbBootLoaderVendorID = 1155;
 
     public List<ILibUsbDevice> GetDevicesInBootloaderMode()
     {
@@ -62,5 +62,18 @@ public class ClassicLibUsbDevice : ILibUsbDevice
         }
 
         return string.Empty;
+    }
+
+    public bool IsMeadow()
+    {
+        if (_device.Vid != 1155)
+        {
+            return false;
+        }
+        if (GetDeviceSerialNumber().Length > 12)
+        {
+            return false;
+        }
+        return true;
     }
 }
