@@ -98,7 +98,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
         }
         catch (Exception ex)
         {
-            Logger.LogError($"Unable to download package '{Version}': {ex.Message}");
+            Logger.LogError($"{ex.Message}");
         }
     }
 
