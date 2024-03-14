@@ -403,43 +403,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private ILibUsbDevice? GetLibUsbDeviceForCurrentEnvironment()
     {
-        ILibUsbProvider provider;
-
-        // TODO: read the settings manager to decide which provider to use (default to non-classic)
-        var setting = Settings.GetAppSetting(SettingsManager.PublicSettings.LibUsb);
-        if (setting == "classic")
-        {
-            provider = new ClassicLibUsbProvider();
-        }
-        else
-        {
-            provider = new LibUsbProvider();
-        }
+        var provider = new LibUsbProvider();
 
         var devices = provider.GetDevicesInBootloaderMode();
 
-        if (devices.Count == 0)
+        var meadowsInDFU = devices.Where(device => device.IsMeadow()).ToList();
+
+        if (meadowsInDFU.Count == 0)
         {
             return null;
         }
-        else if (devices.Count == 1)
-        {
-            return devices[0];
-        }
-        else
-        {
-            var meadowsInDFU = devices.Where(device => device.IsMeadow()).ToList();
 
-            if (meadowsInDFU.Count == 0)
-            {
-                return null;
-            }
-
-            if (meadowsInDFU.Count == 1)
-            {
-                return meadowsInDFU.FirstOrDefault();
-            }
+        if (meadowsInDFU.Count == 1)
+        {
+            return meadowsInDFU.FirstOrDefault();
         }
+
         throw new CommandException(Strings.MultipleDfuDevicesFound);
     }
 
