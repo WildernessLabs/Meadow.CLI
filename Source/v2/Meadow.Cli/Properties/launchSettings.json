@@ -31,6 +31,10 @@
       "commandName": "Project",
       "commandLineArgs": "device info"
     },
+    "Device Public Key": {
+      "commandName": "Project",
+      "commandLineArgs": "device info -k"
+    },
     "Device Reset": {
       "commandName": "Project",
       "commandLineArgs": "device reset"
@@ -42,6 +46,10 @@
     "Device Clock Set": {
       "commandName": "Project",
       "commandLineArgs": "device clock now"
+    },
+    "Config: Set Route local": {
+      "commandName": "Project",
+      "commandLineArgs": "config route local"
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
@@ -214,6 +222,10 @@
     "Device provision": {
       "commandName": "Project",
       "commandLineArgs": "device provision"
+    },
+    "Device provision other": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision -o christacke6612 --id 2258a2fa0739491aa484a0d6b95c3e15 -k \"-----BEGIN RSA PUBLIC KEY-----\nMIIBigKCAYEA2kj+97LvLa9tZhn9rLBGNgJIEw+Wl+qJXHXW1AmAv3zcytXJ5uGJ\nJjrU7V/y/R6R/TizZRY57puz/mG5BMopdtdNx3Cpfb35SaGmIiSiAVpELci/Ldpd\ntsGJphfSxslVkc3/s2LEZ416pybzGoTb4+KGj+L+GcNYoe6rxFgVJEv3PTlpBWbv\nCUZGBb/0twedNmmXZzq9W79UYIMQaB53fgdH9qFOvBIw9zcG2a6MY/MBGU6nr7BY\nwShjMV9AwP3z1ao6X4nbpfPtBRPjyyyGdVH4bKF7dLgBGZnShmvGfhGpaxWJlBIk\n3IJYgJbd8y5MVVhsJv6AmBmm84dyDX2Tn5wKvZ+Fbmpeez87rosm+C80VnO6Kz4E\nFmIErHGGaoBoX9L7cf33yMwty2glCNW7HYUl/YWJPg+8eyuEjOpGHqJSAW4AlfgY\n0FDNj/AR0Pni0wfQ+DUpBt5i2kgUw0MDWlWVYYbgxmO1VbvofWJwYLYgeiCxNPBj\nopp0RZfm/brRAgMBAAE=\n-----END RSA PUBLIC KEY-----\""
     },
     "Login": {
       "commandName": "Project",

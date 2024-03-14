@@ -97,18 +97,21 @@ public class LocalConnection : ConnectionBase
                 var pkFile = Path.Combine(sshFolder.FullName, "id_rsa.pub");
                 if (!File.Exists(pkFile))
                 {
-                    throw new Exception("Public key not found");
+                    throw new Exception("Public key not found. Run 'ssh-keygen -t rsa'");
                 }
 
-                return Task.FromResult(File.ReadAllText(pkFile));
+                var pkFileContent = File.ReadAllText(pkFile);
+
+                if (!pkFileContent.Contains("BEGIN RSA PUBLIC KEY"))
+                {
+                    pkFileContent = ExecuteWindowsCommandLine("ssh-keygen", $"-e -m pem -f {pkFile}");
+                }
+
+                return Task.FromResult(pkFileContent);
             }
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            // ssh-agent sh -c 'ssh-add; ssh-add -L'
-            throw new PlatformNotSupportedException();
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             // ssh-agent sh -c 'ssh-add; ssh-add -L'
             var pubkey = this.ExecuteBashCommandLine("ssh-agent sh -c 'ssh-add; ssh-add -L'");
@@ -127,6 +130,23 @@ public class LocalConnection : ConnectionBase
         }
     }
 
+    private string ExecuteWindowsCommandLine(string command, string args)
+    {
+        var psi = new ProcessStartInfo()
+        {
+            FileName = command,
+            Arguments = args,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(psi);
+
+        process?.WaitForExit();
+
+        return process?.StandardOutput.ReadToEnd() ?? string.Empty;
+    }
 
 
 
