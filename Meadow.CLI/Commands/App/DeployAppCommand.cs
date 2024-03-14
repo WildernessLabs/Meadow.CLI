@@ -5,6 +5,7 @@ using Meadow.CLI.Core.DeviceManagement;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.App
@@ -50,8 +51,9 @@ namespace Meadow.CLI.Commands.App
 
             try
             {
+                var osBinariesCancellationTokenSource = new CancellationTokenSource();
                 // make sure we have the same locally because we will do linking/trimming against that runtime
-                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion, cancellationToken: cancellationToken);
+                await new DownloadManager(LoggerFactory).DownloadOsBinaries(osVersion, cancellationToken: osBinariesCancellationTokenSource.Token);
             }
             catch
             {   //OS binaries failed to download
