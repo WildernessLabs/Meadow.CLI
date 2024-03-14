@@ -24,6 +24,12 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     [CommandOption("host", 'h', Description = "Optionally set a host (default is https://www.meadowcloud.co)", IsRequired = false)]
     public string? Host { get; set; }
 
+    [CommandOption("public-key", 'k', Description = "The public key of the device to provision.  If not provided, it will be queried from the configured device.", IsRequired = false)]
+    public string? PublicKey { get; set; }
+
+    [CommandOption("id", 'i', Description = "The unique ID/serial number of the device to provision.  If not provided, it will be queried from the configured device.", IsRequired = false)]
+    public string? SerialNumber { get; set; }
+
     public DeviceProvisionCommand(UserService userService, DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -76,14 +82,31 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
                 CommandExitCode.NotAuthorized);
         }
 
-        var device = await GetCurrentDevice();
+        string provisioningID, provisioningName;
 
-        var info = await device.GetDeviceInfo(CancellationToken);
+        if (PublicKey != null)
+        {
+            if (SerialNumber == null)
+            {
+                throw new CommandException("If a public key is provided, an `id` must also be provided");
+            }
+            provisioningID = SerialNumber;
+            provisioningName = Name ?? string.Empty;
+        }
+        else
+        {
+            var device = await GetCurrentDevice();
 
-        Logger?.LogInformation(Strings.RequestingDevicePublicKey);
-        var publicKey = await device.GetPublicKey(CancellationToken);
+            var info = await device.GetDeviceInfo(CancellationToken);
 
-        if (string.IsNullOrWhiteSpace(publicKey))
+            Logger?.LogInformation(Strings.RequestingDevicePublicKey);
+            PublicKey = await device.GetPublicKey(CancellationToken);
+
+            provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
+            provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
+        }
+
+        if (string.IsNullOrWhiteSpace(PublicKey))
         {
             throw new CommandException(
                 Strings.CouldNotRetrievePublicKey,
@@ -93,18 +116,20 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         var delimiters = new string[]
         {
             "-----END PUBLIC KEY-----\n", // F7 delimiter
-            "-----END RSA PUBLIC KEY-----\n" // linux/mac/windows delimiter
+            "-----END PUBLIC KEY-----", // F7 delimiter
+            "-----END RSA PUBLIC KEY-----\n", // linux/mac/windows delimiter
+            "-----END RSA PUBLIC KEY-----" // linux/mac/windows delimiter
         };
 
         var valid = false;
 
         foreach (var delim in delimiters)
         {
-            var index = publicKey.IndexOf(delim);
+            var index = PublicKey.IndexOf(delim);
             if (index > 0)
             {
                 valid = true;
-                publicKey = publicKey.Substring(0, publicKey.IndexOf(delim) + delim.Length);
+                PublicKey = PublicKey.Substring(0, PublicKey.IndexOf(delim) + delim.Length);
                 break;
             }
         }
@@ -117,10 +142,8 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         }
 
         Logger?.LogInformation(Strings.ProvisioningWithCloud);
-        var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
-        var provisioningName = !string.IsNullOrWhiteSpace(Name) ? Name : info?.DeviceName;
 
-        var result = await _deviceService.AddDevice(org.Id!, provisioningID!, publicKey, CollectionId, provisioningName, Host, CancellationToken);
+        var result = await _deviceService.AddDevice(org.Id!, provisioningID!, PublicKey, CollectionId, provisioningName, Host, CancellationToken);
 
         if (result.isSuccess)
         {

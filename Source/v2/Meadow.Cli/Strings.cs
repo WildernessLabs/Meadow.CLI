@@ -7,7 +7,8 @@ public static class Strings
     public const string SettingDeviceClock = "Setting device clock...";
     public const string InvalidApplicationPath = "Invalid application path";
     public const string InvalidParameter = "Invalid parameter";
-    public const string GettingDeviceInfo = "Getting device info...";
+    public const string GettingDeviceInfo = "Getting device info";
+    public const string GettingDevicePublicKey = "Getting device public key";
     public const string UnableToGetDeviceInfo = "Unable to get device info";
     public const string RetrievingUserAndOrgInfo = "Retrieving your user and organization information...";
     public const string MemberOfMoreThanOneOrg = "You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.";

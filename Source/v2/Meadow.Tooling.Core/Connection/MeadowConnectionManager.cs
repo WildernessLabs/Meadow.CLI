@@ -48,6 +48,11 @@ public class MeadowConnectionManager
         _currentConnection?.Detach();
         _currentConnection?.Dispose();
 
+        if (route == "local")
+        {
+            return new LocalConnection();
+        }
+
         // try to determine what the route is
         string? uri = null;
         if (route.StartsWith("http"))

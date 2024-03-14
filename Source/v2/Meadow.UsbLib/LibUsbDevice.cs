@@ -1,4 +1,6 @@
 ﻿using LibUsbDotNet.LibUsb;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Meadow.LibUsb;
 
