@@ -40,6 +40,7 @@ public class ConfigCommand : BaseSettingsCommand<ConfigCommand>
         {
             switch (Settings?.Length)
             {
+                case null:
                 case 0:
                     // not valid
                     throw new CommandException($"No setting provided");
