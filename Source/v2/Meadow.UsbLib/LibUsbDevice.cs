@@ -24,8 +24,6 @@ public class LibUsbProvider : ILibUsbProvider
            .Select(d => new LibUsbDevice(d))
            .ToList<ILibUsbDevice>();
 
-        UsbDevice device;
-
         return _devices;
     }
 
