@@ -1,8 +1,4 @@
-﻿using Meadow.Cloud.Client.Firmware;
-using System;
-using System.Threading;
-
-namespace Meadow.Cloud.Client.Users;
+﻿namespace Meadow.Cloud.Client.Users;
 
 public class UserClient : MeadowCloudClientBase, IUserClient
 {
@@ -18,7 +14,7 @@ public class UserClient : MeadowCloudClientBase, IUserClient
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return [];
+            return Enumerable.Empty<GetOrganizationResponse>();
         }
 
         return await ProcessResponse<IEnumerable<GetOrganizationResponse>>(response, cancellationToken);

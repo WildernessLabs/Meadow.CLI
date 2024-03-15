@@ -1,8 +1,10 @@
-﻿namespace Meadow.Cloud.Client.Firmware;
+﻿using System.Linq;
+
+namespace Meadow.Cloud.Client.Firmware;
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
 {
-    public FirmwareClient(MeadowCloudContext meadowCloudContext, ILogger logger) 
+    public FirmwareClient(MeadowCloudContext meadowCloudContext, ILogger logger)
         : base(meadowCloudContext, logger)
     {
     }
@@ -19,7 +21,7 @@ public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return [];
+            return Enumerable.Empty<GetFirmwareVersionsResponse>();
         }
 
         return await ProcessResponse<IEnumerable<GetFirmwareVersionsResponse>>(response, cancellationToken);

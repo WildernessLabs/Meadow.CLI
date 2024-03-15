@@ -1,4 +1,9 @@
-﻿namespace Meadow.Software;
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Meadow.Software;
 
 internal class F7FirmwareDownloadManager
 {
@@ -70,20 +75,20 @@ internal class F7FirmwareDownloadManager
         {
             await DownloadAndExtractFile(new Uri(meta.DownloadURL), local_path);
         }
-        catch
+        catch (Exception ex)
         {
             Directory.Delete(local_path, true);
-            throw new Exception($"Unable to download OS files for {version}");
+            throw new Exception($"Unable to download OS files for {version}: {ex.Message}");
         }
 
         try
         {
             await DownloadAndExtractFile(new Uri(meta.NetworkDownloadURL), local_path);
         }
-        catch
+        catch (Exception ex)
         {
             Directory.Delete(local_path, true);
-            throw new Exception($"Unable to download Coprocessor files for {version}");
+            throw new Exception($"Unable to download Coprocessor files for {version}: {ex.Message}");
         }
 
         return true;

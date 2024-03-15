@@ -1,9 +1,15 @@
 ﻿using Meadow.Hcom;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -29,6 +35,11 @@ public class MeadowConnectionManager
             throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
+        return GetConnectionForRoute(route, forceReconnect);
+    }
+
+    public IMeadowConnection? GetConnectionForRoute(string route, bool forceReconnect = false)
+    {
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
         if (_currentConnection != null && forceReconnect == false)
         {
@@ -36,6 +47,11 @@ public class MeadowConnectionManager
         }
         _currentConnection?.Detach();
         _currentConnection?.Dispose();
+
+        if (route == "local")
+        {
+            return new LocalConnection();
+        }
 
         // try to determine what the route is
         string? uri = null;
@@ -47,9 +63,13 @@ public class MeadowConnectionManager
         {
             uri = $"http://{route}:5000";
         }
-        else if (IPEndPoint.TryParse(route, out var endpoint))
+        else
         {
-            uri = $"http://{route}";
+            var parts = route.Split(':');
+            if (parts.Length == 2 && IPAddress.TryParse(parts[0], out ipAddress) && int.TryParse(parts[1], out var port))
+            {
+                uri = $"http://{parts[0]}:{port}"; // Construct URI with specified IP and port
+            }
         }
 
         if (uri != null)
@@ -193,6 +213,11 @@ public class MeadowConnectionManager
             using var proc = Process.Start(psi);
             _ = proc?.WaitForExit(1000);
             var output = proc?.StandardOutput.ReadToEnd();
+
+            if (output == null)
+            {
+                return Array.Empty<string>();
+            }
 
             return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                   .Where(x => x.Contains("Wilderness_Labs"))

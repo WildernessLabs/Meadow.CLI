@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 internal class TextRequestRejectedResponse : SerialResponse
 {

@@ -1,4 +1,9 @@
-﻿namespace Meadow.Package;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Meadow.Package;
 
 public interface IPackageManager
 {
@@ -13,7 +18,7 @@ public interface IPackageManager
     Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
-        IList<string>? noLink = null,
+        IEnumerable<string>? noLink = null,
         CancellationToken? cancellationToken = null);
 
     Task<string> AssemblePackage(string contentSourceFolder,

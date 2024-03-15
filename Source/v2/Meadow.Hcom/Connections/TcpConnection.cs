@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Text.Json;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public class TcpConnection : ConnectionBase
 {

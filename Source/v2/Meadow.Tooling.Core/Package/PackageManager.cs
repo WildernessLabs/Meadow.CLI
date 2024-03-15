@@ -2,11 +2,17 @@
 using Meadow.Cloud.Client;
 using Meadow.Linker;
 using Meadow.Software;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Meadow.Package;
@@ -97,11 +103,11 @@ public partial class PackageManager : IPackageManager
         };
         proc.OutputDataReceived += (sendingProcess, dataLine) =>
         {
-            // look for "Build FAILED"
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
+                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed") ||
+                    dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("does not exist"))
                 {
                     Debug.WriteLine("Build failed");
                     success = false;
@@ -125,7 +131,7 @@ public partial class PackageManager : IPackageManager
     public Task TrimApplication(
         FileInfo applicationFilePath,
         bool includePdbs = false,
-        IList<string>? noLink = null,
+        IEnumerable<string>? noLink = null,
         CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)

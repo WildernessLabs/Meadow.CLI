@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public class SimulatorConnection : ConnectionBase
 {
@@ -136,7 +134,7 @@ public class SimulatorConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
-    
+
     public override Task WaitForMeadowAttach(CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();

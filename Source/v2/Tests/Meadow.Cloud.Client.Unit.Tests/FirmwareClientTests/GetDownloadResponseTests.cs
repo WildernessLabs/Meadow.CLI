@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
-
-namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
+﻿namespace Meadow.Cloud.Client.Unit.Tests.FirmwareClientTests;
 
 public class GetDownloadResponseTests
 {
@@ -74,7 +72,7 @@ public class GetDownloadResponseTests
         // Act
         using var response = await _firmwareClient.GetDownloadResponse("https://example.org/api/v1/firmware/Meadow_Cloud/Meadow.OS_1.8.0.0.zip");
         using var stream = await response.Content.ReadAsStreamAsync();
-        
+
         // Assert
         using var streamReader = new StreamReader(stream);
         var actualContent = await streamReader.ReadToEndAsync();

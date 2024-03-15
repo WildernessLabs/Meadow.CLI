@@ -25,7 +25,7 @@ public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
 
         if (Level <= 0)
         {
-            Logger?.LogInformation("Disabling tracing...");
+            Logger?.LogInformation($"{Strings.DisablingTracing}...");
 
             await device.SetTraceLevel(Level, CancellationToken);
         }
@@ -34,7 +34,7 @@ public class TraceLevelCommand : BaseDeviceCommand<TraceLevelCommand>
             Logger?.LogInformation($"Setting trace level to {Level}...");
             await connection.Device.SetTraceLevel(Level, CancellationToken);
 
-            Logger?.LogInformation("Enabling tracing...");
+            Logger?.LogInformation($"{Strings.EnablingTracing}...");
             await connection.Device.TraceEnable(CancellationToken);
         }
     }

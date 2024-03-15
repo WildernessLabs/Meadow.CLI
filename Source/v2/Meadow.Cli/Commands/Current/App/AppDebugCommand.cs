@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app debug", Description = "Debug a running application")]
+[Command("app debug", Description = "Debug a running Meadow application")]
 public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
 {
     // VS 2019 - 4024

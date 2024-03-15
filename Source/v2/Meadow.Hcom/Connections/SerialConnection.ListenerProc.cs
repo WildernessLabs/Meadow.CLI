@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace Meadow.Hcom
 {
@@ -292,6 +291,10 @@ namespace Meadow.Hcom
                                     else if (response is FileDownloadFailedResponse fdf)
                                     {
                                         RaiseFileWriteFailed();
+                                    }
+                                    else if (response is DebuggingDataResponse ddr)
+                                    {
+                                        RaiseDebuggerMessage(ddr.Data);
                                     }
                                     else
                                     {

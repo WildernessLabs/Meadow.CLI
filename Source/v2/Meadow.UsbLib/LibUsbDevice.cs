@@ -1,11 +1,11 @@
 ﻿using LibUsbDotNet.LibUsb;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Meadow.LibUsb;
 
 public class LibUsbProvider : ILibUsbProvider
 {
-    private const int _osAddress = 0x08000000;
-    //    public const string UsbStmName = "STM32  BOOTLOADER";
     private const int UsbBootLoaderVendorID = 1155;
 
     internal static UsbContext _context;
@@ -53,6 +53,26 @@ public class LibUsbProvider : ILibUsbProvider
             }
 
             return serialNumber;
+        }
+
+        public bool IsMeadow()
+        {
+            if (_device.VendorId != 1155)
+            {
+                return false;
+            }
+            if (GetDeviceSerialNumber().Length > 12)
+            {
+                return false;
+            }
+            if (_device as UsbDevice is { } usbDevice)
+            {
+                if (usbDevice.ActiveConfigDescriptor.Interfaces.Count != 4)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

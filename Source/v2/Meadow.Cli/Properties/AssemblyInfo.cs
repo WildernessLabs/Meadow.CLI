@@ -2,10 +2,9 @@
 [assembly: System.Reflection.AssemblyVersion(Meadow.CLI.Constants.CLI_VERSION)]
 [assembly: System.Reflection.AssemblyInformationalVersion(Meadow.CLI.Constants.CLI_VERSION)]
 
-namespace Meadow.CLI
+namespace Meadow.CLI;
+
+public static class Constants
 {
-    public static class Constants
-    {
-        public const string CLI_VERSION = "2.0.17.0";
-    }
+    public const string CLI_VERSION = "2.0.27.0";
 }

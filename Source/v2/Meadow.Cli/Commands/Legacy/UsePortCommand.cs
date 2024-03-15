@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("use port", Description = "** Deprecated ** Use `config route` instead")]
+[Command("use port", Description = "** Deprecated ** Use `port select` (if connecting via serial port) or `config route` (if connecting via IP) instead")]
 public class UsePortCommand : BaseCommand<UsePortCommand>
 {
     private readonly ISettingsManager _settingsManager;

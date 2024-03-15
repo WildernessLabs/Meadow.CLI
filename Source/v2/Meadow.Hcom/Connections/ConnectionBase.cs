@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Meadow.Hcom;
+﻿namespace Meadow.Hcom;
 
 public abstract class ConnectionBase : IMeadowConnection, IDisposable
 {
@@ -14,6 +12,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
     public event EventHandler FileWriteFailed = default!;
+    public event EventHandler<byte[]> DebuggerMessageReceived;
 
     public abstract string Name { get; }
 
@@ -56,6 +55,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     protected void RaiseConnectionMessage(string message)
     {
         ConnectionMessage?.Invoke(this, message);
+    }
+
+    protected void RaiseDebuggerMessage(byte[] data)
+    {
+        DebuggerMessageReceived?.Invoke(this, data);
     }
 
     protected void RaiseFileWriteProgress(string fileName, long progress, long total)

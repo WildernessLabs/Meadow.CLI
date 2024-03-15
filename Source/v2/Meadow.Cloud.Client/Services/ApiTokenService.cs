@@ -7,7 +7,7 @@ public class ApiTokenService : CloudServiceBase
     public ApiTokenService(IdentityManager identityManager) : base(identityManager)
     {
     }
-    
+
     public async Task<IEnumerable<GetApiTokenResponse>> GetApiTokens(string host, CancellationToken? cancellationToken)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
@@ -68,40 +68,78 @@ public class ApiTokenService : CloudServiceBase
     }
 }
 
-public class GetApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+public class GetApiTokenResponse
 {
-    public string Id { get; set; } = id;
-    public string Name { get; set; } = name;
-    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
-    public string[] Scopes { get; set; } = scopes;
+    public GetApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+    {
+        Id = id;
+        Name = name;
+        ExpiresAt = expiresAt;
+        Scopes = scopes;
+    }
+
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public string[] Scopes { get; set; }
 }
 
-public class CreateApiTokenRequest(string name, int duration, string[] scopes)
+public class CreateApiTokenRequest
 {
-    public string Name { get; set; } = name;
-    public int Duration { get; set; } = duration;
-    public string[] Scopes { get; set; } = scopes;
+    public CreateApiTokenRequest(string name, int duration, string[] scopes)
+    {
+        Name = name;
+        Duration = duration;
+        Scopes = scopes;
+    }
+
+    public string Name { get; set; }
+    public int Duration { get; set; }
+    public string[] Scopes { get; set; }
 }
 
-public class CreateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes, string token)
+public class CreateApiTokenResponse
 {
-    public string Id { get; set; } = id;
-    public string Name { get; set; } = name;
-    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
-    public string[] Scopes { get; set; } = scopes;
-    public string Token { get; set; } = token;
+    public CreateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes, string token)
+    {
+        Id = id;
+        Name = name;
+        ExpiresAt = expiresAt;
+        Scopes = scopes;
+        Token = token;
+    }
+
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public string[] Scopes { get; set; }
+    public string Token { get; set; }
 }
 
-public class UpdateApiTokenRequest(string name, string[] scopes)
+public class UpdateApiTokenRequest
 {
-    public string Name { get; set; } = name;
-    public string[] Scopes { get; set; } = scopes;
+    public UpdateApiTokenRequest(string name, string[] scopes)
+    {
+        Name = name;
+        Scopes = scopes;
+    }
+
+    public string Name { get; set; }
+    public string[] Scopes { get; set; }
 }
 
-public class UpdateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+public class UpdateApiTokenResponse
 {
-    public string Id { get; set; } = id;
-    public string Name { get; set; } = name;
-    public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
-    public string[] Scopes { get; set; } = scopes;
+    public UpdateApiTokenResponse(string id, string name, DateTimeOffset expiresAt, string[] scopes)
+    {
+        Id = id;
+        Name = name;
+        ExpiresAt = expiresAt;
+        Scopes = scopes;
+    }
+
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public string[] Scopes { get; set; }
 }

@@ -1,4 +1,7 @@
-﻿namespace Meadow.LibUsb;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Meadow.LibUsb;
 
 public interface ILibUsbProvider
 {
@@ -8,4 +11,6 @@ public interface ILibUsbProvider
 public interface ILibUsbDevice : IDisposable
 {
     string GetDeviceSerialNumber();
+
+    bool IsMeadow();
 }

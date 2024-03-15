@@ -1,5 +1,4 @@
 ﻿using Meadow.Cloud.Client.Users;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Meadow.Cloud.Client.Unit.Tests.UserClientTests;
 

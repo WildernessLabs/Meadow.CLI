@@ -1,10 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Buffers;
-using System.Diagnostics;
+﻿using System.Buffers;
 using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Meadow.Hcom;
 
@@ -96,7 +93,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 try
                 {
                     Debug.WriteLine("Opening COM port...");
-                    _port.Open();
+                    Open();
                     Debug.WriteLine("Opened COM port");
                 }
                 catch (Exception ex)
@@ -159,8 +156,18 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 throw new Exception($"Serial port '{_port.PortName}' not found");
             }
+            catch (UnauthorizedAccessException uae)
+            {
+                throw new Exception($"{uae.Message} Another application may have access to '{_port.PortName}'. ");
+            }
+            catch (Exception ex)
+            {
+                // We don't know what happened, best to bail and let the user know.
+                throw new Exception($"Unable to open port '{_port.PortName}'. {ex.Message}");
+            }
+
+            State = ConnectionState.Connected;
         }
-        State = ConnectionState.Connected;
     }
 
     private void Close()
@@ -372,10 +379,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             try
             {
                 // Send the data to Meadow
-                //                Debug.Write($"Sending {encodedToSend} bytes...");
-                //await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, cancellationToken ?? CancellationToken.None);
+                // DO NOT USE _port.BaseStream.  It disables port timeouts!
                 _port.Write(encodedBytes, 0, encodedToSend);
-                //                Debug.WriteLine($"sent");
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
@@ -410,7 +415,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw;
         }
     }
-
 
     private class SerialMessage
     {
@@ -462,20 +466,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var decodedSize = CobsTools.CobsDecoding(packetBuffer.ToArray(), packetLength, ref decodedBuffer);
 
-        /*
-        // If a message is too short it is ignored
-        if (decodedSize < MeadowDeviceManager.ProtocolHeaderSize)
-        {
-            return false;
-        }
-
-        Debug.Assert(decodedSize <= MeadowDeviceManager.MaxAllowableMsgPacketLength);
-
-        // Process the received packet
-        ParseAndProcessReceivedPacket(decodedBuffer.AsSpan(0, decodedSize).ToArray(),
-                                      cancellationToken);
-
-        */
         ArrayPool<byte>.Shared.Return(decodedBuffer);
         return true;
     }
@@ -506,10 +496,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private List<string> StdErr { get; } = new List<string>();
     private List<string> InfoMessages { get; } = new List<string>();
 
-    private const string RuntimeSucessfullyEnabledToken = "Meadow successfully started MONO";
-    private const string RuntimeSucessfullyDisabledToken = "Mono is disabled";
-    private const string RuntimeStateToken = "Mono is";
-    private const string RuntimeIsEnabledToken = "Mono is enabled";
+    private const string MonoStateToken = "Mono is";
+    private const string RuntimeStateToken = "Runtime is";
+    private const string MonoIsEnabledToken = "Mono is enabled";
+    private const string RuntimeIsEnabledToken = "Runtime is enabled";
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
@@ -630,15 +620,23 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var timeout = CommandTimeoutSeconds * 2;
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (timeout <= 0) throw new TimeoutException();
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                return false;
+            }
+            if (timeout <= 0)
+            {
+                throw new TimeoutException();
+            }
 
             if (InfoMessages.Count > 0)
             {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RuntimeStateToken));
+                var m = InfoMessages.FirstOrDefault(i =>
+                    i.Contains(RuntimeStateToken) ||
+                    i.Contains(MonoStateToken));
                 if (m != null)
                 {
-                    return m == RuntimeIsEnabledToken;
+                    return (m == RuntimeIsEnabledToken) || (m == MonoIsEnabledToken);
                 }
             }
 
@@ -861,54 +859,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 0,
                 cancellationToken);
 
-
-            /*
-            RaiseConnectionMessage("\nErasing runtime flash blocks...");
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    // happens on error
-                    return true;
-                }
-
-                var m = string.Join('\n', InfoMessages);
-                return m.Contains("Mono memory erase success");
-            },
-            cancellationToken);
-
-            InfoMessages.Clear();
-
-            RaiseConnectionMessage("Moving runtime to flash...");
-
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    // happens on error
-                    return true;
-                }
-
-                var m = string.Join('\n', InfoMessages);
-                return m.Contains("Verifying runtime flash operation.");
-            },
-            cancellationToken);
-
-            InfoMessages.Clear();
-
-            RaiseConnectionMessage("Verifying...");
-
-            status = await WaitForResult(() =>
-            {
-                if (_lastRequestConcluded != null)
-                {
-                    return true;
-                }
-
-                return false;
-            },
-            cancellationToken);
-            */
 
             if (status)
             {
@@ -1248,7 +1198,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await ReInitializeMeadow(cancellationToken); */
 
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-        var debuggingServer = new DebuggingServer(Device, endpoint, logger);
+        var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         await debuggingServer.StartListening(cancellationToken);
