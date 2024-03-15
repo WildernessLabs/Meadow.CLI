@@ -221,7 +221,11 @@
     },
     "Device provision": {
       "commandName": "Project",
-      "commandLineArgs": "device provision"
+      "commandLineArgs": "device provision -o christacke6612"
+    },
+    "Device provision command": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision --gen-command"
     },
     "Device provision other": {
       "commandName": "Project",

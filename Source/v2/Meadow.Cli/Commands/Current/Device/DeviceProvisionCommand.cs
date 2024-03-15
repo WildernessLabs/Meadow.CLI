@@ -30,6 +30,9 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
     [CommandOption("id", 'i', Description = "The unique ID/serial number of the device to provision.  If not provided, it will be queried from the configured device.", IsRequired = false)]
     public string? SerialNumber { get; set; }
 
+    [CommandOption("gen-command", Description = "Generate a provisioning command for the configured device", IsRequired = false)]
+    public bool GenerateProvisionCommand { get; set; }
+
     public DeviceProvisionCommand(UserService userService, DeviceService deviceService, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -37,8 +40,38 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         _userService = userService;
     }
 
+    private async ValueTask OutputProvisionCommand()
+    {
+        var device = await GetCurrentDevice();
+
+        var info = await device.GetDeviceInfo(CancellationToken);
+
+        Logger?.LogInformation(Strings.RequestingDevicePublicKey);
+
+        var publicKey = await device.GetPublicKey(CancellationToken);
+        publicKey = publicKey.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        var provisioningID = !string.IsNullOrWhiteSpace(info?.ProcessorId) ? info.ProcessorId : info?.SerialNumber;
+
+        var command = "meadow device provision";
+        if (!string.IsNullOrWhiteSpace(OrgId))
+        {
+            command += $" -o {OrgId}";
+        }
+        command += $" -id \"{provisioningID}\" -k \"{publicKey}\"";
+        Logger?.LogInformation($"Provisioning command is:");
+        Logger?.LogInformation(command);
+    }
+
     protected override async ValueTask ExecuteCommand()
     {
+        if (GenerateProvisionCommand)
+        {
+            Logger?.LogInformation("Generating a device provisioning command...");
+
+            await OutputProvisionCommand();
+            return;
+        }
+
         UserOrg? org;
 
         try
