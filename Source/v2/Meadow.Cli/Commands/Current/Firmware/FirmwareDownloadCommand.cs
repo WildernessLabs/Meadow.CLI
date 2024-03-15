@@ -17,6 +17,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
         : base(meadowCloudClient, loggerFactory)
     {
         _fileManager = fileManager;
+        RequiresAuthentication = false;
     }
 
     [CommandOption("force", 'f', IsRequired = false)]
