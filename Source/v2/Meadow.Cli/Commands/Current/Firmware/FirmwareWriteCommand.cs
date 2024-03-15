@@ -4,6 +4,7 @@ using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Runtime.InteropServices;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -169,7 +170,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
 
             // do we have a dfu device attached, or is DFU specified?
-            var dfuDevice = GetLibUsbDeviceForCurrentEnvironment();
+            var provider = new LibUsbProvider();
+            var dfuDevice = GetLibUsbDeviceForCurrentEnvironment(provider);
+            bool ignoreSerial = IgnoreSerialNumberForDfu(provider);
 
             if (dfuDevice != null)
             {
@@ -195,7 +198,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
                 try
                 {
-                    await WriteOsWithDfu(dfuDevice, osFileWithBootloader!);
+                    await WriteOsWithDfu(dfuDevice!, osFileWithBootloader!, ignoreSerial);
                 }
                 finally
                 {
@@ -337,13 +340,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             if (connection == null)
             {
-                var newPort = await WaitForNewSerialPort(initialPorts);
-
-                if (newPort == null)
-                {
-                    throw CommandException.MeadowDeviceNotFound;
-                }
-
+                var newPort = await WaitForNewSerialPort(initialPorts) ?? throw CommandException.MeadowDeviceNotFound;
                 connection = await GetCurrentConnection(true);
 
                 Logger?.LogInformation($"{Strings.MeadowFoundAt} {newPort}");
@@ -401,9 +398,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
     }
 
-    private ILibUsbDevice? GetLibUsbDeviceForCurrentEnvironment()
+    private ILibUsbDevice? GetLibUsbDeviceForCurrentEnvironment(LibUsbProvider? provider)
     {
-        var provider = new LibUsbProvider();
+        provider ??= new LibUsbProvider();
 
         var devices = provider.GetDevicesInBootloaderMode();
 
@@ -414,8 +411,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             return null;
         }
 
-        if (meadowsInDFU.Count == 1)
-        {
+        if (meadowsInDFU.Count == 1 || IgnoreSerialNumberForDfu(provider))
+        {   //IgnoreSerialNumberForDfu is a macOS-specific hack for Mark's machine 
             return meadowsInDFU.FirstOrDefault();
         }
 
@@ -451,22 +448,13 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         return package;
     }
 
-    private async Task WriteOsWithDfu(ILibUsbDevice? libUsbDevice, string osFile)
+    private async Task WriteOsWithDfu(ILibUsbDevice libUsbDevice, string osFile, bool ignoreSerialNumber = false)
     {
-        // get the device's serial number via DFU - we'll need it to find the device after it resets
-        if (libUsbDevice == null)
-        {
-            libUsbDevice = GetLibUsbDeviceForCurrentEnvironment();
-
-            if (libUsbDevice == null)
-            {
-                throw new CommandException(Strings.NoDfuDeviceDetected);
-            }
-        }
+        string serialNumber;
 
         try
         {   //validate device
-            var serialNumber = libUsbDevice.GetDeviceSerialNumber();
+            serialNumber = libUsbDevice.GetDeviceSerialNumber();
         }
         catch
         {
@@ -475,9 +463,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         try
         {
+            if (ignoreSerialNumber)
+            {
+                serialNumber = string.Empty;
+            }
+
             await DfuUtils.FlashFile(
                 osFile,
-                string.Empty, //serial number isn't needed to flash the OS and may cause issues on MacOS
+                serialNumber,
                 logger: Logger,
                 format: DfuUtils.DfuFlashFormat.ConsoleOut);
         }
@@ -525,5 +518,23 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         var ports = await WaitForNewSerialPorts(ignorePorts);
 
         return ports.FirstOrDefault();
+    }
+
+    private bool IgnoreSerialNumberForDfu(LibUsbProvider provider)
+    {   //hack check for Mark's Mac
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            var devices = provider.GetDevicesInBootloaderMode();
+
+            if (devices.Count == 2)
+            {
+                if (devices[0].GetDeviceSerialNumber().Length > 12 || devices[1].GetDeviceSerialNumber().Length > 12)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
