@@ -45,7 +45,7 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 
         if (!Uri.TryCreate(Host, UriKind.Absolute, out Uri? baseAddress) || baseAddress == null)
         {
-            throw new CommandException("Host (--host) must be a valid URL.", showHelp: true);
+            throw new CommandException("Host (--host) must be a valid URL.");
         }
         
         MeadowCloudClient.BaseAddress = baseAddress;
