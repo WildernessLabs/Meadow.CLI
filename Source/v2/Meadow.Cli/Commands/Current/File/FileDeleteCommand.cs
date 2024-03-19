@@ -21,6 +21,14 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         var connection = await GetCurrentConnection();
         var device = await GetCurrentDevice();
 
+        var state = await device.IsRuntimeEnabled(CancellationToken);
+
+        if (state == true)
+        {
+            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
+            await device.RuntimeDisable(CancellationToken);
+        }
+
         // get a list of files in the target folder
         var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
         if (string.IsNullOrWhiteSpace(folder))
