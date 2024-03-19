@@ -30,7 +30,7 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 
             if (state == true)
             {
-                Logger?.LogInformation("Disabling runtime failed");
+                Logger?.LogError("Failed to disable runtime");
             }
 
             Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
