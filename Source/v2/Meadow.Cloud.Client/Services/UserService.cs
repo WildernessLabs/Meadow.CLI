@@ -2,15 +2,15 @@
 
 public class UserService : CloudServiceBase
 {
-    public UserService(IdentityManager identityManager) : base(identityManager)
+    public UserService(IMeadowCloudClient meadowCloudClient) : base(meadowCloudClient)
     {
     }
 
-    public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken? cancellationToken = null)
+    public async Task<List<UserOrg>> GetUserOrgs(string host, CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
-        var response = await httpClient.GetAsync($"{host}/api/users/me/orgs", cancellationToken ?? CancellationToken.None);
+        var response = await httpClient.GetAsync($"{host}/api/users/me/orgs", cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
@@ -23,7 +23,7 @@ public class UserService : CloudServiceBase
         }
     }
 
-    public async Task<User?> GetMe(string host, CancellationToken? cancellationToken = null)
+    public async Task<User?> GetMe(string host, CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 

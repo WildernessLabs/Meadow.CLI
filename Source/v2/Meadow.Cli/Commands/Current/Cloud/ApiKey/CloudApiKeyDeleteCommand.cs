@@ -29,21 +29,14 @@ public class CloudApiKeyDeleteCommand : BaseCloudCommand<CloudApiKeyDeleteComman
 
     protected async override ValueTask ExecuteCloudCommand()
     {
-        try
-        {
-            var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
-            var apiKey = getRequest.FirstOrDefault(x => x.Id == NameOrId || string.Equals(x.Name, NameOrId, StringComparison.OrdinalIgnoreCase));
+        var getRequest = await ApiTokenService.GetApiTokens(Host, CancellationToken);
+        var apiKey = getRequest.FirstOrDefault(x => x.Id == NameOrId || string.Equals(x.Name, NameOrId, StringComparison.OrdinalIgnoreCase));
 
-            if (apiKey == null)
-            {
-                throw new CommandException($"API key `{NameOrId}` not found.");
-            }
-
-            await ApiTokenService.DeleteApiToken(apiKey.Id, Host, CancellationToken);
-        }
-        catch (MeadowCloudException ex)
+        if (apiKey == null)
         {
-            throw new CommandException($"Create API key command failed: {ex.Message}", innerException: ex);
+            throw new CommandException($"API key `{NameOrId}` not found.");
         }
+
+        await ApiTokenService.DeleteApiToken(apiKey.Id, Host, CancellationToken);
     }
 }

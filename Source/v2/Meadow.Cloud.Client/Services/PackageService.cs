@@ -7,7 +7,7 @@ public class PackageService : CloudServiceBase
 {
     private readonly string _info_json = "info.json";
 
-    public PackageService(IdentityManager identityManager) : base(identityManager)
+    public PackageService(IMeadowCloudClient meadowCloudClient) : base(meadowCloudClient)
     {
     }
 
@@ -16,7 +16,7 @@ public class PackageService : CloudServiceBase
         string orgId,
         string description,
         string host,
-        CancellationToken? cancellationToken = null)
+        CancellationToken cancellationToken = default)
     {
         if (!File.Exists(mpakPath))
         {
@@ -94,14 +94,14 @@ public class PackageService : CloudServiceBase
         string collectionId,
         string metadata,
         string host,
-        CancellationToken? cancellationToken = null)
+        CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
         var payload = new { metadata, collectionId };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         var response =
-            await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish", content, cancellationToken ?? CancellationToken.None);
+            await httpClient.PostAsync($"{host}/api/packages/{packageId}/publish", content, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -110,7 +110,7 @@ public class PackageService : CloudServiceBase
         }
     }
 
-    public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken? cancellationToken = null)
+    public async Task<List<Package>> GetOrgPackages(string orgId, string host, CancellationToken cancellationToken = default)
     {
         var httpClient = await GetAuthenticatedHttpClient(cancellationToken);
 
