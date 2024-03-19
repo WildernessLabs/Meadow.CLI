@@ -16,10 +16,19 @@ public class RuntimeEnableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 
         Logger?.LogInformation($"{Strings.EnablingRuntime}...");
 
-        await device.RuntimeEnable(CancellationToken);
-
         var state = await device.IsRuntimeEnabled(CancellationToken);
 
-        Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+        if (state == true)
+        {
+            Logger?.LogInformation("Runtime already enabled");
+        }
+        else
+        {
+            await device.RuntimeEnable(CancellationToken);
+
+            state = await device.IsRuntimeEnabled(CancellationToken);
+
+            Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
+        }
     }
 }
