@@ -28,6 +28,11 @@ public class RuntimeDisableCommand : BaseDeviceCommand<RuntimeEnableCommand>
 
             state = await device.IsRuntimeEnabled(CancellationToken);
 
+            if (state == true)
+            {
+                throw new CommandException("Failed to disable runtime");
+            }
+
             Logger?.LogInformation($"Runtime is {(state ? "ENABLED" : "DISABLED")}");
         }
     }
