@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;

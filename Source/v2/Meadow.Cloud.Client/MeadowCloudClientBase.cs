@@ -1,4 +1,4 @@
-﻿namespace Meadow.Cloud.Client;
+namespace Meadow.Cloud.Client;
 
 public abstract class MeadowCloudClientBase
 {

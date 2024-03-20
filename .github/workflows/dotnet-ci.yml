@@ -14,33 +14,33 @@ jobs:
     
     steps:
     - name: Checkout Meadow.Logging
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Logging
         path: Meadow.Logging
         ref: develop
         
     - name: Checkout Meadow.Units
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Units
         path: Meadow.Units
         ref: develop
 
     - name: Checkout Meadow.Contracts
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Contracts
         path: Meadow.Contracts
         ref: develop
 
     - name: Checkout Meadow.CLI
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
     
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version:
           8.0.x

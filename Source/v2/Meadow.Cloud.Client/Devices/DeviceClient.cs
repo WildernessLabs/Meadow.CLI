@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Devices;
+﻿using Microsoft.Extensions.Logging;
+
+namespace Meadow.Cloud.Client.Devices;
 
 public class DeviceClient : MeadowCloudClientBase, IDeviceClient
 {

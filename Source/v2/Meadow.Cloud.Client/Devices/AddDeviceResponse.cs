@@ -1,4 +1,6 @@
-﻿namespace Meadow.Cloud.Client.Devices;
+﻿using System.Text.Json.Serialization;
+
+namespace Meadow.Cloud.Client.Devices;
 
 public class AddDeviceResponse
 {

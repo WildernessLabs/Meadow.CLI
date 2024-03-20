@@ -1,5 +1,3 @@
-﻿using System.Linq;
-
 namespace Meadow.Cloud.Client.Firmware;
 
 public class FirmwareClient : MeadowCloudClientBase, IFirmwareClient

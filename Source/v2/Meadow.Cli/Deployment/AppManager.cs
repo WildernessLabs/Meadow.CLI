@@ -3,14 +3,8 @@ using Meadow.Linker;
 using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Meadow.CLI;
+namespace Meadow.Deployment;
 
 public static class AppManager
 {
@@ -42,11 +36,6 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-        if (connection == null)
-        {
-            throw new ArgumentNullException(nameof(connection));
-        }
-
         // in order to deploy, the runtime must be disabled
         var isRuntimeEnabled = await connection.IsRuntimeEnabled();
 
@@ -56,20 +45,11 @@ public static class AppManager
 
             await connection.RuntimeDisable(cancellationToken);
 
-            int retryCount = 0;
-            while (await connection.IsRuntimeEnabled())
-            {
-                retryCount++;
-                if (retryCount > 10)
-                {
-                    throw new TimeoutException($"Unable to Disable the runtime.");
-                }
-                Thread.Sleep(500);
-            }
+            await Task.Delay(5000);
         }
+
         try
         {
-
             // TODO: add sub-folder support when HCOM supports it
             var localFiles = new Dictionary<string, uint>();
 
@@ -77,11 +57,10 @@ public static class AppManager
 
             var processedAppPath = localBinaryDirectory;
 
-            var postLinkDirectory = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
-			//check if there's a post link folder
-			if (Directory.Exists(postLinkDirectory))
+            //check if there's a post link folder
+            if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
             {
-                processedAppPath = postLinkDirectory;
+                processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
 
                 //add all dlls from the postlink_bin folder to the dependencies
                 dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
@@ -96,25 +75,26 @@ public static class AppManager
             }
             else
             {
-                dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
+                dependencies = packageManager?.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
             }
-            dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
+            dependencies?.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
             if (includePdbs)
             {
-                dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
+                dependencies?.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
             }
 
             var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
                 .Where(s => new FileInfo(s).Extension != ".dll")
                 .Where(s => new FileInfo(s).Extension != ".pdb")
                 .Where(s => !s.Contains(".DS_Store")).ToList();
-            dependencies.AddRange(binaries);
+            dependencies?.AddRange(binaries);
 
             logger?.LogInformation("Generating list of files to deploy...");
 
-            foreach (var file in dependencies)
+            for (int i = 0; i < dependencies?.Count; i++)
             {
+                string? file = dependencies[i];
                 // TODO: add any other filtering capability here
                 if (!includePdbs && IsPdb(file)) { continue; }
                 if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
@@ -144,6 +124,11 @@ public static class AppManager
                 .Select(f => Path.GetFileName(f.Name))
                 .Except(localFiles.Keys
                     .Select(f => Path.GetFileName(f))).ToList();
+
+            if (removeFiles.Count == 0)
+            {
+                logger?.LogInformation($"No files to delete");
+            }
 
             // delete those files
             foreach (var file in removeFiles)
@@ -176,21 +161,19 @@ public static class AppManager
                     goto send_file;
                 }
             }
-
-            //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
-            logger?.LogInformation(string.Empty);
         }
         finally
         {
             isRuntimeEnabled = await connection.IsRuntimeEnabled();
             if (!isRuntimeEnabled)
             {
+                await Task.Delay(1000);
+
                 // restore runtime state
                 logger?.LogInformation("Enabling runtime...");
 
                 await connection.RuntimeEnable(cancellationToken);
             }
-
         }
     }
 }

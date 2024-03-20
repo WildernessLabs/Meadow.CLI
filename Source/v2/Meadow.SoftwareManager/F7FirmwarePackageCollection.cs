@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace Meadow.Software;
 
 public class F7FirmwarePackageCollection : IFirmwarePackageCollection
@@ -31,7 +25,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
     }
 
-    internal F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
+    public F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
     {
         _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
 

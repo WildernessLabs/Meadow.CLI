@@ -1,11 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Meadow.Software;
 
-internal class F7FirmwareDownloadManager
+public class F7FirmwareDownloadManager
 {
     private readonly IMeadowCloudClient _meadowCloudClient;
 
