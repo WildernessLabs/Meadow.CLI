@@ -42,6 +42,8 @@ namespace Meadow.CLI.Core.DeviceManagement
                     meadow = null;
                 }
 
+                await Task.Delay(1000);
+
                 logger.LogInformation($"{Environment.NewLine}Connecting to Meadow on {serialPort}{Environment.NewLine}");
 
                 var createTask = Task.Run(() => meadow = new MeadowSerialDevice(serialPort, logger));
@@ -56,7 +58,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     }
                     catch (Exception ex)
                     {
-                        logger.LogInformation(ex, "An error occurred while attempting to create Meadow");
+                        logger.LogInformation(ex, "An error occurred while attempting to create Meadow.");
                         throw;
                     }
                     return null;
