@@ -58,7 +58,7 @@ namespace Meadow.CLI.Core.DeviceManagement
                     }
                     catch (Exception ex)
                     {
-                        logger.LogInformation(ex, "An error occurred while attempting to create Meadow.");
+                        logger.LogInformation(ex, "An error occurred while attempting to create Meadow");
                         throw;
                     }
                     return null;
