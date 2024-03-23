@@ -2,6 +2,8 @@
 using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Users;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
+using System.Text;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -9,6 +11,9 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 {
     [CommandOption("host", Description = $"The Meadow.Cloud endpoint.", IsRequired = false)]
     public string Host { get; set; } = DefaultHost;
+
+    [CommandOption("apikey", Description = "The API key to use with Meadow.Cloud. Otherwise, use the logged in Wilderness Labs account.", EnvironmentVariable = "MC_APIKEY", IsRequired = false)]
+    public string? ApiKey { get; set; }
 
     protected const string DefaultHost = Meadow.Cloud.Client.MeadowCloudClient.DefaultHost;
 
@@ -33,19 +38,38 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
 
     protected sealed override async ValueTask ExecuteCommand()
     {
+        if (!Host.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !Host.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CommandException("Host (--host) must be a valid URL that starts with http:// or https://.");
+        }
+
+        if (!Uri.TryCreate(Host, UriKind.Absolute, out Uri? baseAddress) || baseAddress == null)
+        {
+            throw new CommandException("Host (--host) must be a valid URL.");
+        }
+        
+        MeadowCloudClient.BaseAddress = baseAddress;
+
         await PreAuthenticatedValidation();
 
         if (RequiresAuthentication)
         {
-            var result = await MeadowCloudClient.Authenticate(CancellationToken);
-            if (!result)
+            if (!string.IsNullOrEmpty(ApiKey))
             {
-                throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.");
+                MeadowCloudClient.Authorization = new AuthenticationHeaderValue("APIKEY", ApiKey);
             }
+            else
+            {
+                var result = await MeadowCloudClient.Authenticate(CancellationToken);
+                if (!result)
+                {
+                    throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.");
+                }
 
-            // If the user does not yet exist in Meadow.Cloud, this creates them and sets up their initial org
-            var _ = await MeadowCloudClient.User.GetUser(CancellationToken)
-                ?? throw new CommandException("There was a problem retrieving your account information.");
+                // If the user does not yet exist in Meadow.Cloud, this creates them and sets up their initial org
+                var _ = await MeadowCloudClient.User.GetUser(CancellationToken)
+                    ?? throw new CommandException("There was a problem retrieving your account information.");
+            }
         }
 
         try
@@ -55,6 +79,27 @@ public abstract class BaseCloudCommand<T> : BaseCommand<T>
         catch (MeadowCloudAuthException ex)
         {
             throw new CommandException("You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.", ex);
+        }
+        catch (MeadowCloudException ex)
+        {
+            if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                var sb = new StringBuilder("You are not authorized to perform this action. Please check that you have sufficient access");
+                if (!string.IsNullOrWhiteSpace(ApiKey))
+                {
+                    sb.Append(", that your API keys is valid with the correct scopes,");
+                }
+                sb.Append(" and try again.");
+
+                throw new CommandException(sb.ToString(), ex);
+            }
+
+            throw new CommandException($@"There was a problem executing the command. Meadow.Cloud returned a non-successful response.
+
+{(int)ex.StatusCode} {ex.StatusCode}
+Response: {(string.IsNullOrWhiteSpace(ex.Response) ? "None" : Environment.NewLine + ex.Response)}
+
+{ex.StackTrace}", ex);
         }
     }
 

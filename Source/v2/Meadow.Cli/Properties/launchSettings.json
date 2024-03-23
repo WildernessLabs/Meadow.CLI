@@ -189,7 +189,7 @@
     },
     "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "app trim C:\\repos\\wilderness\\Meadow.Core.Samples\\Source\\Blinky\\BlinkyCS --nolink Meadow.Core Meadow.Contracts"
+      "commandLineArgs": "app trim H:\\WL\\Blinky\\Blinky\\BlinkyCs --nolink BlinkyLib"
     },
     "Dfu Install": {
       "commandName": "Project",
@@ -201,15 +201,15 @@
     },
     "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy H:\\WL\\Meadow.ProjectLab\\Source\\ProjectLab_Demo\\bin\\Debug\\netstandard2.1\\postlink_bin"
+      "commandLineArgs": "app deploy H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "App Deploy (untrimmed output)": {
       "commandName": "Project",
       "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
     },
-    "App run": {
+    "App Run": {
       "commandName": "Project",
-      "commandLineArgs": "app run F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "app run H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "Flash erase": {
       "commandName": "Project",
@@ -221,7 +221,11 @@
     },
     "Device provision": {
       "commandName": "Project",
-      "commandLineArgs": "device provision"
+      "commandLineArgs": "device provision -o christacke6612"
+    },
+    "Device provision command": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision --gen-command"
     },
     "Device provision other": {
       "commandName": "Project",

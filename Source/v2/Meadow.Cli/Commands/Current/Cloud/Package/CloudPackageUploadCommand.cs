@@ -42,16 +42,9 @@ public class CloudPackageUploadCommand : BaseCloudCommand<CloudPackageUploadComm
 
         if (org == null) { return; }
 
-        try
-        {
-            Logger.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
+        Logger.LogInformation($"Uploading package {Path.GetFileName(MpakPath)}...");
 
-            var package = await _packageService.UploadPackage(MpakPath, org.Id, Description ?? string.Empty, Host, CancellationToken);
-            Logger.LogInformation($"Upload complete. Package Id: {package.Id}");
-        }
-        catch (MeadowCloudException mex)
-        {
-            Logger.LogError($"Upload failed: {mex.Message}");
-        }
+        var package = await _packageService.UploadPackage(MpakPath, org.Id, Description ?? string.Empty, Host, CancellationToken);
+        Logger.LogInformation($"Upload complete. Package Id: {package.Id}");
     }
 }

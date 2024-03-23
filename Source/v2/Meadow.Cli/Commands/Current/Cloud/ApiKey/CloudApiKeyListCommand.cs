@@ -26,29 +26,22 @@ public class CloudApiKeyListCommand : BaseCloudCommand<CloudApiKeyListCommand>
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        try
+        var response = await ApiTokenService.GetApiTokens(Host, CancellationToken);
+        var apiTokens = response.OrderBy(a => a.Name);
+
+        if (!apiTokens.Any())
         {
-            var response = await ApiTokenService.GetApiTokens(Host, CancellationToken);
-            var apiTokens = response.OrderBy(a => a.Name);
-
-            if (!apiTokens.Any())
-            {
-                Logger.LogInformation("You have no API keys.");
-                return;
-            }
-
-            var table = new ConsoleTable("Id", "Name", $"Expires (UTC)", "Scopes");
-            foreach (var apiToken in apiTokens)
-            {
-                table.AddRow(apiToken.Id, apiToken.Name, $"{apiToken.ExpiresAt:G}", string.Join(", ", apiToken.Scopes.OrderBy(t => t)));
-            }
-
-            Logger.LogInformation(table);
+            Logger.LogInformation("You have no API keys.");
+            return;
         }
-        catch (MeadowCloudException ex)
+
+        var table = new ConsoleTable("Id", "Name", $"Expires (UTC)", "Scopes");
+        foreach (var apiToken in apiTokens)
         {
-            throw new CommandException($"Get API keys command failed: {ex.Message}", innerException: ex);
+            table.AddRow(apiToken.Id, apiToken.Name, $"{apiToken.ExpiresAt:G}", string.Join(", ", apiToken.Scopes.OrderBy(t => t)));
         }
+
+        Logger.LogInformation(table);
     }
 }
 

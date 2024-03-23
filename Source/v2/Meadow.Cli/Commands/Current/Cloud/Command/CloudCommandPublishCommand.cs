@@ -51,25 +51,18 @@ public class CloudCommandPublishCommand : BaseCloudCommand<CloudCommandPublishCo
 
     protected override async ValueTask ExecuteCloudCommand()
     {
-        try
+        if (!string.IsNullOrWhiteSpace(CollectionId))
         {
-            if (!string.IsNullOrWhiteSpace(CollectionId))
-            {
-                await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
-            }
-            else if (DeviceIds?.Length > 0)
-            {
-                await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
-            }
-            else
-            {
-                throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
-            }
-            Logger.LogInformation("Publish command successful.");
+            await CommandService.PublishCommandForCollection(CollectionId, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
         }
-        catch (MeadowCloudException ex)
+        else if (DeviceIds?.Length > 0)
         {
-            throw new CommandException($"Publish command failed: {ex.Message}", innerException: ex);
+            await CommandService.PublishCommandForDevices(DeviceIds, CommandName, Arguments, (int)QualityOfService, Host, CancellationToken);
         }
+        else
+        {
+            throw new CommandException("Cannot specify both a collection ID (-c|--collectionId) and list of device IDs (-d|--deviceIds). Only one is allowed.");
+        }
+        Logger.LogInformation("Publish command successful.");
     }
 }

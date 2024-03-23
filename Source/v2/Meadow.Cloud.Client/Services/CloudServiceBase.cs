@@ -2,24 +2,30 @@
 
 public abstract class CloudServiceBase
 {
-    private readonly IdentityManager _identityManager;
+    private readonly IMeadowCloudClient _meadowCloudClient;
 
-    protected CloudServiceBase(IdentityManager identityManager)
+    protected CloudServiceBase(IMeadowCloudClient meadowCloudClient)
     {
-        _identityManager = identityManager;
+        _meadowCloudClient = meadowCloudClient;
     }
 
-    protected async Task<HttpClient> GetAuthenticatedHttpClient(CancellationToken? cancellationToken = null)
+    protected async Task<HttpClient> GetAuthenticatedHttpClient(CancellationToken cancellationToken = default)
     {
-        var authToken = await _identityManager.GetAccessToken(cancellationToken ?? CancellationToken.None);
-        if (string.IsNullOrEmpty(authToken))
+        if (_meadowCloudClient.Authorization == null)
         {
-            throw new MeadowCloudAuthException();
+            var result = await _meadowCloudClient.Authenticate(cancellationToken);
+            if (!result)
+            {
+                throw new MeadowCloudAuthException();
+            }
         }
 
-        HttpClient client = new();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-
-        return client;
+        return new HttpClient
+        {
+            DefaultRequestHeaders =
+            {
+                Authorization = _meadowCloudClient.Authorization
+            }
+        };
     }
 }
