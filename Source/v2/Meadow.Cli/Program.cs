@@ -18,30 +18,12 @@ using System.Runtime.CompilerServices;
 
 public class Program
 {
-    public static async Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] _)
     {
-        var logLevel = LogEventLevel.Information;
-        var logModifier = args.FirstOrDefault(a => a.Contains("-m"))
-                              ?.Count(x => x == 'm') ?? 0;
-
-        logLevel -= logModifier;
-        if (logLevel < 0)
-        {
-            logLevel = 0;
-        }
-
-        var outputTemplate = logLevel == LogEventLevel.Verbose
-                                 ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-                                 : "{Message:lj}{NewLine}{Exception}";
+        var outputTemplate = "{Message:lj}{NewLine}{Exception}";
         Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
-                                              .WriteTo.Console(logLevel, outputTemplate)
+                                              .WriteTo.Console(LogEventLevel.Information, outputTemplate)
                                               .CreateLogger();
-
-        // Log that we're using a log level other than default of Information
-        if (logLevel != LogEventLevel.Information)
-        {
-            Console.WriteLine($"Using log level {logLevel}");
-        }
 
         var services = new ServiceCollection();
 
@@ -89,30 +71,33 @@ public class Program
 
         var serviceProvider = services.BuildServiceProvider();
 
+        int returnCode;
+
         try
         {
-            await new CliApplicationBuilder()
+            returnCode = await new CliApplicationBuilder()
                 .AddCommandsFromThisAssembly()
                 .UseTypeActivator(serviceProvider.GetService!)
                 .SetExecutableName("meadow")
                 .Build()
                 .RunAsync();
         }
+        catch (CommandException ce)
+        {
+            returnCode = ce.ExitCode;
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"Operation failed: {ex.Message}");
-#if DEBUG
-            throw; //debug spew for debug builds
-#endif
+            returnCode = 1;
         }
 
-        Environment.Exit(0);
-        return 0;
+        return returnCode;
     }
 
     private static void AddCommandsAsServices(IServiceCollection services)
     {
-        var assembly = System.Reflection.Assembly.GetEntryAssembly(); //.GetAssembly(typeof(Program));
+        var assembly = System.Reflection.Assembly.GetEntryAssembly();
         Trace.Assert(assembly != null);
         var types = assembly?.GetTypes();
 
