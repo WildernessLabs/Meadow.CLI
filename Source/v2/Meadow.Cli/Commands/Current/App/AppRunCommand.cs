@@ -66,9 +66,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         var lastFile = string.Empty;
 
-        // in order to deploy, the runtime must be disabled
-        await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
-
         Logger?.LogInformation($"Building {Configuration} configuration of {path} for Meadow v{deviceInfo.OsVersion}...");
 
         if (!_packageManager.BuildApplication(path, Configuration))
@@ -85,9 +82,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         {
             throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
-
-        Logger?.LogInformation($"{Strings.EnablingRuntime}...");
-        await connection.RuntimeEnable(CancellationToken);
 
         Logger?.LogInformation("Listening for messages from Meadow...\n");
         connection.DeviceMessageReceived += OnDeviceMessageReceived;

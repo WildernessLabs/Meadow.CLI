@@ -35,7 +35,7 @@ public static class AppManager
 
     public static async Task DeployApplication(
         IPackageManager packageManager,
-        IMeadowConnection connection,
+        IMeadowConnection meadowConnection,
         string osVersion,
         string localBinaryDirectory,
         bool includePdbs,
@@ -43,6 +43,18 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
+        bool isRuntimeEnabled;
+
+        // in order to deploy, the runtime must be disabled
+        isRuntimeEnabled = await meadowConnection.IsRuntimeEnabled();
+
+        if (isRuntimeEnabled)
+        {
+            logger?.LogInformation($"Disabling runtime...");
+
+            await meadowConnection.RuntimeDisable(cancellationToken);
+        }
+
         // TODO: add sub-folder support when HCOM supports it
         var localFiles = new Dictionary<string, uint>();
 
@@ -50,10 +62,12 @@ public static class AppManager
 
         var processedAppPath = localBinaryDirectory;
 
+        var postLinkDirectoryPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+
         //check if there's a post link folder
-        if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
+        if (Directory.Exists(postLinkDirectoryPath))
         {
-            processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+            processedAppPath = postLinkDirectoryPath;
 
             //add all dlls from the postlink_bin folder to the dependencies
             dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
@@ -109,7 +123,7 @@ public static class AppManager
         }
 
         // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+        var deviceFiles = await meadowConnection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
 
         // get a list of files of the device files that are not in the list we intend to deploy
         var removeFiles = deviceFiles
@@ -121,7 +135,7 @@ public static class AppManager
         foreach (var file in removeFiles)
         {
             logger?.LogInformation($"Deleting file '{file}'...");
-            await connection.DeleteFile(file, cancellationToken);
+            await meadowConnection.DeleteFile(file, cancellationToken);
         }
 
         // now send all files with differing CRCs
@@ -141,7 +155,7 @@ public static class AppManager
 
         send_file:
 
-            if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
+            if (!await meadowConnection.WriteFile(localFile.Key, null, cancellationToken))
             {
                 logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
                 await Task.Delay(100);
@@ -151,5 +165,18 @@ public static class AppManager
 
         //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
         logger?.LogInformation(string.Empty);
+
+        // Renable the runtime, if we've finished deploying.
+        isRuntimeEnabled = await meadowConnection.IsRuntimeEnabled();
+
+        if (!isRuntimeEnabled)
+        {
+            logger?.LogInformation($"Enabling runtime...");
+
+            await meadowConnection.RuntimeDisable(cancellationToken);
+        }
+
+        // Wait for the device to realise it's own existence.
+        await Task.Delay(2000, cancellationToken);
     }
 }
