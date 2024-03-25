@@ -215,15 +215,9 @@ namespace Meadow.Hcom
                                         // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
                                         Close();
 
-                                        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                                        {
-                                            await Task.Delay(3000);
-                                            Open();
-                                        }
-                                        else
-                                        {
-                                            _reconnectInProgress = true;
-                                        }
+                                        await Task.Delay(3000);
+
+                                        Open();
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {
