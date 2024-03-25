@@ -31,8 +31,6 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         var connection = await GetCurrentConnection();
 
-        await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
-
         if (!await DeployApplication(connection, file.FullName, CancellationToken))
         {
             throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);

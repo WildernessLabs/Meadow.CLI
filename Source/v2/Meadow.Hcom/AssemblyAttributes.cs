@@ -1,3 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Meadow.HCom.Integration.Tests")]
+//[assembly: InternalsVisibleTo("Meadow.HCom.Integration.Tests")]

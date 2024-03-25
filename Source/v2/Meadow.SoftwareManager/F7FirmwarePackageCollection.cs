@@ -31,7 +31,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     {
     }
 
-    internal F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
+    public F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
     {
         _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
 

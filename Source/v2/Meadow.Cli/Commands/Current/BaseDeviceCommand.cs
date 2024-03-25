@@ -50,7 +50,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
             }
             catch (TimeoutException)
             {
-                throw new CommandException("Timeout attempting to attach to device on {connection?.Name}", CommandExitCode.ConnectionNotFound);
+                throw new CommandException($"Timeout attempting to attach to device on {connection?.Name}", CommandExitCode.ConnectionNotFound);
             }
             catch (Exception ex)
             {
