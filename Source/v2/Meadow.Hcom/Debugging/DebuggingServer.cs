@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using Microsoft.Extensions.Logging;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -192,7 +193,13 @@ public class DebuggingServer : IDisposable
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, TaskCreationOptions.LongRunning);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
 
-            _connection.DebuggerMessageReceived += (s, e) => _debuggerMessages.Add(e);
+            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
+        }
+
+        private void MeadowConnection_DebuggerMessageReceived(object sender, byte[] e)
+        {
+            _logger?.LogDebug("Debugger Message Received, Adding to collection");
+            _debuggerMessages.Add(e);
         }
 
         private const int RECEIVE_BUFFER_SIZE = 256;
@@ -330,6 +337,11 @@ public class DebuggingServer : IDisposable
                 _tcpClient.Dispose();
                 _networkStream.Dispose();
                 _cts.Dispose();
+
+                if (_connection != null)
+                {
+                    _connection.DebuggerMessageReceived -= MeadowConnection_DebuggerMessageReceived;
+                }
                 Disposed = true;
             }
         }
