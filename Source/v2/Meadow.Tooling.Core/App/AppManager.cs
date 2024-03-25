@@ -53,6 +53,8 @@ public static class AppManager
             logger?.LogInformation($"Disabling runtime...");
 
             await meadowConnection.RuntimeDisable(cancellationToken);
+
+            await Task.Delay(3000, cancellationToken);
         }
 
         // TODO: add sub-folder support when HCOM supports it
