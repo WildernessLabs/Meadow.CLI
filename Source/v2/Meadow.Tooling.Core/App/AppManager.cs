@@ -54,6 +54,9 @@ public static class AppManager
                 logger?.LogInformation($"Disabling runtime...");
 
                 await meadowConnection.RuntimeDisable(cancellationToken);
+
+                logger?.LogDebug("Waiting for Meadow to restart");
+                await Task.Delay(3000, cancellationToken);
             }
 
             // TODO: add sub-folder support when HCOM supports it
