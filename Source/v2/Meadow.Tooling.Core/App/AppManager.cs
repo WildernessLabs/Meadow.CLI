@@ -179,7 +179,7 @@ public static class AppManager
             {
                 logger?.LogInformation($"Enabling runtime...");
 
-                await meadowConnection.RuntimeDisable(cancellationToken);
+                await meadowConnection.RuntimeEnable(cancellationToken);
             }
 
             // Wait for the device to realise it's own existence.
