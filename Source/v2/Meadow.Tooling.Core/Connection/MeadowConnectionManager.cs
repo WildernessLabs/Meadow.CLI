@@ -138,7 +138,7 @@ public class MeadowConnectionManager
             throw new PlatformNotSupportedException("This method is only supported on macOS");
         }
 
-        return await Task.Run(() =>
+        return await Task.Run(async () =>
         {
             var ports = new List<string>();
 
@@ -156,7 +156,7 @@ public class MeadowConnectionManager
             {
                 if (p != null)
                 {
-                    output = p.StandardOutput.ReadToEnd();
+                    output = await p.StandardOutput.ReadToEndAsync();
                     p.WaitForExit();
                 }
             }
