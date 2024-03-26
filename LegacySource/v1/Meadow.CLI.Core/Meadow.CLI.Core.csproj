@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>AnyCPU</Platforms>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>1.9.4.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Internals\Dfu\DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuContext.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuSharp.cs" />
+    <Compile Remove="Internals\Dfu\WIP.DfuUpload.cs" />
+    <Compile Remove="Internals\Dfu\WIP.NativeMethods.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<None Update="lib\illink.dll" CopyToOutputDirectory="Always" />
+	<None Update="lib\meadow_link.xml" CopyToOutputDirectory="Always" />
+	<None Update="lib\Mono.Cecil.dll" CopyToOutputDirectory="Always" />
+	<None Update="lib\illink.runtimeconfig.json" CopyToOutputDirectory="Always" />
+    <None Update="libusb-1.0.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="libusb-1.0.dylib" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CredentialManagement.Standard" Version="1.0.4" />
+    <PackageReference Include="Glob" Version="1.1.9" />
+    <PackageReference Include="IdentityModel.OidcClient" Version="3.1.2" />
+    <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Include="System.IO" Version="4.3.0" />
+    <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
+    <PackageReference Include="System.Management" Version="5.0.0" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
+    <PackageReference Include="System.Text.Json" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="YamlDotNet" Version="13.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.Hcom\Meadow.Hcom.csproj" />
+    <None Include="images\icon.png" PackagePath="icon.png" Pack="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Management" />
+  </ItemGroup>
+  
+</Project>
