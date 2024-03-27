@@ -13,6 +13,8 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<string> ConnectionMessage = default!;
     public event EventHandler FileWriteFailed = default!;
     public event EventHandler<byte[]> DebuggerMessageReceived;
+    public event EventHandler<string>? FileReadCompleted = default!;
+    public event EventHandler<int>? FileBytesReceived;
 
     public abstract string Name { get; }
 
@@ -62,6 +64,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
         DebuggerMessageReceived?.Invoke(this, data);
     }
 
+    protected void RaiseFileReadCompleted(string fileName)
+    {
+        FileReadCompleted?.Invoke(this, fileName);
+    }
+
     protected void RaiseFileWriteProgress(string fileName, long progress, long total)
     {
         FileWriteProgress?.Invoke(this, (fileName, progress, total));
@@ -80,6 +87,11 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     protected void RaiseConnectionError(Exception error)
     {
         ConnectionError?.Invoke(this, error);
+    }
+
+    protected void RaiseFileBytesReceived(int length)
+    {
+        FileBytesReceived?.Invoke(this, length);
     }
 
     protected virtual void Dispose(bool disposing)

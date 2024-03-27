@@ -107,7 +107,10 @@ namespace Meadow.Hcom
 
                                 if (index < 0)
                                 {
-                                    Debug.WriteLine($"No delimiter");
+                                    if (messageBytes.Count > 0)
+                                    {
+                                        Debug.WriteLine($"We have {messageBytes.Count} bytes with no end delimiter");
+                                    }
                                     break;
                                 }
                                 var packetBytes = messageBytes.Remove(index + 1);
@@ -131,6 +134,12 @@ namespace Meadow.Hcom
 
                                     // now parse this per the HCOM protocol definition
                                     var response = SerialResponse.Parse(decodedBuffer, decodedSize);
+
+                                    if (response == null)
+                                    {
+                                        Debug.WriteLine($"Response parsing yielded null");
+                                        continue;
+                                    }
 
                                     Debug.WriteLine($"{response.RequestType}");
                                     _state = ConnectionState.MeadowAttached;
@@ -248,6 +257,8 @@ namespace Meadow.Hcom
                                         }
 
                                         _readFileInfo.FileStream.Write(udp.FileData, 0, udp.FileData.Length);
+
+                                        RaiseFileBytesReceived(udp.FileData.Length);
                                     }
                                     else if (response is UploadCompletedResponse ucr)
                                     {
@@ -262,7 +273,7 @@ namespace Meadow.Hcom
                                         _readFileInfo.FileStream.Dispose();
                                         _readFileInfo = null;
 
-                                        FileReadCompleted?.Invoke(this, fn);
+                                        RaiseFileReadCompleted(fn ?? string.Empty);
                                     }
                                     else if (response is FileReadInitFailedResponse frf)
                                     {
@@ -286,7 +297,7 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is TextPayloadSerialResponse fib)
                                     {
-                                        FileDataReceived?.Invoke(this, fib.Text);
+                                        FileTextReceived?.Invoke(this, fib.Text);
                                     }
                                     else if (response is FileDownloadFailedResponse fdf)
                                     {
