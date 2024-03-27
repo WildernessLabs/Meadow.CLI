@@ -19,8 +19,29 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
     protected override async ValueTask ExecuteCommand()
     {
         var device = await GetCurrentDevice();
+        var connection = await GetCurrentConnection();
+
+        var received = 0;
+
+        connection.FileBytesReceived += (s, count) =>
+        {
+            received += count;
+            Logger?.LogInformation($"Received {received} bytes");
+        };
+
+        connection.FileReadCompleted += (s, f) =>
+        {
+            Logger?.LogInformation($"File written to '{f}'");
+        };
 
         Logger?.LogInformation($"Getting file '{MeadowFile}' from device...");
+        var runtimeIsEnabled = await device.IsRuntimeEnabled();
+
+        if (runtimeIsEnabled)
+        {
+            Logger?.LogInformation($"Disabling runtime...");
+            await device.RuntimeDisable();
+        }
 
         var success = await device.ReadFile(MeadowFile, LocalFile, CancellationToken);
 

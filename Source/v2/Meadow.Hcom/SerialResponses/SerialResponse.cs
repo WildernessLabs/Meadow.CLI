@@ -18,8 +18,13 @@ internal class SerialResponse
     public uint UserData => BitConverter.ToUInt32(_data, HCOM_PROTOCOL_REQUEST_HEADER_USER_DATA_OFFSET);
     protected int PayloadLength => _data.Length - RESPONSE_PAYLOAD_OFFSET;
 
-    public static SerialResponse Parse(byte[] data, int length)
+    public static SerialResponse? Parse(byte[] data, int length)
     {
+        if (length == 0)
+        {
+            return null;
+        }
+
         var type = (ResponseType)BitConverter.ToUInt16(data, HCOM_PROTOCOL_REQUEST_HEADER_RQST_TYPE_OFFSET);
 
         return type switch

@@ -53,7 +53,7 @@
     },
     "Config: Set Route Serial": {
       "commandName": "Project",
-      "commandLineArgs": "config route COM4"
+      "commandLineArgs": "config route COM5"
     },
     "Config: Set Route TCP": {
       "commandName": "Project",
@@ -94,6 +94,10 @@
     "File Delete All": {
       "commandName": "Project",
       "commandLineArgs": "file delete all"
+    },
+    "File Read Large": {
+      "commandName": "Project",
+      "commandLineArgs": "file read Meadow.F7.dll"
     },
     "File Read": {
       "commandName": "Project",

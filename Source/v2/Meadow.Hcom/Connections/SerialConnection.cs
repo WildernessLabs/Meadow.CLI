@@ -13,9 +13,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     public const int ReadBufferSizeBytes = 0x2000;
     private const int DefaultTimeout = 5000;
 
-    private event EventHandler<string> FileReadCompleted = default!;
     private event EventHandler FileWriteAccepted = default!;
-    private event EventHandler<string> FileDataReceived = default!;
+    private event EventHandler<string> FileTextReceived = default!;
     public event ConnectionStateChangedHandler ConnectionStateChanged = default!;
 
     private readonly SerialPort _port;
@@ -279,7 +278,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 if (_localFileName != null) return _localFileName;
 
-                return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.GetFileName(MeadowFileName));
+                return Path.Combine(Environment.CurrentDirectory, Path.GetFileName(MeadowFileName));
             }
             set => _localFileName = value;
         }
@@ -503,6 +502,48 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private const string RtcRetrievalToken = "UTC time:";
 
     public int CommandTimeoutSeconds { get; set; } = 30;
+
+    private async Task<bool> WaitForFileReadCompleted(CancellationToken? cancellationToken)
+    {
+        var timeout = CommandTimeoutSeconds * 2;
+
+        var completed = false;
+
+        void LocalFRCHandler(object s, string e)
+        {
+            completed = true;
+        }
+        void LocalFBRHandler(object s, int e)
+        {
+            timeout = CommandTimeoutSeconds * 2;
+        }
+
+        FileBytesReceived += LocalFBRHandler;
+        FileReadCompleted += LocalFRCHandler;
+
+        try
+        {
+            while (timeout-- > 0)
+            {
+                if (cancellationToken?.IsCancellationRequested ?? false) return false;
+                if (_lastException != null) return false;
+
+                if (timeout <= 0) throw new TimeoutException();
+
+                if (completed) return true;
+
+                await Task.Delay(500);
+            }
+        }
+        finally
+        {
+            // clean up local events
+            FileBytesReceived -= LocalFBRHandler;
+            FileReadCompleted -= LocalFRCHandler;
+        }
+
+        return true;
+    }
 
     private async Task<bool> WaitForResult(Func<bool> checkAction, CancellationToken? cancellationToken)
     {
@@ -1077,12 +1118,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             EnqueueRequest(command);
 
-            if (!await WaitForResult(
-                () =>
-                {
-                    return completed | ex != null;
-                },
-                cancellationToken))
+            if (!await WaitForFileReadCompleted(cancellationToken))
             {
                 return false;
             }
@@ -1108,7 +1144,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             contents = data;
         }
 
-        FileDataReceived += OnFileDataReceived;
+        FileTextReceived += OnFileDataReceived;
 
         _lastRequestConcluded = null;
         EnqueueRequest(command);
@@ -1159,7 +1195,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             contents = data;
         }
 
-        FileDataReceived += OnFileDataReceived;
+        FileTextReceived += OnFileDataReceived;
 
         var lastTimeout = CommandTimeoutSeconds;
 
