@@ -57,7 +57,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         {
             command += $" -o {OrgId}";
         }
-        command += $" -id \"{provisioningID}\" -k \"{publicKey}\"";
+        command += $" --id \"{provisioningID}\" -k \"{publicKey}\"";
         Logger?.LogInformation($"Provisioning command is:");
         Logger?.LogInformation(command);
     }
