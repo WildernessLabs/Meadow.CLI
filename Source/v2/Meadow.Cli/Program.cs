@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -22,7 +23,8 @@ public class Program
     {
         var outputTemplate = "{Message:lj}{NewLine}{Exception}";
         Log.Logger = new LoggerConfiguration().MinimumLevel.Verbose()
-                                              .WriteTo.Console(LogEventLevel.Information, outputTemplate)
+                                              .WriteTo.Console(LogEventLevel.Information, outputTemplate,
+                                                                theme: ConsoleTheme.None)
                                               .CreateLogger();
 
         var services = new ServiceCollection();
