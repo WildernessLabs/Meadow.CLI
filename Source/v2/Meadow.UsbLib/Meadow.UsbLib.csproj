@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-      <LangVersion>10</LangVersion>
-      <Nullable>enable</Nullable>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LibUsbDotNet" Version="3.0.102-alpha" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Meadow.UsbLib.Core\Meadow.UsbLib.Core.csproj" />
+  </ItemGroup>
 
 </Project>

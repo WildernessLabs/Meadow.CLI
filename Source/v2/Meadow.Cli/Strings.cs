@@ -1,4 +1,6 @@
-﻿namespace Meadow.CLI;
+﻿using Meadow.Telemetry;
+
+namespace Meadow.CLI;
 
 public static class Strings
 {
@@ -65,4 +67,19 @@ public static class Strings
     public const string NewMeadowDeviceNotFound = "New Meadow device not found";
     public const string NoFirmwarePackagesFound = "No firmware packages found, run 'meadow firmware download' to download the latest firmware";
     public const string NoDefaultFirmwarePackageSet = "No default firmware package set, run 'meadow firmware default' to set the default firmware";
+
+    public static class Telemetry
+    {
+        public const string ConsentMessage = @$"
+Let's improve the Meadow experience together
+--------------------------------------------
+To help improve the Meadow experience, we'd like to collect anonymous usage data. This data helps us understand how our tools are used, so we can make them better for everyone. This usage data is not tied to individuals and no personally identifiable information is collected.
+
+Our privacy policy is available at https://www.wildernesslabs.co/privacy-policy.
+
+You can change your mind at any time by running the ""[bold]meadow telemetry [[enable|disable]][/]"" command or by setting the [bold]{MeadowTelemetry.TelemetryEnvironmentVariable}[/] environment variable to '1' or '0' ('true' or 'false', respectively).
+";
+
+        public const string AskToParticipate = "Would you like to participate?";
+    }
 }
