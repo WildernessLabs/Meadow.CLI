@@ -42,113 +42,138 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-        // TODO: add sub-folder support when HCOM supports it
-        var localFiles = new Dictionary<string, uint>();
-
-        var dependencies = new List<string>();
-
-        var processedAppPath = localBinaryDirectory;
-
-        //check if there's a post link folder
-        if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
+        bool isRuntimeEnabled;
+        try
         {
-            processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+            // in order to deploy, the runtime must be disabled
+            isRuntimeEnabled = await connection.IsRuntimeEnabled();
 
-            //add all dlls from the postlink_bin folder to the dependencies
-            dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
-            dependencies.Remove(Path.Combine(processedAppPath, "App.dll"));
+            if (isRuntimeEnabled)
+            {
+                logger?.LogInformation($"Disabling runtime...");
 
-            //add all pdbs from the postlink_bin folder to the dependencies if includePdbs is true
+                await connection.RuntimeDisable(cancellationToken);
+            }
+
+            // TODO: add sub-folder support when HCOM supports it
+            var localFiles = new Dictionary<string, uint>();
+
+            var dependencies = new List<string>();
+
+            var processedAppPath = localBinaryDirectory;
+
+            //check if there's a post link folder
+            if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
+            {
+                processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+
+                //add all dlls from the postlink_bin folder to the dependencies
+                dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
+                dependencies.Remove(Path.Combine(processedAppPath, "App.dll"));
+
+                //add all pdbs from the postlink_bin folder to the dependencies if includePdbs is true
+                if (includePdbs)
+                {
+                    dependencies.AddRange(Directory.EnumerateFiles(processedAppPath, "*.pdb", SearchOption.TopDirectoryOnly));
+                    dependencies.Remove(Path.Combine(processedAppPath, "App.pdb"));
+                }
+            }
+            else
+            {
+                dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
+            }
+            dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
+
             if (includePdbs)
             {
-                dependencies.AddRange(Directory.EnumerateFiles(processedAppPath, "*.pdb", SearchOption.TopDirectoryOnly));
-                dependencies.Remove(Path.Combine(processedAppPath, "App.pdb"));
+                dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
             }
-        }
-        else
-        {
-            dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
-        }
-        dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
-        if (includePdbs)
-        {
-            dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
-        }
+            var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(s => new FileInfo(s).Extension != ".dll")
+                .Where(s => new FileInfo(s).Extension != ".pdb")
+                .Where(s => !s.Contains(".DS_Store")).ToList();
+            dependencies.AddRange(binaries);
 
-        var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
-            .Where(s => new FileInfo(s).Extension != ".dll")
-            .Where(s => new FileInfo(s).Extension != ".pdb")
-            .Where(s => !s.Contains(".DS_Store")).ToList();
-        dependencies.AddRange(binaries);
+            logger?.LogInformation("Generating list of files to deploy...");
 
-        logger?.LogInformation("Generating list of files to deploy...");
-
-        foreach (var file in dependencies)
-        {
-            // TODO: add any other filtering capability here
-            if (!includePdbs && IsPdb(file)) { continue; }
-            if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
-
-            // read the file data so we can generate a CRC
-            using FileStream fs = File.Open(file, FileMode.Open);
-            var len = (int)fs.Length;
-            var bytes = new byte[len];
-
-            await fs.ReadAsync(bytes, 0, len, cancellationToken);
-
-            var crc = CrcTools.Crc32part(bytes, len, 0);
-
-            localFiles.Add(file, crc);
-        }
-
-        if (localFiles.Count == 0)
-        {
-            logger?.LogInformation($"No new files to deploy");
-        }
-
-        // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
-
-        // get a list of files of the device files that are not in the list we intend to deploy
-        var removeFiles = deviceFiles
-            .Select(f => Path.GetFileName(f.Name))
-            .Except(localFiles.Keys
-                .Select(f => Path.GetFileName(f))).ToList();
-
-        // delete those files
-        foreach (var file in removeFiles)
-        {
-            logger?.LogInformation($"Deleting file '{file}'...");
-            await connection.DeleteFile(file, cancellationToken);
-        }
-
-        // now send all files with differing CRCs
-        foreach (var localFile in localFiles)
-        {
-            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
-
-            if (existing != null && existing.Crc != null)
+            foreach (var file in dependencies)
             {
-                var crc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
+                // TODO: add any other filtering capability here
+                if (!includePdbs && IsPdb(file)) { continue; }
+                if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
 
-                if (crc == localFile.Value)
-                {   // exists and has a matching CRC, skip it
-                    continue;
+                // read the file data so we can generate a CRC
+                using FileStream fs = File.Open(file, FileMode.Open);
+                var len = (int)fs.Length;
+                var bytes = new byte[len];
+
+                await fs.ReadAsync(bytes, 0, len, cancellationToken);
+
+                var crc = CrcTools.Crc32part(bytes, len, 0);
+
+                localFiles.Add(file, crc);
+            }
+
+            if (localFiles.Count == 0)
+            {
+                logger?.LogInformation($"No new files to deploy");
+            }
+
+            // get a list of files on-device, with CRCs
+            var deviceFiles = await connection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+
+            // get a list of files of the device files that are not in the list we intend to deploy
+            var removeFiles = deviceFiles
+                .Select(f => Path.GetFileName(f.Name))
+                .Except(localFiles.Keys
+                    .Select(f => Path.GetFileName(f))).ToList();
+
+            // delete those files
+            foreach (var file in removeFiles)
+            {
+                logger?.LogInformation($"Deleting file '{file}'...");
+                await connection.DeleteFile(file, cancellationToken);
+            }
+
+            // now send all files with differing CRCs
+            foreach (var localFile in localFiles)
+            {
+                var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
+
+                if (existing != null && existing.Crc != null)
+                {
+                    var crc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
+
+                    if (crc == localFile.Value)
+                    {   // exists and has a matching CRC, skip it
+                        continue;
+                    }
+                }
+
+            send_file:
+
+                if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
+                {
+                    logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
+                    await Task.Delay(100);
+                    goto send_file;
                 }
             }
 
-        send_file:
+            //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
+            logger?.LogInformation(string.Empty);
+        }
+        finally
+        {
+            isRuntimeEnabled = await connection.IsRuntimeEnabled();
 
-            if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
+            if (!isRuntimeEnabled)
             {
-                logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
-                await Task.Delay(100);
-                goto send_file;
+                logger?.LogInformation($"Enabling runtime...");
+
+                await connection.RuntimeEnable(cancellationToken);
             }
         }
-
-        //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
-        logger?.LogInformation(string.Empty);
     }
 }
