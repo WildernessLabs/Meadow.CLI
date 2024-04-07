@@ -252,15 +252,16 @@ namespace Meadow.CLI.Core.Devices
                 string osVersion = await GetOSVersion(TimeSpan.FromSeconds(30), cancellationToken);
 
                 await _meadowDevice.DeployApp(fileName, osVersion, includePdbs, verbose, noLink, cancellationToken);
-
-                await MonoEnable(true, cancellationToken: cancellationToken);
-
-                await Task.Delay(2000, cancellationToken);
             }
             catch (Exception ex)
             {
-                await MonoDisable(true, cancellationToken);
                 throw ex;
+            }
+            finally
+            {
+                await MonoEnable(true, cancellationToken: cancellationToken);
+
+                await Task.Delay(2000, cancellationToken);
             }
         }
 
