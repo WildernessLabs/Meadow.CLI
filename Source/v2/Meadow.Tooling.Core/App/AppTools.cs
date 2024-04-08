@@ -1,13 +1,19 @@
-﻿using CliFx.Infrastructure;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using CliFx.Exceptions;
+using CliFx.Infrastructure;
 using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.DeviceManagement;
+namespace Meadow.CLI;
 
-internal static class AppTools
+public static class AppTools
 {
-    internal static string ValidateAndSanitizeAppPath(string? path)
+    public static string ValidateAndSanitizeAppPath(string? path)
     {
         path ??= Directory.GetCurrentDirectory();
 
@@ -19,7 +25,7 @@ internal static class AppTools
         {   // is it a valid directory?
             if (!Directory.Exists(path))
             {
-                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
+                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", (int)CommandExitCode.FileNotFound);
             }
         }
 
@@ -27,7 +33,7 @@ internal static class AppTools
         return Path.GetFullPath(path);
     }
 
-    internal static async Task DisableRuntimeIfEnabled(IMeadowConnection connection, ILogger? logger, CancellationToken cancellationToken)
+    public static async Task DisableRuntimeIfEnabled(IMeadowConnection connection, ILogger? logger, CancellationToken cancellationToken)
     {
         var isRuntimeEnabled = await connection.IsRuntimeEnabled();
 
@@ -39,7 +45,19 @@ internal static class AppTools
         }
     }
 
-    internal static async Task<bool> TrimApplication(string path,
+    public static async Task EnableRuntimeIfDisabled(IMeadowConnection connection, ILogger? logger, CancellationToken cancellationToken)
+    {
+        var isRuntimeEnabled = await connection.IsRuntimeEnabled();
+
+        if (!isRuntimeEnabled)
+        {
+            logger?.LogInformation($"{Strings.EnablingRuntime}...");
+
+            await connection.RuntimeEnable(cancellationToken);
+        }
+    }
+
+    public static async Task<bool> TrimApplication(string path,
         IPackageManager packageManager,
         string? configuration,
         IEnumerable<string>? noLinkAssemblies,

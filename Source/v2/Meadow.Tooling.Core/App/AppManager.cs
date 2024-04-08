@@ -42,18 +42,10 @@ public static class AppManager
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-        bool isRuntimeEnabled;
         try
         {
             // in order to deploy, the runtime must be disabled
-            isRuntimeEnabled = await connection.IsRuntimeEnabled();
-
-            if (isRuntimeEnabled)
-            {
-                logger?.LogInformation($"Disabling runtime...");
-
-                await connection.RuntimeDisable(cancellationToken);
-            }
+            await AppTools.DisableRuntimeIfEnabled(connection, logger, cancellationToken);
 
             // TODO: add sub-folder support when HCOM supports it
             var localFiles = new Dictionary<string, uint>();
@@ -166,14 +158,7 @@ public static class AppManager
         }
         finally
         {
-            isRuntimeEnabled = await connection.IsRuntimeEnabled();
-
-            if (!isRuntimeEnabled)
-            {
-                logger?.LogInformation($"Enabling runtime...");
-
-                await connection.RuntimeEnable(cancellationToken);
-            }
+            await AppTools.EnableRuntimeIfDisabled(connection, logger, cancellationToken);
         }
     }
 }
