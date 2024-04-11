@@ -109,6 +109,7 @@ public class MeadowLinker
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error trimming Meadow app");
+            throw;
         }
 
         return Directory.EnumerateFiles(postlink_dir);
