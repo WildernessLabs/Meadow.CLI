@@ -1228,10 +1228,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
+        await StartDebugging(port, logger, cancellationToken);
 
         /* TODO logger?.LogDebug("Reinitialize the device");
         await ReInitializeMeadow(cancellationToken); */
+        await WaitForMeadowAttach(cancellationToken);
 
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
         var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
