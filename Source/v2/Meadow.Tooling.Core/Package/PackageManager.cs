@@ -27,8 +27,7 @@ public partial class PackageManager : IPackageManager
     public PackageManager(FileManager fileManager)
     {
         _fileManager = fileManager;
-
-        _meadowLinker = new MeadowLinker(MeadowAssembliesPath, null);
+        _meadowLinker = new MeadowLinker(GetMeadowAssembliesPath(), null);
     }
 
     private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
@@ -165,7 +164,7 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var linker = new MeadowLinker(MeadowAssembliesPath);
+        var linker = new MeadowLinker(GetMeadowAssembliesPath());
 
         return linker.Trim(applicationFilePath, includePdbs, noLink);
     }

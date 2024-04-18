@@ -62,4 +62,6 @@ public static class Strings
     public const string IsDfuUtilInstalled = "Is dfu-util installed?";
     public const string RunMeadowDfuInstall = "Run 'meadow dfu install' to install";
     public const string NewMeadowDeviceNotFound = "New Meadow device not found";
+    public const string NoFirmwarePackagesFound = "No firmware packages found, run 'meadow firmware download' to download the latest firmware";
+    public const string NoDefaultFirmwarePackageSet = "No default firmware package set, run 'meadow firmware default' to set the default firmware";
 }

@@ -24,6 +24,11 @@ public class FirmwareDefaultCommand : BaseFileCommand<FirmwareDefaultCommand>
 
         if (Version == null)
         {
+            if (collection == null || collection.Count() == 0)
+            {
+                throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
+            }
+
             Logger?.LogInformation($"Default firmware is '{collection?.DefaultPackage?.Version}'.");
         }
         else

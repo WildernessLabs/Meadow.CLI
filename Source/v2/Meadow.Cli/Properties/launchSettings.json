@@ -129,11 +129,11 @@
     },
     "Firmware Default set": {
       "commandName": "Project",
-      "commandLineArgs": "firmware default 1.3.4.0"
+      "commandLineArgs": "firmware default 1.10.0.2"
     },
     "Firmware Delete": {
       "commandName": "Project",
-      "commandLineArgs": "firmware delete 1.9.0.0"
+      "commandLineArgs": "firmware delete 1.99.0.0"
     },
     "Firmware Write all": {
       "commandName": "Project",

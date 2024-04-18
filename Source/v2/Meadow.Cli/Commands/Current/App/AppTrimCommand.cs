@@ -1,5 +1,6 @@
 ﻿using CliFx.Attributes;
 using Meadow.Package;
+using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -18,14 +19,33 @@ public class AppTrimCommand : BaseCommand<AppTrimCommand>
     [CommandOption("nolink", Description = Strings.NoLinkAssemblies, IsRequired = false)]
     public string[]? NoLink { get; private set; }
 
-    public AppTrimCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+    readonly FileManager _fileManager;
+
+    public AppTrimCommand(FileManager fileManager, IPackageManager packageManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
         _packageManager = packageManager;
+        _fileManager = fileManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
+        await _fileManager.Refresh();
+
+        // for now we only support F7
+        // TODO: add switch and support for other platforms
+        var collection = _fileManager.Firmware["Meadow F7"];
+
+        if (collection == null || collection.Count() == 0)
+        {
+            throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
+        }
+
+        if (collection.DefaultPackage == null)
+        {
+            throw new CommandException(Strings.NoDefaultFirmwarePackageSet, CommandExitCode.GeneralError);
+        }
+
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
 
         if (!File.Exists(path))
