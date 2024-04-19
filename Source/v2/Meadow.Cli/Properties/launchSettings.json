@@ -249,7 +249,7 @@
     },
     "Cloud package create": {
       "commandName": "Project",
-      "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "cloud package create H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "Cloud package upload": {
       "commandName": "Project",

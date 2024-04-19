@@ -23,9 +23,10 @@ public static class Strings
     public const string BuildingSpecifiedConfiguration = "Building {0} configuration of application...";
     public const string BuildFailed = "Build failed";
     public const string TrimmingApplicationForSpecifiedVersion = "Trimming application for OS version {0}...";
+    public const string TrimmedApplicationForSpecifiedVersion = "Trimmed application with OS version {0}";
     public const string AssemblingCloudPackage = "Assembling the MPAK...";
     public const string PackageAssemblyFailed = "Package assembly failed";
-    public const string PackageAvailableAtSpecifiedPath = "Done. Package is available at {0}";
+    public const string PackageAvailableAtSpecifiedPath = "Package is available at {0}";
     public const string NoCompiledApplicationFound = "No compiled application found";
     public const string DfuDeviceDetected = "DFU Device Detected";
     public const string UsingDfuToWriteOs = "using DFU to write OS";

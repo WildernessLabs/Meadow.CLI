@@ -181,6 +181,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
         if (result.isSuccess)
         {
             Logger?.LogInformation(Strings.ProvisioningSucceeded);
+            Logger?.LogInformation($"Device ID: {provisioningID}");
         }
         else
         {
