@@ -175,7 +175,7 @@ public partial class PackageManager : IPackageManager
         string outputFolder,
         string osVersion,
         string? mpakName = null,
-        string filter = "*",
+        string filter = "**/*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null)
     {
@@ -204,7 +204,8 @@ public partial class PackageManager : IPackageManager
 
         foreach (var fPath in appFiles)
         {
-            CreateEntry(archive, Path.Combine(contentSourceFolder, fPath), Path.Combine("app", Path.GetFileName(fPath)));
+            var destination = Path.Combine("app", fPath);
+            CreateEntry(archive, Path.Combine(contentSourceFolder, fPath), destination);
         }
 
         // write a metadata file info.json in the mpak
