@@ -43,7 +43,7 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
             await device.RuntimeDisable();
         }
 
-        var success = await device.ReadFile(MeadowFile, LocalFile, CancellationToken);
+        var success = await device.ReadFile(AppTools.SanitiseMeadowFilename(MeadowFile), LocalFile, CancellationToken);
 
         if (success)
         {

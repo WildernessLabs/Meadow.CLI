@@ -19,7 +19,7 @@ public class FileInitialCommand : BaseDeviceCommand<FileInitialCommand>
 
         Logger?.LogInformation($"Reading file '{MeadowFile}' from device...\n");
 
-        var data = await device.ReadFileString(MeadowFile, CancellationToken);
+        var data = await device.ReadFileString(AppTools.SanitiseMeadowFilename(MeadowFile), CancellationToken);
 
         if (data == null)
         {

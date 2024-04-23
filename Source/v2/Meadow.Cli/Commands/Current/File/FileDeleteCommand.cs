@@ -10,8 +10,6 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
     public string MeadowFile { get; init; } = default!;
 
-    private const string MeadowRootFolder = "meadow0";
-
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
@@ -33,10 +31,10 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
         if (string.IsNullOrWhiteSpace(folder))
         {
-            folder = MeadowRootFolder;
+            folder = $"/{AppTools.MeadowRootFolder}/";
         }
 
-        var fileList = await connection.GetFileList($"/{folder}/", false);
+        var fileList = await connection.GetFileList($"{folder}", false, CancellationToken);
 
         if (fileList == null || fileList.Length == 0)
         {
@@ -48,7 +46,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         {
             foreach (var file in fileList)
             {
-                await DeleteFileRecursive(device, file, CancellationToken);
+                await DeleteFileRecursive(device, folder, file, CancellationToken);
             }
         }
         else
@@ -72,26 +70,29 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
                 }
 
                 Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await device.DeleteFile(MeadowFile, CancellationToken);
+                await device.DeleteFile(AppTools.SanitiseMeadowFilename(MeadowFile), CancellationToken);
             }
         }
     }
 
-    private async Task DeleteFileRecursive(IMeadowDevice device, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
+    private async Task DeleteFileRecursive(IMeadowDevice device, string directoryname, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
     {
+        var meadowFile = AppTools.SanitiseMeadowFilename(Path.Combine(directoryname, fileInfo.Name));
         if (fileInfo.IsDirectory)
         {
-            var subfolderFiles = await device.GetFileList(fileInfo.Name, false, cancellationToken);
+            // Add a backslash as we're a directory and not a file
+            meadowFile += "/";
+            var subfolderFiles = await device.GetFileList(meadowFile, false, cancellationToken);
 
             foreach (var subfolderFile in subfolderFiles)
             {
-                await DeleteFileRecursive(device, subfolderFile, cancellationToken);
+                await DeleteFileRecursive(device, meadowFile, subfolderFile, cancellationToken);
             }
             return;
         }
 
-        var fileName = Path.GetFileName(fileInfo.Name);
-        Logger?.LogInformation($"Deleting file '{fileName}' from device...");
-        await device.DeleteFile(fileName, cancellationToken);
+        Logger?.LogInformation($"Deleting file '{meadowFile}' from device...");
+
+        await device.DeleteFile(meadowFile, cancellationToken);
     }
 }
