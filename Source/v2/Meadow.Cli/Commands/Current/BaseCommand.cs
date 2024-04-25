@@ -1,6 +1,10 @@
 ﻿using CliFx;
+using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Meadow.Telemetry;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
+using System.Reflection;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -28,6 +32,23 @@ public abstract class BaseCommand<T> : ICommand
             _console = console;
             CancellationToken = _console.RegisterCancellationHandler();
 
+            try
+            {
+                if (MeadowTelemetry.Current.ShouldAskForConsent)
+                {
+                    AnsiConsole.MarkupLine(Strings.Telemetry.ConsentMessage);
+
+                    var result = AnsiConsole.Confirm(Strings.Telemetry.AskToParticipate, defaultValue: true);
+                    MeadowTelemetry.Current.SetTelemetryEnabled(result);
+                }
+
+                MeadowTelemetry.Current.TrackCommand(GetCommandName());
+            }
+            catch
+            {
+                // Swallow any telemetry-related exceptions
+            }
+
             await ExecuteCommand();
         }
         catch (Exception ex) when (ex is not CommandException && ex is not CliFx.Exceptions.CommandException)
@@ -39,5 +60,10 @@ public abstract class BaseCommand<T> : ICommand
         {
             throw new CommandException("Cancelled", CommandExitCode.UserCancelled);
         }
+    }
+
+    private string? GetCommandName()
+    {
+        return GetType().GetCustomAttribute<CommandAttribute>(true)?.Name;
     }
 }

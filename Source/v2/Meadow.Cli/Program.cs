@@ -5,6 +5,7 @@ using Meadow.Cloud.Client;
 using Meadow.Cloud.Client.Identity;
 using Meadow.Package;
 using Meadow.Software;
+using Meadow.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -92,6 +93,10 @@ public class Program
         {
             Console.WriteLine($"Operation failed: {ex.Message}");
             returnCode = 1;
+        }
+        finally
+        {
+            MeadowTelemetry.Current.Dispose();
         }
 
         return returnCode;

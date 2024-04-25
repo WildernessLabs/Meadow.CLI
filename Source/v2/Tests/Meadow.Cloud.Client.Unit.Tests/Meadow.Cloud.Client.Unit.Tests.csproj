@@ -11,8 +11,8 @@
   <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="8.1.0" />
     <PackageReference Include="FakeItEasy.Analyzer.CSharp" Version="6.1.1">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="FakeItEasy.Extensions.ValueTask" Version="8.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-      <ProjectReference Include="..\..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
+    <ProjectReference Include="..\..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
   </ItemGroup>
 
 </Project>

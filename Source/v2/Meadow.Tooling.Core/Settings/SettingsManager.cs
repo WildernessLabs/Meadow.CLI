@@ -33,14 +33,23 @@ public class SettingsManager : ISettingsManager
     public string? GetSetting(string setting)
     {
         var settings = GetSettings();
-        if (settings.Public.TryGetValue(setting.ToString(), out var ret))
+        Dictionary<string, string> target;
+
+        if (setting.StartsWith(PrivatePrefix))
         {
-            return ret;
+            setting = setting.Substring(PrivatePrefix.Length);
+            target = settings.Private;
         }
-        else if (settings.Private.TryGetValue(setting.ToString(), out var pret))
+        else
         {
-            return pret;
+            target = settings.Public;
         }
+
+        if (target.TryGetValue(setting, out var value))
+        {
+            return value;
+        }
+
         return null;
     }
 
@@ -59,7 +68,7 @@ public class SettingsManager : ISettingsManager
             target = settings.Public;
         }
 
-        if (target.ContainsKey(setting.ToString()))
+        if (target.ContainsKey(setting))
         {
             target.Remove(setting);
 
