@@ -7,6 +7,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 internal static class AppTools
 {
+    internal const string MeadowRootFolder = "meadow0";
+
     internal static string ValidateAndSanitizeAppPath(string? path)
     {
         path ??= Directory.GetCurrentDirectory();
@@ -94,5 +96,33 @@ internal static class AppTools
         await Task.Delay(1000, cancellationToken);
 
         return true;
+    }
+
+    internal static string SanitiseMeadowFilename(string fileName)
+    {
+        var folder = Path.GetDirectoryName(fileName);
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            folder = MeadowRootFolder;
+        }
+        else
+        {
+            if (folder.EndsWith('/') == false)
+            {
+                folder += "/";
+            }
+            if (folder.StartsWith('/') == false)
+            {
+                folder = $"/{folder}";
+            }
+            if (folder.Contains(MeadowRootFolder) == false)
+            {
+                folder = $"/{MeadowRootFolder}{folder}";
+            }
+        }
+
+        var meadowFileName = Path.Combine(folder, Path.GetFileName(fileName));
+
+        return meadowFileName!.Replace(Path.DirectorySeparatorChar, '/');
     }
 }

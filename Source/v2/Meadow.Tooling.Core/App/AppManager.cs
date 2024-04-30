@@ -77,7 +77,7 @@ public static class AppManager
             dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
         }
 
-        var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
+        var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.AllDirectories)
             .Where(s => new FileInfo(s).Extension != ".dll")
             .Where(s => new FileInfo(s).Extension != ".pdb")
             .Where(s => !s.Contains(".DS_Store")).ToList();
@@ -127,6 +127,20 @@ public static class AppManager
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
+            string? meadowFilename = string.Empty;
+            if (!localFile.Key.Contains(MeadowLinker.PreLinkDirectoryName)
+                && !localFile.Key.Contains(MeadowLinker.PostLinkDirectoryName))
+            {
+                meadowFilename = GetRelativePath(localBinaryDirectory, localFile.Key);
+                if (!meadowFilename.StartsWith("/meadow0/"))
+                {
+                    meadowFilename = "/meadow0/" + meadowFilename;
+                }
+            }
+            else
+            {
+                meadowFilename = null;
+            }
             var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
             if (existing != null && existing.Crc != null)
@@ -139,9 +153,10 @@ public static class AppManager
                 }
             }
 
+            logger?.LogInformation($"Sending  '{localFile.Key}'");
         send_file:
 
-            if (!await connection.WriteFile(localFile.Key, null, cancellationToken))
+            if (!await connection.WriteFile(localFile.Key, meadowFilename, cancellationToken))
             {
                 logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
                 await Task.Delay(100);
@@ -151,5 +166,13 @@ public static class AppManager
 
         //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
         logger?.LogInformation(string.Empty);
+    }
+
+    // Path.GetRelativePath is only available in .NET 8 but we also need to support netstandard2.0, hence using this
+    static string GetRelativePath(string relativeTo, string path)
+    {
+        // Determine the difference
+        var relativePath = path.Substring(relativeTo.Length + 1);
+        return relativePath;
     }
 }

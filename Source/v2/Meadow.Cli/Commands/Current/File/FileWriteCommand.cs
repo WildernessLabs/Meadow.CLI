@@ -54,7 +54,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
             }
             else
             {
-                var targetFileName = GetTargetFileName(i);
+                var targetFileName = AppTools.SanitiseMeadowFilename(GetTargetFileName(i));
 
                 Logger?.LogInformation(
                     $"Writing '{Files[i]}' as '{targetFileName}' to device");
