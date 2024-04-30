@@ -50,7 +50,7 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
         var buildPath = GetAppBuildPath(projectPath);
 
-        await AppTools.TrimApplication(projectPath, _packageManager, Configuration, null, Logger, Console, CancellationToken);
+        await AppTools.TrimApplication(projectPath, _packageManager, osVersion, Configuration, null, Logger, Console, CancellationToken);
         Logger.LogInformation(string.Format(Strings.TrimmedApplicationForSpecifiedVersion, osVersion));
 
         // package

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Meadow.Package;
@@ -9,28 +10,33 @@ public partial class PackageManager
     public const string PostLinkDirectoryName = "postlink_bin";
     public const string PackageOutputDirectoryName = "mpak";
 
-    private string _meadowAssembliesPath = string.Empty;
-
-    public List<string> GetDependencies(FileInfo file)
+    public List<string> GetDependencies(FileInfo file, string? osVerion)
     {
-        return _meadowLinker.MapDependencies(file);
+        var linker = new Linker.MeadowLinker(GetAssemblyPathForOS(osVerion));
+        return linker.MapDependencies(file);
     }
 
-    private string GetMeadowAssembliesPath()
+    private string GetAssemblyPathForOS(string? osVersion)
     {
-        if (string.IsNullOrWhiteSpace(_meadowAssembliesPath))
-        {   // for now we only support F7
-            // TODO: add switch and support for other platforms
-            var store = _fileManager.Firmware["Meadow F7"];
-            if (store != null)
-            {
-                store.Refresh();
-                if (store.DefaultPackage != null && store.DefaultPackage.BclFolder != null)
-                {
-                    _meadowAssembliesPath = store.DefaultPackage.GetFullyQualifiedPath(store.DefaultPackage.BclFolder);
-                }
-            }
+        if (string.IsNullOrWhiteSpace(osVersion))
+        {
+            osVersion = _fileManager?.Firmware["Meadow F7"]?.DefaultPackage?.Version;
         }
-        return _meadowAssembliesPath;
+
+        var store = _fileManager?.Firmware["Meadow F7"];
+        if (store != null)
+        {
+            store.Refresh();
+
+            var package = store.GetLocalPackage(osVersion!);
+
+            if (package == null)
+            {
+                throw new Exception($"No firmware package found for Meadow F7 with version {osVersion}");
+            }
+            return package.GetFullyQualifiedPath(package.BclFolder);
+        }
+
+        throw new Exception("No firmware package(s) found for Meadow F7");
     }
 }

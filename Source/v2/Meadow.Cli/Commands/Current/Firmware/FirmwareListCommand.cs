@@ -47,7 +47,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
-            foreach (var package in collection.OrderByDescending(p => new Version(p.Version)))
+            foreach (var package in collection.OrderBy(p => new Version(p.Version)))
             {
                 if (package == collection.DefaultPackage)
                 {
@@ -88,7 +88,7 @@ public class FirmwareListCommand : BaseCommand<FirmwareListCommand>
             Logger?.LogInformation($" {name}");
             var collection = manager.Firmware[name];
 
-            foreach (var package in collection.OrderByDescending(p => new Version(p.Version)))
+            foreach (var package in collection.OrderBy(p => new Version(p.Version)))
             {
                 if (package == collection.DefaultPackage)
                 {

@@ -36,6 +36,7 @@ public static class AppManager
     public static async Task DeployApplication(
         IPackageManager packageManager,
         IMeadowConnection connection,
+        string osVersion,
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
@@ -67,7 +68,7 @@ public static class AppManager
         }
         else
         {
-            dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
+            dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
         }
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 

@@ -262,6 +262,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         return Task.CompletedTask;
     }
 
+    public FirmwarePackage? GetLocalPackage(string osVersion)
+    {
+        return _f7Packages.FirstOrDefault(p => p.Version == osVersion);
+    }
+
     public IEnumerator<FirmwarePackage> GetEnumerator()
     {
         return _f7Packages.GetEnumerator();
