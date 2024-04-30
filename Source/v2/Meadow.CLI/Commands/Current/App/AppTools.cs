@@ -118,11 +118,14 @@ internal static class AppTools
         {
             if (!folder.StartsWith(Path.DirectorySeparatorChar))
             {
-                folder = $"{Path.DirectorySeparatorChar}{folder}";
-            }
-            if (!folder.Contains(MeadowRootFolder))
-            {
-                folder = $"{Path.DirectorySeparatorChar}{MeadowRootFolder}{folder}";
+                if (!folder.StartsWith($"{MeadowRootFolder}"))
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{MeadowRootFolder}{Path.DirectorySeparatorChar}{folder}";
+                }
+                else
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{folder}";
+                }
             }
         }
 
