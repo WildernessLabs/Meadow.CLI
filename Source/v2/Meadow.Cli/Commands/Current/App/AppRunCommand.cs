@@ -57,26 +57,33 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         var connection = await GetCurrentConnection();
 
+        var deviceInfo = await connection.GetDeviceInfo();
+
+        if (deviceInfo == null || deviceInfo.OsVersion == null)
+        {
+            throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
+        }
+
         var lastFile = string.Empty;
 
         // in order to deploy, the runtime must be disabled
         await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
-        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
+        Logger?.LogInformation($"Building {Configuration} configuration of {path} for Meadow v{deviceInfo.OsVersion}...");
 
         if (!_packageManager.BuildApplication(path, Configuration))
         {
-            throw new CommandException("Application build failed", CommandExitCode.GeneralError);
+            throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
         }
 
-        if (!await AppTools.TrimApplication(path, _packageManager, Configuration, NoLink, Logger, Console, CancellationToken))
+        if (!await AppTools.TrimApplication(path, _packageManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken))
         {
-            throw new CommandException("Application trimming failed", CommandExitCode.GeneralError);
+            throw new CommandException(Strings.AppTrimFailed, CommandExitCode.GeneralError);
         }
 
         if (!await DeployApplication(connection, path, CancellationToken))
         {
-            throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
+            throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
 
         Logger?.LogInformation($"{Strings.EnablingRuntime}...");
@@ -97,6 +104,13 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
+        var deviceInfo = await connection.GetDeviceInfo();
+
+        if (deviceInfo == null || deviceInfo.OsVersion == null)
+        {
+            throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
+        }
+
         var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
@@ -109,7 +123,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, cancellationToken);
+        await AppManager.DeployApplication(_packageManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

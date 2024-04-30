@@ -22,12 +22,10 @@ public partial class PackageManager : IPackageManager
     public const string BuildOptionsFileName = "app.build.yaml";
 
     private readonly FileManager _fileManager;
-    private readonly MeadowLinker _meadowLinker;
 
     public PackageManager(FileManager fileManager)
     {
         _fileManager = fileManager;
-        _meadowLinker = new MeadowLinker(GetMeadowAssembliesPath(), null);
     }
 
     private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
@@ -129,6 +127,7 @@ public partial class PackageManager : IPackageManager
 
     public Task TrimApplication(
         FileInfo applicationFilePath,
+        string osVersion,
         bool includePdbs = false,
         IEnumerable<string>? noLink = null,
         CancellationToken? cancellationToken = null)
@@ -164,7 +163,7 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var linker = new MeadowLinker(GetMeadowAssembliesPath());
+        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion));
 
         return linker.Trim(applicationFilePath, includePdbs, noLink);
     }

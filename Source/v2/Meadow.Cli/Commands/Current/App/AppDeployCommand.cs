@@ -33,9 +33,16 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
-        if (!await DeployApplication(connection, file.FullName, CancellationToken))
+        var deviceInfo = await connection.GetDeviceInfo();
+
+        if (deviceInfo == null || deviceInfo.OsVersion == null)
         {
-            throw new CommandException("Application deploy failed", CommandExitCode.GeneralError);
+            throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
+        }
+
+        if (!await DeployApplication(connection, deviceInfo.OsVersion, file.FullName, CancellationToken))
+        {
+            throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
     }
 
@@ -79,7 +86,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         return file;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken GetAvailableBuiltConfigurations)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string path, CancellationToken GetAvailableBuiltConfigurations)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
@@ -95,7 +102,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, file.DirectoryName!, true, false, Logger, GetAvailableBuiltConfigurations);
+        await AppManager.DeployApplication(_packageManager, connection, osVersion, file.DirectoryName!, true, false, Logger, GetAvailableBuiltConfigurations);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

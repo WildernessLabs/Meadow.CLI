@@ -185,11 +185,11 @@
     },
     "App Build": {
       "commandName": "Project",
-      "commandLineArgs": "app build H:\\AS\\BlockPuzzleGenerator\\src\\MeadowBoulderScape\\"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "App Build Debug": {
       "commandName": "Project",
-      "commandLineArgs": "app build F:\\temp\\MeadowApplication1 -c Debug"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs -c Debug"
     },
     "App Trim": {
       "commandName": "Project",

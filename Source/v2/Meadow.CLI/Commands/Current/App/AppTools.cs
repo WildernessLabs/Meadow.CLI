@@ -41,6 +41,7 @@ internal static class AppTools
 
     internal static async Task<bool> TrimApplication(string path,
         IPackageManager packageManager,
+        string osVersion,
         string? configuration,
         IEnumerable<string>? noLinkAssemblies,
         ILogger? logger,
@@ -86,7 +87,7 @@ internal static class AppTools
             logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await packageManager.TrimApplication(file, false, noLinkAssemblies, cancellationToken);
+        await packageManager.TrimApplication(file, osVersion, false, noLinkAssemblies, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s
