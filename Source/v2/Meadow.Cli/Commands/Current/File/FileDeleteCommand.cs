@@ -27,12 +27,9 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             await device.RuntimeDisable(CancellationToken);
         }
 
-        // get a list of files in the target folder
-        var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            folder = $"/{AppTools.MeadowRootFolder}/";
-        }
+        Logger?.LogInformation($"Looking for file {MeadowFile}...");
+
+        var folder = AppTools.SanitizeMeadowFolderName(Path.GetDirectoryName(MeadowFile)!);
 
         var fileList = await connection.GetFileList($"{folder}", false, CancellationToken);
 
@@ -55,29 +52,23 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
             var exists = fileList?.Any(f => Path.GetFileName(f.Name) == requested) ?? false;
 
+            var file = AppTools.SanitizeMeadowFilename(MeadowFile);
+
             if (!exists)
             {
-                Logger?.LogError($"File '{MeadowFile}' not found on device.");
+                Logger?.LogError($"File '{file}' not found on device");
             }
             else
             {
-                var wasRuntimeEnabled = await device.IsRuntimeEnabled(CancellationToken);
-
-                if (wasRuntimeEnabled)
-                {
-                    Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
-                    return;
-                }
-
-                Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await device.DeleteFile(AppTools.SanitiseMeadowFilename(MeadowFile), CancellationToken);
+                Logger?.LogInformation($"Deleting file '{file}' from device...");
+                await device.DeleteFile(file, CancellationToken);
             }
         }
     }
 
     private async Task DeleteFileRecursive(IMeadowDevice device, string directoryname, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
     {
-        var meadowFile = AppTools.SanitiseMeadowFilename(Path.Combine(directoryname, fileInfo.Name));
+        var meadowFile = AppTools.SanitizeMeadowFilename(Path.Combine(directoryname, fileInfo.Name));
         if (fileInfo.IsDirectory)
         {
             // Add a backslash as we're a directory and not a file

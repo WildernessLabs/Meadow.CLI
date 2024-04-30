@@ -83,13 +83,21 @@
       "commandName": "Project",
       "commandLineArgs": "file list"
     },
+    "File List folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file list Temp"
+    },
     "File List verbose": {
       "commandName": "Project",
       "commandLineArgs": "file list --verbose"
     },
     "File Delete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete Juego.pdb"
+      "commandLineArgs": "file delete /yo2.txt"
+    },
+    "File Delete folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete /Temp/yo3.txt"
     },
     "File Delete All": {
       "commandName": "Project",
@@ -105,7 +113,7 @@
     },
     "File Write": {
       "commandName": "Project",
-      "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
+      "commandLineArgs": "file write -f .\\yo2.txt"
     },
     "Firmware List": {
       "commandName": "Project",
