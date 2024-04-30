@@ -21,6 +21,14 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
         var device = await GetCurrentDevice();
         var connection = await GetCurrentConnection();
 
+        var state = await device.IsRuntimeEnabled(CancellationToken);
+
+        if (state == true)
+        {
+            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
+            await device.RuntimeDisable(CancellationToken);
+        }
+
         var received = 0;
 
         connection.FileBytesReceived += (s, count) =>
@@ -43,7 +51,7 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
             await device.RuntimeDisable();
         }
 
-        var success = await device.ReadFile(AppTools.SanitiseMeadowFilename(MeadowFile), LocalFile, CancellationToken);
+        var success = await device.ReadFile(AppTools.SanitizeMeadowFilename(MeadowFile), LocalFile, CancellationToken);
 
         if (success)
         {

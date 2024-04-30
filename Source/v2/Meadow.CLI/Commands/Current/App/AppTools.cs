@@ -98,26 +98,34 @@ internal static class AppTools
         return true;
     }
 
-    internal static string SanitiseMeadowFilename(string fileName)
+    internal static string SanitizeMeadowFolderName(string fileName)
     {
+        return SanitizeMeadowFilename(fileName) + '/';
+    }
+
+    internal static string SanitizeMeadowFilename(string fileName)
+    {
+        fileName = fileName.Replace('\\', Path.DirectorySeparatorChar);
+        fileName = fileName.Replace('/', Path.DirectorySeparatorChar);
+
         var folder = Path.GetDirectoryName(fileName);
+
         if (string.IsNullOrWhiteSpace(folder))
         {
-            folder = MeadowRootFolder;
+            folder = Path.DirectorySeparatorChar + MeadowRootFolder;
         }
         else
         {
-            if (folder.EndsWith('/') == false)
+            if (!folder.StartsWith(Path.DirectorySeparatorChar))
             {
-                folder += "/";
-            }
-            if (folder.StartsWith('/') == false)
-            {
-                folder = $"/{folder}";
-            }
-            if (folder.Contains(MeadowRootFolder) == false)
-            {
-                folder = $"/{MeadowRootFolder}{folder}";
+                if (!folder.StartsWith($"{MeadowRootFolder}"))
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{MeadowRootFolder}{Path.DirectorySeparatorChar}{folder}";
+                }
+                else
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{folder}";
+                }
             }
         }
 

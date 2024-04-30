@@ -29,6 +29,14 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
         var connection = await GetCurrentConnection();
         var device = await GetCurrentDevice();
 
+        var state = await device.IsRuntimeEnabled(CancellationToken);
+
+        if (state == true)
+        {
+            Logger?.LogInformation($"{Strings.DisablingRuntime}...");
+            await device.RuntimeDisable(CancellationToken);
+        }
+
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
             Logger?.LogError($"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
@@ -40,8 +48,11 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
         {
             var p = e.completed / (double)e.total * 100d;
 
-            // Console instead of Logger due to line breaking for progress bar
-            Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+            if (!double.IsNaN(p))
+            {
+                // Console instead of Logger due to line breaking for progress bar
+                Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+            }
         };
 
         Logger?.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
@@ -54,7 +65,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
             }
             else
             {
-                var targetFileName = AppTools.SanitiseMeadowFilename(GetTargetFileName(i));
+                var targetFileName = AppTools.SanitizeMeadowFilename(GetTargetFileName(i));
 
                 Logger?.LogInformation(
                     $"Writing '{Files[i]}' as '{targetFileName}' to device");

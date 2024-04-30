@@ -26,7 +26,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
         if (Folder != null)
         {
-            Folder = AppTools.SanitiseMeadowFilename(Folder);
+            Folder = AppTools.SanitizeMeadowFolderName(Folder);
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
         }
