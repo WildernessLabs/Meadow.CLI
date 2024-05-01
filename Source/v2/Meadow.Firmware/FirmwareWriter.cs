@@ -52,10 +52,10 @@ public class FirmwareWriter
         Debug.WriteLine($"DFU Writing file {osFile}");
 
         return DfuUtils.FlashFile(
-        osFile,
-        serialNumber,
-        logger: logger,
-        format: DfuUtils.DfuFlashFormat.ConsoleOut);
+            osFile,
+            serialNumber,
+            logger: logger,
+            format: DfuUtils.DfuFlashFormat.Full);
     }
 
     public Task WriteRuntimeWithHcom(IMeadowConnection connection, string firmwareFile, ILogger? logger = null)
