@@ -58,7 +58,8 @@ public static class DfuUtils
         }
         else //Console out
         {
-            if (!logLine.Contains("Device's firmware is corrupt"))
+            if (!logLine.Contains("Device's firmware is corrupt") &&
+                !logLine.Contains("null"))
             {
                 Console.Write(logLine);
                 Console.Write(logLine.Contains("%") ? "\r" : "\r\n");
