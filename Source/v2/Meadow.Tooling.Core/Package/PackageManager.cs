@@ -262,7 +262,9 @@ public partial class PackageManager : IPackageManager
             {
                 var shortname = Path.GetFileName(dir);
 
-                if (shortname == PostLinkDirectoryName || shortname == PreLinkDirectoryName)
+                if (shortname == PostLinkDirectoryName ||
+                    shortname == PreLinkDirectoryName ||
+                    shortname == PackageOutputDirectoryName)
                 {
                     continue;
                 }
