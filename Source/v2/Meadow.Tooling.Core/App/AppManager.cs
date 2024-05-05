@@ -172,7 +172,14 @@ public static class AppManager
     static string GetRelativePath(string relativeTo, string path)
     {
         // Determine the difference
-        var relativePath = path.Substring(relativeTo.Length + 1);
+        var relativePath = path.Substring(relativeTo.Length);
+        //remove leading slash
+        if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()) ||
+            relativePath.StartsWith("/") ||
+            relativePath.StartsWith("\\"))
+        {
+            relativePath = relativePath.Substring(1);
+        }
         return relativePath;
     }
 }
