@@ -10,8 +10,6 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     [CommandParameter(0, Name = "MeadowFile", IsRequired = true)]
     public string MeadowFile { get; init; } = default!;
 
-    private const string MeadowRootFolder = "meadow0";
-
     public FileDeleteCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
@@ -29,14 +27,11 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             await device.RuntimeDisable(CancellationToken);
         }
 
-        // get a list of files in the target folder
-        var folder = Path.GetDirectoryName(MeadowFile)!.Replace(Path.DirectorySeparatorChar, '/');
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            folder = MeadowRootFolder;
-        }
+        Logger?.LogInformation($"Looking for file {MeadowFile}...");
 
-        var fileList = await connection.GetFileList($"/{folder}/", false);
+        var folder = AppTools.SanitizeMeadowFolderName(Path.GetDirectoryName(MeadowFile)!);
+
+        var fileList = await connection.GetFileList($"{folder}", false, CancellationToken);
 
         if (fileList == null || fileList.Length == 0)
         {
@@ -48,7 +43,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         {
             foreach (var file in fileList)
             {
-                await DeleteFileRecursive(device, file, CancellationToken);
+                await DeleteFileRecursive(device, folder, file, CancellationToken);
             }
         }
         else
@@ -57,41 +52,38 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
 
             var exists = fileList?.Any(f => Path.GetFileName(f.Name) == requested) ?? false;
 
+            var file = AppTools.SanitizeMeadowFilename(MeadowFile);
+
             if (!exists)
             {
-                Logger?.LogError($"File '{MeadowFile}' not found on device.");
+                Logger?.LogError($"File '{file}' not found on device");
             }
             else
             {
-                var wasRuntimeEnabled = await device.IsRuntimeEnabled(CancellationToken);
-
-                if (wasRuntimeEnabled)
-                {
-                    Logger?.LogError($"The runtime must be disabled before doing any file management. Use 'meadow runtime disable' first.");
-                    return;
-                }
-
-                Logger?.LogInformation($"Deleting file '{MeadowFile}' from device...");
-                await device.DeleteFile(MeadowFile, CancellationToken);
+                Logger?.LogInformation($"Deleting file '{file}' from device...");
+                await device.DeleteFile(file, CancellationToken);
             }
         }
     }
 
-    private async Task DeleteFileRecursive(IMeadowDevice device, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
+    private async Task DeleteFileRecursive(IMeadowDevice device, string directoryname, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
     {
+        var meadowFile = AppTools.SanitizeMeadowFilename(Path.Combine(directoryname, fileInfo.Name));
         if (fileInfo.IsDirectory)
         {
-            var subfolderFiles = await device.GetFileList(fileInfo.Name, false, cancellationToken);
+            // Add a backslash as we're a directory and not a file
+            meadowFile += "/";
+            var subfolderFiles = await device.GetFileList(meadowFile, false, cancellationToken);
 
             foreach (var subfolderFile in subfolderFiles)
             {
-                await DeleteFileRecursive(device, subfolderFile, cancellationToken);
+                await DeleteFileRecursive(device, meadowFile, subfolderFile, cancellationToken);
             }
             return;
         }
 
-        var fileName = Path.GetFileName(fileInfo.Name);
-        Logger?.LogInformation($"Deleting file '{fileName}' from device...");
-        await device.DeleteFile(fileName, cancellationToken);
+        Logger?.LogInformation($"Deleting file '{meadowFile}' from device...");
+
+        await device.DeleteFile(meadowFile, cancellationToken);
     }
 }

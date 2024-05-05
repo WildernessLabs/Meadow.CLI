@@ -12,7 +12,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public event EventHandler<(string fileName, long completed, long total)> FileWriteProgress = default!;
     public event EventHandler<string> ConnectionMessage = default!;
     public event EventHandler FileWriteFailed = default!;
-    public event EventHandler<byte[]> DebuggerMessageReceived = default;
+    public event EventHandler<byte[]> DebuggerMessageReceived;
     public event EventHandler<string>? FileReadCompleted = default!;
     public event EventHandler<int>? FileBytesReceived;
 

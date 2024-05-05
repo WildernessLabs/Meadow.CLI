@@ -7,6 +7,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 internal static class AppTools
 {
+    internal const string MeadowRootFolder = "meadow0";
+
     internal static string ValidateAndSanitizeAppPath(string? path)
     {
         path ??= Directory.GetCurrentDirectory();
@@ -41,6 +43,7 @@ internal static class AppTools
 
     internal static async Task<bool> TrimApplication(string path,
         IPackageManager packageManager,
+        string osVersion,
         string? configuration,
         IEnumerable<string>? noLinkAssemblies,
         ILogger? logger,
@@ -86,12 +89,48 @@ internal static class AppTools
             logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await packageManager.TrimApplication(file, false, noLinkAssemblies, cancellationToken);
+        await packageManager.TrimApplication(file, osVersion, false, noLinkAssemblies, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s
         await Task.Delay(1000, cancellationToken);
 
         return true;
+    }
+
+    internal static string SanitizeMeadowFolderName(string fileName)
+    {
+        return SanitizeMeadowFilename(fileName) + '/';
+    }
+
+    internal static string SanitizeMeadowFilename(string fileName)
+    {
+        fileName = fileName.Replace('\\', Path.DirectorySeparatorChar);
+        fileName = fileName.Replace('/', Path.DirectorySeparatorChar);
+
+        var folder = Path.GetDirectoryName(fileName);
+
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            folder = Path.DirectorySeparatorChar + MeadowRootFolder;
+        }
+        else
+        {
+            if (!folder.StartsWith(Path.DirectorySeparatorChar))
+            {
+                if (!folder.StartsWith($"{MeadowRootFolder}"))
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{MeadowRootFolder}{Path.DirectorySeparatorChar}{folder}";
+                }
+                else
+                {
+                    folder = $"{Path.DirectorySeparatorChar}{folder}";
+                }
+            }
+        }
+
+        var meadowFileName = Path.Combine(folder, Path.GetFileName(fileName));
+
+        return meadowFileName!.Replace(Path.DirectorySeparatorChar, '/');
     }
 }

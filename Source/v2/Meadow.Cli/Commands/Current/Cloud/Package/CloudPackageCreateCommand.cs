@@ -9,17 +9,17 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 {
     [CommandParameter(0, Description = "Path to project file", IsRequired = false)]
-    public string? ProjectPath { get; set; }
+    public string? ProjectPath { get; init; }
 
     [CommandOption("configuration", 'c', Description = "The build configuration to compile", IsRequired = false)]
-    public string Configuration { get; init; } = "Release";
+    public string Configuration { get; set; } = "Release";
 
     [CommandOption("name", 'n', Description = "Name of the mpak file to be created", IsRequired = false)]
     public string? MpakName { get; init; }
 
     [CommandOption("filter", 'f', Description = "Glob pattern to filter files. ex ('app.dll', 'app*','{app.dll,meadow.dll}')",
         IsRequired = false)]
-    public string Filter { get; init; } = "*";
+    public string Filter { get; init; } = "**/*";
 
     [CommandOption("osVersion", 'v', Description = "Target OS version for the app", IsRequired = false)]
     public string? OsVersion { get; init; } = default!;
@@ -39,40 +39,26 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        ProjectPath ??= Directory.GetCurrentDirectory();
-        ProjectPath = Path.GetFullPath(ProjectPath);
-        if (!Directory.Exists(ProjectPath))
-        {
-            throw new CommandException($"Directory not found '{ProjectPath}'. Check path to project file.", CommandExitCode.DirectoryNotFound);
-        }
-
-        // build
-        Logger.LogInformation(string.Format(Strings.BuildingSpecifiedConfiguration, Configuration));
-        if (!_packageManager.BuildApplication(ProjectPath, Configuration, true, CancellationToken))
-        {
-            throw new CommandException(Strings.BuildFailed);
-        }
-
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(ProjectPath, "App.dll");
-
-        if (candidates.Length == 0)
-        {
-            throw new CommandException($"Cannot find a compiled application at '{ProjectPath}'", CommandExitCode.FileNotFound);
-        }
-
         var store = _fileManager.Firmware["Meadow F7"];
-        await store.Refresh();
-        var osVersion = OsVersion ?? store?.DefaultPackage?.Version ?? "unknown";
+        await ValidateFirmwarePackage(store);
 
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
-        // trim
-        Logger.LogInformation(string.Format(Strings.TrimmingApplicationForSpecifiedVersion, osVersion));
-        await _packageManager.TrimApplication(file, cancellationToken: CancellationToken);
+        var osVersion = OsVersion ?? store!.DefaultPackage!.Version;
+
+        var projectPath = ProjectPath ?? AppTools.ValidateAndSanitizeAppPath(ProjectPath);
+
+        BuildApp(projectPath);
+
+        var buildPath = GetAppBuildPath(projectPath);
+
+        await AppTools.TrimApplication(projectPath, _packageManager, osVersion, Configuration, null, Logger, Console, CancellationToken);
+        Logger.LogInformation(string.Format(Strings.TrimmedApplicationForSpecifiedVersion, osVersion));
 
         // package
-        var packageDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PackageOutputDirectoryName);
-        //TODO - properly manage shared paths
-        var postlinkDir = Path.Combine(file.Directory?.FullName ?? string.Empty, PackageManager.PostLinkDirectoryName);
+        var packageDir = Path.Combine(buildPath, PackageManager.PackageOutputDirectoryName);
+        var postlinkDir = Path.Combine(buildPath, PackageManager.PostLinkDirectoryName);
+
+        //copy non-assembly files to the postlink directory
+        CopyContentFiles(buildPath, postlinkDir);
 
         Logger.LogInformation(Strings.AssemblingCloudPackage);
         var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
@@ -84,6 +70,95 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
         else
         {
             throw new CommandException(Strings.PackageAssemblyFailed);
+        }
+    }
+
+    private async Task ValidateFirmwarePackage(IFirmwarePackageCollection? collection)
+    {
+        await _fileManager.Refresh();
+
+        // for now we only support F7
+        if (collection == null || collection.Count() == 0)
+        {
+            throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
+        }
+
+        if (collection.DefaultPackage == null)
+        {
+            throw new CommandException(Strings.NoDefaultFirmwarePackageSet, CommandExitCode.GeneralError);
+        }
+    }
+
+    private void BuildApp(string path)
+    {
+        Configuration ??= "Release";
+
+        Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
+
+        var success = _packageManager.BuildApplication(path, Configuration);
+
+        if (!success)
+        {
+            throw new CommandException("Build failed", CommandExitCode.GeneralError);
+        }
+        else
+        {
+            Logger?.LogInformation($"Build successful");
+        }
+    }
+
+    private string GetAppBuildPath(string path)
+    {
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+
+        if (candidates.Length == 0)
+        {
+            Logger?.LogError($"Cannot find a compiled application at '{path}'");
+            return path;
+        }
+
+        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+
+        //get the directory of the file
+        return Path.GetDirectoryName(file.FullName);
+    }
+
+    /// <summary>
+    /// Copy all files that are not assemblies in the source directory to the target directory
+    //  and ignore the prelink, postlink, and package output directories if they're in the source directory
+    /// </summary>
+    /// <param name="sourceDir">Source, the compiled output folder</param>
+    /// <param name="targetDir">The target folder</param>
+    private void CopyContentFiles(string sourceDir, string targetDir)
+    {
+        var sourceFiles = Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories);
+
+        foreach (var sourceFile in sourceFiles)
+        {
+            var relativePath = Path.GetRelativePath(sourceDir, sourceFile);
+            var targetFile = Path.Combine(targetDir, relativePath);
+            var targetDirectory = Path.GetDirectoryName(targetFile);
+
+            if (sourceFile.Contains(PackageManager.PostLinkDirectoryName) ||
+                sourceFile.Contains(PackageManager.PreLinkDirectoryName) ||
+                sourceFile.Contains(PackageManager.PackageOutputDirectoryName))
+            {
+                continue;
+            }
+
+            if (targetDirectory != null && !Directory.Exists(targetDirectory))
+            {
+                Directory.CreateDirectory(targetDirectory);
+            }
+
+            if (Path.GetExtension(sourceFile) == ".dll" ||
+                Path.GetExtension(sourceFile) == ".exe" ||
+                Path.GetExtension(sourceFile) == ".pdb")
+            {
+                continue;
+            }
+
+            File.Copy(sourceFile, targetFile, true);
         }
     }
 }

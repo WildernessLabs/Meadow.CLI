@@ -8,7 +8,6 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 {
     public const int FileSystemBlockSize = 4096;
 
-    private const string MeadowRootFolder = "meadow0";
     private const string FolderLabel = "[folder]";
 
     [CommandOption("verbose", 'v', IsRequired = false)]
@@ -27,18 +26,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
 
         if (Folder != null)
         {
-            if (Folder.EndsWith('/') == false)
-            {
-                Folder += "/";
-            }
-            if (Folder.StartsWith('/') == false)
-            {
-                Folder = $"/{Folder}";
-            }
-            if (Folder.Contains(MeadowRootFolder) == false)
-            {
-                Folder = $"/{MeadowRootFolder}{Folder}";
-            }
+            Folder = AppTools.SanitizeMeadowFolderName(Folder);
 
             Logger?.LogInformation($"Getting file list from '{Folder}'...");
         }
@@ -47,7 +35,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await device.GetFileList(Folder ?? $"/{MeadowRootFolder}/", Verbose, CancellationToken);
+        var files = await device.GetFileList(Folder ?? $"/{AppTools.MeadowRootFolder}/", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {

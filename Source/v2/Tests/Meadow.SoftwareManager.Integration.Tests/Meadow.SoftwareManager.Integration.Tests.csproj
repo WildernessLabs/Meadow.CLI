@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   
   <ItemGroup>
@@ -27,8 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-      <ProjectReference Include="..\..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
-      <ProjectReference Include="..\..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
+    <ProjectReference Include="..\..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
+    <ProjectReference Include="..\..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
   </ItemGroup>
 
 </Project>

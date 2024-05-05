@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Meadow.Software;
 
-public class F7FirmwareDownloadManager
+internal class F7FirmwareDownloadManager
 {
     private readonly IMeadowCloudClient _meadowCloudClient;
 

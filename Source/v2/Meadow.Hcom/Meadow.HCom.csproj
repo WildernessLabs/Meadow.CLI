@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
-	<LangVersion>10</LangVersion>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

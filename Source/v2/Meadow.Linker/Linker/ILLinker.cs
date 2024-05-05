@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Meadow.Linker
@@ -56,6 +57,8 @@ namespace Meadow.Linker
 
             using (var process = new Process())
             {
+                var output = new StringBuilder();
+                
                 process.StartInfo.WorkingDirectory = Directory.GetDirectoryRoot(illinkerDllPath);
                 process.StartInfo.FileName = "dotnet";
                 process.StartInfo.Arguments = monolinker_args;
@@ -63,23 +66,18 @@ namespace Meadow.Linker
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;
+                process.OutputDataReceived += (sender, args) => output.AppendLine(args.Data);
+                process.ErrorDataReceived += (sender, args) => output.AppendLine(args.Data);
                 process.Start();
-
-                // To avoid deadlocks, read the output stream first and then wait
-                string stdOutReaderResult;
-                using (StreamReader stdOutReader = process.StandardOutput)
-                {
-                    stdOutReaderResult = await stdOutReader.ReadToEndAsync();
-
-                    _logger?.Log(LogLevel.Debug, "StandardOutput Contains: " + stdOutReaderResult);
-                }
+                process.BeginErrorReadLine();
+                process.BeginOutputReadLine();
 
                 await Task.Run(() => process.WaitForExit());
 
                 if (process.ExitCode != 0)
                 {
                     _logger?.Log(LogLevel.Debug, $"Trimming failed - ILLinker execution error!\nProcess Info: {process.StartInfo.FileName} {process.StartInfo.Arguments} \nExit Code: {process.ExitCode}");
-                    throw new Exception("Trimming failed");
+                    throw new Exception($"Trimming failed{Environment.NewLine}{output}");
                 }
             }
         }

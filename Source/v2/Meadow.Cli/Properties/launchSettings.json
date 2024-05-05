@@ -83,13 +83,21 @@
       "commandName": "Project",
       "commandLineArgs": "file list"
     },
+    "File List folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file list Temp"
+    },
     "File List verbose": {
       "commandName": "Project",
       "commandLineArgs": "file list --verbose"
     },
     "File Delete": {
       "commandName": "Project",
-      "commandLineArgs": "file delete Juego.pdb"
+      "commandLineArgs": "file delete /yo2.txt"
+    },
+    "File Delete folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete /Temp/yo3.txt"
     },
     "File Delete All": {
       "commandName": "Project",
@@ -105,7 +113,7 @@
     },
     "File Write": {
       "commandName": "Project",
-      "commandLineArgs": "file write -f \"f:\\temp\\test.txt\""
+      "commandLineArgs": "file write -f .\\yo2.txt"
     },
     "Firmware List": {
       "commandName": "Project",
@@ -129,11 +137,11 @@
     },
     "Firmware Default set": {
       "commandName": "Project",
-      "commandLineArgs": "firmware default 1.3.4.0"
+      "commandLineArgs": "firmware default 1.10.0.2"
     },
     "Firmware Delete": {
       "commandName": "Project",
-      "commandLineArgs": "firmware delete 1.9.0.0"
+      "commandLineArgs": "firmware delete 1.99.0.0"
     },
     "Firmware Write all": {
       "commandName": "Project",
@@ -185,11 +193,11 @@
     },
     "App Build": {
       "commandName": "Project",
-      "commandLineArgs": "app build H:\\AS\\BlockPuzzleGenerator\\src\\MeadowBoulderScape\\"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "App Build Debug": {
       "commandName": "Project",
-      "commandLineArgs": "app build F:\\temp\\MeadowApplication1 -c Debug"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs -c Debug"
     },
     "App Trim": {
       "commandName": "Project",
@@ -249,7 +257,7 @@
     },
     "Cloud package create": {
       "commandName": "Project",
-      "commandLineArgs": "cloud package create F:\\temp\\MeadowApplication1"
+      "commandLineArgs": "cloud package create H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
     "Cloud package upload": {
       "commandName": "Project",

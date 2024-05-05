@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFramework>netstandard2.0</TargetFramework>
-	<Nullable>enable</Nullable>
-	<LangVersion>10</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,18 +17,18 @@
   </ItemGroup>
 
   <ItemGroup>
-      <None Update="lib\illink.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="lib\illink.runtimeconfig.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="lib\meadow_link.xml">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="lib\Mono.Cecil.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+    <None Update="lib\illink.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lib\illink.runtimeconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lib\meadow_link.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lib\Mono.Cecil.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

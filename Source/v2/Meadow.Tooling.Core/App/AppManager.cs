@@ -35,155 +35,144 @@ public static class AppManager
 
     public static async Task DeployApplication(
         IPackageManager packageManager,
-        IMeadowConnection meadowConnection,
+        IMeadowConnection connection,
+        string osVersion,
         string localBinaryDirectory,
         bool includePdbs,
         bool includeXmlDocs,
         ILogger? logger,
         CancellationToken cancellationToken)
     {
-        bool isRuntimeEnabled;
+        // TODO: add sub-folder support when HCOM supports it
+        var localFiles = new Dictionary<string, uint>();
 
-        try
+        var dependencies = new List<string>();
+
+        var processedAppPath = localBinaryDirectory;
+
+        //check if there's a post link folder
+        if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
         {
-            // in order to deploy, the runtime must be disabled
-            isRuntimeEnabled = await meadowConnection.IsRuntimeEnabled();
+            processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
 
-            if (isRuntimeEnabled)
+            //add all dlls from the postlink_bin folder to the dependencies
+            dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
+            dependencies.Remove(Path.Combine(processedAppPath, "App.dll"));
+
+            //add all pdbs from the postlink_bin folder to the dependencies if includePdbs is true
+            if (includePdbs)
             {
-                logger?.LogInformation($"Disabling runtime...");
-
-                await meadowConnection.RuntimeDisable(cancellationToken);
-
-                logger?.LogDebug("Waiting for Meadow to restart");
-                await Task.Delay(3000, cancellationToken);
+                dependencies.AddRange(Directory.EnumerateFiles(processedAppPath, "*.pdb", SearchOption.TopDirectoryOnly));
+                dependencies.Remove(Path.Combine(processedAppPath, "App.pdb"));
             }
+        }
+        else
+        {
+            dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
+        }
+        dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 
-            // TODO: add sub-folder support when HCOM supports it
-            var localFiles = new Dictionary<string, uint>();
+        if (includePdbs)
+        {
+            dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
+        }
 
-            var dependencies = new List<string>();
+        var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.AllDirectories)
+            .Where(s => new FileInfo(s).Extension != ".dll")
+            .Where(s => new FileInfo(s).Extension != ".pdb")
+            .Where(s => !s.Contains(".DS_Store")).ToList();
+        dependencies.AddRange(binaries);
 
-            var processedAppPath = localBinaryDirectory;
+        logger?.LogInformation("Generating list of files to deploy...");
 
-            var postLinkDirectoryPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
+        foreach (var file in dependencies)
+        {
+            // TODO: add any other filtering capability here
+            if (!includePdbs && IsPdb(file)) { continue; }
+            if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
 
-            //check if there's a post link folder
-            if (Directory.Exists(postLinkDirectoryPath))
+            // read the file data so we can generate a CRC
+            using FileStream fs = File.Open(file, FileMode.Open);
+            var len = (int)fs.Length;
+            var bytes = new byte[len];
+
+            await fs.ReadAsync(bytes, 0, len, cancellationToken);
+
+            var crc = CrcTools.Crc32part(bytes, len, 0);
+
+            localFiles.Add(file, crc);
+        }
+
+        if (localFiles.Count == 0)
+        {
+            logger?.LogInformation($"No new files to deploy");
+        }
+
+        // get a list of files on-device, with CRCs
+        var deviceFiles = await connection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+
+        // get a list of files of the device files that are not in the list we intend to deploy
+        var removeFiles = deviceFiles
+            .Select(f => Path.GetFileName(f.Name))
+            .Except(localFiles.Keys
+                .Select(f => Path.GetFileName(f))).ToList();
+
+        // delete those files
+        foreach (var file in removeFiles)
+        {
+            logger?.LogInformation($"Deleting file '{file}'...");
+            await connection.DeleteFile(file, cancellationToken);
+        }
+
+        // now send all files with differing CRCs
+        foreach (var localFile in localFiles)
+        {
+            string? meadowFilename = string.Empty;
+            if (!localFile.Key.Contains(MeadowLinker.PreLinkDirectoryName)
+                && !localFile.Key.Contains(MeadowLinker.PostLinkDirectoryName))
             {
-                processedAppPath = postLinkDirectoryPath;
-
-                //add all dlls from the postlink_bin folder to the dependencies
-                dependencies = Directory.EnumerateFiles(processedAppPath, "*.dll", SearchOption.TopDirectoryOnly).ToList();
-                dependencies.Remove(Path.Combine(processedAppPath, "App.dll"));
-
-                //add all pdbs from the postlink_bin folder to the dependencies if includePdbs is true
-                if (includePdbs)
+                meadowFilename = GetRelativePath(localBinaryDirectory, localFile.Key);
+                if (!meadowFilename.StartsWith("/meadow0/"))
                 {
-                    dependencies.AddRange(Directory.EnumerateFiles(processedAppPath, "*.pdb", SearchOption.TopDirectoryOnly));
-                    dependencies.Remove(Path.Combine(processedAppPath, "App.pdb"));
+                    meadowFilename = "/meadow0/" + meadowFilename;
                 }
             }
             else
             {
-                dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")));
+                meadowFilename = null;
             }
-            dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
+            var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
-            if (includePdbs)
+            if (existing != null && existing.Crc != null)
             {
-                dependencies.Add(Path.Combine(localBinaryDirectory, "App.pdb"));
-            }
+                var crc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
 
-            var binaries = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.TopDirectoryOnly)
-                .Where(s => new FileInfo(s).Extension != ".dll")
-                .Where(s => new FileInfo(s).Extension != ".pdb")
-                .Where(s => !s.Contains(".DS_Store")).ToList();
-            dependencies.AddRange(binaries);
-
-            logger?.LogInformation("Generating list of files to deploy...");
-
-            foreach (var file in dependencies)
-            {
-                // TODO: add any other filtering capability here
-                if (!includePdbs && IsPdb(file)) { continue; }
-                if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
-
-                // read the file data so we can generate a CRC
-                using FileStream fs = File.Open(file, FileMode.Open);
-                var len = (int)fs.Length;
-                var bytes = new byte[len];
-
-                await fs.ReadAsync(bytes, 0, len, cancellationToken);
-
-                var crc = CrcTools.Crc32part(bytes, len, 0);
-
-                localFiles.Add(file, crc);
-            }
-
-            if (localFiles.Count == 0)
-            {
-                logger?.LogInformation($"No new files to deploy");
-            }
-
-            // get a list of files on-device, with CRCs
-            var deviceFiles = await meadowConnection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
-
-            // get a list of files of the device files that are not in the list we intend to deploy
-            var removeFiles = deviceFiles
-                .Select(f => Path.GetFileName(f.Name))
-                .Except(localFiles.Keys
-                    .Select(f => Path.GetFileName(f))).ToList();
-
-            // delete those files
-            foreach (var file in removeFiles)
-            {
-                logger?.LogInformation($"Deleting file '{file}'...");
-                await meadowConnection.DeleteFile(file, cancellationToken);
-            }
-
-            // now send all files with differing CRCs
-            foreach (var localFile in localFiles)
-            {
-                var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
-
-                if (existing != null && existing.Crc != null)
-                {
-                    var crc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
-
-                    if (crc == localFile.Value)
-                    {   // exists and has a matching CRC, skip it
-                        continue;
-                    }
-                }
-
-            send_file:
-
-                if (!await meadowConnection.WriteFile(localFile.Key, null, cancellationToken))
-                {
-                    logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
-                    await Task.Delay(100);
-                    goto send_file;
+                if (crc == localFile.Value)
+                {   // exists and has a matching CRC, skip it
+                    continue;
                 }
             }
 
-            //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
-            logger?.LogInformation(string.Empty);
-        }
-        finally
-        {
-            // Renable the runtime, if we've finished deploying.
-            isRuntimeEnabled = await meadowConnection.IsRuntimeEnabled();
+            logger?.LogInformation($"Sending  '{localFile.Key}'");
+        send_file:
 
-            if (!isRuntimeEnabled)
+            if (!await connection.WriteFile(localFile.Key, meadowFilename, cancellationToken))
             {
-                logger?.LogInformation($"Enabling runtime...");
-
-                await meadowConnection.RuntimeEnable(cancellationToken);
+                logger?.LogWarning($"Error sending'{Path.GetFileName(localFile.Key)}' - retrying");
+                await Task.Delay(100);
+                goto send_file;
             }
-
-            // Wait for the device to realise it's own existence.
-            await Task.Delay(2000, cancellationToken);
         }
+
+        //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
+        logger?.LogInformation(string.Empty);
+    }
+
+    // Path.GetRelativePath is only available in .NET 8 but we also need to support netstandard2.0, hence using this
+    static string GetRelativePath(string relativeTo, string path)
+    {
+        // Determine the difference
+        var relativePath = path.Substring(relativeTo.Length + 1);
+        return relativePath;
     }
 }

@@ -22,13 +22,10 @@ public partial class PackageManager : IPackageManager
     public const string BuildOptionsFileName = "app.build.yaml";
 
     private readonly FileManager _fileManager;
-    private readonly MeadowLinker _meadowLinker;
 
     public PackageManager(FileManager fileManager)
     {
         _fileManager = fileManager;
-
-        _meadowLinker = new MeadowLinker(MeadowAssembliesPath, null);
     }
 
     private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
@@ -130,6 +127,7 @@ public partial class PackageManager : IPackageManager
 
     public Task TrimApplication(
         FileInfo applicationFilePath,
+        string osVersion,
         bool includePdbs = false,
         IEnumerable<string>? noLink = null,
         CancellationToken? cancellationToken = null)
@@ -165,7 +163,7 @@ public partial class PackageManager : IPackageManager
             }
         }
 
-        var linker = new MeadowLinker(MeadowAssembliesPath);
+        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion));
 
         return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
@@ -176,7 +174,7 @@ public partial class PackageManager : IPackageManager
         string outputFolder,
         string osVersion,
         string? mpakName = null,
-        string filter = "*",
+        string filter = "**/*",
         bool overwrite = false,
         CancellationToken? cancellationToken = null)
     {
@@ -205,7 +203,8 @@ public partial class PackageManager : IPackageManager
 
         foreach (var fPath in appFiles)
         {
-            CreateEntry(archive, Path.Combine(contentSourceFolder, fPath), Path.Combine("app", Path.GetFileName(fPath)));
+            var destination = Path.Combine("app", fPath);
+            CreateEntry(archive, Path.Combine(contentSourceFolder, fPath), destination);
         }
 
         // write a metadata file info.json in the mpak
@@ -263,7 +262,9 @@ public partial class PackageManager : IPackageManager
             {
                 var shortname = Path.GetFileName(dir);
 
-                if (shortname == PostLinkDirectoryName || shortname == PreLinkDirectoryName)
+                if (shortname == PostLinkDirectoryName ||
+                    shortname == PreLinkDirectoryName ||
+                    shortname == PackageOutputDirectoryName)
                 {
                     continue;
                 }
