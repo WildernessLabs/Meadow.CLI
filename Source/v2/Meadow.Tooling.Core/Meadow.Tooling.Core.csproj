@@ -6,6 +6,11 @@
     <LangVersion>10</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Glob" Version="1.1.9" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />

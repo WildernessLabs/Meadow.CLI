@@ -193,7 +193,7 @@ namespace Meadow.Hcom
 
                                         if (_reconnectInProgress)
                                         {
-                                            _state = ConnectionState.MeadowAttached;
+                                            Open();
                                             _reconnectInProgress = false;
                                         }
                                         else if (_textListComplete != null)
@@ -213,18 +213,11 @@ namespace Meadow.Hcom
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
                                         // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
-                                        _state = ConnectionState.Disconnected;
-                                        _reconnectInProgress = true;
+                                        Close();
 
-                                        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                                        {
-                                            if (_port.IsOpen)
-                                            {
-                                                _port.Close();
-                                                Thread.Sleep(2000);
-                                                _port.Open();
-                                            }
-                                        }
+                                        await Task.Delay(3000);
+
+                                        Open();
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {

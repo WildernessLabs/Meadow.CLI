@@ -1232,6 +1232,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         /* TODO logger?.LogDebug("Reinitialize the device");
         await ReInitializeMeadow(cancellationToken); */
+        await WaitForMeadowAttach(cancellationToken);
 
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
         var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);

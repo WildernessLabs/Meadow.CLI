@@ -1,3 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Meadow.HCom.Integration.Tests")]
+[assembly: InternalsVisibleTo("Meadow.HCom.Integration.Tests,PublicKey=" +
+"0024000004800000940000000602000000240000525341310004000001000100792a27a41cf42a" +
+"09ac6bb433f2602ac886175eed60cc74ae70adbdc8237b510ae474981420f1d0395ad58cfd459b" +
+"6c6ecbe28ec7234761cfe5acadcf7b76e273b25a3547826e16658a474a8e34ec297778130a1781" +
+"95a2034e7b1ec591177ce1e87160682d5f8b49d3c63a92aafa9c7f7f5b06763d7a19d96b781099" +
+"a39e35d1")]
