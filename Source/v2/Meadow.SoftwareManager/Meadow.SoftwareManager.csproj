@@ -6,6 +6,11 @@
     <LangVersion>10</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\MeadowCLIKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Net.Http.Json" Version="7.0.1" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
