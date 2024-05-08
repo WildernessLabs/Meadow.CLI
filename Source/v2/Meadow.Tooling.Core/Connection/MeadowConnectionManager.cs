@@ -180,7 +180,11 @@ public class MeadowConnectionManager
                 if (foundMeadow && line.Contains("IODialinDevice"))
                 {
                     int startIndex = line.IndexOf("/");
+                    if (startIndex == -1) { continue; }
+
                     int endIndex = line.IndexOf("\"", startIndex + 1);
+                    if (endIndex == -1) { continue; }
+
                     var port = line.Substring(startIndex, endIndex - startIndex);
 
                     ports.Add(port);
