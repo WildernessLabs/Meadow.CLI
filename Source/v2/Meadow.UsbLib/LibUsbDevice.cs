@@ -36,6 +36,8 @@ public class LibUsbProvider : ILibUsbProvider
             _device = usbDevice;
         }
 
+        public ushort productId;
+
         public void Dispose()
         {
             _device?.Dispose();
@@ -49,6 +51,7 @@ public class LibUsbProvider : ILibUsbProvider
             if (_device.IsOpen)
             {
                 serialNumber = _device.Info?.SerialNumber ?? string.Empty;
+                productId = _device.Info?.ProductId ?? 0;
                 _device.Close();
             }
 
