@@ -1227,16 +1227,17 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
-        logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
-
-        await WaitForMeadowAttach(cancellationToken);
-
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
         var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
 
+        await WaitForMeadowAttach(cancellationToken);
+
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         await debuggingServer.StartListening(cancellationToken);
+
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
         return debuggingServer;
     }
 
