@@ -88,4 +88,11 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
     }
 
     public const string ProvisionRefreshDeviceList = "Reselect Bootloader devices (y=Refresh List, n=Flash selected devices)?";
+    public const string ProvisionMoreChoicesInstructions = "[grey](Move up and down to reveal more devices)[/]";
+    public const string ProvisionInstructions = "[grey](Press [blue]<space>[/] to toggle a device, [green]<enter>[/] to accept and flash the selected device)[/]";
+    public const string ProvisionTitle = "Devices in Bootloader mode";
+    public const string ProvisionNoDevicesFound = "No devices found in bootloader mode. Rerun this command when at least 1 connected device is in bootloader mode.";
+    public const string ProvisionColumnTitle = "Selected Devices";
+    public const string ProvsionNoDeviceSelected = "[yellow]No devices selected to provision[/]. Exiting.";
+    public const string ProvisionFlashingDevice = "Flashing [green]{0}[/]";
 }

@@ -16,7 +16,7 @@ using Spectre.Console;
 namespace Meadow.CLI.Commands.Provision;
 
 [Command("provision", Description = "Provision 1 or more devices that are in DFU mode.")]
-public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
+public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
 {
     public const string DefaultOSVersion = "1.11.0.0";
     [CommandOption("version", 'v', Description = "Target OS version for devices to be provisioned with", IsRequired = false)]
@@ -26,16 +26,10 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     private ObservableConcurrentQueue<BootLoaderDevice> bootloaderDeviceQueue = new ObservableConcurrentQueue<BootLoaderDevice>();
     //private ObservableConcurrentQueue<BootLoaderDevice> processingDeviceQueue = new ObservableConcurrentQueue<BootLoaderDevice>();
 
-    private FileManager FileManager { get; }
-    private ISettingsManager Settings { get; }
-    private MeadowConnectionManager MeadowConnectionManager { get; }
 
-    public ProvisionCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(connectionManager, loggerFactory)
+    public ProvisionCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+        : base(settingsManager, loggerFactory)
     {
-        FileManager = fileManager;
-        Settings = settingsManager;
-        MeadowConnectionManager = connectionManager;
     }
 
     protected override async ValueTask ExecuteCommand()
@@ -48,9 +42,11 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
             osVersion = OsVersion;
 
         // Install DFU, if it's not already installed.
-        var dfuInstallCommand = new DfuInstallCommand(Settings, LoggerFactory);
+        var dfuInstallCommand = new DfuInstallCommand(SettingsManager, LoggerFactory);
         await dfuInstallCommand.ExecuteAsync(Console);
 
+        // Make sure we've downloaded the passed in osVersion or default
+        // Use Firmware Download command??
         if (await MeadowCLI($"firmware download -v {osVersion} -f") == 0)
         {
             bool refreshDeviceList = false;
@@ -61,16 +57,16 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
                 if (bootloaderDeviceQueue.Count == 0)
                 {
-                    Logger?.LogError($"No devices found in bootloader mode. Rerun this command when at least 1 connected device is in bootloader mode.");
+                    Logger?.LogError(Strings.ProvisionNoDevicesFound);
                     return;
                 }
 
                 var multiSelectionPrompt = new MultiSelectionPrompt<BootLoaderDevice>()
-                    .Title("Devices in Bootloader mode")
+                    .Title(Strings.ProvisionTitle)
                     .PageSize(15)
                     .NotRequired() // Can be Blank to exit
-                    .MoreChoicesText("More Choices")
-                    .InstructionsText("Instructions")
+                    .MoreChoicesText(Strings.ProvisionMoreChoicesInstructions)
+                    .InstructionsText(Strings.ProvisionInstructions)
                     .UseConverter(x => x.SerialPort);
 
                 foreach (var device in bootloaderDeviceQueue)
@@ -81,7 +77,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 selectedDevices = AnsiConsole.Prompt(multiSelectionPrompt);
 
                 var selectedDeviceTable = new Table();
-                selectedDeviceTable.AddColumn("Selected Devices");
+                selectedDeviceTable.AddColumn(Strings.ProvisionColumnTitle);
 
                 foreach (var device in selectedDevices)
                 {
@@ -90,13 +86,13 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
                 AnsiConsole.Write(selectedDeviceTable);
 
-               refreshDeviceList = AnsiConsole.Confirm(Strings.ProvisionRefreshDeviceList);
+                refreshDeviceList = AnsiConsole.Confirm(Strings.ProvisionRefreshDeviceList);
             } while (refreshDeviceList);
 
-            
+
             if (selectedDevices.Count == 0)
             {
-                AnsiConsole.MarkupLine("[yellow]No devices selected to update[/]. Exiting.");
+                AnsiConsole.MarkupLine(Strings.ProvsionNoDeviceSelected);
                 return;
             }
             else
@@ -106,7 +102,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                     await AnsiConsole.Status()
                         .Start("Thinking...", async ctx =>
                         {
-                            AnsiConsole.MarkupLine($"Flashing [green]{item.SerialPort}[/]");
+                            AnsiConsole.MarkupLine(Strings.ProvisionFlashingDevice, item.SerialPort);
 
                             if (await MeadowCLI($"firmware write -v {osVersion} -s {item.SerialNumber}") == 0)
                             {
@@ -116,7 +112,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                                 Logger?.LogError($"Error flash in {item.SerialPort} :(");
                             }
                         });
-                    
+
                 }
             }
         }
@@ -124,11 +120,6 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
         {
             Logger?.LogError($"Unable to download os v{OsVersion}. Please check your internet conneciton.");
         }
-    }
-
-    private void FirmwareWriteCommand_FlashProgress(object? sender, FirmwareType e)
-    {
-        Logger?.LogInformation($"Writing {e}");
     }
 
     private async Task UpdateDeviceList(CancellationToken token)
@@ -212,6 +203,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     {
         using (var process = new Process())
         {
+            // TODO Remove ./ before merging PR, otherwise it won't work
             process.StartInfo.FileName = "./meadow";
             process.StartInfo.Arguments = $"{arg}";
             process.StartInfo.WorkingDirectory = System.AppContext.BaseDirectory;
@@ -240,4 +232,3 @@ internal class BootLoaderDevice
     internal string SerialNumber { get; set; } = string.Empty;
     internal string CurrentStatus { get; set; } = string.Empty;
 }
-
