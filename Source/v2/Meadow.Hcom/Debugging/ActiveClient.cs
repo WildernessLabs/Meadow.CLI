@@ -33,14 +33,15 @@ namespace Meadow.Hcom
             }
 
             _logger = logger;
+
             _connection = connection;
+            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
+
             _tcpClient = tcpClient;
             _networkStream = tcpClient.GetStream();
             _logger?.LogDebug("Starting receive task");
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadow, TaskCreationOptions.LongRunning);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, TaskCreationOptions.LongRunning);
-
-            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
         }
 
         private void MeadowConnection_DebuggerMessageReceived(object sender, byte[] e)
