@@ -27,6 +27,9 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     [CommandOption("file", 'f', IsRequired = false, Description = "Send only the specified file")]
     public string? IndividualFile { get; set; }
 
+    [CommandOption("serialnumber", 's', IsRequired = false, Description = "Flash the specified device")]
+    public string? SerialNumber { get; set; }
+
     [CommandParameter(0, Description = "Files to write", IsRequired = false)]
     public FirmwareType[]? FirmwareFileTypes { get; set; } = default!;
 
@@ -464,7 +467,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         try
         {   //validate device
-            serialNumber = libUsbDevice.GetDeviceSerialNumber();
+            if (!string.IsNullOrWhiteSpace(SerialNumber))
+            {
+                serialNumber = SerialNumber;
+            }
+            else
+            {
+                serialNumber = libUsbDevice.GetDeviceSerialNumber();
+            }
         }
         catch
         {

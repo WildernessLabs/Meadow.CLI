@@ -86,4 +86,6 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
 
         public const string AskToParticipate = "Would you like to participate?";
     }
+
+    public const string ProvisionRefreshDeviceList = "Reselect Bootloader devices (y=Refresh List, n=Flash selected devices)?";
 }
