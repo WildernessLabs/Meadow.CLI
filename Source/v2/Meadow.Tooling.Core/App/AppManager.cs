@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -171,15 +172,34 @@ public static class AppManager
     // Path.GetRelativePath is only available in .NET 8 but we also need to support netstandard2.0, hence using this
     static string GetRelativePath(string relativeTo, string path)
     {
-        // Determine the difference
-        var relativePath = path.Substring(relativeTo.Length);
-        //remove leading slash
-        if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()) ||
-            relativePath.StartsWith("/") ||
-            relativePath.StartsWith("\\"))
+        string[] relativeToParts = relativeTo.Split(Path.DirectorySeparatorChar);
+        string[] pathParts = path.Split(Path.DirectorySeparatorChar);
+
+        // Find the common prefix length
+        int commonPrefixLength = 0;
+        while (commonPrefixLength < relativeToParts.Length && commonPrefixLength < pathParts.Length
+            && relativeToParts[commonPrefixLength] == pathParts[commonPrefixLength])
         {
-            relativePath = relativePath.Substring(1);
+            commonPrefixLength++;
         }
+
+        // If there's no common path, return the entire second path
+        if (commonPrefixLength == 0)
+        {
+            return path;
+        }
+
+        // Construct the relative path from remaining parts
+        var relativePath = string.Empty;
+        for (int i = commonPrefixLength; i < pathParts.Length; i++)
+        {
+            if (i > commonPrefixLength)
+            {
+                relativePath += Path.DirectorySeparatorChar;
+            }
+            relativePath += pathParts[i];
+        }
+
         return relativePath;
     }
 }
