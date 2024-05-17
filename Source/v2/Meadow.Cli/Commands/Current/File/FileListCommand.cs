@@ -101,7 +101,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             {
                 foreach (var file in files)
                 {
-                    Logger?.LogInformation(file.Name + (file.IsDirectory ? FolderLabel : string.Empty));
+                    Logger?.LogInformation(file.Name + '\t' + (file.IsDirectory ? FolderLabel : string.Empty));
                 }
 
                 Logger?.LogInformation($"\t{files.Length} file(s)");
