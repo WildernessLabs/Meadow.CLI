@@ -9,7 +9,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;
-    private string? _lastFile;
+    private readonly string? _lastFile;
 
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
@@ -106,6 +106,8 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 
+        Logger?.LogInformation($"{Strings.AppDeployedSuccessfully}");
+
         return true;
     }
 
@@ -113,13 +115,10 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     {
         var p = e.completed / (double)e.total * 100d;
 
-        if (e.fileName != _lastFile)
+        if (!double.IsNaN(p))
         {
-            Console?.Output.Write("\n");
-            _lastFile = e.fileName;
+            // Console instead of Logger due to line breaking for progress bar
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%         \r");
         }
-
-        // Console instead of Logger due to line breaking for progress bar
-        Console?.Output.Write($"Writing {e.fileName}: {p:0}%         \r");
     }
 }
