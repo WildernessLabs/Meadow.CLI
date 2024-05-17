@@ -20,7 +20,7 @@ public static class AppManager
     {
         "Data",
         "Documents",
-        "update",
+        "update-store",
     };
 
     private static bool MatchingDllExists(string file)
