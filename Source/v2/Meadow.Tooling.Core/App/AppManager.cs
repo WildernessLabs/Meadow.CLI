@@ -14,6 +14,15 @@ namespace Meadow.CLI;
 
 public static class AppManager
 {
+    static readonly string MeadowRootFolder = "meadow0";
+
+    static readonly string[] PersistantFolders = new string[]
+    {
+        "Data",
+        "Documents",
+        "update-store",
+    };
+
     private static bool MatchingDllExists(string file)
     {
         return File.Exists(Path.ChangeExtension(file, ".dll"));
@@ -53,6 +62,8 @@ public static class AppManager
         //check if there's a post link folder
         if (Directory.Exists(Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName)))
         {
+            logger?.LogInformation($"Found trimmed binaries in post link folder...");
+
             processedAppPath = Path.Combine(localBinaryDirectory, MeadowLinker.PostLinkDirectoryName);
 
             //add all dlls from the postlink_bin folder to the dependencies
@@ -68,6 +79,8 @@ public static class AppManager
         }
         else
         {
+            logger?.LogInformation($"Did not find trimmed binaries folder...");
+
             dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
         }
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
@@ -87,7 +100,7 @@ public static class AppManager
 
         foreach (var file in dependencies)
         {
-            // TODO: add any other filtering capability here
+            // Add any other filtering capability here
             if (!includePdbs && IsPdb(file)) { continue; }
             if (!includeXmlDocs && IsXmlDoc(file)) { continue; }
 
@@ -109,37 +122,38 @@ public static class AppManager
         }
 
         // get a list of files on-device, with CRCs
-        var deviceFiles = await connection.GetFileList("/meadow0/", true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+        var deviceFiles = await GetFilesInFolder(connection, $"/{MeadowRootFolder}/", cancellationToken);
 
-        // get a list of files of the device files that are not in the list we intend to deploy
+        // get a list of MeadowFileInfo of the device files that are not in the list we intend to deploy
         var removeFiles = deviceFiles
-            .Select(f => Path.GetFileName(f.Name))
-            .Except(localFiles.Keys
-                .Select(f => Path.GetFileName(f))).ToList();
+            .Where(f => !localFiles.Keys.Select(f => Path.GetFileName(f)).Contains(Path.GetFileName(f.Name)))
+            .ToList();
 
         // delete those files
         foreach (var file in removeFiles)
         {
             logger?.LogInformation($"Deleting file '{file}'...");
-            await connection.DeleteFile(file, cancellationToken);
+            var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"/{MeadowRootFolder}/{file.Path}/";
+
+            await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
         }
 
         // now send all files with differing CRCs
         foreach (var localFile in localFiles)
         {
             string? meadowFilename = string.Empty;
-            if (!localFile.Key.Contains(MeadowLinker.PreLinkDirectoryName)
-                && !localFile.Key.Contains(MeadowLinker.PostLinkDirectoryName))
+            if (localFile.Key.Contains(PackageManager.PreLinkDirectoryName) ||
+                localFile.Key.Contains(PackageManager.PackageOutputDirectoryName))
             {
-                meadowFilename = GetRelativePath(localBinaryDirectory, localFile.Key);
-                if (!meadowFilename.StartsWith("/meadow0/"))
-                {
-                    meadowFilename = "/meadow0/" + meadowFilename;
-                }
+                continue;
+            }
+            else if (localFile.Key.Contains(PackageManager.PostLinkDirectoryName))
+            {   //we want to transfer the file but we can let the API find the file name
+                meadowFilename = null;
             }
             else
-            {
-                meadowFilename = null;
+            {   //may have a sub folder so we manually process the file name + path
+                meadowFilename = GetTargetMeadowFileName(localBinaryDirectory, localFile.Key);
             }
             var existing = deviceFiles.FirstOrDefault(f => Path.GetFileName(f.Name) == Path.GetFileName(localFile.Key));
 
@@ -149,6 +163,7 @@ public static class AppManager
 
                 if (crc == localFile.Value)
                 {   // exists and has a matching CRC, skip it
+                    logger?.LogInformation($"Skipping '{localFile.Key}'");
                     continue;
                 }
             }
@@ -168,18 +183,65 @@ public static class AppManager
         logger?.LogInformation(string.Empty);
     }
 
-    // Path.GetRelativePath is only available in .NET 8 but we also need to support netstandard2.0, hence using this
-    static string GetRelativePath(string relativeTo, string path)
+    static async Task<List<MeadowFileInfo>> GetFilesInFolder(IMeadowConnection connection, string folder, CancellationToken? cancellationToken)
     {
-        // Determine the difference
-        var relativePath = path.Substring(relativeTo.Length);
-        //remove leading slash
-        if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()) ||
-            relativePath.StartsWith("/") ||
-            relativePath.StartsWith("\\"))
+        var deviceFiles = new List<MeadowFileInfo>();
+
+        var rootFiles = await connection.GetFileList(folder, true, cancellationToken) ?? Array.Empty<MeadowFileInfo>();
+
+        foreach (var file in rootFiles)
         {
-            relativePath = relativePath.Substring(1);
+            if (file.IsDirectory)
+            {
+                if (PersistantFolders.Contains(file.Name))
+                {
+                    continue;
+                }
+
+                //call recursively 
+                var subfolderFiles = await GetFilesInFolder(connection, file.Name, cancellationToken);
+
+                if (subfolderFiles != null)
+                {
+                    deviceFiles.AddRange(subfolderFiles);
+                }
+            }
+            else
+            {
+                deviceFiles.Add(file);
+            }
         }
-        return relativePath;
+
+        return deviceFiles;
+    }
+
+    static string GetTargetMeadowFileName(string localBinaryFolder, string fullyQualifiedFilePath)
+    {
+        string relativePath = string.Empty;
+        string fileName = Path.GetFileName(fullyQualifiedFilePath);
+        string? filePath = Path.GetDirectoryName(fullyQualifiedFilePath);
+
+        if (filePath is not null && filePath.StartsWith(localBinaryFolder))
+        {
+            relativePath = filePath.Substring(localBinaryFolder.Length);
+
+            relativePath = relativePath.Replace("\\", "/");
+
+            //remove leading slash
+            if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()) ||
+                relativePath.StartsWith("/") ||
+                relativePath.StartsWith("\\"))
+            {
+                relativePath = relativePath.Substring(1);
+            }
+
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                //add trailing slash
+                relativePath += "/";
+            }
+        }
+
+        return $"/{MeadowRootFolder}/" + relativePath + fileName;
     }
 }
