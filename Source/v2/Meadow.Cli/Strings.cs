@@ -67,6 +67,10 @@ public static class Strings
     public const string NewMeadowDeviceNotFound = "New Meadow device not found";
     public const string NoFirmwarePackagesFound = "No firmware packages found, run 'meadow firmware download' to download the latest firmware";
     public const string NoDefaultFirmwarePackageSet = "No default firmware package set, run 'meadow firmware default' to set the default firmware";
+    public const string AppDeployFailed = "Application deploy failed";
+    public const string AppDeployedSuccessfully = "Application deployed successfully";
+    public const string AppTrimFailed = "Application trimming failed";
+
 
     public static class Telemetry
     {
@@ -82,7 +86,4 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
 
         public const string AskToParticipate = "Would you like to participate?";
     }
-
-    public const string AppDeployFailed = "Application deploy failed";
-    public const string AppTrimFailed = "Application trimming failed";
 }
