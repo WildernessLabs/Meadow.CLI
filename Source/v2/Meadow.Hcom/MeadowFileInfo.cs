@@ -2,6 +2,7 @@
 {
     public string Name { get; private set; } = default!;
     public string Path { get; private set; } = string.Empty;
+    public string FullName => System.IO.Path.Combine(Path, Name).Replace("\\", "/");
     public long? Size { get; private set; }
     public string? Crc { get; private set; }
     public bool IsDirectory { get; private set; }
@@ -13,6 +14,8 @@
 
     public static MeadowFileInfo? Parse(string info, string folder)
     {
+        folder = folder.Replace("\\", "/");
+
         MeadowFileInfo? mfi = null;
 
         // parse the input to a file info
