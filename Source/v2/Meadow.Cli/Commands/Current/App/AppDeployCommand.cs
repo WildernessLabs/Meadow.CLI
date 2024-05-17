@@ -9,7 +9,8 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;
-    private readonly string? _lastFile;
+
+    private readonly string AppFileName = "App.dll";
 
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
@@ -60,11 +61,11 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             }
 
             // does the directory have an App.dll in it?
-            file = new FileInfo(System.IO.Path.Combine(path, "App.dll"));
+            file = new FileInfo(System.IO.Path.Combine(path, AppFileName));
             if (!file.Exists)
             {
                 // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+                var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName);
 
                 if (candidates.Length == 0)
                 {
@@ -76,7 +77,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         }
         else
         {
-            if (System.IO.Path.GetFileName(path) != "App.dll")
+            if (System.IO.Path.GetFileName(path) != AppFileName)
             {
                 throw new CommandException($"The file '{path}' is not a compiled Meadow application", CommandExitCode.FileNotFound);
             }
@@ -90,7 +91,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName);
 
         if (candidates.Length == 0)
         {
