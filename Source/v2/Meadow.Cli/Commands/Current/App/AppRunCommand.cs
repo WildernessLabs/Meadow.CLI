@@ -10,7 +10,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 {
     private readonly IPackageManager _packageManager;
-    private string? _lastFile;
+    private readonly string? _lastFile;
 
     [CommandOption("no-prefix", 'n', Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'", IsRequired = false)]
     public bool NoPrefix { get; init; }
@@ -134,14 +134,10 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
     {
         var p = e.completed / (double)e.total * 100d;
 
-        if (e.fileName != _lastFile)
-        {
-            Console?.Output.Write("\n");
-            _lastFile = e.fileName;
+        if (!double.IsNaN(p))
+        {   // Console instead of Logger due to line breaking for progress bar
+            Console?.Output.Write($"Writing {e.fileName}: {p:0}%         \r");
         }
-
-        // Console instead of Logger due to line breaking for progress bar
-        Console?.Output.Write($"Writing {e.fileName}: {p:0}%         \r");
     }
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
