@@ -157,12 +157,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             }
             catch (UnauthorizedAccessException uae)
             {
-                throw new Exception($"{uae.Message} Another application may have access to '{_port.PortName}'. ");
+                throw new Exception($"{uae.Message}");
             }
             catch (Exception ex)
             {
-                // We don't know what happened, best to bail and let the user know.
-                throw new Exception($"Unable to open port '{_port.PortName}'. {ex.Message}");
+                throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
             }
 
             State = ConnectionState.Connected;
@@ -855,7 +854,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         foreach (var candidate in _textList)
         {
-            var fi = MeadowFileInfo.Parse(candidate);
+            var fi = MeadowFileInfo.Parse(candidate, folder);
             if (fi != null)
             {
                 list.Add(fi);
@@ -1230,8 +1229,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         logger?.LogDebug($"Start Debugging on port: {port}");
         await StartDebugging(port, logger, cancellationToken);
 
-        /* TODO logger?.LogDebug("Reinitialize the device");
-        await ReInitializeMeadow(cancellationToken); */
         await WaitForMeadowAttach(cancellationToken);
 
         var endpoint = new IPEndPoint(IPAddress.Loopback, port);
