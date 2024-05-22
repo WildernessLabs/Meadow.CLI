@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -171,7 +170,7 @@ public class DebuggingServer : IDisposable
         private readonly Task _receiveMeadowDebugDataTask;
         private readonly ILogger? _logger;
         public bool Disposed = false;
-        private BlockingCollection<byte[]> _debuggerMessages = new();
+        private readonly BlockingCollection<byte[]> _debuggerMessages = new();
 
         // Constructor
         internal ActiveClient(IMeadowConnection connection, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
