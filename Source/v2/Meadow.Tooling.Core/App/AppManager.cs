@@ -80,7 +80,6 @@ public static class AppManager
         else
         {
             logger?.LogInformation($"Did not find trimmed binaries folder...");
-
             dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
         }
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
@@ -142,6 +141,7 @@ public static class AppManager
         foreach (var localFile in localFiles)
         {
             string? meadowFilename = string.Empty;
+
             if (localFile.Key.Contains(PackageManager.PreLinkDirectoryName) ||
                 localFile.Key.Contains(PackageManager.PackageOutputDirectoryName))
             {

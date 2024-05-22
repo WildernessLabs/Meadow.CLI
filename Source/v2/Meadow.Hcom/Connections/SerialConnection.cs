@@ -1227,7 +1227,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
+        await StartDebugging(port, logger, cancellationToken);
 
         await WaitForMeadowAttach(cancellationToken);
 
