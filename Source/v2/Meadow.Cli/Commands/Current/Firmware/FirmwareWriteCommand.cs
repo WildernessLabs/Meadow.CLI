@@ -244,12 +244,12 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             connection = await GetConnectionAndDisableRuntime();
 
             await WriteEspFiles(connection, deviceInfo, package);
-        }
 
-        // reset device
-        if (connection != null && connection.Device != null)
-        {
-            await connection.Device.Reset();
+            // reset device
+            if (connection != null && connection.Device != null)
+            {
+                await connection.Device.Reset();
+            }
         }
 
         Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
