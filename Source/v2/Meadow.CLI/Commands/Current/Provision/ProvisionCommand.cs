@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Management;
 using CliFx.Attributes;
-using LibUsbDotNet.Info;
-using LibUsbDotNet.LibUsb;
 using Meadow.CLI.Commands.DeviceManagement;
-using Meadow.CLI.Core.Internals.Dfu;
+using Meadow.Cloud.Client;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
@@ -15,116 +12,105 @@ using Spectre.Console;
 
 namespace Meadow.CLI.Commands.Provision;
 
-[Command("provision", Description = "Provision 1 or more devices that are in DFU mode.")]
+[Command("provision", Description = Strings.Provision.CommandDescription)]
 public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
 {
     public const string DefaultOSVersion = "1.11.0.0";
-    [CommandOption("version", 'v', Description = "Target OS version for devices to be provisioned with", IsRequired = false)]
+    [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
     public string? OsVersion { get; set; } = DefaultOSVersion;
-    private string? osVersion = string.Empty;
 
-    private ObservableConcurrentQueue<BootLoaderDevice> bootloaderDeviceQueue = new ObservableConcurrentQueue<BootLoaderDevice>();
-    //private ObservableConcurrentQueue<BootLoaderDevice> processingDeviceQueue = new ObservableConcurrentQueue<BootLoaderDevice>();
+    private ConcurrentQueue<BootLoaderDevice> bootloaderDeviceQueue = new ConcurrentQueue<BootLoaderDevice>();
 
+    private List<BootLoaderDevice> selectedDevices = default!;
+    private FileManager fileManager;
+    private IMeadowCloudClient meadowCloudClient;
+    private MeadowConnectionManager connectionManager;
 
-    public ProvisionCommand(ISettingsManager settingsManager, ILoggerFactory loggerFactory)
+    public ProvisionCommand(ISettingsManager settingsManager, FileManager fileManager,
+        IMeadowCloudClient meadowCloudClient, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(settingsManager, loggerFactory)
     {
+        this.fileManager = fileManager;
+        this.meadowCloudClient = meadowCloudClient;
+        this.connectionManager = connectionManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
-        AnsiConsole.MarkupLine("Provisioning");
+        AnsiConsole.MarkupLine(Strings.Provision.RunningTitle);
 
         if (string.IsNullOrEmpty(OsVersion))
-            osVersion = DefaultOSVersion;
-        else
-            osVersion = OsVersion;
+        {
+            OsVersion = DefaultOSVersion;
+        }
 
         // Install DFU, if it's not already installed.
         var dfuInstallCommand = new DfuInstallCommand(SettingsManager, LoggerFactory);
         await dfuInstallCommand.ExecuteAsync(Console);
 
-        // Make sure we've downloaded the passed in osVersion or default
-        // Use Firmware Download command??
-        if (await MeadowCLI($"firmware download -v {osVersion} -f") == 0)
+        // Make sure we've downloaded the osVersion or default
+        var firmwareDownloadCommand = new FirmwareDownloadCommand(fileManager, meadowCloudClient, LoggerFactory)
         {
-            bool refreshDeviceList = false;
-            List<BootLoaderDevice> selectedDevices;
-            do
+            Version = OsVersion,
+            Force = true
+        };
+        await firmwareDownloadCommand.ExecuteAsync(Console);
+
+        bool refreshDeviceList = false;
+        do
+        {
+            UpdateDeviceList(CancellationToken);
+
+            if (bootloaderDeviceQueue.Count == 0)
             {
-                await UpdateDeviceList(CancellationToken);
-
-                if (bootloaderDeviceQueue.Count == 0)
-                {
-                    Logger?.LogError(Strings.ProvisionNoDevicesFound);
-                    return;
-                }
-
-                var multiSelectionPrompt = new MultiSelectionPrompt<BootLoaderDevice>()
-                    .Title(Strings.ProvisionTitle)
-                    .PageSize(15)
-                    .NotRequired() // Can be Blank to exit
-                    .MoreChoicesText(Strings.ProvisionMoreChoicesInstructions)
-                    .InstructionsText(Strings.ProvisionInstructions)
-                    .UseConverter(x => x.SerialPort);
-
-                foreach (var device in bootloaderDeviceQueue)
-                {
-                    multiSelectionPrompt.AddChoices(device);
-                }
-
-                selectedDevices = AnsiConsole.Prompt(multiSelectionPrompt);
-
-                var selectedDeviceTable = new Table();
-                selectedDeviceTable.AddColumn(Strings.ProvisionColumnTitle);
-
-                foreach (var device in selectedDevices)
-                {
-                    selectedDeviceTable.AddRow(device.SerialPort);
-                }
-
-                AnsiConsole.Write(selectedDeviceTable);
-
-                refreshDeviceList = AnsiConsole.Confirm(Strings.ProvisionRefreshDeviceList);
-            } while (refreshDeviceList);
-
-
-            if (selectedDevices.Count == 0)
-            {
-                AnsiConsole.MarkupLine(Strings.ProvsionNoDeviceSelected);
+                Logger?.LogError(Strings.Provision.NoDevicesFound);
                 return;
             }
-            else
+
+            var multiSelectionPrompt = new MultiSelectionPrompt<BootLoaderDevice>()
+                .Title(Strings.Provision.PromptTitle)
+                .PageSize(15)
+                .NotRequired() // Can be Blank to exit
+                .MoreChoicesText(Strings.Provision.MoreChoicesInstructions)
+                .InstructionsText(Strings.Provision.Instructions)
+                .UseConverter(x => x.SerialPort);
+
+            foreach (var device in bootloaderDeviceQueue)
             {
-                foreach (var item in selectedDevices)
-                {
-                    await AnsiConsole.Status()
-                        .Start("Thinking...", async ctx =>
-                        {
-                            AnsiConsole.MarkupLine(Strings.ProvisionFlashingDevice, item.SerialPort);
-
-                            if (await MeadowCLI($"firmware write -v {osVersion} -s {item.SerialNumber}") == 0)
-                            {
-                            }
-                            else
-                            {
-                                Logger?.LogError($"Error flash in {item.SerialPort} :(");
-                            }
-                        });
-
-                }
+                multiSelectionPrompt.AddChoices(device);
             }
+
+            selectedDevices = AnsiConsole.Prompt(multiSelectionPrompt);
+
+            var selectedDeviceTable = new Table();
+            selectedDeviceTable.AddColumn(Strings.Provision.ColumnTitle);
+
+            foreach (var device in selectedDevices)
+            {
+                selectedDeviceTable.AddRow(device.SerialPort);
+            }
+
+            AnsiConsole.Write(selectedDeviceTable);
+
+            refreshDeviceList = AnsiConsole.Confirm(Strings.Provision.RefreshDeviceList);
+        } while (refreshDeviceList);
+
+
+        if (selectedDevices.Count == 0)
+        {
+            AnsiConsole.MarkupLine(Strings.Provision.NoDeviceSelected);
+            return;
         }
         else
         {
-            Logger?.LogError($"Unable to download os v{OsVersion}. Please check your internet conneciton.");
+
+            await FlashingAttachedDevices();
         }
     }
 
-    private async Task UpdateDeviceList(CancellationToken token)
+    private void UpdateDeviceList(CancellationToken cancellationToken)
     {
-        var ourDevices = await GetValidUsbDevices();
+        var ourDevices = GetValidUsbDevices();
 
         if (ourDevices?.Count() > 0)
         {
@@ -141,7 +127,7 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
                         var serialPort = (Environment.OSVersion.Platform == PlatformID.Unix
                             || Environment.OSVersion.Platform == PlatformID.MacOSX)
                             ? $"/dev/tty.usbmodem{deviceSerialNumber}1"
-                            : $"COM{await GetComPortNumber()}";
+                            : $"COM{GetComPortNumber()}";
 
                         // Does the serial number match
                         var serialNumberMatch = (bootloaderDeviceQueue.Count(d => d.SerialNumber == deviceSerialNumber) > 0);
@@ -162,35 +148,30 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
         }
     }
 
-    private async Task<int> GetComPortNumber()
+    private int GetComPortNumber()
     {
-        return await Task.Run(() =>
+
+        using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_PnPEntity WHERE DeviceID LIKE 'USB\\VID_" /* TODO + deviceInfo.VendorId.ToString("X4")*/ + "&PID_" /*+ deviceInfo.ProductId.ToString("X4")*/ + "%'"))
         {
-            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_PnPEntity WHERE DeviceID LIKE 'USB\\VID_" /* TODO + deviceInfo.VendorId.ToString("X4")*/ + "&PID_" /*+ deviceInfo.ProductId.ToString("X4")*/ + "%'"))
+            foreach (ManagementObject mo in searcher.Get())
             {
-                foreach (ManagementObject mo in searcher.Get())
-                {
-                    string deviceId = (string)mo["DeviceID"];
-                    string portName = deviceId.Substring(deviceId.LastIndexOf("_") + 1);
-                    return int.Parse(portName.Replace("#", ""));
-                }
+                string deviceId = (string)mo["DeviceID"];
+                string portName = deviceId.Substring(deviceId.LastIndexOf("_") + 1);
+                return int.Parse(portName.Replace("#", ""));
             }
-            throw new Exception("COM port not found");
-        });
+        }
+        throw new Exception("COM port not found");
     }
 
-    private async Task<IEnumerable<ILibUsbDevice>>? GetValidUsbDevices()
+    private IEnumerable<ILibUsbDevice>? GetValidUsbDevices()
     {
         try
         {
-            return await Task.Run(() =>
-            {
-                var provider = new LibUsbProvider();
+            var provider = new LibUsbProvider();
 
-                var devices = provider.GetDevicesInBootloaderMode();
+            var devices = provider.GetDevicesInBootloaderMode();
 
-                return devices;
-            });
+            return devices;
         }
         catch (Exception)
         {
@@ -199,7 +180,7 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
         }
     }
 
-    static async Task<int> MeadowCLI(string arg, bool redirectStandardOutput = true, bool redirectStandardError = true, bool redirectStandardInput = false)
+    internal static async Task<int> MeadowCLI(string arg, bool redirectStandardOutput = true, bool redirectStandardError = true, bool redirectStandardInput = false)
     {
         using (var process = new Process())
         {
@@ -223,6 +204,37 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
             return process.ExitCode;
         }
     }
+
+    public async Task FlashingAttachedDevices()
+    {
+        await AnsiConsole.Progress()
+            .AutoRefresh(true)
+            .HideCompleted(false)
+            .StartAsync(async ctx =>
+            {
+                var tasklist = new List<Task>();
+
+                foreach (var device in selectedDevices)
+                {
+                    var task = ctx.AddTask($"[green]{device.SerialPort}[/]", maxValue: 100);
+                    tasklist.Add(Task.Run(async () => {
+                        
+                        var firmwareWrite = new FirmwareWriteCommand(SettingsManager, fileManager, connectionManager, LoggerFactory)
+                        {
+                            Version = OsVersion,
+                            SerialNumber = device.SerialNumber
+                        };
+                        await firmwareWrite.ExecuteAsync(Console);
+
+                        task.StopTask();
+                    }));
+                }
+
+                await Task.WhenAll(tasklist);
+            });
+
+        AnsiConsole.MarkupLine("[green]All devices flashed![/]");
+    }
 }
 
 internal class BootLoaderDevice
@@ -231,4 +243,15 @@ internal class BootLoaderDevice
     internal string SerialPort { get; set; } = string.Empty;
     internal string SerialNumber { get; set; } = string.Empty;
     internal string CurrentStatus { get; set; } = string.Empty;
+    public async Task Flash(string osVersion, ILogger logger, IProgress<string> progress)
+    {
+        if (await ProvisionCommand.MeadowCLI($"firmware write -v {osVersion} -s {SerialNumber}") == 0)
+        {
+        }
+        else
+        {
+            logger?.LogError($"Error flash in {SerialPort} :(");
+        }
+        progress.Report($"{SerialPort}: Flashing completed successfully.");
+    }
 }
