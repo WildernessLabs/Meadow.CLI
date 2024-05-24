@@ -20,6 +20,7 @@ public partial class DebuggingServer
         private readonly ILogger? _logger;
         public bool Disposed = false;
         private readonly BlockingCollection<byte[]> _debuggerMessages = new();
+        private readonly AutoResetEvent _vsDebugDataReady = new(false);
 
         // Constructor
         internal ActiveClient(IMeadowConnection connection, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
@@ -49,6 +50,7 @@ public partial class DebuggingServer
         {
             // _logger?.LogDebug("Debugger Message Received, Adding to collection");
             _debuggerMessages.Add(e);
+            _vsDebugDataReady.Set();
         }
 
         private const int RECEIVE_BUFFER_SIZE = 256;
@@ -134,6 +136,8 @@ public partial class DebuggingServer
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
+                        _vsDebugDataReady.WaitOne();
+
                         while (_debuggerMessages.Count > 0)
                         {
                             var byteData = _debuggerMessages.Take(_cts.Token);
