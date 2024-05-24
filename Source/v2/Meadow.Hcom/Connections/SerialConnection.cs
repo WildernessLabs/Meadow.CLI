@@ -1,6 +1,5 @@
 ﻿using System.Buffers;
 using System.IO.Ports;
-using System.Net;
 using System.Security.Cryptography;
 
 namespace Meadow.Hcom;
@@ -77,7 +76,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                         Name = "HCOM Connection Manager"
                     };
                     _connectionManager.Start();
-
                 }
             }
         }
@@ -184,6 +182,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             // TODO: close this up
         }
+
+        //State = ConnectionState.Disconnected;
 
         Close();
     }
@@ -1226,16 +1226,21 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        var debuggingServer = new DebuggingServer(this, port, logger);
+
+        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        _ = debuggingServer.StartListening(cancellationToken);
+
         logger?.LogDebug($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
 
+        // await Task.Delay(2000);
+
+        // Device = null;
+        // State = ConnectionState.Disconnected;
+
         await WaitForMeadowAttach(cancellationToken);
 
-        var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-        var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
-
-        logger?.LogDebug("Tell the Debugging Server to Start Listening");
-        await debuggingServer.StartListening(cancellationToken);
         return debuggingServer;
     }
 
@@ -1268,14 +1273,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        var success = await WaitForResult(() =>
-        {
-            if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
-            {
-                return true;
-            }
-
-            return false;
-        }, cancellationToken);
+        //await WaitForConcluded(null, cancellationToken);
     }
 }
