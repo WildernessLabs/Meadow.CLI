@@ -184,8 +184,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // TODO: close this up
         }
 
-        //State = ConnectionState.Disconnected;
-
         Close();
     }
 
@@ -1236,11 +1234,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         logger?.LogDebug($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
 
-        // await Task.Delay(2000);
-
-        // Device = null;
-        // State = ConnectionState.Disconnected;
-
         await WaitForMeadowAttach(cancellationToken);
 
         return debuggingServer;
@@ -1274,7 +1267,5 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _lastRequestConcluded = null;
 
         EnqueueRequest(command);
-
-        //await WaitForConcluded(null, cancellationToken);
     }
 }
