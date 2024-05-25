@@ -123,7 +123,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             {
                 throw new CommandException("If a public key is provided, an `id` must also be provided");
             }
-            provisioningID = SerialNumber.ToUpper();
+            provisioningID = SerialNumber;
             provisioningName = Name ?? string.Empty;
         }
         else
@@ -176,7 +176,9 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
 
         Logger?.LogInformation(Strings.ProvisioningWithCloud);
 
-        var result = await _deviceService.AddDevice(org.Id!, provisioningID!, PublicKey, CollectionId, provisioningName, Host, CancellationToken);
+        provisioningID = provisioningID!.ToUpper();
+
+        var result = await _deviceService.AddDevice(org.Id!, provisioningID, PublicKey, CollectionId, provisioningName, Host, CancellationToken);
 
         if (result.isSuccess)
         {
