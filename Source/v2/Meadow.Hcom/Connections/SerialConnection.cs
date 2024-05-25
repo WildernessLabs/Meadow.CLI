@@ -1,6 +1,5 @@
 ﻿using System.Buffers;
 using System.IO.Ports;
-using System.Net;
 using System.Security.Cryptography;
 
 namespace Meadow.Hcom;
@@ -23,6 +22,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private ConnectionState _state;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
+    private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
     private readonly List<string> _textList = new List<string>();
@@ -77,7 +77,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                         Name = "HCOM Connection Manager"
                     };
                     _connectionManager.Start();
-
                 }
             }
         }
@@ -210,6 +209,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             var count = _messageCount;
 
             _pendingCommands.Enqueue(command);
+            _commandEvent.Set();
 
             while (timeout-- > 0)
             {
@@ -246,6 +246,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         while (!_isDisposed)
         {
+            _commandEvent.WaitOne();
             while (_pendingCommands.Count > 0)
             {
                 Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
@@ -261,8 +262,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                     // TODO: re-queue on fail?
                 }
             }
-
-            Thread.Sleep(1000);
         }
     }
 
@@ -298,6 +297,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         _pendingCommands.Enqueue(command);
+        _commandEvent.Set();
     }
 
     private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
@@ -1226,16 +1226,16 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        var debuggingServer = new DebuggingServer(this, port, logger);
+
+        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        _ = debuggingServer.StartListening(cancellationToken);
+
         logger?.LogDebug($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
 
         await WaitForMeadowAttach(cancellationToken);
 
-        var endpoint = new IPEndPoint(IPAddress.Loopback, port);
-        var debuggingServer = new DebuggingServer(this, Device, endpoint, logger);
-
-        logger?.LogDebug("Tell the Debugging Server to Start Listening");
-        await debuggingServer.StartListening(cancellationToken);
         return debuggingServer;
     }
 
@@ -1267,15 +1267,5 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _lastRequestConcluded = null;
 
         EnqueueRequest(command);
-
-        var success = await WaitForResult(() =>
-        {
-            if (_lastRequestConcluded != null && _lastRequestConcluded == RequestType.HCOM_MDOW_REQUEST_RTC_SET_TIME_CMD)
-            {
-                return true;
-            }
-
-            return false;
-        }, cancellationToken);
     }
 }
