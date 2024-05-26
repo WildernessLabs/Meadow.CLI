@@ -113,7 +113,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        var package = await GetSelectedPackage();
+        /*var package = await GetSelectedPackage();
 
         if (package == null)
         {
@@ -263,9 +263,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             {
                 await connection.Device.Reset();
             }
-        }
+        }*/
 
-        Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
+        var firmareUpdater = new FirmwareUpdater<FirmwareWriteCommand>(this, Settings, FileManager, ConnectionManager, IndividualFile, FirmwareFileTypes, UseDfu, Version, SerialNumber, Logger, CancellationToken);
+        
+        if (await firmareUpdater.UpdateFirmware())
+        {
+            Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
+        }
     }
 
     private async Task<IMeadowConnection> FindMeadowConnection(IList<string> portsToIgnore)

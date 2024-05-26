@@ -40,7 +40,6 @@
     <PackageReference Include="Spectre.Console" Version="0.48.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
     <PackageReference Include="System.Management" Version="7.0.2" />
-    <PackageReference Include="ObservableConcurrentQueue" Version="2.0.1" />
   </ItemGroup>
   
   <ItemGroup>

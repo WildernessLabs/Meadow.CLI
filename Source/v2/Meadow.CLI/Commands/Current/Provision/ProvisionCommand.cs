@@ -9,11 +9,12 @@ using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
+using YamlDotNet.Serialization;
 
 namespace Meadow.CLI.Commands.Provision;
 
 [Command("provision", Description = Strings.Provision.CommandDescription)]
-public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
+public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 {
     public const string DefaultOSVersion = "1.11.0.0";
     [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
@@ -22,14 +23,16 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
     private ConcurrentQueue<BootLoaderDevice> bootloaderDeviceQueue = new ConcurrentQueue<BootLoaderDevice>();
 
     private List<BootLoaderDevice> selectedDevices = default!;
+    private ISettingsManager settingsManager;
     private FileManager fileManager;
     private IMeadowCloudClient meadowCloudClient;
     private MeadowConnectionManager connectionManager;
 
     public ProvisionCommand(ISettingsManager settingsManager, FileManager fileManager,
         IMeadowCloudClient meadowCloudClient, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
-        : base(settingsManager, loggerFactory)
+        : base(connectionManager, loggerFactory)
     {
+        this.settingsManager = settingsManager;
         this.fileManager = fileManager;
         this.meadowCloudClient = meadowCloudClient;
         this.connectionManager = connectionManager;
@@ -45,7 +48,7 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
         }
 
         // Install DFU, if it's not already installed.
-        var dfuInstallCommand = new DfuInstallCommand(SettingsManager, LoggerFactory);
+        var dfuInstallCommand = new DfuInstallCommand(settingsManager, LoggerFactory);
         await dfuInstallCommand.ExecuteAsync(Console);
 
         // Make sure we've downloaded the osVersion or default
@@ -218,13 +221,13 @@ public class ProvisionCommand : BaseSettingsCommand<ProvisionCommand>
                 {
                     var task = ctx.AddTask($"[green]{device.SerialPort}[/]", maxValue: 100);
                     tasklist.Add(Task.Run(async () => {
-                        
-                        var firmwareWrite = new FirmwareWriteCommand(SettingsManager, fileManager, connectionManager, LoggerFactory)
+
+                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, string.Empty, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP}, true, OsVersion, device.SerialNumber, Logger, CancellationToken);
+
+                        if (await firmareUpdater.UpdateFirmware())
                         {
-                            Version = OsVersion,
-                            SerialNumber = device.SerialNumber
-                        };
-                        await firmwareWrite.ExecuteAsync(Console);
+                            Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
+                        }
 
                         task.StopTask();
                     }));
