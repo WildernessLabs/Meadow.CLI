@@ -63,7 +63,10 @@ internal static class AppTools
 
         if (configuration is not null)
         {
-            file = candidates.Where(c => c.DirectoryName.Contains(configuration)).OrderByDescending(c => c.LastWriteTime).First();
+            file = candidates
+                .Where(c => c.DirectoryName.IndexOf(configuration, StringComparison.OrdinalIgnoreCase) >= 0)
+                .OrderByDescending(c => c.LastWriteTime)
+                .First();
 
             if (file == null)
             {
