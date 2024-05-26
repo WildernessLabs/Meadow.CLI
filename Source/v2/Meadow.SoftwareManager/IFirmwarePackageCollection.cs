@@ -25,6 +25,7 @@ public interface IFirmwarePackageCollection : IEnumerable<FirmwarePackage>
     Task<bool> IsVersionAvailableForDownload(string version);
     Task<bool> RetrievePackage(string version, bool overwrite = false);
     FirmwarePackage? GetLocalPackage(string version);
+    FirmwarePackage? GetClosestLocalPackage(string version);
     FirmwarePackage this[int index] { get; }
     FirmwarePackage? this[string version] { get; }
     string PackageFileRoot { get; }
