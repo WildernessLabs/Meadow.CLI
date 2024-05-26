@@ -32,20 +32,6 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
     {
         await _fileManager.Refresh();
 
-        // for now we only support F7
-        // TODO: add switch and support for other platforms
-        var collection = _fileManager.Firmware["Meadow F7"];
-
-        if (collection == null || collection.Count() == 0)
-        {
-            throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
-        }
-
-        if (collection.DefaultPackage == null)
-        {
-            throw new CommandException(Strings.NoDefaultFirmwarePackageSet, CommandExitCode.GeneralError);
-        }
-
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
 
         if (!File.Exists(path))
@@ -68,7 +54,10 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
-        Logger.LogInformation($"Preparing to trim using v{deviceInfo.OsVersion} assemblies...");
+        var collection = _fileManager.Firmware["Meadow F7"];
+        var package = collection.GetClosestLocalPackage(deviceInfo.OsVersion);
+
+        Logger.LogInformation($"Preparing to trim using v{package?.Version ?? " unknown"} assemblies...");
         await AppTools.TrimApplication(path, _packageManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken);
         Logger.LogInformation("Application trimmed successfully");
     }
