@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("app deploy", Description = "Deploys a previously compiled Meadow application to a target device. Note: This command does not compile the application.")]
+[Command("app deploy", Description = "Deploys a previously compiled Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
     private readonly IPackageManager _packageManager;
