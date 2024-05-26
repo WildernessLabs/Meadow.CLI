@@ -45,11 +45,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
         }
 
-        if (collection.DefaultPackage == null)
-        {
-            throw new CommandException(Strings.NoDefaultFirmwarePackageSet, CommandExitCode.GeneralError);
-        }
-
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
 
         Configuration ??= "Release";
