@@ -3,49 +3,29 @@
     "Meadow.CLI": {
       "commandName": "Project"
     },
-    "Help": {
+    "App Build": {
       "commandName": "Project",
-      "commandLineArgs": "--help"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
-    "Version": {
+    "App Build Debug": {
       "commandName": "Project",
-      "commandLineArgs": "--version"
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs -c Debug"
     },
-    "Port List": {
+    "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "port list"
+      "commandLineArgs": "app deploy H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
-    "Port Select": {
+    "App Deploy (untrimmed output)": {
       "commandName": "Project",
-      "commandLineArgs": "port select"
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
     },
-    "Listen": {
+    "App Run": {
       "commandName": "Project",
-      "commandLineArgs": "listen"
+      "commandLineArgs": "app run H:\\WL\\Blinky\\Blinky\\BlinkyCs"
     },
-    "Listen (no prefix)": {
+    "App Trim": {
       "commandName": "Project",
-      "commandLineArgs": "listen -n"
-    },
-    "Device Info": {
-      "commandName": "Project",
-      "commandLineArgs": "device info"
-    },
-    "Device Public Key": {
-      "commandName": "Project",
-      "commandLineArgs": "device info -k"
-    },
-    "Device Reset": {
-      "commandName": "Project",
-      "commandLineArgs": "device reset"
-    },
-    "Device Clock Read": {
-      "commandName": "Project",
-      "commandLineArgs": "device clock"
-    },
-    "Device Clock Set": {
-      "commandName": "Project",
-      "commandLineArgs": "device clock now"
+      "commandLineArgs": "app trim H:\\WL\\Blinky\\Blinky\\BlinkyCs --nolink BlinkyLib"
     },
     "Config: Set Route local": {
       "commandName": "Project",
@@ -67,17 +47,37 @@
       "commandName": "Project",
       "commandLineArgs": "config --help"
     },
-    "Runtime Enable": {
+    "Developer": {
       "commandName": "Project",
-      "commandLineArgs": "runtime enable"
+      "commandLineArgs": "developer -p 2 -v 20"
     },
-    "Runtime Disable": {
+    "Device Info": {
       "commandName": "Project",
-      "commandLineArgs": "runtime disable"
+      "commandLineArgs": "device info"
     },
-    "Runtime State": {
+    "Device Public Key": {
       "commandName": "Project",
-      "commandLineArgs": "runtime state"
+      "commandLineArgs": "device info -k"
+    },
+    "Device Reset": {
+      "commandName": "Project",
+      "commandLineArgs": "device reset"
+    },
+    "Device Clock Read": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock"
+    },
+    "Device Clock Set": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock now"
+    },
+    "Dfu Install": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install"
+    },
+    "Dfu Install 0.10": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install -v 0.10"
     },
     "File List": {
       "commandName": "Project",
@@ -102,6 +102,10 @@
     "File Delete All": {
       "commandName": "Project",
       "commandLineArgs": "file delete all"
+    },
+    "File initial": {
+      "commandName": "Project",
+      "commandLineArgs": "file initial meadow.log"
     },
     "File Read Large": {
       "commandName": "Project",
@@ -167,6 +171,46 @@
       "commandName": "Project",
       "commandLineArgs": "firmware write os -v 1.2.0.1"
     },
+    "Flash erase": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erase"
+    },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
+    "Listen": {
+      "commandName": "Project",
+      "commandLineArgs": "listen"
+    },
+    "Listen (no prefix)": {
+      "commandName": "Project",
+      "commandLineArgs": "listen -n"
+    },
+    "Port List": {
+      "commandName": "Project",
+      "commandLineArgs": "port list"
+    },
+    "Port Select": {
+      "commandName": "Project",
+      "commandLineArgs": "port select"
+    },
+    "Runtime Enable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime enable"
+    },
+    "Runtime Disable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime disable"
+    },
+    "Runtime State": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime state"
+    },
+    "Version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
     "Trace enable": {
       "commandName": "Project",
       "commandLineArgs": "trace enable"
@@ -179,10 +223,6 @@
       "commandName": "Project",
       "commandLineArgs": "trace level 2"
     },
-    "Developer": {
-      "commandName": "Project",
-      "commandLineArgs": "developer -p 2 -v 20"
-    },
     "Uart trace enable": {
       "commandName": "Project",
       "commandLineArgs": "uart trace enable"
@@ -190,46 +230,6 @@
     "Uart trace disable": {
       "commandName": "Project",
       "commandLineArgs": "uart trace disable"
-    },
-    "App Build": {
-      "commandName": "Project",
-      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs"
-    },
-    "App Build Debug": {
-      "commandName": "Project",
-      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs -c Debug"
-    },
-    "App Trim": {
-      "commandName": "Project",
-      "commandLineArgs": "app trim H:\\WL\\Blinky\\Blinky\\BlinkyCs --nolink BlinkyLib"
-    },
-    "Dfu Install": {
-      "commandName": "Project",
-      "commandLineArgs": "dfu install"
-    },
-    "Dfu Install 0.10": {
-      "commandName": "Project",
-      "commandLineArgs": "dfu install -v 0.10"
-    },
-    "App Deploy (project folder)": {
-      "commandName": "Project",
-      "commandLineArgs": "app deploy H:\\WL\\Blinky\\Blinky\\BlinkyCs"
-    },
-    "App Deploy (untrimmed output)": {
-      "commandName": "Project",
-      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
-    },
-    "App Run": {
-      "commandName": "Project",
-      "commandLineArgs": "app run H:\\WL\\Blinky\\Blinky\\BlinkyCs"
-    },
-    "Flash erase": {
-      "commandName": "Project",
-      "commandLineArgs": "flash erase"
-    },
-    "File initial": {
-      "commandName": "Project",
-      "commandLineArgs": "file initial meadow.log"
     },
     "Device provision": {
       "commandName": "Project",
@@ -298,6 +298,10 @@
     "legacy flash os": {
       "commandName": "Project",
       "commandLineArgs": "flash os"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
     }
   }
 }
