@@ -28,7 +28,7 @@ public partial class PackageManager
         {
             store.Refresh();
 
-            var package = store.GetLocalPackage(osVersion!);
+            var package = store.GetClosestLocalPackage(osVersion!);
 
             if (package == null)
             {
