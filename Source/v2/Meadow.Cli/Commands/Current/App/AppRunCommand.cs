@@ -11,8 +11,8 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 {
     private readonly IPackageManager _packageManager;
 
-    [CommandOption("no-prefix", 'n', Description = "When set, the message source prefix (e.g. 'stdout>') is suppressed during 'listen'", IsRequired = false)]
-    public bool NoPrefix { get; init; }
+    [CommandOption("prefix", 'p', Description = "When set, the message source prefix (e.g. 'stdout>') is shown during 'listen'", IsRequired = false)]
+    public bool Prefix { get; init; } = false;
 
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
@@ -136,13 +136,13 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     private void OnDeviceMessageReceived(object? sender, (string message, string? source) e)
     {
-        if (NoPrefix)
+        if (Prefix)
         {
-            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
         }
         else
         {
-            Logger?.LogInformation($"{e.source}> {e.message.TrimEnd('\n', '\r')}");
+            Logger?.LogInformation($"{e.message.TrimEnd('\n', '\r')}");
         }
     }
 }
