@@ -30,6 +30,8 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        await _fileManager.Refresh();
+
         // for now we only support F7
         // TODO: add switch and support for other platforms
         var collection = _fileManager.Firmware["Meadow F7"];
@@ -38,8 +40,6 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
         {
             throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
         }
-
-        await _fileManager.Refresh();
 
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
 

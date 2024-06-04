@@ -39,6 +39,7 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
+        await _fileManager.Refresh();
         var store = _fileManager.Firmware["Meadow F7"];
         await ValidateFirmwarePackage(store);
 
