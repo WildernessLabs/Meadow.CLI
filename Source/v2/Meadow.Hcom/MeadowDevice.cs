@@ -169,4 +169,14 @@ public partial class MeadowDevice : IMeadowDevice
     {
         await _connection.SendDebuggerData(debuggerData, userData, cancellationToken);
     }
+
+    public async Task NshDisable(CancellationToken? cancellationToken = null)
+    {
+        await _connection.NshDisable(cancellationToken);
+    }
+
+    public async Task NshEnable(CancellationToken? cancellationToken = null)
+    {
+        await _connection.NshEnable(cancellationToken);
+    }
 }

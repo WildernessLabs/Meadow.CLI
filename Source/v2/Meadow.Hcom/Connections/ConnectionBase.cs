@@ -50,6 +50,9 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
 
     public abstract Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
 
+    public abstract Task NshDisable(CancellationToken? cancellationToken = null);
+    public abstract Task NshEnable(CancellationToken? cancellationToken = null);
+
     public ConnectionBase()
     {
     }

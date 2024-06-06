@@ -28,4 +28,6 @@ public interface IMeadowDevice
     Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
     Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
+    Task NshDisable(CancellationToken? cancellationToken = null);
+    Task NshEnable(CancellationToken? cancellationToken = null);
 }

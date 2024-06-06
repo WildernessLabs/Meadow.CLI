@@ -159,4 +159,14 @@ public class SimulatorConnection : ConnectionBase
     {
         throw new NotImplementedException();
     }
+
+    public override Task NshDisable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override Task NshEnable(CancellationToken? cancellationToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

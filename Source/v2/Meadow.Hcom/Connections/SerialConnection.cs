@@ -246,7 +246,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         while (!_isDisposed)
         {
-            _commandEvent.WaitOne();
+            _commandEvent.WaitOne(1000);
+
             while (_pendingCommands.Count > 0)
             {
                 Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
@@ -701,6 +702,32 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<RuntimeDisableRequest>();
+
+        InfoMessages.Clear();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task NshEnable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<NshEnableDisableRequest>(1);
+
+        InfoMessages.Clear();
+
+        _lastRequestConcluded = null;
+
+        EnqueueRequest(command);
+
+        await WaitForConcluded(null, cancellationToken);
+    }
+
+    public override async Task NshDisable(CancellationToken? cancellationToken = null)
+    {
+        var command = RequestBuilder.Build<NshEnableDisableRequest>(0);
 
         InfoMessages.Clear();
 

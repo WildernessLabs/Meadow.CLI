@@ -115,7 +115,7 @@ public partial class DebuggingServer
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        _vsDebugDataReady.WaitOne();
+                        _vsDebugDataReady.WaitOne(1000);
 
                         while (_debuggerMessages.Count > 0)
                         {
