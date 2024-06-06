@@ -46,6 +46,7 @@
     <ProjectReference Include="..\Meadow.Dfu\Meadow.Dfu.csproj" />
     <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
     <ProjectReference Include="..\Meadow.Tooling.Core\Meadow.Tooling.Core.csproj" />
+    <ProjectReference Include="..\Meadow.Updater\Meadow.Updater.csproj" />
     <ProjectReference Include="..\Meadow.UsbLib\Meadow.UsbLib.csproj" />
   </ItemGroup>
   
@@ -62,4 +63,13 @@
   <ItemGroup>
     <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="..\Meadow.Updater\bin\$(Configuration)\net8.0\Meadow.Updater.exe">
+      <Pack>true</Pack>
+      <PackagePath>tools\net8.0\any\</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
