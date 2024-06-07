@@ -161,12 +161,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
         if (FirmwareFileTypes.Contains(FirmwareType.OS))
         {
-            var osFileWithBootloader = package.GetFullyQualifiedPath(package.OSWithBootloader);
-            var osFileWithoutBootloader = package.GetFullyQualifiedPath(package.OsWithoutBootloader);
+            string? osFileWithBootloader = null;
+            string? osFileWithoutBootloader = null;
 
-            if (osFileWithBootloader == null && osFileWithoutBootloader == null)
+            if (string.IsNullOrWhiteSpace(IndividualFile))
             {
-                throw new CommandException(string.Format(Strings.OsFileNotFoundForSpecifiedVersion, package.Version));
+                osFileWithBootloader = package.GetFullyQualifiedPath(package.OSWithBootloader);
+                osFileWithoutBootloader = package.GetFullyQualifiedPath(package.OsWithoutBootloader);
+
+                if (osFileWithBootloader == null && osFileWithoutBootloader == null)
+                {
+                    throw new CommandException(string.Format(Strings.OsFileNotFoundForSpecifiedVersion, package.Version));
+                }
+            }
+            else
+            {
+                osFileWithBootloader = IndividualFile;
             }
 
             // do we have a dfu device attached, or is DFU specified?

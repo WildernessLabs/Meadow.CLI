@@ -159,6 +159,10 @@
       "commandName": "Project",
       "commandLineArgs": "firmware write runtime"
     },
+    "Firmware Write runtime local file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write runtime -f g:\\Meadow.OS.Runtime.bin"
+    },
     "Firmware Write esp": {
       "commandName": "Project",
       "commandLineArgs": "firmware write esp"
@@ -170,6 +174,10 @@
     "Firmware Write os DFU": {
       "commandName": "Project",
       "commandLineArgs": "firmware write os -v 1.2.0.1"
+    },
+    "Firmware Write OS local file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write OS -f g:\\Meadow.OS.bin"
     },
     "Flash erase": {
       "commandName": "Project",
