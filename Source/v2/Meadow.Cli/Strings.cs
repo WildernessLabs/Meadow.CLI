@@ -90,7 +90,7 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
     {
         public const string CommandDescription = "Provision 1 or more devices that are in DFU mode.";
         public const string CommandOptionVersion = "Target OS version for devices to be provisioned with";
-        public const string RefreshDeviceList = "Reselect Bootloader devices (y=Refresh List, n=Flash selected devices)?";
+        public const string RefreshDeviceList = "Flash devices (y=Flash selected devices, n=Refresh List)?";
         public const string MoreChoicesInstructions = "[grey](Move up and down to reveal more devices)[/]";
         public const string Instructions = "[grey]Press [blue]<space>[/] to toggle a device, [green]<enter>[/] to accept and flash the selected device[/]";
         public const string RunningTitle = "Provisioning";

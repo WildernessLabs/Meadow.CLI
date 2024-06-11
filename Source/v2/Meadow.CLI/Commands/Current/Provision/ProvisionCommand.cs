@@ -96,7 +96,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
             AnsiConsole.Write(selectedDeviceTable);
 
             refreshDeviceList = AnsiConsole.Confirm(Strings.Provision.RefreshDeviceList);
-        } while (refreshDeviceList);
+        } while (!refreshDeviceList);
 
 
         if (selectedDevices.Count == 0)
@@ -183,31 +183,6 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
         }
     }
 
-    internal static async Task<int> MeadowCLI(string arg, bool redirectStandardOutput = true, bool redirectStandardError = true, bool redirectStandardInput = false)
-    {
-        using (var process = new Process())
-        {
-            // TODO Remove ./ before merging PR, otherwise it won't work
-            process.StartInfo.FileName = "./meadow";
-            process.StartInfo.Arguments = $"{arg}";
-            process.StartInfo.WorkingDirectory = System.AppContext.BaseDirectory;
-
-            process.StartInfo.UseShellExecute = false;
-
-            process.StartInfo.CreateNoWindow = true;
-
-            process.StartInfo.RedirectStandardOutput = redirectStandardOutput;
-            process.StartInfo.RedirectStandardError = redirectStandardError;
-            process.StartInfo.RedirectStandardInput = redirectStandardInput;
-
-            process.Start();
-
-            await process.WaitForExitAsync();
-
-            return process.ExitCode;
-        }
-    }
-
     public async Task FlashingAttachedDevices()
     {
         await AnsiConsole.Progress()
@@ -222,7 +197,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                     var task = ctx.AddTask($"[green]{device.SerialPort}[/]", maxValue: 100);
                     tasklist.Add(Task.Run(async () => {
 
-                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, string.Empty, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP}, true, OsVersion, device.SerialNumber, Logger, CancellationToken);
+                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP}, true, OsVersion, device.SerialNumber, Logger, CancellationToken);
 
                         if (await firmareUpdater.UpdateFirmware())
                         {
@@ -246,15 +221,4 @@ internal class BootLoaderDevice
     internal string SerialPort { get; set; } = string.Empty;
     internal string SerialNumber { get; set; } = string.Empty;
     internal string CurrentStatus { get; set; } = string.Empty;
-    public async Task Flash(string osVersion, ILogger logger, IProgress<string> progress)
-    {
-        if (await ProvisionCommand.MeadowCLI($"firmware write -v {osVersion} -s {SerialNumber}") == 0)
-        {
-        }
-        else
-        {
-            logger?.LogError($"Error flash in {SerialPort} :(");
-        }
-        progress.Report($"{SerialPort}: Flashing completed successfully.");
-    }
 }
