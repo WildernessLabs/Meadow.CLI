@@ -132,7 +132,7 @@ public static class AppManager
         // delete those files
         foreach (var file in removeFiles)
         {
-            logger?.LogInformation($"Deleting file '{file}'...");
+            logger?.LogInformation($"Deleting '{file}'");
             var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"{file.Path}";
 
             await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
@@ -163,12 +163,12 @@ public static class AppManager
 
                 if (crc == localFile.Value)
                 {   // exists and has a matching CRC, skip it
-                    logger?.LogInformation($"Skipping '{localFile.Key}'");
+                    logger?.LogInformation($"Skipping '{Path.GetFileName(localFile.Key)}'");
                     continue;
                 }
             }
 
-            logger?.LogInformation($"Sending  '{localFile.Key}'");
+            logger?.LogInformation($"Sending  '{Path.GetFileName(localFile.Key)}'");
         send_file:
 
             if (!await connection.WriteFile(localFile.Key, meadowFilename, cancellationToken))
