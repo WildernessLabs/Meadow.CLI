@@ -86,18 +86,22 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
         public const string AskToParticipate = "Would you like to participate?";
     }
 
+    public const string Enter = "Enter";
+    public const string Space = "Space";
+
     public static class Provision
     {
         public const string CommandDescription = "Provision 1 or more devices that are in DFU mode.";
         public const string CommandOptionVersion = "Target OS version for devices to be provisioned with";
         public const string RefreshDeviceList = "Flash devices (y=Flash selected devices, n=Refresh List)?";
-        public const string MoreChoicesInstructions = "[grey](Move up and down to reveal more devices)[/]";
-        public const string Instructions = "[grey]Press [blue]<space>[/] to toggle a device, [green]<enter>[/] to accept and flash the selected device[/]";
+        public const string MoreChoicesInstructions = "(Move up and down to reveal more devices)";
+        public const string Instructions = "Press {0} to toggle a device, {1} to accept and flash the selected device";
         public const string RunningTitle = "Provisioning";
         public const string PromptTitle = "Devices in Bootloader mode";
         public const string NoDevicesFound = "No devices found in bootloader mode. Rerun this command when at least 1 connected device is in bootloader mode.";
         public const string ColumnTitle = "Selected Devices";
-        public const string NoDeviceSelected = "[yellow]No devices selected to provision[/]. Exiting.";
-        public const string FlashingDevice = "Flashing [green]{0}[/]";
+        public const string NoDeviceSelected = "No devices selected to provision. Exiting.";
+        public const string UpdateFailed = "Updated failed";
+        public const string UpdateComplete = "Updated completed";
     }
 }
