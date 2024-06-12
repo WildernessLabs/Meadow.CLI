@@ -16,7 +16,7 @@ namespace Meadow.CLI.Commands.Provision;
 [Command("provision", Description = Strings.Provision.CommandDescription)]
 public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 {
-    public const string DefaultOSVersion = "1.11.0.0";
+    public const string DefaultOSVersion = "1.12.0.0";
     [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
     public string? OsVersion { get; set; } = DefaultOSVersion;
 
@@ -42,23 +42,6 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     {
         AnsiConsole.MarkupLine(Strings.Provision.RunningTitle);
 
-        if (string.IsNullOrEmpty(OsVersion))
-        {
-            OsVersion = DefaultOSVersion;
-        }
-
-        // Install DFU, if it's not already installed.
-        var dfuInstallCommand = new DfuInstallCommand(settingsManager, LoggerFactory);
-        await dfuInstallCommand.ExecuteAsync(Console);
-
-        // Make sure we've downloaded the osVersion or default
-        var firmwareDownloadCommand = new FirmwareDownloadCommand(fileManager, meadowCloudClient, LoggerFactory)
-        {
-            Version = OsVersion,
-            Force = true
-        };
-        await firmwareDownloadCommand.ExecuteAsync(Console);
-
         bool refreshDeviceList = false;
         do
         {
@@ -74,8 +57,8 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 .Title(Strings.Provision.PromptTitle)
                 .PageSize(15)
                 .NotRequired() // Can be Blank to exit
-                .MoreChoicesText(Strings.Provision.MoreChoicesInstructions)
-                .InstructionsText(Strings.Provision.Instructions)
+                .MoreChoicesText($"[grey]{Strings.Provision.MoreChoicesInstructions}[/]")
+                .InstructionsText(string.Format($"[grey]{Strings.Provision.Instructions}[/]", $"[blue]<{Strings.Space}>[/]", $"[green]<{Strings.Enter}>[/]"))
                 .UseConverter(x => x.SerialPort);
 
             foreach (var device in bootloaderDeviceQueue)
@@ -101,14 +84,30 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
         if (selectedDevices.Count == 0)
         {
-            AnsiConsole.MarkupLine(Strings.Provision.NoDeviceSelected);
+            AnsiConsole.MarkupLine($"[yellow]{Strings.Provision.NoDeviceSelected}[/]");
             return;
         }
-        else
-        {
 
-            await FlashingAttachedDevices();
+        if (string.IsNullOrEmpty(OsVersion))
+        {
+            OsVersion = DefaultOSVersion;
         }
+
+        // Install DFU, if it's not already installed.
+        var dfuInstallCommand = new DfuInstallCommand(settingsManager, LoggerFactory);
+        await dfuInstallCommand.ExecuteAsync(Console);
+
+        // Make sure we've downloaded the osVersion or default
+        var firmwareDownloadCommand = new FirmwareDownloadCommand(fileManager, meadowCloudClient, LoggerFactory)
+        {
+            Version = OsVersion,
+            Force = true
+        };
+        await firmwareDownloadCommand.ExecuteAsync(Console);
+
+
+        // If we've reached here we're ready to Flash
+        await FlashingAttachedDevices();
     }
 
     private void UpdateDeviceList(CancellationToken cancellationToken)
@@ -188,21 +187,38 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
         await AnsiConsole.Progress()
             .AutoRefresh(true)
             .HideCompleted(false)
+            .Columns(new ProgressColumn[]
+            {
+                new TaskDescriptionColumn(),    // Task description
+                new ProgressBarColumn(),        // Progress bar
+                new PercentageColumn(),         // Percentage
+                new SpinnerColumn(),            // Spinner
+            })
             .StartAsync(async ctx =>
             {
                 var tasklist = new List<Task>();
 
                 foreach (var device in selectedDevices)
                 {
-                    var task = ctx.AddTask($"[green]{device.SerialPort}[/]", maxValue: 100);
-                    tasklist.Add(Task.Run(async () => {
-
-                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP}, true, OsVersion, device.SerialNumber, Logger, CancellationToken);
-
-                        if (await firmareUpdater.UpdateFirmware())
+                    var formatedDevice = $"[green]{device.SerialPort}[/]";
+                    var task = ctx.AddTask(formatedDevice, maxValue: 100);
+                    tasklist.Add(Task.Run(async () =>
+                    {
+                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP }, true, OsVersion, device.SerialNumber, null, CancellationToken, true);
+                        firmareUpdater.UpdateProgress += (o, e) =>
                         {
-                            Logger?.LogInformation(Strings.FirmwareUpdatedSuccessfully);
+                            task.Increment(20.00);
+                            task.Description = string.Format($"{formatedDevice}: {e}");
+                        };
+
+                        if (!await firmareUpdater.UpdateFirmware())
+                        {
+                            task.Description = string.Format($"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]");
+                            task.StopTask();
                         }
+
+                        task.Increment(20.00);
+                        task.Description = string.Format($"{formatedDevice}: [green]{Strings.Provision.UpdateComplete}[/]");
 
                         task.StopTask();
                     }));
@@ -211,7 +227,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 await Task.WhenAll(tasklist);
             });
 
-        AnsiConsole.MarkupLine("[green]All devices flashed![/]");
+        AnsiConsole.MarkupLine($"[green]{Strings.Provision.AllDevicesFlashed}[/]");
     }
 }
 

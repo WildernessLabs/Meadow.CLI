@@ -20,6 +20,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
     private readonly MeadowConnectionManager connectionManager;
     private readonly ILogger? logger;
     private readonly CancellationToken cancellationToken;
+    private readonly bool hideDfuOutput;
     private readonly ISettingsManager settings;
     private readonly FileManager fileManager;
 
@@ -27,7 +28,9 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private BaseDeviceCommand<T> command;
 
-    public FirmwareUpdater(BaseDeviceCommand<T> command, ISettingsManager settings, FileManager fileManager, MeadowConnectionManager connectionManager, string? individualFile, FirmwareType[]? firmwareFileTypes, bool useDfu, string? osVersion, string? serialNumber, ILogger logger, CancellationToken cancellationToken)
+    public event EventHandler<string> UpdateProgress = default!;
+
+    public FirmwareUpdater(BaseDeviceCommand<T> command, ISettingsManager settings, FileManager fileManager, MeadowConnectionManager connectionManager, string? individualFile, FirmwareType[]? firmwareFileTypes, bool useDfu, string? osVersion, string? serialNumber, ILogger? logger, CancellationToken cancellationToken, bool hideDfuOutput = false)
     {
         this.command = command;
         this.settings = settings;
@@ -40,6 +43,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         this.serialNumber = serialNumber;
         this.logger = logger;
         this.cancellationToken = cancellationToken;
+        this.hideDfuOutput = hideDfuOutput;
     }
 
     public async Task<bool> UpdateFirmware()
@@ -95,11 +99,13 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (firmwareFileTypes.Contains(FirmwareType.OS))
         {
+            UpdateProgress?.Invoke(this, "Flashing OS");
             await WriteOSFiles(connection, deviceInfo, package, useDfu);
         }
 
         if (firmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
+            UpdateProgress?.Invoke(this, "Writing Runtime");
             await WriteRuntimeFiles(connection, deviceInfo, package, individualFile);
         }
 
@@ -108,6 +114,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
+            UpdateProgress?.Invoke(this, "Writing ESP");
             await WriteEspFiles(deviceInfo, package);
         }
 
@@ -364,7 +371,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 osFile,
                 serialNumber,
                 logger: logger,
-                format: DfuUtils.DfuFlashFormat.ConsoleOut);
+                format: hideDfuOutput ? DfuUtils.DfuFlashFormat.None : DfuUtils.DfuFlashFormat.ConsoleOut);
         }
         catch (ArgumentException)
         {
