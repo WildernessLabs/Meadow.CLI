@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using CliFx;
+using DfuSharp;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.LibUsb;
@@ -20,7 +21,6 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
     private readonly MeadowConnectionManager connectionManager;
     private readonly ILogger? logger;
     private readonly CancellationToken cancellationToken;
-    private readonly bool hideDfuOutput;
     private readonly ISettingsManager settings;
     private readonly FileManager fileManager;
 
@@ -30,7 +30,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     public event EventHandler<string> UpdateProgress = default!;
 
-    public FirmwareUpdater(BaseDeviceCommand<T> command, ISettingsManager settings, FileManager fileManager, MeadowConnectionManager connectionManager, string? individualFile, FirmwareType[]? firmwareFileTypes, bool useDfu, string? osVersion, string? serialNumber, ILogger? logger, CancellationToken cancellationToken, bool hideDfuOutput = false)
+    public FirmwareUpdater(BaseDeviceCommand<T> command, ISettingsManager settings, FileManager fileManager, MeadowConnectionManager connectionManager, string? individualFile, FirmwareType[]? firmwareFileTypes, bool useDfu, string? osVersion, string? serialNumber, ILogger? logger, CancellationToken cancellationToken)
     {
         this.command = command;
         this.settings = settings;
@@ -43,7 +43,6 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         this.serialNumber = serialNumber;
         this.logger = logger;
         this.cancellationToken = cancellationToken;
-        this.hideDfuOutput = hideDfuOutput;
     }
 
     public async Task<bool> UpdateFirmware()
@@ -103,6 +102,12 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             await WriteOSFiles(connection, deviceInfo, package, useDfu);
         }
 
+        if (!string.IsNullOrWhiteSpace(serialNumber))
+        {
+            connection = await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber!));
+            deviceInfo = await connection.GetDeviceInfo(cancellationToken);
+        }
+
         if (firmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
             UpdateProgress?.Invoke(this, "Writing Runtime");
@@ -115,7 +120,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
             UpdateProgress?.Invoke(this, "Writing ESP");
-            await WriteEspFiles(deviceInfo, package);
+            await WriteEspFiles(connection, deviceInfo, package);
         }
 
         // reset device
@@ -127,9 +132,9 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         return true;
     }
 
-    private async Task WriteEspFiles(DeviceInfo? deviceInfo, FirmwarePackage package)
+    private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        var connection = await GetConnectionAndDisableRuntime();
+        connection ??= await GetConnectionAndDisableRuntime();
 
         await WriteEsp(connection, deviceInfo, package);
 
@@ -169,9 +174,8 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             throw new CommandException(string.Format(Strings.OsFileNotFoundForSpecifiedVersion, package.Version));
         }
 
-        // do we have a dfu device attached, or is DFU specified?
         var provider = new LibUsbProvider();
-        var dfuDevice = GetLibUsbDeviceForCurrentEnvironment(provider);
+        var dfuDevice = GetLibUsbDeviceForCurrentEnvironment(provider, serialNumber);
         bool ignoreSerial = IgnoreSerialNumberForDfu(provider);
 
         if (dfuDevice != null)
@@ -196,18 +200,11 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             // get a list of ports - it will not have our meadow in it (since it should be in DFU mode)
             var initialPorts = await MeadowConnectionManager.GetSerialPorts();
 
-            try
-            {
-                await WriteOsWithDfu(dfuDevice!, osFileWithBootloader!, ignoreSerial);
-            }
-            finally
-            {
-                dfuDevice?.Dispose();
-            }
+            await WriteOsWithDfu(dfuDevice!, osFileWithBootloader!, ignoreSerial);
 
             await Task.Delay(1500);
 
-            connection = await FindMeadowConnection(initialPorts);
+            connection ??= await FindMeadowConnection(initialPorts);
 
             await connection.WaitForMeadowAttach();
         }
@@ -246,7 +243,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         return package;
     }
 
-    private ILibUsbDevice? GetLibUsbDeviceForCurrentEnvironment(LibUsbProvider? provider)
+    private ILibUsbDevice? GetLibUsbDeviceForCurrentEnvironment(LibUsbProvider? provider, string? serialNumber = null)
     {
         provider ??= new LibUsbProvider();
 
@@ -259,7 +256,11 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             return null;
         }
 
-        if (meadowsInDFU.Count == 1 || IgnoreSerialNumberForDfu(provider))
+        if (!string.IsNullOrWhiteSpace(serialNumber))
+        {
+            return meadowsInDFU.Where(device => device.GetDeviceSerialNumber() == serialNumber).FirstOrDefault();
+        }
+        else if (meadowsInDFU.Count == 1 || IgnoreSerialNumberForDfu(provider))
         {   //IgnoreSerialNumberForDfu is a macOS-specific hack for Mark's machine 
             return meadowsInDFU.FirstOrDefault();
         }
@@ -371,7 +372,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 osFile,
                 serialNumber,
                 logger: logger,
-                format: hideDfuOutput ? DfuUtils.DfuFlashFormat.None : DfuUtils.DfuFlashFormat.ConsoleOut);
+                format: string.IsNullOrEmpty(serialNumber) ? DfuUtils.DfuFlashFormat.ConsoleOut : DfuUtils.DfuFlashFormat.None);
         }
         catch (ArgumentException)
         {
@@ -500,7 +501,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 goto write_runtime;
             }
 
-            connection = await command.GetCurrentConnection(true);
+            connection ??= await command.GetCurrentConnection(true);
 
             if (connection == null)
             {

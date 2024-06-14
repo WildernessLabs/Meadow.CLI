@@ -101,8 +101,8 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
         public const string NoDevicesFound = "No devices found in bootloader mode. Rerun this command when at least 1 connected device is in bootloader mode.";
         public const string ColumnTitle = "Selected Devices";
         public const string NoDeviceSelected = "No devices selected to provision. Exiting.";
-        public const string UpdateFailed = "Updated failed";
-        public const string UpdateComplete = "Updated completed";
-        public const string AllDevicesFlashed = "All devices flashed!";
+        public const string UpdateFailed = "Update failed";
+        public const string UpdateComplete = "Update completed";
+        public const string AllDevicesFlashed = "All devices updated!";
     }
 }

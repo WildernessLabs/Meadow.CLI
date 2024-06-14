@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Management;
+using System.Runtime.InteropServices;
 using CliFx.Attributes;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud.Client;
@@ -20,9 +21,9 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
     public string? OsVersion { get; set; } = DefaultOSVersion;
 
-    private ConcurrentQueue<BootLoaderDevice> bootloaderDeviceQueue = new ConcurrentQueue<BootLoaderDevice>();
+    private ConcurrentQueue<ILibUsbDevice> bootloaderDeviceQueue = new ConcurrentQueue<ILibUsbDevice>();
 
-    private List<BootLoaderDevice> selectedDevices = default!;
+    private List<string> selectedDeviceList = default!;
     private ISettingsManager settingsManager;
     private FileManager fileManager;
     private IMeadowCloudClient meadowCloudClient;
@@ -53,40 +54,39 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 return;
             }
 
-            var multiSelectionPrompt = new MultiSelectionPrompt<BootLoaderDevice>()
+            var multiSelectionPrompt = new MultiSelectionPrompt<string>()
                 .Title(Strings.Provision.PromptTitle)
                 .PageSize(15)
                 .NotRequired() // Can be Blank to exit
                 .MoreChoicesText($"[grey]{Strings.Provision.MoreChoicesInstructions}[/]")
                 .InstructionsText(string.Format($"[grey]{Strings.Provision.Instructions}[/]", $"[blue]<{Strings.Space}>[/]", $"[green]<{Strings.Enter}>[/]"))
-                .UseConverter(x => x.SerialPort);
+                .UseConverter(x => x);
 
             foreach (var device in bootloaderDeviceQueue)
             {
-                multiSelectionPrompt.AddChoices(device);
+                multiSelectionPrompt.AddChoices(device.GetDeviceSerialNumber());
             }
 
-            selectedDevices = AnsiConsole.Prompt(multiSelectionPrompt);
+            selectedDeviceList = AnsiConsole.Prompt(multiSelectionPrompt);
+
+            if (selectedDeviceList.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[yellow]{Strings.Provision.NoDeviceSelected}[/]");
+                return;
+            }
 
             var selectedDeviceTable = new Table();
             selectedDeviceTable.AddColumn(Strings.Provision.ColumnTitle);
 
-            foreach (var device in selectedDevices)
+            foreach (var device in selectedDeviceList)
             {
-                selectedDeviceTable.AddRow(device.SerialPort);
+                selectedDeviceTable.AddRow(device);
             }
 
             AnsiConsole.Write(selectedDeviceTable);
 
             refreshDeviceList = AnsiConsole.Confirm(Strings.Provision.RefreshDeviceList);
         } while (!refreshDeviceList);
-
-
-        if (selectedDevices.Count == 0)
-        {
-            AnsiConsole.MarkupLine($"[yellow]{Strings.Provision.NoDeviceSelected}[/]");
-            return;
-        }
 
         if (string.IsNullOrEmpty(OsVersion))
         {
@@ -124,45 +124,11 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 {
                     if (device != null)
                     {
-                        var deviceSerialNumber = device.GetDeviceSerialNumber();
-
-                        var serialPort = (Environment.OSVersion.Platform == PlatformID.Unix
-                            || Environment.OSVersion.Platform == PlatformID.MacOSX)
-                            ? $"/dev/tty.usbmodem{deviceSerialNumber}1"
-                            : $"COM{GetComPortNumber()}";
-
-                        // Does the serial number match
-                        var serialNumberMatch = (bootloaderDeviceQueue.Count(d => d.SerialNumber == deviceSerialNumber) > 0);
-                        if (serialNumberMatch || string.IsNullOrEmpty(deviceSerialNumber))
-                        {
-                            continue;
-                        }
-
-                        bootloaderDeviceQueue.Enqueue(new BootLoaderDevice
-                        {
-                            DeviceObject = device,
-                            SerialNumber = deviceSerialNumber,
-                            SerialPort = serialPort,
-                        });
+                        bootloaderDeviceQueue.Enqueue(device);
                     }
                 }
             }
         }
-    }
-
-    private int GetComPortNumber()
-    {
-
-        using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_PnPEntity WHERE DeviceID LIKE 'USB\\VID_" /* TODO + deviceInfo.VendorId.ToString("X4")*/ + "&PID_" /*+ deviceInfo.ProductId.ToString("X4")*/ + "%'"))
-        {
-            foreach (ManagementObject mo in searcher.Get())
-            {
-                string deviceId = (string)mo["DeviceID"];
-                string portName = deviceId.Substring(deviceId.LastIndexOf("_") + 1);
-                return int.Parse(portName.Replace("#", ""));
-            }
-        }
-        throw new Exception("COM port not found");
     }
 
     private IEnumerable<ILibUsbDevice>? GetValidUsbDevices()
@@ -196,45 +162,34 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
             })
             .StartAsync(async ctx =>
             {
-                var tasklist = new List<Task>();
-
-                foreach (var device in selectedDevices)
+                foreach (var deviceSerialNumber in selectedDeviceList)
                 {
-                    var formatedDevice = $"[green]{device.SerialPort}[/]";
+                    var formatedDevice = $"[green]{deviceSerialNumber}[/]";
                     var task = ctx.AddTask(formatedDevice, maxValue: 100);
-                    tasklist.Add(Task.Run(async () =>
+
+                    var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, null, true, OsVersion, deviceSerialNumber, null, CancellationToken);
+                    firmareUpdater.UpdateProgress += (o, e) =>
                     {
-                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, new FirmwareType[] { FirmwareType.OS, FirmwareType.Runtime, FirmwareType.ESP }, true, OsVersion, device.SerialNumber, null, CancellationToken, true);
-                        firmareUpdater.UpdateProgress += (o, e) =>
-                        {
-                            task.Increment(20.00);
-                            task.Description = string.Format($"{formatedDevice}: {e}");
-                        };
-
-                        if (!await firmareUpdater.UpdateFirmware())
-                        {
-                            task.Description = string.Format($"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]");
-                            task.StopTask();
-                        }
-
                         task.Increment(20.00);
-                        task.Description = string.Format($"{formatedDevice}: [green]{Strings.Provision.UpdateComplete}[/]");
+                        task.Description = string.Format($"{formatedDevice}: {e}");
+                    };
 
+                    task.Increment(20.00);
+                    if (!await firmareUpdater.UpdateFirmware())
+                    {
+                        task.Description = string.Format($"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]");
                         task.StopTask();
-                    }));
-                }
+                    }
 
-                await Task.WhenAll(tasklist);
+                    task.Value = 100.00;
+                    task.Description = string.Format($"{formatedDevice}: [green]{Strings.Provision.UpdateComplete}[/]");
+
+                    task.StopTask();
+
+                    await Task.Delay(2000);
+                }
             });
 
         AnsiConsole.MarkupLine($"[green]{Strings.Provision.AllDevicesFlashed}[/]");
     }
-}
-
-internal class BootLoaderDevice
-{
-    public ILibUsbDevice? DeviceObject { get; internal set; }
-    internal string SerialPort { get; set; } = string.Empty;
-    internal string SerialNumber { get; set; } = string.Empty;
-    internal string CurrentStatus { get; set; } = string.Empty;
 }
