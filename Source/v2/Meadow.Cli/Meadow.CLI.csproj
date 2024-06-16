@@ -10,7 +10,7 @@
     <Authors>Wilderness Labs, Inc</Authors>
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>2.0.50.0</PackageVersion>
+    <PackageVersion>2.0.51.0</PackageVersion>
     <Platforms>AnyCPU</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.CLI/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WildernessLabs/Meadow.CLI</RepositoryUrl>
