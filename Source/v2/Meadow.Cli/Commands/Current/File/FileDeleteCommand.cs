@@ -27,7 +27,14 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             await device.RuntimeDisable(CancellationToken);
         }
 
-        Logger?.LogInformation($"Looking for file {MeadowFile}...");
+        if (MeadowFile == "all")
+        {
+            Logger?.LogInformation($"Looking for files...");
+        }
+        else
+        {
+            Logger?.LogInformation($"Looking for file {MeadowFile}...");
+        }
 
         var folder = AppTools.SanitizeMeadowFolderName(Path.GetDirectoryName(MeadowFile)!);
 
@@ -60,7 +67,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             }
             else
             {
-                Logger?.LogInformation($"Deleting file '{file}' from device...");
+                Logger?.LogInformation($"Deleting '{file}'");
                 await device.DeleteFile(file, CancellationToken);
             }
         }
