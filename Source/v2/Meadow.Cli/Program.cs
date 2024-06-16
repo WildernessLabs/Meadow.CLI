@@ -99,6 +99,8 @@ public class Program
             MeadowTelemetry.Current.Dispose();
         }
 
+        VersionChecker.CheckForUpdates(Log.Logger, serviceProvider.GetService<ISettingsManager>()).Wait();
+
         return returnCode;
     }
 
