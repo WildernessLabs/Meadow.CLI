@@ -66,9 +66,4 @@ public abstract class BaseCommand<T> : ICommand
     {
         return GetType().GetCustomAttribute<CommandAttribute>(true)?.Name;
     }
-
-    private void CheckForCLIUpdates()
-    {
-
-    }
 }
