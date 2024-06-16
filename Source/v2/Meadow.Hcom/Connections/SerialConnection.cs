@@ -1036,8 +1036,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
 
-        Debug.WriteLine($"Sending '{localFileName}'");
-
         EnqueueRequest(command);
 
         // this will wait for a "file write accepted" from the target
