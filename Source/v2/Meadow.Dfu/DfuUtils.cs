@@ -86,7 +86,7 @@ public static class DfuUtils
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                logger.LogError("dfu-util not found - to install, run: `meadow install dfu-util` (may require administrator mode)");
+                logger.LogError("dfu-util not found - to install, run: `meadow dfu install` (may require administrator mode)");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
