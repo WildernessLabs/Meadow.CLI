@@ -51,7 +51,7 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
             if (!double.IsNaN(p))
             {
                 // Console instead of Logger due to line breaking for progress bar
-                Console?.Output.Write($"Writing {e.fileName}: {p:0}%     \r");
+                Console?.Output.Write($"Writing  '{e.fileName}': {p:0}%     \r");
             }
         };
 

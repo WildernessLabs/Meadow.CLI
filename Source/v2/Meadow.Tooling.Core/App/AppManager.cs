@@ -168,7 +168,7 @@ public static class AppManager
                 }
             }
 
-            logger?.LogInformation($"Sending  '{Path.GetFileName(localFile.Key)}'");
+            logger?.LogInformation($"Sending  '{Path.GetFileName(localFile.Key)}'".PadRight(80));
         send_file:
 
             if (!await connection.WriteFile(localFile.Key, meadowFilename, cancellationToken))
