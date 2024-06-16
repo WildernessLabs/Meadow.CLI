@@ -18,7 +18,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
         : base(connectionManager, loggerFactory)
     { }
 
-    private void StartNewFile(string outputPath, FileStream? outputFile, byte[] header, ref int headerIndex, ref int totalBytesWritten, ref int headerFileCount)
+    private void StartNewFile(string outputPath, ref FileStream? outputFile, byte[] header, ref int headerIndex, ref int totalBytesWritten, ref int headerFileCount)
     {
         if (outputFile != null)
         {
@@ -41,7 +41,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
     private void ReadAndSaveSerialData()
     {
         // Define the equivalent header bytes sequence to the 32-bit representation of 0x4D505A01
-        //  according to the Mono Profiler LOG_VERSION_MAJOR 3 LOG_VERSION_MINOR 0 LOG_DATA_VERSION 17
+        // according to the Mono Profiler LOG_VERSION_MAJOR 3 LOG_VERSION_MINOR 0 LOG_DATA_VERSION 17
         var header = new byte[] { 0x01, 0x5A, 0x50, 0x4D };
         var headerIndex = 0;
         var totalBytesWritten = 0;
@@ -74,7 +74,7 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                             if (headerIndex == header.Length)
                             {
                                 Logger?.LogInformation($"Profiling data header found! Writing to {outputPath}...");
-                                StartNewFile(outputPath, outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
+                                StartNewFile(outputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                             }
                         }
                         else
@@ -96,10 +96,10 @@ public class UartProfilerEnableCommand : BaseDeviceCommand<UartProfilerEnableCom
                             if (headerIndex == header.Length)
                             {
                                 // Close the current file, start writing to a new file, and reset counters
-                                //  to avoid corrupted profiling data (e.g. device reset while profiling)
-                                var newOutputPath = outputDirectory + "output_" + headerFileCount + ".mlpd";
+                                // to avoid corrupted profiling data (e.g. device reset while profiling)
+                                var newOutputPath = Path.Combine(outputDirectory, "output_" + headerFileCount + ".mlpd");
                                 Logger?.LogInformation($"New profiling data header found! Writing to {newOutputPath}...");
-                                StartNewFile(newOutputPath, outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
+                                StartNewFile(newOutputPath, ref outputFile, header, ref headerIndex, ref totalBytesWritten, ref headerFileCount);
                             }
                         }
                         else
