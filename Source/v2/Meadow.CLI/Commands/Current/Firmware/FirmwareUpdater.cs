@@ -1,13 +1,9 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using CliFx;
-using DfuSharp;
+﻿using System.Runtime.InteropServices;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
-using YamlDotNet.Serialization;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 

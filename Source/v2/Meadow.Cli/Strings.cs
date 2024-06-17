@@ -93,6 +93,7 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
     {
         public const string CommandDescription = "Provision 1 or more devices that are in DFU mode.";
         public const string CommandOptionVersion = "Target OS version for devices to be provisioned with";
+        public const string CommandOptionPath = "Path to the provision.json file";
         public const string RefreshDeviceList = "Flash devices (y=Flash selected devices, n=Refresh List)?";
         public const string MoreChoicesInstructions = "(Move up and down to reveal more devices)";
         public const string Instructions = "Press {0} to toggle a device, {1} to accept and flash the selected device";
@@ -104,5 +105,9 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
         public const string UpdateFailed = "Update failed";
         public const string UpdateComplete = "Update completed";
         public const string AllDevicesFlashed = "All devices updated!";
+        public const string FileNotFound = "Provision Settings file (provision.json), not found at location: {0}.";
+        public const string NoAppDeployment = "Skipping App Deployment and using default version: {0}";
+        public const string DeployingApp = "Deploying App";
+        public const string TrimmingApp = "Trimming App, before we get started";
     }
 }

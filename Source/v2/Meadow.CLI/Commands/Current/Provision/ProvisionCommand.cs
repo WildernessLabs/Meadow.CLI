@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Management;
-using System.Runtime.InteropServices;
+﻿using System.Collections.Concurrent;
 using CliFx.Attributes;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud.Client;
 using Meadow.LibUsb;
+using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Spectre.Console;
-using YamlDotNet.Serialization;
 
 namespace Meadow.CLI.Commands.Provision;
 
@@ -18,8 +15,14 @@ namespace Meadow.CLI.Commands.Provision;
 public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 {
     public const string DefaultOSVersion = "1.12.0.0";
+    private string? appPath;
+    private string? configuration;
+
     [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
     public string? OsVersion { get; set; } = DefaultOSVersion;
+
+    [CommandOption("path", 'p', Description = Strings.Provision.CommandOptionPath, IsRequired = false)]
+    public string? Path { get; set; }
 
     private ConcurrentQueue<ILibUsbDevice> bootloaderDeviceQueue = new ConcurrentQueue<ILibUsbDevice>();
 
@@ -28,20 +31,59 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     private FileManager fileManager;
     private IMeadowCloudClient meadowCloudClient;
     private MeadowConnectionManager connectionManager;
+    private IPackageManager packageManager;
+    private bool deployApp = true;
 
     public ProvisionCommand(ISettingsManager settingsManager, FileManager fileManager,
-        IMeadowCloudClient meadowCloudClient, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        IMeadowCloudClient meadowCloudClient, IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
         this.settingsManager = settingsManager;
         this.fileManager = fileManager;
         this.meadowCloudClient = meadowCloudClient;
         this.connectionManager = connectionManager;
+        this.packageManager = packageManager;
     }
 
     protected override async ValueTask ExecuteCommand()
     {
         AnsiConsole.MarkupLine(Strings.Provision.RunningTitle);
+
+        string path = AppTools.ValidateAndSanitizeAppPath(Path);
+
+        if (!string.IsNullOrWhiteSpace(path)
+            && !File.Exists(path))
+        {
+            deployApp = false;
+            AnsiConsole.MarkupLine($"[red]{Strings.Provision.FileNotFound}[/]", $"[yellow]{path}[/]");
+            AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
+        }
+        else
+        {
+            Path = path;
+        }
+
+        if (deployApp)
+        {
+            var provisionSettings = JsonConvert.DeserializeObject<ProvisionSettings>(File.ReadAllText(Path!));
+            if (provisionSettings == null)
+            {
+                throw new Exception("Failed to read provision.json file.");
+            }
+
+            // Use the settings from provisionSettings as needed
+            appPath = AppTools.ValidateAndSanitizeAppPath(provisionSettings.AppPath);
+            configuration = provisionSettings.Configuration;
+            OsVersion = provisionSettings.OsVersion;
+
+            if (!File.Exists(appPath))
+            { 
+                throw new FileNotFoundException($"No App found at location:{appPath}");
+            }
+
+            AnsiConsole.MarkupLine(Strings.Provision.TrimmingApp);
+            await AppTools.TrimApplication(appPath!, packageManager, OsVersion!, configuration, null, null, Console, CancellationToken);
+        }
 
         bool refreshDeviceList = false;
         do
@@ -171,14 +213,27 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                     firmareUpdater.UpdateProgress += (o, e) =>
                     {
                         task.Increment(20.00);
-                        task.Description = string.Format($"{formatedDevice}: {e}");
+                        task.Description = $"{formatedDevice}: {e}";
                     };
 
-                    task.Increment(20.00);
                     if (!await firmareUpdater.UpdateFirmware())
                     {
-                        task.Description = string.Format($"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]");
+                        task.Description = $"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]";
                         task.StopTask();
+                    }
+
+                    if (deployApp)
+                    {
+                        task.Increment(20.00);
+                        task.Description = $"{Strings.Provision.DeployingApp}";
+
+                        var route = await MeadowConnectionManager.GetRouteFromSerialNumber(deviceSerialNumber!);
+                        if (!string.IsNullOrWhiteSpace(route))
+                        {
+                            var connection = await GetConnectionForRoute(route, true);
+                            var appDir = System.IO.Path.GetDirectoryName(appPath);
+                            await AppManager.DeployApplication(packageManager, connection, OsVersion!, appDir!, true, false, null, CancellationToken);
+                        }
                     }
 
                     task.Value = 100.00;
@@ -192,4 +247,11 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
         AnsiConsole.MarkupLine($"[green]{Strings.Provision.AllDevicesFlashed}[/]");
     }
+}
+
+public class ProvisionSettings
+{
+    public string? AppPath { get; set; }
+    public string? Configuration { get; set; }
+    public string? OsVersion { get; set; }
 }
