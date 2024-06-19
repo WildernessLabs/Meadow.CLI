@@ -22,7 +22,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
     public string? OsVersion { get; set; } = DefaultOSVersion;
 
     [CommandOption("path", 'p', Description = Strings.Provision.CommandOptionPath, IsRequired = false)]
-    public string? Path { get; set; }
+    public string? Path { get; set; } = ".";
 
     private ConcurrentQueue<ILibUsbDevice> bootloaderDeviceQueue = new ConcurrentQueue<ILibUsbDevice>();
 
@@ -47,109 +47,122 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        AnsiConsole.MarkupLine(Strings.Provision.RunningTitle);
-
-        string path = AppTools.ValidateAndSanitizeAppPath(Path);
-
-        if (!string.IsNullOrWhiteSpace(path)
-            && !File.Exists(path))
+        try
         {
-            deployApp = false;
-            AnsiConsole.MarkupLine($"[red]{Strings.Provision.FileNotFound}[/]", $"[yellow]{path}[/]");
-            AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
+            AnsiConsole.MarkupLine(Strings.Provision.RunningTitle);
+
+            bool refreshDeviceList = false;
+            do
+            {
+                UpdateDeviceList(CancellationToken);
+
+                if (bootloaderDeviceQueue.Count == 0)
+                {
+                    Logger?.LogError(Strings.Provision.NoDevicesFound);
+                    return;
+                }
+
+                var multiSelectionPrompt = new MultiSelectionPrompt<string>()
+                    .Title(Strings.Provision.PromptTitle)
+                    .PageSize(15)
+                    .NotRequired() // Can be Blank to exit
+                    .MoreChoicesText($"[grey]{Strings.Provision.MoreChoicesInstructions}[/]")
+                    .InstructionsText(string.Format($"[grey]{Strings.Provision.Instructions}[/]", $"[blue]<{Strings.Space}>[/]", $"[green]<{Strings.Enter}>[/]"))
+                    .UseConverter(x => x);
+
+                foreach (var device in bootloaderDeviceQueue)
+                {
+                    multiSelectionPrompt.AddChoices(device.GetDeviceSerialNumber());
+                }
+
+                selectedDeviceList = AnsiConsole.Prompt(multiSelectionPrompt);
+
+                if (selectedDeviceList.Count == 0)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]{Strings.Provision.NoDeviceSelected}[/]");
+                    return;
+                }
+
+                var selectedDeviceTable = new Table();
+                selectedDeviceTable.AddColumn(Strings.Provision.ColumnTitle);
+
+                foreach (var device in selectedDeviceList)
+                {
+                    selectedDeviceTable.AddRow(device);
+                }
+
+                AnsiConsole.Write(selectedDeviceTable);
+
+                refreshDeviceList = AnsiConsole.Confirm(Strings.Provision.RefreshDeviceList);
+            } while (!refreshDeviceList);
+
+            string path = AppTools.ValidateAndSanitizeAppPath(System.IO.Path.Combine(Path, "provision.json"));
+
+            if (!string.IsNullOrWhiteSpace(path)
+                && !File.Exists(path))
+            {
+                deployApp = false;
+                AnsiConsole.MarkupLine($"[red]{Strings.Provision.FileNotFound}[/]", $"[yellow]{path}[/]");
+                AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
+            }
+            else
+            {
+                Path = path;
+            }
+
+            if (deployApp)
+            {
+                var provisionSettings = JsonConvert.DeserializeObject<ProvisionSettings>(File.ReadAllText(Path!));
+                if (provisionSettings == null)
+                {
+                    throw new Exception("Failed to read provision.json file.");
+                }
+
+                // Use the settings from provisionSettings as needed
+                appPath = AppTools.ValidateAndSanitizeAppPath(provisionSettings.AppPath);
+                configuration = provisionSettings.Configuration;
+                OsVersion = provisionSettings.OsVersion;
+
+                if (!File.Exists(appPath))
+                {
+                    throw new FileNotFoundException($"App.dll Not found at location:{appPath}");
+                }
+
+                AnsiConsole.MarkupLine(Strings.Provision.TrimmingApp);
+                await AppTools.TrimApplication(appPath!, packageManager, OsVersion!, configuration, null, null, Console, CancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(OsVersion))
+            {
+                OsVersion = DefaultOSVersion;
+            }
+
+            // Install DFU, if it's not already installed.
+            var dfuInstallCommand = new DfuInstallCommand(settingsManager, LoggerFactory);
+            await dfuInstallCommand.ExecuteAsync(Console);
+
+            // Make sure we've downloaded the osVersion or default
+            var firmwareDownloadCommand = new FirmwareDownloadCommand(fileManager, meadowCloudClient, LoggerFactory)
+            {
+                Version = OsVersion,
+                Force = true
+            };
+            await firmwareDownloadCommand.ExecuteAsync(Console);
+
+
+            // If we've reached here we're ready to Flash
+            await FlashingAttachedDevices();
         }
-        else
+        catch (Exception ex)
         {
-            Path = path;
+            
+            var message = ex.Message;
+#if DEBUG
+            var stackTrace = ex.StackTrace;
+            message += Environment.NewLine + stackTrace;
+#endif
+            AnsiConsole.MarkupLine($"[red]{message}[/]");
         }
-
-        if (deployApp)
-        {
-            var provisionSettings = JsonConvert.DeserializeObject<ProvisionSettings>(File.ReadAllText(Path!));
-            if (provisionSettings == null)
-            {
-                throw new Exception("Failed to read provision.json file.");
-            }
-
-            // Use the settings from provisionSettings as needed
-            appPath = AppTools.ValidateAndSanitizeAppPath(provisionSettings.AppPath);
-            configuration = provisionSettings.Configuration;
-            OsVersion = provisionSettings.OsVersion;
-
-            if (!File.Exists(appPath))
-            { 
-                throw new FileNotFoundException($"No App found at location:{appPath}");
-            }
-
-            AnsiConsole.MarkupLine(Strings.Provision.TrimmingApp);
-            await AppTools.TrimApplication(appPath!, packageManager, OsVersion!, configuration, null, null, Console, CancellationToken);
-        }
-
-        bool refreshDeviceList = false;
-        do
-        {
-            UpdateDeviceList(CancellationToken);
-
-            if (bootloaderDeviceQueue.Count == 0)
-            {
-                Logger?.LogError(Strings.Provision.NoDevicesFound);
-                return;
-            }
-
-            var multiSelectionPrompt = new MultiSelectionPrompt<string>()
-                .Title(Strings.Provision.PromptTitle)
-                .PageSize(15)
-                .NotRequired() // Can be Blank to exit
-                .MoreChoicesText($"[grey]{Strings.Provision.MoreChoicesInstructions}[/]")
-                .InstructionsText(string.Format($"[grey]{Strings.Provision.Instructions}[/]", $"[blue]<{Strings.Space}>[/]", $"[green]<{Strings.Enter}>[/]"))
-                .UseConverter(x => x);
-
-            foreach (var device in bootloaderDeviceQueue)
-            {
-                multiSelectionPrompt.AddChoices(device.GetDeviceSerialNumber());
-            }
-
-            selectedDeviceList = AnsiConsole.Prompt(multiSelectionPrompt);
-
-            if (selectedDeviceList.Count == 0)
-            {
-                AnsiConsole.MarkupLine($"[yellow]{Strings.Provision.NoDeviceSelected}[/]");
-                return;
-            }
-
-            var selectedDeviceTable = new Table();
-            selectedDeviceTable.AddColumn(Strings.Provision.ColumnTitle);
-
-            foreach (var device in selectedDeviceList)
-            {
-                selectedDeviceTable.AddRow(device);
-            }
-
-            AnsiConsole.Write(selectedDeviceTable);
-
-            refreshDeviceList = AnsiConsole.Confirm(Strings.Provision.RefreshDeviceList);
-        } while (!refreshDeviceList);
-
-        if (string.IsNullOrEmpty(OsVersion))
-        {
-            OsVersion = DefaultOSVersion;
-        }
-
-        // Install DFU, if it's not already installed.
-        var dfuInstallCommand = new DfuInstallCommand(settingsManager, LoggerFactory);
-        await dfuInstallCommand.ExecuteAsync(Console);
-
-        // Make sure we've downloaded the osVersion or default
-        var firmwareDownloadCommand = new FirmwareDownloadCommand(fileManager, meadowCloudClient, LoggerFactory)
-        {
-            Version = OsVersion,
-            Force = true
-        };
-        await firmwareDownloadCommand.ExecuteAsync(Console);
-
-
-        // If we've reached here we're ready to Flash
-        await FlashingAttachedDevices();
     }
 
     private void UpdateDeviceList(CancellationToken cancellationToken)
@@ -233,6 +246,8 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                             var connection = await GetConnectionForRoute(route, true);
                             var appDir = System.IO.Path.GetDirectoryName(appPath);
                             await AppManager.DeployApplication(packageManager, connection, OsVersion!, appDir!, true, false, null, CancellationToken);
+
+                            await connection?.Device?.RuntimeEnable(CancellationToken);
                         }
                     }
 
