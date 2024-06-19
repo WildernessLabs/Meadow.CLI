@@ -16,6 +16,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
     private string? serialNumber;
     private readonly MeadowConnectionManager connectionManager;
     private readonly ILogger? logger;
+    private readonly bool provisioninInProgress;
     private readonly CancellationToken cancellationToken;
     private readonly ISettingsManager settings;
     private readonly FileManager fileManager;
@@ -38,6 +39,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         this.osVersion = osVersion;
         this.serialNumber = serialNumber;
         this.logger = logger;
+        this.provisioninInProgress = logger == null;
         this.cancellationToken = cancellationToken;
     }
 
@@ -368,7 +370,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 osFile,
                 serialNumber,
                 logger: logger,
-                format: string.IsNullOrEmpty(serialNumber) ? DfuUtils.DfuFlashFormat.ConsoleOut : DfuUtils.DfuFlashFormat.None);
+                format: provisioninInProgress ? DfuUtils.DfuFlashFormat.None : DfuUtils.DfuFlashFormat.ConsoleOut);
         }
         catch (ArgumentException)
         {
