@@ -16,7 +16,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 {
     public const string DefaultOSVersion = "1.12.0.0";
     private string? appPath;
-    private string? configuration;
+    private string? configuration = "Release";
 
     [CommandOption("version", 'v', Description = Strings.Provision.CommandOptionVersion, IsRequired = false)]
     public string? OsVersion { get; set; } = DefaultOSVersion;
@@ -119,17 +119,33 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 }
 
                 // Use the settings from provisionSettings as needed
-                appPath = AppTools.ValidateAndSanitizeAppPath(provisionSettings.AppPath);
-                configuration = provisionSettings.Configuration;
-                OsVersion = provisionSettings.OsVersion;
-
-                if (!File.Exists(appPath))
+                try
                 {
-                    throw new FileNotFoundException($"App.dll Not found at location:{appPath}");
-                }
+                    appPath = AppTools.ValidateAndSanitizeAppPath(provisionSettings.AppPath);
 
-                AnsiConsole.MarkupLine(Strings.Provision.TrimmingApp);
-                await AppTools.TrimApplication(appPath!, packageManager, OsVersion!, configuration, null, null, Console, CancellationToken);
+                    if (!File.Exists(appPath))
+                    {
+                        throw new FileNotFoundException($"App.dll Not found at location:{appPath}");
+                    }
+
+                    configuration = provisionSettings.Configuration;
+                    OsVersion = provisionSettings.OsVersion;
+
+                    AnsiConsole.MarkupLine(Strings.Provision.TrimmingApp);
+                    await AppTools.TrimApplication(appPath!, packageManager, OsVersion!, configuration, null, null, Console, CancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    // Eat the exception and keep going.
+                    deployApp = false;
+#if DEBUG
+                    var message = ex.Message;
+                    var stackTrace = ex.StackTrace;
+                    message += Environment.NewLine + stackTrace;
+                    AnsiConsole.MarkupLine($"[red]{ex.Message}[/]");
+#endif
+                    AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
+                }
             }
 
             if (string.IsNullOrEmpty(OsVersion))
@@ -155,7 +171,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
         }
         catch (Exception ex)
         {
-            
+
             var message = ex.Message;
 #if DEBUG
             var stackTrace = ex.StackTrace;
@@ -198,7 +214,6 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
         }
         catch (Exception)
         {
-            //footerMessage = ex.Message;
             return null;
         }
     }

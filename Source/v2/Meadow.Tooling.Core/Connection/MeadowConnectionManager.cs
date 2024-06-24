@@ -210,7 +210,7 @@ public class MeadowConnectionManager
 
         return await Task.Run(() =>
         {
-            const string devicePath = "/dev/serial/by-id";
+            const string devicePath = "/dev/serial/by-id/";
             var psi = new ProcessStartInfo()
             {
                 FileName = "ls",
