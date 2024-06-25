@@ -10,8 +10,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("dfu install", Description = "Install dfu-util to the host operating system")]
 public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
 {
-    public const string DefaultVersion = "0.11";
-
     [CommandOption("version", 'v', IsRequired = false)]
     public string? Version { get; set; }
 
@@ -27,7 +25,7 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        Version ??= DefaultVersion;
+        Version ??= DfuUtils.DEFAULT_DFU_VERSION;
 
         switch (Version)
         {
@@ -40,32 +38,30 @@ public class DfuInstallCommand : BaseSettingsCommand<AppDeployCommand>
                 return;
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        bool successfullyInstalled = false;
+        try
         {
-            if (IsAdministrator())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                try
-                {
-                    await DfuUtils.InstallDfuUtil(FileManager.WildernessTempFolderPath, Version, CancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    throw new CommandException($"Failed to install DFU {Version}: " + ex.Message);
-                }
-                Logger?.LogInformation($"DFU {Version} installed successfully");
+                successfullyInstalled = await DfuUtils.CheckIfDfuUtilIsInstalledOnWindows(FileManager.WildernessTempFolderPath, Version, CancellationToken);
             }
-            else
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Logger?.LogError("To install DFU on Windows, you'll need to run the command as an Administrator");
+                successfullyInstalled = await DfuUtils.CheckIfDfuUtilIsInstalledOnMac(Version, CancellationToken);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                successfullyInstalled = await DfuUtils.CheckIfDfuUtilIsInstalledOnLinux(Version, CancellationToken);
             }
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        catch (Exception ex)
         {
-            Logger?.LogWarning("To install DFU on macOS, run: brew install dfu-util");
+            throw new CommandException($"Failed to install DFU {Version}: " + ex.Message);
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+
+        if (successfullyInstalled)
         {
-            Logger?.LogWarning("To install DFU on Linux, use the package manager to install the dfu-util package");
+            Logger?.LogInformation($"DFU Is installed");
         }
     }
 
