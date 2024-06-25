@@ -138,12 +138,12 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 {
                     // Eat the exception and keep going.
                     deployApp = false;
-#if DEBUG
+// TODO put this back in for release #if DEBUG
                     var message = ex.Message;
                     var stackTrace = ex.StackTrace;
                     message += Environment.NewLine + stackTrace;
                     AnsiConsole.MarkupLine($"[red]{ex.Message}[/]");
-#endif
+//#endif
                     AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
                 }
             }
