@@ -210,8 +210,10 @@ public class MeadowConnectionManager
             {
                 FileName = "ls",
                 Arguments = $"-l {devicePath}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
-                RedirectStandardOutput = true
+                CreateNoWindow = true
             };
 
             using var proc = Process.Start(psi);

@@ -1,21 +1,31 @@
-﻿using Meadow.Hcom;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Meadow.Hcom;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Meadow.CLI.Core.Internals.Dfu;
 
 public static class DfuUtils
 {
     private static readonly int _osAddress = 0x08000000;
+
+    private const string DFU_UTIL_UBUNTU_AMD64_URL = "http://ftp.de.debian.org/debian/pool/main/d/dfu-util/dfu-util_0.11-1_amd64.deb";
+    private const string DFU_UTIL_UBUNTU_ARM64_URL = "http://ftp.de.debian.org/debian/pool/main/d/dfu-util/dfu-util_0.11-1_arm64.deb";
+    private const string DFU_UTIL_WINDOWS_URL = $"https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-{DEFAULT_DFU_VERSION}-binaries.zip";
+    private const string DFU_UTIL = "dfu-util";
+    private const int STREAM_BUFFER_SIZE = 81920; // 80 KB buffer size
+
+    public const string DEFAULT_DFU_VERSION = "0.11";
 
     public enum DfuFlashFormat
     {
@@ -31,6 +41,10 @@ public static class DfuUtils
         /// Console.WriteLine for CLI - ToDo - remove
         /// </summary>
         ConsoleOut,
+        /// <summary>
+        /// No Console Output
+        /// </summary>
+        None,
     }
 
     private static void FormatDfuOutput(string logLine, ILogger? logger, DfuFlashFormat format = DfuFlashFormat.Percent)
@@ -79,43 +93,19 @@ public static class DfuUtils
 
         logger.LogInformation($"Flashing OS with {fileName}");
 
-        var dfuUtilVersion = new Version(GetDfuUtilVersion());
+        var dfuUtilVersion = new Version(await GetDfuUtilVersion());
         logger.LogDebug("Detected OS: {os}", RuntimeInformation.OSDescription);
 
+        var expectedDfuUtilVersion = new Version(DEFAULT_DFU_VERSION);
         if (dfuUtilVersion == null)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                logger.LogError("dfu-util not found - to install, run: `meadow dfu install` (may require administrator mode)");
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                logger.LogError("dfu-util not found - to install run: `brew install dfu-util`");
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                logger.LogError("dfu-util not found - install using package manager, for example: `apt install dfu-util` or the equivalent for your Linux distribution");
-            }
+            logger.LogError("dfu-util not found - to install, run: `meadow dfu install`");
             return false;
         }
-        else if (dfuUtilVersion.CompareTo(new Version("0.11")) < 0)
+        else if (dfuUtilVersion.CompareTo(expectedDfuUtilVersion) < 0)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                logger.LogError("dfu-util update required - to update, run in administrator mode: `meadow install dfu-util`");
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                logger.LogError("dfu-util update required - to update, run: `brew upgrade dfu-util`");
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                logger.LogError("dfu-util update required - to update , run: `apt upgrade dfu-util` or the equivalent for your Linux distribution");
-            }
-            else
-            {
-                return false;
-            }
+            logger.LogError($"dfu-util update required. Expected: {expectedDfuUtilVersion}, Found: {dfuUtilVersion}  - to update, run: `meadow dfu install`");
+            return false;
         }
 
         try
@@ -144,79 +134,53 @@ public static class DfuUtils
 
     private static async Task RunDfuUtil(string args, ILogger? logger, DfuFlashFormat format = DfuFlashFormat.Percent)
     {
-        var startInfo = new ProcessStartInfo("dfu-util", args)
+        try
         {
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            RedirectStandardInput = false,
-            CreateNoWindow = true
-        };
-        using var process = Process.Start(startInfo);
-
-        if (process == null)
-        {
-            throw new Exception("Failed to start dfu-util");
+            var result = await RunProcessCommand(DFU_UTIL, args,
+                outputLogLine =>
+                {
+                    // Ignore empty output
+                    if (!string.IsNullOrWhiteSpace(outputLogLine)
+                    && format != DfuFlashFormat.None)
+                    {
+                        FormatDfuOutput(outputLogLine, logger, format);
+                    }
+                },
+                errorLogLine =>
+                {
+                    if (!string.IsNullOrWhiteSpace(errorLogLine))
+                    {
+                        logger?.LogError(errorLogLine);
+                    }
+                });
         }
-
-        var informationLogger = logger != null
-                             ? Task.Factory.StartNew(
-                                 () =>
-                                 {
-                                     var lastProgress = string.Empty;
-
-                                     while (process.HasExited == false)
-                                     {
-                                         var logLine = process.StandardOutput.ReadLine();
-                                         // Ignore empty output
-                                         if (logLine == null)
-                                             continue;
-
-                                         FormatDfuOutput(logLine, logger, format);
-                                     }
-                                 }) : Task.CompletedTask;
-
-        var errorLogger = logger != null
-                                    ? Task.Factory.StartNew(
-                                        () =>
-                                        {
-                                            while (process.HasExited == false)
-                                            {
-                                                var logLine = process.StandardError.ReadLine();
-                                                logger.LogError(logLine);
-                                            }
-                                        }) : Task.CompletedTask;
-        await informationLogger;
-        await errorLogger;
-        process.WaitForExit();
+        catch (Exception ex)
+        {
+            throw new Exception($"dfu-util failed. Error: {ex.Message}");
+        }
     }
 
-    private static string GetDfuUtilVersion()
+    private static async Task<string> GetDfuUtilVersion()
     {
         try
         {
-            using (var process = new Process())
-            {
-                process.StartInfo.FileName = "dfu-util";
-                process.StartInfo.Arguments = $"--version";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.Start();
+            var version = string.Empty;
 
-                var reader = process.StandardOutput;
-                var output = reader.ReadLine();
-                if (output != null && output.StartsWith("dfu-util"))
+            var result = await RunProcessCommand(DFU_UTIL, "--version",
+                output =>
                 {
-                    var split = output.Split(new char[] { ' ' });
-                    if (split.Length == 2)
+                    if (!string.IsNullOrWhiteSpace(output)
+                    && output.StartsWith(DFU_UTIL))
                     {
-                        return split[1];
+                        var split = output.Split(new char[] { ' ' });
+                        if (split.Length == 2)
+                        {
+                            version = split[1];
+                        }
                     }
-                }
+                });
 
-                process.WaitForExit();
-                return string.Empty;
-            }
+            return string.IsNullOrWhiteSpace(version) ? string.Empty : version;
         }
         catch (Win32Exception ex)
         {
@@ -237,43 +201,54 @@ public static class DfuUtils
         }
     }
 
-    public static async Task InstallDfuUtil(
+    public static async Task<bool> CheckIfDfuUtilIsInstalledOnWindows(
         string tempFolder,
-        string dfuUtilVersion = "0.11",
+        string dfuUtilVersion = DEFAULT_DFU_VERSION,
         CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        // Check if dfu-util is installed.
+        bool isDfuUtilInstalled = await IsCommandInstalled(DFU_UTIL);
+        if (isDfuUtilInstalled)
+        {
+            var version = await GetDfuUtilVersion();
+            if (!dfuUtilVersion.Equals(version))
+            {
+                return await InstallDfuUtilOnWindows(tempFolder, dfuUtilVersion, cancellationToken);
+            }
+
+            return true;
+        }
+        else
+        {
+            return await InstallDfuUtilOnWindows(tempFolder, dfuUtilVersion, cancellationToken);
+        }
+    }
+
+    private static async Task<bool> InstallDfuUtilOnWindows(string tempFolder, string dfuUtilVersion, CancellationToken cancellationToken)
     {
         try
         {
-            if (Directory.Exists(tempFolder))
-            {
-                Directory.Delete(tempFolder, true);
-            }
+            await DeleteDirectory(tempFolder);
 
             using var client = new HttpClient();
 
             Directory.CreateDirectory(tempFolder);
 
-            var downloadUrl = $"https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/public/dfu-util-{dfuUtilVersion}-binaries.zip";
+            var downloadedFileName = Path.GetFileName(new Uri(DFU_UTIL_WINDOWS_URL).LocalPath);
+            var downloadedFilePath = Path.Combine(tempFolder, downloadedFileName);
+            await DownloadFile(DFU_UTIL_WINDOWS_URL, downloadedFilePath, cancellationToken);
 
-            var downloadFileName = downloadUrl.Substring(downloadUrl.LastIndexOf("/", StringComparison.Ordinal) + 1);
-
-            var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-            if (response.IsSuccessStatusCode == false)
+            await Task.Run(() =>
             {
-                throw new Exception("Failed to download dfu-util");
-            }
-
-            using (var stream = await response.Content.ReadAsStreamAsync())
-            using (var downloadFileStream = new DownloadFileStream(stream))
-            using (var fs = File.OpenWrite(Path.Combine(tempFolder, downloadFileName)))
-            {
-                await downloadFileStream.CopyToAsync(fs);
-            }
-
-            ZipFile.ExtractToDirectory(
-                Path.Combine(tempFolder, downloadFileName),
+                ZipFile.ExtractToDirectory(
+                downloadedFilePath,
                 tempFolder);
+            });
 
             var is64Bit = Environment.Is64BitOperatingSystem;
 
@@ -290,15 +265,346 @@ public static class DfuUtils
                                 ? Environment.GetFolderPath(Environment.SpecialFolder.System)
                                 : Environment.GetFolderPath(Environment.SpecialFolder.SystemX86);
 
-            File.Copy(dfuUtilExe.FullName, Path.Combine(targetDir, dfuUtilExe.Name), true);
-            File.Copy(libUsbDll.FullName, Path.Combine(targetDir, libUsbDll.Name), true);
+            using (FileStream sourceStream = new FileStream(dfuUtilExe.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, STREAM_BUFFER_SIZE, useAsync: true))
+            {
+                await CopyFile(sourceStream, Path.Combine(targetDir, dfuUtilExe.Name));
+            }
+
+            using (FileStream sourceStream = new FileStream(libUsbDll.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, STREAM_BUFFER_SIZE, useAsync: true))
+            {
+                await CopyFile(sourceStream, Path.Combine(targetDir, libUsbDll.Name));
+            }
+
+            return true;
         }
         finally
         {
-            if (Directory.Exists(tempFolder))
+            await DeleteDirectory(tempFolder);
+        }
+    }
+
+    public static async Task<bool> CheckIfDfuUtilIsInstalledOnMac(
+        string dfuUtilVersion = DEFAULT_DFU_VERSION,
+        CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        // Check if brew is intalled.
+        bool isBrewInstalled = await IsCommandInstalled("brew");
+        if (!isBrewInstalled)
+        {
+            await InstallHomebrewOnMac();
+        }
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        // Check if dfu-util is installed
+        bool isDfuUtilInstalled = await IsCommandInstalled(DFU_UTIL);
+        if (isDfuUtilInstalled)
+        {
+            var version = await GetDfuUtilVersion();
+            if (!dfuUtilVersion.Equals(version))
             {
-                Directory.Delete(tempFolder, true);
+                return await InstallDfuUtilOnMac();
+            }
+
+            return true;
+        }
+        else
+        {
+            return await InstallDfuUtilOnMac();
+        }
+    }
+
+    public static async Task<bool> IsCommandInstalled(string command)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return await IsCommandInstalledOnWindows(command);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return await IsCommandInstalledOnNix(command);
+        }
+        else
+        {
+            // Unsupported platform
+            Console.Error.WriteLine("Unsupported platform.");
+            return false;
+        }
+    }
+
+    public static async Task<bool> IsCommandInstalledOnNix(string command)
+    {
+        try
+        {
+            var exitCode = await RunProcessCommand("/bin/bash", $"-c \"which {command}\"");
+            return exitCode == 0;
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            return false;
+        }
+    }
+
+    public static async Task InstallHomebrewOnMac()
+    {
+        var exitCode = await RunProcessCommand("/bin/bash", "-c '/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"'");
+        if (exitCode != 0)
+        {
+            throw new Exception($"Unable to install Homebrew. Error:{exitCode}");
+        }
+        Console.WriteLine("Homebrew installated successfully.");
+    }
+
+    public static async Task<bool> InstallDfuUtilOnMac()
+    {
+        // Use brew to to install dfu-util
+        var exitCode = await RunProcessCommand("/bin/bash", "-c 'brew install dfu-util'");
+        if (exitCode != 0)
+        {
+            throw new Exception($"Unable to install dfu-util. Error:{exitCode}");
+        }
+        return true;
+    }
+
+    public static async Task<bool> IsCommandInstalledOnWindows(string command)
+    {
+        try
+        {
+            // -Verb RunAs elevates the command and asks for UAC
+            var exitCode = await RunProcessCommand("powershell", $"-Command \"Start-Process -Verb RunAs -FilePath '{command}'\"");
+            return exitCode == 0;
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            return false;
+        }
+    }
+
+    public static async Task<bool> CheckIfDfuUtilIsInstalledOnLinux(
+        string dfuUtilVersion = DEFAULT_DFU_VERSION,
+        CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        // Check if dfu-util is installed.
+        bool isDfuUtilInstalled = await IsCommandInstalled(DFU_UTIL);
+        if (isDfuUtilInstalled)
+        {
+            var version = await GetDfuUtilVersion();
+            if (!dfuUtilVersion.Equals(version))
+            {
+                return await InstallPackageOnLinux(DFU_UTIL);
+            }
+
+            return true;
+        }
+        else
+        {
+            return await InstallPackageOnLinux(DFU_UTIL);
+        }
+    }
+
+    private static async Task<bool> InstallPackageOnLinux(string package)
+    {
+        string osReleaseFile = "/etc/os-release";
+
+        if (File.Exists(osReleaseFile))
+        {
+            var lines = File.ReadAllLines(osReleaseFile);
+            var distroName = string.Empty;
+            var distroVersion = string.Empty;
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("NAME="))
+                {
+                    distroName = line.Substring(5).Trim('"').ToLower();
+                }
+                else if (line.StartsWith("VERSION="))
+                {
+                    distroVersion = line.Substring(8).Trim('"');
+                }
+            }
+
+            switch (distroName)
+            {
+                case "ubuntu":
+                    // If need be we can check distroVersion here too
+
+                    // Install the default package for this distro
+                    await InstallPackageOnUbuntu(package);
+
+                    // We check the version again, because on some versions of Ubuntu the default dfu-util version is 0.9 :(
+                    var installedDfuUtilVersion = new Version(await GetDfuUtilVersion());
+                    var expectedDfuUtilVersion = new Version(DEFAULT_DFU_VERSION);
+                    if (installedDfuUtilVersion.CompareTo(expectedDfuUtilVersion) < 0)
+                    {
+                        var dfuPackageUrl = RuntimeInformation.OSArchitecture switch
+                        {
+                            Architecture.Arm64 => DFU_UTIL_UBUNTU_ARM64_URL,
+                            Architecture.X64 => DFU_UTIL_UBUNTU_AMD64_URL,
+                            _ => throw new PlatformNotSupportedException("Unsupported architecture")
+                        };
+
+                        var downloadedFileName = Path.GetFileName(new Uri(dfuPackageUrl).LocalPath);
+                        var downloadedFilePath = Path.Combine(Path.GetTempPath(), downloadedFileName);
+                        await DownloadFile(dfuPackageUrl, downloadedFilePath);
+
+                        await InstallDownloadedDebianPackage(downloadedFilePath);
+
+                        // We've finished with it, let's delete it.
+                        await DeleteFile(downloadedFilePath);
+
+                        var recentlyInstalledDfuUtilVersion = new Version(await GetDfuUtilVersion());
+                        if (recentlyInstalledDfuUtilVersion.CompareTo(expectedDfuUtilVersion) != 0)
+                        {
+                            throw new Exception($"Unable to install the version {expectedDfuUtilVersion} of {package}.");
+                        }
+                    }
+
+                    return true;
+
+                default:
+                    Console.WriteLine($"To install {package} on Linux, use your distro's package manager to install the {package} package");
+                    return false;
             }
         }
+        else
+        {
+            Console.Error.WriteLine($"The {osReleaseFile} file does not exist. unable to proceed");
+            return false;
+        }
+    }
+
+    private static async Task InstallDownloadedDebianPackage(string fileName)
+    {
+        await RunProcessCommand("sudo", $"dpkg -i {fileName}");
+    }
+
+    public static async Task DeleteFile(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+        }
+
+        await Task.Run(() =>
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        });
+    }
+
+    public static async Task DeleteDirectory(string directoryPath, bool recursive = true)
+    {
+        if (string.IsNullOrEmpty(directoryPath))
+        {
+            throw new ArgumentException("Directory path cannot be null or empty.", nameof(directoryPath));
+        }
+
+        await Task.Run(() =>
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                Directory.Delete(directoryPath, recursive: recursive);
+            }
+        });
+    }
+
+    private static async Task DownloadFile(string downloadUrl, string downloadedFileName, CancellationToken cancellationToken = default)
+    {
+        using var client = new HttpClient();
+        var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Failed to download {downloadedFileName} from {downloadUrl}");
+        }
+
+        using Stream contentStream = await response.Content.ReadAsStreamAsync();
+        await CopyFile(contentStream, downloadedFileName);
+    }
+
+    public static async Task CopyFile(Stream sourceStream, string destinationFilePath)
+    {
+        using (FileStream destinationStream = new FileStream(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, STREAM_BUFFER_SIZE, useAsync: true))
+        {
+            await sourceStream.CopyToAsync(destinationStream);
+        }
+    }
+
+    public static async Task<int> InstallPackageOnUbuntu(string package)
+    {
+        return await RunProcessCommand("sudo", $"apt-get --reinstall install {package}");
+    }
+
+    public static async Task<int> RunProcessCommand(string command, string args, Action<string>? handleOutput = null, Action<string>? handleError = null)
+    {
+        var processStartInfo = new ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = args,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using (var process = new Process { StartInfo = processStartInfo })
+        {
+            process.Start();
+
+            var outputCompletion = ReadLinesAsync(process.StandardOutput, handleOutput);
+            var errorCompletion = ReadLinesAsync(process.StandardError, handleError);
+
+            await Task.WhenAll(outputCompletion, errorCompletion, process.WaitForExitAsync());
+
+            return process.ExitCode;
+        }
+    }
+
+    private static async Task ReadLinesAsync(StreamReader reader, Action<string>? handleLine)
+    {
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync();
+            if (!string.IsNullOrWhiteSpace(line)
+                && handleLine != null)
+            {
+                handleLine(line);
+            }
+        }
+    }
+}
+
+public static class ProcessExtensions
+{
+    public static Task<bool> WaitForExitAsync(this Process process)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        process.EnableRaisingEvents = true;
+        process.Exited += (sender, args) =>
+        {
+            tcs.SetResult(process.ExitCode == 0);
+        };
+
+        return tcs.Task;
     }
 }
