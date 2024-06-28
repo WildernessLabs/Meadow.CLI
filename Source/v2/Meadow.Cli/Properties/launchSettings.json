@@ -279,6 +279,10 @@
       "commandName": "Project",
       "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
     },
+    "Provision Multiple Devices": {
+      "commandName": "Project",
+      "commandLineArgs": "provision"
+    },
     "legacy list ports": {
       "commandName": "Project",
       "commandLineArgs": "list ports"

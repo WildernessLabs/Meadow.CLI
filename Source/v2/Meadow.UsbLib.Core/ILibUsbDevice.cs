@@ -10,7 +10,7 @@ public interface ILibUsbProvider
 
 public interface ILibUsbDevice : IDisposable
 {
-    string GetDeviceSerialNumber();
+    string SerialNumber { get; }
 
     bool IsMeadow();
 }

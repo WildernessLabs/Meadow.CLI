@@ -87,4 +87,44 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
 
         public const string AskToParticipate = "Would you like to participate?";
     }
+
+    public const string Enter = "Enter";
+    public const string Space = "Space";
+
+    public static class Provision
+    {
+        public const string CommandDescription = "Provision 1 or more devices that are in DFU mode.";
+        public const string CommandOptionVersion = "Target OS version for devices to be provisioned with";
+        public const string CommandOptionPath = "Path to the provision.json file";
+        public const string RefreshDeviceList = "Flash devices (y=Flash selected devices, n=Refresh List)?";
+        public const string MoreChoicesInstructions = "(Move up and down to reveal more devices)";
+        public const string Instructions = "Press {0} to toggle a device, {1} to accept and flash the selected device";
+        public const string RunningTitle = "Provisioning";
+        public const string PromptTitle = "Devices in Bootloader mode";
+        public const string NoDevicesFound = "No devices found in bootloader mode. Rerun this command when at least 1 connected device is in bootloader mode.";
+        public const string ColumnTitle = "Selected Devices";
+        public const string NoDeviceSelected = "No devices selected to provision. Exiting.";
+        public const string UpdateFailed = "Update failed";
+        public const string UpdateComplete = "Update completed";
+        public const string AllDevicesFlashed = "All devices updated!";
+        public const string FileNotFound = "Provision Settings file (provision.json), not found at location: {0}.";
+        public const string NoAppDeployment = "Skipping App Deployment and using default version: {0}";
+        public const string DeployingApp = "Deploying App";
+        public const string TrimmingApp = "Trimming App, before we get started";
+        public const string ShowErrorMessages = "Show all error messages (y=Show Messages, n=Exit Immediately)?";
+        public const string IssuesFound = "There were issues during the last provision.";
+        public const string ErrorSerialNumberColumnTitle = "Serial Number";
+        public const string ErrorMessageColumnTitle = "Message";
+        public const string ErrorStackTraceColumnTitle = "Stack Trace";
+        public const string AppDllNotFound = "App.dll Not found at location";
+        public const string FailedToReadProvisionFile = "Failed to read provision.json file";
+    }
+
+    public static class FirmwareUpdater
+    {
+        public const string FlashingOS = "Flashing OS";
+        public const string WritingRuntime = "Writing Runtime";
+        public const string WritingESP = "Writing ESP";
+        public const string SwitchingToLibUsbClassic = "This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.";
+    }
 }

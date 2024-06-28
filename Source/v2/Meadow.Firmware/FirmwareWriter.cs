@@ -47,7 +47,7 @@ public class FirmwareWriter
             default: throw new Exception("Multiple devices found in bootloader mode - only connect one device");
         }
 
-        var serialNumber = devices.First().GetDeviceSerialNumber();
+        var serialNumber = devices.First().SerialNumber;
 
         Debug.WriteLine($"DFU Writing file {osFile}");
 

@@ -19,14 +19,17 @@ public class MeadowConnectionManager
     private static readonly object _lockObject = new();
 
     private readonly ISettingsManager _settingsManager;
-    private IMeadowConnection? _currentConnection;
+    private static IMeadowConnection? _currentConnection;
+
+    private static readonly int RETRY_COUNT = 10;
+    private static readonly int RETRY_DELAY = 500;
 
     public MeadowConnectionManager(ISettingsManager settingsManager)
     {
         _settingsManager = settingsManager;
     }
 
-    public IMeadowConnection? GetCurrentConnection(bool forceReconnect = false)
+    public async Task<IMeadowConnection?> GetCurrentConnection(bool forceReconnect = false)
     {
         var route = _settingsManager.GetSetting(SettingsManager.PublicSettings.Route);
 
@@ -35,22 +38,36 @@ public class MeadowConnectionManager
             throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
-        return GetConnectionForRoute(route, forceReconnect);
+        return await GetConnectionForRoute(route, forceReconnect);
     }
 
-    public IMeadowConnection? GetConnectionForRoute(string route, bool forceReconnect = false)
+    public static async Task<IMeadowConnection?> GetConnectionForRoute(string route, bool forceReconnect = false)
     {
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
-        if (_currentConnection != null && forceReconnect == false)
+        lock (_lockObject)
         {
-            return _currentConnection;
+            if (_currentConnection != null
+            && _currentConnection.Name == route
+            && forceReconnect == false)
+            {
+                return _currentConnection;
+            }
+            else if (_currentConnection != null)
+            {
+                _currentConnection.Detach();
+                _currentConnection.Dispose();
+                _currentConnection = null;
+            }
         }
-        _currentConnection?.Detach();
-        _currentConnection?.Dispose();
 
         if (route == "local")
         {
-            return new LocalConnection();
+            var newConnection = new LocalConnection();
+            lock (_lockObject)
+            {
+                _currentConnection = newConnection;
+            }
+            return _currentConnection;
         }
 
         // try to determine what the route is
@@ -74,50 +91,59 @@ public class MeadowConnectionManager
 
         if (uri != null)
         {
-            _currentConnection = new TcpConnection(uri);
+            var newConnection = new TcpConnection(uri);
+            lock (_lockObject)
+            {
+                _currentConnection = newConnection;
+            }
+            return _currentConnection;
         }
         else
         {
-            var retryCount = 0;
-
-        get_serial_connection:
-            try
+            for (int retryCount = 0; retryCount <= RETRY_COUNT; retryCount++)
             {
-                _currentConnection = new SerialConnection(route);
-            }
-            catch
-            {
-                retryCount++;
-                if (retryCount > 10)
+                try
                 {
-                    throw new Exception($"Cannot find port {route}");
+                    var newConnection = new SerialConnection(route);
+                    lock (_lockObject)
+                    {
+                        _currentConnection = newConnection;
+                    }
+                    return _currentConnection;
                 }
-                Thread.Sleep(500);
-                goto get_serial_connection;
-            }
-        }
+                catch
+                {
+                    if (retryCount == RETRY_COUNT)
+                    {
+                        throw new Exception($"Cannot create SerialConnection on route: {route}");
+                    }
 
-        return _currentConnection;
+                    await Task.Delay(RETRY_DELAY);
+                }
+            }
+
+            // This line should never be reached because the loop will either return or throw
+            throw new Exception("Unexpected error in GetCurrentConnection");
+        }
     }
 
-    public static async Task<IList<string>> GetSerialPorts()
+    public static async Task<IList<string>> GetSerialPorts(string? serialNumber = null)
     {
         try
         {
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return await GetMeadowSerialPortsForLinux();
+                return await GetMeadowSerialPortsForLinux(serialNumber);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return await GetMeadowSerialPortsForOsx();
+                return await GetMeadowSerialPortsForOsx(serialNumber);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 lock (_lockObject)
                 {
-                    return GetMeadowSerialPortsForWindows();
+                    return GetMeadowSerialPortsForWindows(serialNumber);
                 }
             }
             else
@@ -131,9 +157,9 @@ public class MeadowConnectionManager
         }
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForOsx()
+    public static async Task<IList<string>> GetMeadowSerialPortsForOsx(string? serialNumber)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             throw new PlatformNotSupportedException("This method is only supported on macOS");
         }
@@ -187,6 +213,12 @@ public class MeadowConnectionManager
 
                     var port = line.Substring(startIndex, endIndex - startIndex);
 
+                    if (!string.IsNullOrWhiteSpace(serialNumber)
+                    && !port.Contains(serialNumber))
+                    {
+                        continue;
+                    }
+
                     ports.Add(port);
                     foundMeadow = false;
                 }
@@ -196,16 +228,16 @@ public class MeadowConnectionManager
         });
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForLinux()
+    public static async Task<IList<string>> GetMeadowSerialPortsForLinux(string? serialNumber)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             throw new PlatformNotSupportedException("This method is only supported on Linux");
         }
 
         return await Task.Run(() =>
         {
-            const string devicePath = "/dev/serial/by-id";
+            const string devicePath = "/dev/serial/by-id/";
             var psi = new ProcessStartInfo()
             {
                 FileName = "ls",
@@ -225,7 +257,8 @@ public class MeadowConnectionManager
                 return Array.Empty<string>();
             }
 
-            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+            var wlSerialPorts = output
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                   .Where(x => x.Contains("Wilderness_Labs"))
                   .Select(
                       line =>
@@ -234,13 +267,24 @@ public class MeadowConnectionManager
                           var target = parts[1];
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
                           return port;
-                      }).ToArray();
+                      });
+
+            if (string.IsNullOrWhiteSpace(serialNumber))
+            {
+                return wlSerialPorts.ToArray();
+            }
+            else
+            {
+                return wlSerialPorts
+                      .Where(line => !string.IsNullOrWhiteSpace(serialNumber) && line.Contains(serialNumber))
+                      .ToArray();
+            }
         });
     }
 
-    public static IList<string> GetMeadowSerialPortsForWindows()
+    public static IList<string> GetMeadowSerialPortsForWindows(string? serialNumber)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             throw new PlatformNotSupportedException("This method is only supported on Windows");
         }
@@ -288,7 +332,11 @@ public class MeadowConnectionManager
                 // the characters: USB\VID_XXXX&PID_XXXX\
                 // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
                 var splits = pnpDeviceId.Split('\\');
-                var serialNumber = splits[2];
+
+                if (!string.IsNullOrWhiteSpace(serialNumber)
+                && !string.IsNullOrWhiteSpace(splits[2])
+                && !splits[2].Contains(serialNumber))
+                    continue;
 
                 results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
             }
@@ -305,5 +353,11 @@ public class MeadowConnectionManager
 
             return ports;
         }
+    }
+
+    public static async Task<string?> GetRouteFromSerialNumber(string? serialNumber)
+    {
+        var results = await GetSerialPorts(serialNumber);
+        return results.FirstOrDefault();
     }
 }
