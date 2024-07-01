@@ -102,7 +102,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (!string.IsNullOrWhiteSpace(serialNumber))
         {
-            connection = await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber!));
+            connection = await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
             deviceInfo = await connection.GetDeviceInfo(cancellationToken);
         }
 
@@ -204,7 +204,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
             connection ??= await FindMeadowConnection(initialPorts);
 
-            await connection.WaitForMeadowAttach();
+            await connection.WaitForMeadowAttach(cancellationToken);
         }
         else
         {
