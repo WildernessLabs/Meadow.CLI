@@ -256,7 +256,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (!string.IsNullOrWhiteSpace(serialNumber))
         {
-            return meadowsInDFU.Where(device => device.GetDeviceSerialNumber() == serialNumber).FirstOrDefault();
+            return meadowsInDFU.Where(device => device.SerialNumber == serialNumber).FirstOrDefault();
         }
         else if (meadowsInDFU.Count == 1 || IgnoreSerialNumberForDfu(provider))
         {   //IgnoreSerialNumberForDfu is a macOS-specific hack for Mark's machine 
@@ -274,7 +274,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
             if (devices.Count == 2)
             {
-                if (devices[0].GetDeviceSerialNumber().Length > 12 || devices[1].GetDeviceSerialNumber().Length > 12)
+                if (devices[0].SerialNumber.Length > 12 || devices[1].SerialNumber.Length > 12)
                 {
                     return true;
                 }
@@ -351,7 +351,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         {   //validate device
             if (string.IsNullOrWhiteSpace(serialNumber))
             {
-                serialNumber = libUsbDevice.GetDeviceSerialNumber();
+                serialNumber = libUsbDevice.SerialNumber;
             }
         }
         catch

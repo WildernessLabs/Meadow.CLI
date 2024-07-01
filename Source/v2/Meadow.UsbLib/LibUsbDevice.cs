@@ -7,9 +7,11 @@ namespace Meadow.LibUsb;
 public class LibUsbProvider : ILibUsbProvider
 {
     private const int UsbBootLoaderVendorID = 1155;
+    private const int UsbMeadowVendorID = 11882;
 
     internal static UsbContext _context;
     internal static List<ILibUsbDevice>? _devices;
+
     static LibUsbProvider()
     {
         // only ever create one of these - there's a bug in the LibUsbDotNet library and when this disposes, things go sideways
@@ -30,41 +32,30 @@ public class LibUsbProvider : ILibUsbProvider
     public class LibUsbDevice : ILibUsbDevice
     {
         private readonly IUsbDevice _device;
+        private string? serialNumber;
+
+        public string? SerialNumber => serialNumber;
 
         public LibUsbDevice(IUsbDevice usbDevice)
         {
             _device = usbDevice;
-        }
 
-        public ushort productId;
+            _device.Open();
+            if (_device.IsOpen)
+            {
+                serialNumber = _device.Info?.SerialNumber ?? string.Empty;
+                _device.Close();
+            }
+        }
 
         public void Dispose()
         {
             _device?.Dispose();
         }
 
-        public string GetDeviceSerialNumber()
-        {
-            var serialNumber = string.Empty;
-
-            _device.Open();
-            if (_device.IsOpen)
-            {
-                serialNumber = _device.Info?.SerialNumber ?? string.Empty;
-                productId = _device.Info?.ProductId ?? 0;
-                _device.Close();
-            }
-
-            return serialNumber;
-        }
-
         public bool IsMeadow()
         {
-            if (_device.VendorId != 1155)
-            {
-                return false;
-            }
-            if (GetDeviceSerialNumber().Length > 12)
+            if (serialNumber?.Length > 12)
             {
                 return false;
             }

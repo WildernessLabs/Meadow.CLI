@@ -72,7 +72,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
                 foreach (var device in bootloaderDeviceQueue)
                 {
-                    multiSelectionPrompt.AddChoices(device.GetDeviceSerialNumber());
+                    multiSelectionPrompt.AddChoices(device.SerialNumber);
                 }
 
                 selectedDeviceList = AnsiConsole.Prompt(multiSelectionPrompt);
