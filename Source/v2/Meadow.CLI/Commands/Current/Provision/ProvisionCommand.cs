@@ -138,12 +138,12 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                 {
                     // Eat the exception and keep going.
                     deployApp = false;
-// TODO put this back in for release #if DEBUG
+                    // TODO put this back in for release #if DEBUG
                     var message = ex.Message;
                     var stackTrace = ex.StackTrace;
                     message += Environment.NewLine + stackTrace;
                     AnsiConsole.MarkupLine($"[red]{ex.Message}[/]");
-//#endif
+                    //#endif
                     AnsiConsole.MarkupLine(Strings.Provision.NoAppDeployment, $"[yellow]{OsVersion}[/]");
                 }
             }
@@ -220,6 +220,7 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
 
     public async Task FlashingAttachedDevices()
     {
+        var succeedCount = 0;
         await AnsiConsole.Progress()
             .AutoRefresh(true)
             .HideCompleted(false)
@@ -234,48 +235,64 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
             {
                 foreach (var deviceSerialNumber in selectedDeviceList)
                 {
-                    var formatedDevice = $"[green]{deviceSerialNumber}[/]";
-                    var task = ctx.AddTask(formatedDevice, maxValue: 100);
-
-                    var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, null, true, OsVersion, deviceSerialNumber, null, CancellationToken);
-                    firmareUpdater.UpdateProgress += (o, e) =>
+                    try
                     {
-                        task.Increment(20.00);
-                        task.Description = $"{formatedDevice}: {e}";
-                    };
+                        var formatedDevice = $"[green]{deviceSerialNumber}[/]";
+                        var task = ctx.AddTask(formatedDevice, maxValue: 100);
 
-                    if (!await firmareUpdater.UpdateFirmware())
-                    {
-                        task.Description = $"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]";
-                        task.StopTask();
-                    }
-
-                    if (deployApp)
-                    {
-                        task.Increment(20.00);
-                        task.Description = $"{Strings.Provision.DeployingApp}";
-
-                        var route = await MeadowConnectionManager.GetRouteFromSerialNumber(deviceSerialNumber!);
-                        if (!string.IsNullOrWhiteSpace(route))
+                        var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, null, true, OsVersion, deviceSerialNumber, null, CancellationToken);
+                        firmareUpdater.UpdateProgress += (o, e) =>
                         {
-                            var connection = await GetConnectionForRoute(route, true);
-                            var appDir = System.IO.Path.GetDirectoryName(appPath);
-                            await AppManager.DeployApplication(packageManager, connection, OsVersion!, appDir!, true, false, null, CancellationToken);
+                            task.Increment(20.00);
+                            task.Description = $"{formatedDevice}: {e}";
+                        };
 
-                            await connection?.Device?.RuntimeEnable(CancellationToken);
+                        if (!await firmareUpdater.UpdateFirmware())
+                        {
+                            task.Description = $"{formatedDevice}: [red]{Strings.Provision.UpdateFailed}[/]";
+                            task.StopTask();
                         }
+
+                        if (deployApp)
+                        {
+                            task.Increment(20.00);
+                            task.Description = $"{Strings.Provision.DeployingApp}";
+
+                            var route = await MeadowConnectionManager.GetRouteFromSerialNumber(deviceSerialNumber!);
+                            if (!string.IsNullOrWhiteSpace(route))
+                            {
+                                var connection = await GetConnectionForRoute(route, true);
+                                var appDir = System.IO.Path.GetDirectoryName(appPath);
+                                await AppManager.DeployApplication(packageManager, connection, OsVersion!, appDir!, true, false, null, CancellationToken);
+
+                                await connection?.Device?.RuntimeEnable(CancellationToken);
+                            }
+                        }
+
+                        task.Value = 100.00;
+                        task.Description = string.Format($"{formatedDevice}: [green]{Strings.Provision.UpdateComplete}[/]");
+
+                        task.StopTask();
+
+                        await Task.Delay(2000);
+
+                        succeedCount++;
                     }
-
-                    task.Value = 100.00;
-                    task.Description = string.Format($"{formatedDevice}: [green]{Strings.Provision.UpdateComplete}[/]");
-
-                    task.StopTask();
-
-                    await Task.Delay(2000);
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[red]{ex.Message}[/]{Environment.NewLine}{ex.StackTrace}");
+                    }
                 }
             });
 
-        AnsiConsole.MarkupLine($"[green]{Strings.Provision.AllDevicesFlashed}[/]");
+        if (succeedCount == selectedDeviceList.Count)
+        {
+            AnsiConsole.MarkupLine($"[green]{Strings.Provision.AllDevicesFlashed}[/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]There were issues. Please check previous error messages.[/]");
+        }
     }
 }
 

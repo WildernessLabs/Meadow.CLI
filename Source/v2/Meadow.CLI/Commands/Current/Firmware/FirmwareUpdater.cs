@@ -132,7 +132,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        connection ??= await GetConnectionAndDisableRuntime();
+        connection ??= await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
 
         await WriteEsp(connection, deviceInfo, package);
 
@@ -288,7 +288,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
     {
         IMeadowConnection connection;
 
-        if (route != null)
+        if (!string.IsNullOrWhiteSpace(route))
         {
             connection = await command.GetConnectionForRoute(route, true);
         }
@@ -476,7 +476,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, string runtimePath, string destinationFilename)
     {
-        connection ??= await GetConnectionAndDisableRuntime();
+        connection ??= await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
 
         logger?.LogInformation($"{Environment.NewLine}{Strings.WritingRuntime}...");
 
@@ -522,7 +522,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private async Task WriteEsp(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        connection ??= await GetConnectionAndDisableRuntime();
+        connection ??= await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
 
         if (connection == null) { return; } // couldn't find a connected device
 

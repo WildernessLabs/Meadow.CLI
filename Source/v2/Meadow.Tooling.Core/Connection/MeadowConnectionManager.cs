@@ -335,7 +335,7 @@ public class MeadowConnectionManager
         }
     }
 
-    public static async Task<string?> GetRouteFromSerialNumber(string serialNumber)
+    public static async Task<string?> GetRouteFromSerialNumber(string? serialNumber)
     {
         var results = await GetSerialPorts(serialNumber);
         return results.FirstOrDefault();
