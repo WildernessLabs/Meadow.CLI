@@ -244,7 +244,10 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                         var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, null, true, OsVersion, deviceSerialNumber, null, CancellationToken);
                         firmareUpdater.UpdateProgress += (o, e) =>
                         {
-                            task.Value = e.percentage;
+                            if (e.percentage > 0)
+                            {
+                                task.Value = e.percentage;
+                            }
                             task.Description = $"{formatedDevice}: {e.message}";
                         };
 

@@ -21,7 +21,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
     private readonly ISettingsManager settings;
     private readonly FileManager fileManager;
 
-    private int _lastWriteProgress = 0;
+    private int lastWriteProgress = 0;
 
     private BaseDeviceCommand<T> command;
 
@@ -103,7 +103,18 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         if (!string.IsNullOrWhiteSpace(serialNumber))
         {
             connection = await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
-            deviceInfo = await connection.GetDeviceInfo(cancellationToken);
+            if (connection != null)
+            {
+                if (provisioninInProgress)
+                {
+                    connection.ConnectionMessage += (o, e) =>
+                    {
+                        UpdateProgress?.Invoke(this, (e, 0));
+                    };
+                }
+
+                deviceInfo = await connection.GetDeviceInfo(cancellationToken);
+            }
         }
 
         if (firmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
@@ -303,15 +314,15 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             await connection.Device.RuntimeDisable();
         }
 
-        _lastWriteProgress = 0;
+        lastWriteProgress = 0;
 
         connection.FileWriteProgress += (s, e) =>
         {
             var p = (int)(e.completed / (double)e.total * 100d);
             // don't report < 10% increments (decrease spew on large files)
-            if (p - _lastWriteProgress < 10) { return; }
+            if (p - lastWriteProgress < 10) { return; }
 
-            _lastWriteProgress = p;
+            lastWriteProgress = p;
 
             logger?.LogInformation($"{Strings.Writing} {e.fileName}: {p:0}%     {(p < 100 ? string.Empty : "\r\n")}");
         };
