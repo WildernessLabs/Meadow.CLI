@@ -230,9 +230,7 @@ public class MeadowConnectionManager
                 return Array.Empty<string>();
             }
 
-            if (string.IsNullOrWhiteSpace(serialNumber))
-            {
-                return output
+            var wlSerialPorts = output
                     .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                   .Where(x => x.Contains("Wilderness_Labs"))
                   .Select(
@@ -242,20 +240,15 @@ public class MeadowConnectionManager
                           var target = parts[1];
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
                           return port;
-                      }).ToArray();
+                      });
+
+            if (string.IsNullOrWhiteSpace(serialNumber))
+            {
+                return wlSerialPorts.ToArray();
             }
             else
             {
-                return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                      .Where(x => x.Contains("Wilderness_Labs"))
-                      .Select(
-                          line =>
-                          {
-                              var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
-                              var target = parts[1];
-                              var port = Path.GetFullPath(Path.Combine(devicePath, target));
-                              return port;
-                          })
+                return wlSerialPorts
                       .Where(line => !string.IsNullOrWhiteSpace(serialNumber) && line.Contains(serialNumber))
                       .ToArray();
             }
