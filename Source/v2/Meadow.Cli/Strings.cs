@@ -1,4 +1,5 @@
-﻿using Meadow.Telemetry;
+﻿using System.Numerics;
+using Meadow.Telemetry;
 
 namespace Meadow.CLI;
 
@@ -85,5 +86,14 @@ You can change your mind at any time by running the ""[bold]meadow telemetry [[e
 ";
 
         public const string AskToParticipate = "Would you like to participate?";
+    }
+
+    public static class Update
+    {
+        public const string Description = "Update WildernessLabs.Meadow.CLI";
+        public const string Updating = "Updating {0}";
+        public const string Instruction1 = "This will initially uninstall {0} and will then install version {1}";
+        public const string Instruction2 = "Please wait about 10s to allow the above steps to complete.";
+        public const string UpdaterNotFound = "Meadow.Updater not found.";
     }
 }

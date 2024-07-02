@@ -2,6 +2,7 @@
 using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -135,5 +136,43 @@ internal static class AppTools
         var meadowFileName = Path.Combine(folder, Path.GetFileName(fileName));
 
         return meadowFileName!.Replace(Path.DirectorySeparatorChar, '/');
+    }
+
+    internal static async Task<int> RunProcessCommand(string command, string args, Action<string>? handleOutput = null, Action<string>? handleError = null, CancellationToken cancellationToken = default)
+    {
+        var processStartInfo = new ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = args,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using (var process = new Process { StartInfo = processStartInfo })
+        {
+            process.Start();
+
+            var outputCompletion = ReadLinesAsync(process.StandardOutput, handleOutput, cancellationToken);
+            var errorCompletion = ReadLinesAsync(process.StandardError, handleError, cancellationToken);
+
+            await Task.WhenAll(outputCompletion, errorCompletion, process.WaitForExitAsync());
+
+            return process.ExitCode;
+        }
+    }
+
+    private static async Task ReadLinesAsync(StreamReader reader, Action<string>? handleLine, CancellationToken cancellationToken)
+    {
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(line)
+                && handleLine != null)
+            {
+                handleLine(line);
+            }
+        }
     }
 }
