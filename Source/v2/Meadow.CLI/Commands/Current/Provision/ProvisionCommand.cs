@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using CliFx.Attributes;
 using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud.Client;
@@ -235,16 +236,16 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
             {
                 foreach (var deviceSerialNumber in selectedDeviceList)
                 {
+                    var formatedDevice = $"[green]{deviceSerialNumber}[/]";
+                    var task = ctx.AddTask(formatedDevice, maxValue: 100);
+
                     try
                     {
-                        var formatedDevice = $"[green]{deviceSerialNumber}[/]";
-                        var task = ctx.AddTask(formatedDevice, maxValue: 100);
-
                         var firmareUpdater = new FirmwareUpdater<ProvisionCommand>(this, settingsManager, fileManager, this.connectionManager, null, null, true, OsVersion, deviceSerialNumber, null, CancellationToken);
                         firmareUpdater.UpdateProgress += (o, e) =>
                         {
-                            task.Increment(20.00);
-                            task.Description = $"{formatedDevice}: {e}";
+                            task.Value = e.percentage;
+                            task.Description = $"{formatedDevice}: {e.message}";
                         };
 
                         if (!await firmareUpdater.UpdateFirmware())
@@ -280,7 +281,11 @@ public class ProvisionCommand : BaseDeviceCommand<ProvisionCommand>
                     }
                     catch (Exception ex)
                     {
+                        task.Description = $"{formatedDevice}: [red]{ex.Message}[/]";
+                        task.StopTask();
+#if DEBUG
                         AnsiConsole.MarkupLine($"[red]{ex.Message}[/]{Environment.NewLine}{ex.StackTrace}");
+#endif
                     }
                 }
             });

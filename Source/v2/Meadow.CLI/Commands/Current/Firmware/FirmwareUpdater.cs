@@ -25,7 +25,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private BaseDeviceCommand<T> command;
 
-    public event EventHandler<string> UpdateProgress = default!;
+    public event EventHandler<(string message, double percentage)> UpdateProgress = default!;
 
     public FirmwareUpdater(BaseDeviceCommand<T> command, ISettingsManager settings, FileManager fileManager, MeadowConnectionManager connectionManager, string? individualFile, FirmwareType[]? firmwareFileTypes, bool useDfu, string? osVersion, string? serialNumber, ILogger? logger, CancellationToken cancellationToken)
     {
@@ -96,7 +96,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (firmwareFileTypes.Contains(FirmwareType.OS))
         {
-            UpdateProgress?.Invoke(this, "Flashing OS");
+            UpdateProgress?.Invoke(this, ("Flashing OS", 20));
             await WriteOSFiles(connection, deviceInfo, package, useDfu);
         }
 
@@ -108,7 +108,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (firmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
-            UpdateProgress?.Invoke(this, "Writing Runtime");
+            UpdateProgress?.Invoke(this, ("Writing Runtime", 40));
             await WriteRuntimeFiles(connection, deviceInfo, package, individualFile);
         }
 
@@ -117,7 +117,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
-            UpdateProgress?.Invoke(this, "Writing ESP");
+            UpdateProgress?.Invoke(this, ("Writing ESP", 60));
             await WriteEspFiles(connection, deviceInfo, package);
         }
 
