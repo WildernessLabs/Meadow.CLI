@@ -1,4 +1,5 @@
 ﻿using Meadow.Telemetry;
+using Spectre.Console;
 
 namespace Meadow.CLI;
 
@@ -71,19 +72,46 @@ public static class Strings
     public const string AppDeployedSuccessfully = "Application deployed successfully";
     public const string AppTrimFailed = "Application trimming failed";
 
-
     public static class Telemetry
     {
-        public const string ConsentMessage = @$"
+        public const string ConsentMessage = @"
 Let's improve the Meadow experience together
 --------------------------------------------
 To help improve the Meadow experience, we'd like to collect anonymous usage data. This data helps us understand how our tools are used, so we can make them better for everyone. This usage data is not tied to individuals and no personally identifiable information is collected.
 
 Our privacy policy is available at https://www.wildernesslabs.co/privacy-policy.
 
-You can change your mind at any time by running the ""[bold]meadow telemetry [[enable|disable]][/]"" command or by setting the [bold]{MeadowTelemetry.TelemetryEnvironmentVariable}[/] environment variable to '1' or '0' ('true' or 'false', respectively).
+You can change your mind at any time by running the ""{0}"" command or by setting the {1} environment variable to '1' or '0' ('true' or 'false', respectively).
 ";
-
         public const string AskToParticipate = "Would you like to participate?";
     }
+
+    public static class ProjectTemplates
+    {
+        public const string InstallTitle = "Installing and updating the Meadow Project Templates";
+        public const string Installed = "The following Meadow Project Templates are now installed.";
+
+        public const string WizardTitle = "Meadow Project Wizard...";
+        public const string ProjectName = "What is your project's name?";
+        public const string GenerationComplete = "All of {0}'s projects have now been created!";
+        public const string GenerateSln = "Create an sln that contains all the new projects?";
+        public const string NoTemplatesFound = "No Meadow project templates found.";
+        public const string InstalledTemplates = "--- Installed Templates ---";
+        public const string MoreChoicesInstructions = "(Move up and down to reveal more templates)";
+        public const string Instructions = "Press {0} to toggle a template or {1} to accept and generate the selected templates";
+        public const string CreatingProject = "Creating {0} project";
+        public const string CreatingSln = "Creating sln for selected projects....";
+        public const string NoTemplateSelected = "No templates selected.";
+        public const string NewCommandDescription = "Shows a list of project templates to choose from.";
+        public const string CommandOptionOutputPathDescription = "The path where you would like the projects created.";
+        public const string CommandOptionSupportedLanguagesDescription = "Generate the projects using the specified language. Valid values are C# or F# or VB.NET";
+        public const string InstallCommandDescription = "Install or updates to the latest project templates";
+        public const string ErrorInstallingTemplates = "An error occured install the templates. Check that your internet connection is working.";
+        public const string ColumnTemplateName = "Template Name";
+        public const string ColumnLanguages = "Languages";
+    }
+
+    public const string UnsupportedOperatingSystem = "Unsupported Operating System";
+    public const string Enter = "Enter";
+    public const string Space = "Space";
 }

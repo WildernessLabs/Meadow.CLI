@@ -36,7 +36,7 @@ public abstract class BaseCommand<T> : ICommand
             {
                 if (MeadowTelemetry.Current.ShouldAskForConsent)
                 {
-                    AnsiConsole.MarkupLine(Strings.Telemetry.ConsentMessage);
+                    AnsiConsole.MarkupLine(Strings.Telemetry.ConsentMessage, "[bold]meadow telemetry [[enable|disable]][/]", $"[bold]{MeadowTelemetry.TelemetryEnvironmentVariable}[/]");
 
                     var result = AnsiConsole.Confirm(Strings.Telemetry.AskToParticipate, defaultValue: true);
                     MeadowTelemetry.Current.SetTelemetryEnabled(result);
