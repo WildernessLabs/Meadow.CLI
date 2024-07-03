@@ -49,7 +49,7 @@ public partial class DebuggingServer : IDisposable
         _listener.Start();
         _logger?.LogInformation($"Listening for Visual Studio to connect");
 
-        // This call will wait for the client to connect, before continuing. We shouldn't need a loop.
+        // This call will wait for the client to connect, before continuing.
         var tcpClient = await _listener.AcceptTcpClientAsync();
         _activeClient = CreateActiveClient(tcpClient);
     }

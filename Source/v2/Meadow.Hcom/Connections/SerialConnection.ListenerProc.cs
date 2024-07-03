@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Meadow.Hcom
+﻿namespace Meadow.Hcom
 {
     public partial class SerialConnection
     {
@@ -93,6 +91,11 @@ namespace Meadow.Hcom
                                 }
                             }
                             goto read;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error reading from port: {ex.Message}");
+                            await Task.Delay(1000);
                         }
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
@@ -315,7 +318,6 @@ namespace Meadow.Hcom
                     }
                     catch (IOException ioe)
                     {
-
                         FileException?.Invoke(this, ioe);
                         // attempt to read timed out (i.e. there's just no data)
                         // NOP

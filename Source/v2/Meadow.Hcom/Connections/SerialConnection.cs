@@ -1284,7 +1284,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    public override async Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
+    public override Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken)
     {
         var command = RequestBuilder.Build<DebuggerDataRequest>(userData);
         command.DebuggerData = debuggerData;
@@ -1292,5 +1292,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _lastRequestConcluded = null;
 
         EnqueueRequest(command);
+
+        return Task.CompletedTask;
     }
 }
