@@ -2,9 +2,13 @@
 {
     public partial class SerialConnection
     {
-        private bool _reconnectInProgress = false;
+        private volatile bool reconnectInProgress = false;
+        private volatile bool isDisposed = false;
 
         public event EventHandler<Exception> FileException = delegate { };
+
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
@@ -32,11 +36,16 @@
                 {
                     try
                     {
+                        await semaphore.WaitAsync(cancellationToken.GetValueOrDefault());
                         Open();
                     }
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"Unable to open port: {ex.Message}");
+                    }
+                    finally
+                    {
+                        semaphore.Release();
                     }
                 }
             }
@@ -52,7 +61,7 @@
             var delimiter = new byte[] { 0x00 };
             var receivedLength = 0;
 
-            while (!_isDisposed)
+            while (!isDisposed)
             {
                 if (_port.IsOpen)
                 {
@@ -82,12 +91,17 @@
 
                                 try
                                 {
+                                    await semaphore.WaitAsync(cancellationTokenSource.Token);
                                     Open();
                                     Debug.WriteLine($"Port re-opened");
                                 }
                                 catch
                                 {
                                     Debug.WriteLine($"Failed to re-open port");
+                                }
+                                finally
+                                {
+                                    semaphore.Release();
                                 }
                             }
                             goto read;
@@ -189,10 +203,18 @@
                                     {
                                         _lastRequestConcluded = (RequestType)tcr.RequestType;
 
-                                        if (_reconnectInProgress)
+                                        if (reconnectInProgress)
                                         {
-                                            Open();
-                                            _reconnectInProgress = false;
+                                            await semaphore.WaitAsync();
+                                            try
+                                            {
+                                                Open();
+                                                reconnectInProgress = false;
+                                            }
+                                            finally
+                                            {
+                                                semaphore.Release();
+                                            }
                                         }
                                         else if (_textListComplete != null)
                                         {
@@ -215,7 +237,15 @@
 
                                         await Task.Delay(3000);
 
-                                        Open();
+                                        await semaphore.WaitAsync();
+                                        try
+                                        {
+                                            Open();
+                                        }
+                                        finally
+                                        {
+                                            semaphore.Release();
+                                        }
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {
@@ -351,4 +381,4 @@
             }
         }
     }
-}
+}                                    
