@@ -36,8 +36,8 @@ public partial class DebuggingServer
 
             _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
 
-            _receiveVsDebugDataTask = Task.Run(SendToMeadow);
-            _receiveMeadowDebugDataTask = Task.Run(SendToVisualStudio);
+            _receiveVsDebugDataTask = Task.Run(SendToMeadow, _cts.Token);
+            _receiveMeadowDebugDataTask = Task.Run(SendToVisualStudio, _cts.Token);
         }
 
         private void MeadowConnection_DebuggerMessageReceived(object sender, byte[] e)
