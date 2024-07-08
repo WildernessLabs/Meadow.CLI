@@ -24,7 +24,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private ConnectionState _state;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private readonly ConcurrentQueue<IRequest> _pendingCommands = new ConcurrentQueue<IRequest>();
-    private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
     private readonly List<string> _textList = new List<string>();
@@ -246,26 +245,27 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void CommandManager()
+    private async Task CommandManager()
     {
         while (!_isDisposed)
         {
-            _commandEvent.WaitOne(1000);
-
-            while (_pendingCommands.TryDequeue(out var pendingCommand))
+            if (_pendingCommands.TryDequeue(out var pendingCommand))
             {
-                Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
-
-                //var command = _pendingCommands.Dequeue() as Request;
                 if (pendingCommand is Request command)
                 {
-                    // if this is a file write, we need to packetize for progress
+                    Debug.WriteLine($"Processing {command}....");
 
+                    // if this is a file write, we need to packetize for progress
                     var payload = command.Serialize();
                     EncodeAndSendPacket(payload);
 
                     // TODO: re-queue on fail?
                 }
+            }
+            else
+            {
+                // If no commands are available, delay a bit to avoid busy waiting
+                await Task.Delay(100);
             }
         }
     }
@@ -302,7 +302,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         _pendingCommands.Enqueue(command);
-        _commandEvent.Set();
     }
 
     private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
