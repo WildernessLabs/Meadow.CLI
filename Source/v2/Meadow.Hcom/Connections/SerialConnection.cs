@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 using System.IO.Ports;
 using System.Security.Cryptography;
+using System.Threading;
 
 namespace Meadow.Hcom;
 
@@ -30,6 +31,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private ReadFileInfo? _readFileInfo = null;
     private string? _lastError = null;
 
+    private readonly SemaphoreSlim connectionSemaphore = new SemaphoreSlim(1, 1);
+    private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
     public override string Name { get; }
 
     public SerialConnection(string port, ILogger? logger = default)
@@ -45,17 +49,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _port = new SerialPort(port);
         _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
-        new Task(
-            () => _ = ListenerProc(),
-            TaskCreationOptions.LongRunning)
-        .Start();
-
-        new Thread(CommandManager)
-        {
-            IsBackground = true,
-            Name = "HCOM Sender"
-        }
-        .Start();
+        Task.Run(() => ListenerProc(), cancellationTokenSource.Token);
+        Task.Run(() => CommandManager(), cancellationTokenSource.Token);
     }
 
     private bool MaintainConnection
@@ -71,18 +66,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 if (_connectionManager == null || _connectionManager.ThreadState != System.Threading.ThreadState.Running)
                 {
-                    _connectionManager = new Thread(ConnectionManagerProc)
-                    {
-                        IsBackground = true,
-                        Name = "HCOM Connection Manager"
-                    };
-                    _connectionManager.Start();
+                    Task.Run(() => ConnectionManagerProc(), cancellationTokenSource.Token);
                 }
             }
         }
     }
 
-    private void ConnectionManagerProc()
+    private async Task ConnectionManagerProc()
     {
         while (_maintainConnection)
         {
@@ -91,7 +81,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 try
                 {
                     Debug.WriteLine("Opening COM port...");
-                    Open();
+                    await Open();
                     Debug.WriteLine("Opened COM port");
                 }
                 catch (Exception ex)
@@ -142,39 +132,53 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void Open()
+    private async Task Open()
     {
-        if (!_port.IsOpen)
-        {
-            try
-            {
-                _port.Open();
-            }
-            catch (FileNotFoundException)
-            {
-                throw new Exception($"Serial port '{_port.PortName}' not found");
-            }
-            catch (UnauthorizedAccessException uae)
-            {
-                throw new Exception($"{uae.Message}");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
-            }
+        await connectionSemaphore.WaitAsync(cancellationTokenSource.Token);
 
-            State = ConnectionState.Connected;
+        try
+        {
+            if (!_port.IsOpen)
+            {
+                try
+                {
+                    _port.Open();
+                    State = ConnectionState.Connected;
+                }
+                catch (FileNotFoundException)
+                {
+                    throw new Exception($"Serial port '{_port.PortName}' not found");
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    throw new Exception($"{uae.Message}");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            connectionSemaphore.Release();
         }
     }
 
     private void Close()
     {
-        if (_port.IsOpen)
+        try
         {
-            _port.Close();
+            if (_port.IsOpen)
+            {
+                _port.Close();
+                State = ConnectionState.Disconnected;
+            }
         }
-
-        State = ConnectionState.Disconnected;
+        catch (Exception ex)
+        {
+            throw new Exception($"Unable to close port '{_port.PortName}' - {ex.Message}");
+        }
     }
 
     public override void Detach()
@@ -192,7 +196,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         try
         {
             // ensure the port is open
-            Open();
+            await Open();
 
             // search for the device via HCOM - we'll use a simple command since we don't have a "ping"
             var command = RequestBuilder.Build<GetDeviceInfoRequest>();
@@ -208,8 +212,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // local function so we can unsubscribe
             var count = _messageCount;
 
-            _pendingCommands.Enqueue(command);
-            _commandEvent.Set();
+            EnqueueRequest(command);
 
             while (timeout-- > 0)
             {

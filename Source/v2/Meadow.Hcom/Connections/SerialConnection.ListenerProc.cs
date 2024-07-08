@@ -7,9 +7,6 @@
 
         public event EventHandler<Exception> FileException = delegate { };
 
-        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
-        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
             var timeout = 500;
@@ -36,16 +33,11 @@
                 {
                     try
                     {
-                        await semaphore.WaitAsync(cancellationToken.GetValueOrDefault());
-                        Open();
+                        await Open();
                     }
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"Unable to open port: {ex.Message}");
-                    }
-                    finally
-                    {
-                        semaphore.Release();
                     }
                 }
             }
@@ -91,17 +83,12 @@
 
                                 try
                                 {
-                                    await semaphore.WaitAsync(cancellationTokenSource.Token);
-                                    Open();
+                                    await Open();
                                     Debug.WriteLine($"Port re-opened");
                                 }
                                 catch
                                 {
                                     Debug.WriteLine($"Failed to re-open port");
-                                }
-                                finally
-                                {
-                                    semaphore.Release();
                                 }
                             }
                             goto read;
@@ -205,16 +192,8 @@
 
                                         if (reconnectInProgress)
                                         {
-                                            await semaphore.WaitAsync();
-                                            try
-                                            {
-                                                Open();
-                                                reconnectInProgress = false;
-                                            }
-                                            finally
-                                            {
-                                                semaphore.Release();
-                                            }
+                                            await Open();
+                                            reconnectInProgress = false;
                                         }
                                         else if (_textListComplete != null)
                                         {
@@ -237,15 +216,7 @@
 
                                         await Task.Delay(3000);
 
-                                        await semaphore.WaitAsync();
-                                        try
-                                        {
-                                            Open();
-                                        }
-                                        finally
-                                        {
-                                            semaphore.Release();
-                                        }
+                                        await Open();
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {
