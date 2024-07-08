@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
 using System.Threading;
@@ -22,7 +23,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private bool _isDisposed;
     private ConnectionState _state;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
-    private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
+    private readonly ConcurrentQueue<IRequest> _pendingCommands = new ConcurrentQueue<IRequest>();
     private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
@@ -251,12 +252,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             _commandEvent.WaitOne(1000);
 
-            while (_pendingCommands.Count > 0)
+            while (_pendingCommands.TryDequeue(out var pendingCommand))
             {
                 Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
 
-                var command = _pendingCommands.Dequeue() as Request;
-                if (command != null)
+                //var command = _pendingCommands.Dequeue() as Request;
+                if (pendingCommand is Request command)
                 {
                     // if this is a file write, we need to packetize for progress
 
