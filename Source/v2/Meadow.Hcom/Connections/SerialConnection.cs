@@ -264,7 +264,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             }
             else
             {
-                // If no commands are available, delay a bit to avoid busy waiting
+                // If no commands to dequeue, delay a bit to avoid busy waiting
                 await Task.Delay(100);
             }
         }

@@ -18,7 +18,6 @@ public partial class DebuggingServer
         private readonly ILogger? _logger;
         private bool _disposed;
         private readonly BlockingCollection<byte[]> _debuggerMessages = new();
-        private readonly AutoResetEvent _vsDebugDataReady = new(false);
         private readonly object _disposeLock = new();
 
         internal ActiveClient(IMeadowConnection connection, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
@@ -47,7 +46,6 @@ public partial class DebuggingServer
                 if (!_disposed)
                 {
                     _debuggerMessages.Add(e);
-                    _vsDebugDataReady.Set();
                 }
             }
         }
@@ -134,9 +132,7 @@ public partial class DebuggingServer
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        _vsDebugDataReady.WaitOne(500);
-
-                        while (_debuggerMessages.TryTake(out var byteData, Timeout.Infinite, _cts.Token))
+                        if (_debuggerMessages.TryTake(out var byteData, Timeout.Infinite, _cts.Token))
                         {
                             _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
                             if (!_tcpClient.Connected)
@@ -149,6 +145,11 @@ public partial class DebuggingServer
                             _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
 
                             Debug.WriteLine($"ToVisStu: {BitConverter.ToString(byteData)}");
+                        }
+                        else
+                        {
+                            // If no _debuggerMessages to Take, delay a bit to avoid busy waiting
+                            await Task.Delay(100);
                         }
                     }
                     else
