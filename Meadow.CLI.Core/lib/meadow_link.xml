@@ -9,4 +9,5 @@
     <assembly fullname="SQLite-net" />
     <assembly fullname="MQTTnet" />
     <assembly fullname="System.Configuration" />
+    <assembly fullname="ProjectLab" />
 </linker>
