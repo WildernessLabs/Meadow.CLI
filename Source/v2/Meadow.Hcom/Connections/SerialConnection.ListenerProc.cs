@@ -64,7 +64,7 @@
                     read:
                         try
                         {
-                            receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
+                            receivedLength = await _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length);
                         }
                         catch (OperationCanceledException)
                         {
@@ -129,7 +129,8 @@
                                 {
                                     Debug.WriteLine($"Received a {packetBytes.Length} byte packet");
 
-                                    var decodedSize = CobsTools.CobsDecoding(packetBytes, packetBytes.Length - delimiter.Length, ref decodedBuffer);
+                                    int decodedSize;
+                                    (decodedSize, decodedBuffer) = await CobsTools.CobsDecoding(packetBytes, packetBytes.Length - delimiter.Length, decodedBuffer.Length);
 
                                     // now parse this per the HCOM protocol definition
                                     var response = SerialResponse.Parse(decodedBuffer, decodedSize);
@@ -239,7 +240,7 @@
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
-                                        EncodeAndSendPacket(uploadRequest.Serialize());
+                                        await EncodeAndSendPacket(uploadRequest.Serialize());
                                     }
                                     else if (response is UploadDataPacketResponse udp)
                                     {

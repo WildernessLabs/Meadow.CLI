@@ -87,12 +87,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"{ex.Message}");
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                 }
             }
             else
             {
-                Thread.Sleep(1000);
+                await Task.Delay(1000);
             }
         }
     }
@@ -257,7 +257,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
                     // if this is a file write, we need to packetize for progress
                     var payload = command.Serialize();
-                    EncodeAndSendPacket(payload);
+                    await EncodeAndSendPacket(payload);
 
                     // TODO: re-queue on fail?
                 }
@@ -304,19 +304,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _pendingCommands.Enqueue(command);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
     {
-        EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
+        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
         //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
         while (!_port.IsOpen)
         {
             _state = ConnectionState.Disconnected;
-            Thread.Sleep(100);
+            await Task.Delay(100);
             // wait for the port to open
         }
 
@@ -336,11 +336,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // The encoded size using COBS is just a bit more than the original size adding 1 byte
                 // every 254 bytes plus 1 and need room for beginning and ending delimiters.
-                var l = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
-                encodedBytes = new byte[l + 2];
+                var encodingLength = Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE + (Protocol.HCOM_PROTOCOL_ENCODED_MAX_SIZE / 254) + 8;
 
                 // Skip over first byte so it can be a start delimiter
-                encodedToSend = CobsTools.CobsEncoding(messageBytes, 0, length, ref encodedBytes, 1);
+                (encodedToSend, encodedBytes) = await CobsTools.CobsEncoding(messageBytes, 0, length, encodingLength, 1);
 
                 // DEBUG TESTING
                 if (encodedToSend == -1)
@@ -374,7 +373,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // This should drop the connection and retry
                 Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
-                Thread.Sleep(500);    // Place for break point
+                await Task.Delay(500);    // Place for break point
                 throw;
             }
 
@@ -382,7 +381,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // Send the data to Meadow
                 // DO NOT USE _port.BaseStream.  It disables port timeouts!
-                _port.Write(encodedBytes, 0, encodedToSend);
+                await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend);
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
@@ -450,7 +449,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private bool DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
+    private async Task<bool> DecodeAndProcessPacket(Memory<byte> packetBuffer, CancellationToken cancellationToken)
     {
         var decodedBuffer = ArrayPool<byte>.Shared.Rent(8192);
         var packetLength = packetBuffer.Length;
@@ -465,8 +464,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             //_logger.LogTrace("Throwing out 0x00 from buffer");
             return false;
         }
+        int decodedSize;
 
-        var decodedSize = CobsTools.CobsDecoding(packetBuffer.ToArray(), packetLength, ref decodedBuffer);
+        (decodedSize, decodedBuffer) = await CobsTools.CobsDecoding(packetBuffer.ToArray(), packetLength, decodedBuffer.Length);
 
         ArrayPool<byte>.Shared.Return(decodedBuffer);
         return true;
@@ -1087,7 +1087,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             Array.Copy(fileBytes, progress, packet, 2, toRead);
             try
             {
-                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+                await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
             }
             catch (Exception)
             {
@@ -1109,7 +1109,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             var request = RequestBuilder.Build<EndFileWriteRequest>();
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
-            EncodeAndSendPacket(p, cancellationToken);
+            await EncodeAndSendPacket(p, cancellationToken);
         }
 
         FileWriteAccepted -= OnFileWriteAccepted;
