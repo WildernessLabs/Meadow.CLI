@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
-using System.Threading;
 
 namespace Meadow.Hcom;
 
@@ -49,7 +48,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _port = new SerialPort(port);
         _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
-        Task.Run(() => ListenerProc(), cancellationTokenSource.Token);
+        Task.Run(() => ListenerProc(cancellationTokenSource.Token), cancellationTokenSource.Token);
         Task.Run(() => CommandManager(), cancellationTokenSource.Token);
     }
 
@@ -313,6 +312,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
 
+        var effectiveCancellationToken = cancellationToken ?? CancellationToken.None;
+
         while (!_port.IsOpen)
         {
             _state = ConnectionState.Disconnected;
@@ -381,23 +382,38 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // Send the data to Meadow
                 // DO NOT USE _port.BaseStream.  It disables port timeouts!
-                await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend);
+                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(effectiveCancellationToken))
+                {
+                    var writeTask = _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, linkedCts.Token);
+                    var timeoutTask = Task.Delay(_port.WriteTimeout, linkedCts.Token);
+
+                    var completedTask = await Task.WhenAny(writeTask, timeoutTask);
+                    if (completedTask == timeoutTask)
+                    {
+                        // Timeout has occurred
+                        throw new TimeoutException();
+                    }
+
+                    linkedCts.Cancel(); // Cancel the timeout task
+
+                    await writeTask;
+                }
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
-                string msg = string.Format("Write but port not opened. Exception: {0}", ioe);
+                string msg = string.Format($"Write but port not opened. Exception: {ioe}");
                 _logger?.LogError(msg);
                 throw;
             }
             catch (ArgumentOutOfRangeException aore)  // offset or count don't match buffer
             {
-                string msg = string.Format("Write buffer, offset and count don't line up. Exception: {0}", aore);
+                string msg = string.Format($"Write buffer, offset and count don't line up. Exception: {aore}");
                 _logger?.LogError(msg);
                 throw;
             }
             catch (ArgumentException ae)  // offset plus count > buffer length
             {
-                string msg = string.Format($"Write offset plus count > buffer length. Exception: {0}", ae);
+                string msg = string.Format($"Write offset plus count > buffer length. Exception: {ae}");
                 _logger?.LogError(msg);
                 throw;
             }
