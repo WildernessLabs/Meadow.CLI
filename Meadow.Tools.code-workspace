@@ -16,4 +16,14 @@
 			"path": "../Meadow.Sdk"
 		}
 	],
+	"launch": {
+		"configurations": [
+			{
+				"name": "/dev/tty.usbmodem205A318452301",
+				"type": "meadow",
+				"request": "launch",
+				"preLaunchTask": "meadow: Build"
+			}
+		]
+	},
 }

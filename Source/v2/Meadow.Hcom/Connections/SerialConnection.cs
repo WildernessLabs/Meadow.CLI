@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
-
 namespace Meadow.Hcom;
 
 public delegate void ConnectionStateChangedHandler(SerialConnection connection, ConnectionState oldState, ConnectionState newState);
@@ -381,8 +380,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             try
             {
                 // Send the data to Meadow
-                // DO NOT USE _port.BaseStream.  It disables port timeouts!
-                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(effectiveCancellationToken))
+                using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None))
                 {
                     var writeTask = _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, linkedCts.Token);
                     var timeoutTask = Task.Delay(_port.WriteTimeout, linkedCts.Token);

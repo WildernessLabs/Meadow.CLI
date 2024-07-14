@@ -47,8 +47,6 @@
 
         private async Task ListenerProc(CancellationToken? cancellationToken)
         {
-            var effectiveCancellationToken = cancellationToken ?? CancellationToken.None;
-
             var readBuffer = new byte[ReadBufferSizeBytes];
             var decodedBuffer = new byte[8192];
             var messageBytes = new CircularBuffer<byte>(8192 * 2);
@@ -66,9 +64,10 @@
                     read:
                         try
                         {
-                            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(effectiveCancellationToken))
+                            receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
+                            /*using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None))
                             {
-                                var readTask = _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length, effectiveCancellationToken);
+                                var readTask = _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length, linkedCts);
                                 var timeoutTask = Task.Delay(_port.ReadTimeout, linkedCts.Token);
 
                                 var completedTask = await Task.WhenAny(readTask, timeoutTask);
@@ -81,7 +80,7 @@
                                 linkedCts.Cancel(); // Cancel the timeout task
 
                                 receivedLength = await readTask;
-                            }
+                            }*/
                         }
                         catch (OperationCanceledException)
                         {
