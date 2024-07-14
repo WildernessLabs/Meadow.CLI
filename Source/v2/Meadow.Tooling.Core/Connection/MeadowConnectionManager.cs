@@ -1,4 +1,5 @@
 ﻿using Meadow.Hcom;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,14 +20,17 @@ public class MeadowConnectionManager
     private static readonly object _lockObject = new();
 
     private readonly ISettingsManager _settingsManager;
-    private IMeadowConnection? _currentConnection;
+    private static IMeadowConnection? _currentConnection;
+
+    private static readonly int RETRY_COUNT = 10;
+    private static readonly int RETRY_DELAY = 500;
 
     public MeadowConnectionManager(ISettingsManager settingsManager)
     {
         _settingsManager = settingsManager;
     }
 
-    public IMeadowConnection? GetCurrentConnection(bool forceReconnect = false)
+    public async Task<IMeadowConnection?> GetCurrentConnection(bool forceReconnect = false)
     {
         var route = _settingsManager.GetSetting(SettingsManager.PublicSettings.Route);
 
@@ -35,22 +39,36 @@ public class MeadowConnectionManager
             throw new Exception($"No 'route' configuration set.{Environment.NewLine}Use the `meadow config route` command. For example:{Environment.NewLine}  > meadow config route COM5");
         }
 
-        return GetConnectionForRoute(route, forceReconnect);
+        return await GetConnectionForRoute(route, forceReconnect);
     }
 
-    public IMeadowConnection? GetConnectionForRoute(string route, bool forceReconnect = false)
+    public static async Task<IMeadowConnection?> GetConnectionForRoute(string route, bool forceReconnect = false)
     {
         // TODO: support connection changing (CLI does this rarely as it creates a new connection with each command)
-        if (_currentConnection != null && forceReconnect == false)
+        lock (_lockObject)
         {
-            return _currentConnection;
+            if (_currentConnection != null
+            && _currentConnection.Name == route
+            && forceReconnect == false)
+            {
+                return _currentConnection;
+            }
+            else if (_currentConnection != null)
+            {
+                _currentConnection.Detach();
+                _currentConnection.Dispose();
+                _currentConnection = null;
+            }
         }
-        _currentConnection?.Detach();
-        _currentConnection?.Dispose();
 
         if (route == "local")
         {
-            return new LocalConnection();
+            var newConnection = new LocalConnection();
+            lock (_lockObject)
+            {
+                _currentConnection = newConnection;
+            }
+            return _currentConnection;
         }
 
         // try to determine what the route is
@@ -74,30 +92,40 @@ public class MeadowConnectionManager
 
         if (uri != null)
         {
-            _currentConnection = new TcpConnection(uri);
+            var newConnection = new TcpConnection(uri);
+            lock (_lockObject)
+            {
+                _currentConnection = newConnection;
+            }
+            return _currentConnection;
         }
         else
         {
-            var retryCount = 0;
-
-        get_serial_connection:
-            try
+            for (int retryCount = 0; retryCount <= RETRY_COUNT; retryCount++)
             {
-                _currentConnection = new SerialConnection(route);
-            }
-            catch
-            {
-                retryCount++;
-                if (retryCount > 10)
+                try
                 {
-                    throw new Exception($"Cannot find port {route}");
+                    var newConnection = new SerialConnection(route);
+                    lock (_lockObject)
+                    {
+                        _currentConnection = newConnection;
+                    }
+                    return _currentConnection;
                 }
-                Thread.Sleep(500);
-                goto get_serial_connection;
-            }
-        }
+                catch
+                {
+                    if (retryCount == RETRY_COUNT)
+                    {
+                        throw new Exception($"Cannot create SerialConnection on route: {route}");
+                    }
 
-        return _currentConnection;
+                    await Task.Delay(RETRY_DELAY);
+                }
+            }
+
+            // This line should never be reached because the loop will either return or throw
+            throw new Exception("Unexpected error in GetCurrentConnection");
+        }
     }
 
     public static async Task<IList<string>> GetSerialPorts()
