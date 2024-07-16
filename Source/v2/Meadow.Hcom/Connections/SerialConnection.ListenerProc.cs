@@ -67,7 +67,7 @@
                             receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
                             /*using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None))
                             {
-                                var readTask = _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length, linkedCts);
+                                var readTask = _port.BaseStream.ReadAsync(readBuffer, 0, readBuffer.Length, linkedCts.Token);
                                 var timeoutTask = Task.Delay(_port.ReadTimeout, linkedCts.Token);
 
                                 var completedTask = await Task.WhenAny(readTask, timeoutTask);
@@ -229,7 +229,7 @@
                                     else if (response is ReconnectRequiredResponse rrr)
                                     {
                                         // the device is going to restart - we need to wait for a HCOM_HOST_REQUEST_TEXT_CONCLUDED to know it's back
-                                        Close();
+                                        await Close();
 
                                         await Task.Delay(3000);
 

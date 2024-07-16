@@ -78,9 +78,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 try
                 {
-                    Debug.WriteLine("Opening COM port...");
                     await Open();
-                    Debug.WriteLine("Opened COM port");
                 }
                 catch (Exception ex)
                 {
@@ -102,7 +100,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             _listeners.Add(listener);
         }
 
-        Open();
+        Open().Wait();
 
         MaintainConnection = true;
     }
@@ -140,8 +138,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 try
                 {
+                    Debug.WriteLine("Opening port...");
                     _port.Open();
                     State = ConnectionState.Connected;
+                    Debug.WriteLine("Opened port...");
                 }
                 catch (FileNotFoundException)
                 {
@@ -163,19 +163,27 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void Close()
+    private async Task Close()
     {
+        await connectionSemaphore.WaitAsync(cancellationTokenSource.Token);
+
         try
         {
             if (_port.IsOpen)
             {
+                Debug.WriteLine("Closing port...");
                 _port.Close();
                 State = ConnectionState.Disconnected;
+                Debug.WriteLine("Closed port...");
             }
         }
         catch (Exception ex)
         {
             throw new Exception($"Unable to close port '{_port.PortName}' - {ex.Message}");
+        }
+        finally
+        {
+            connectionSemaphore.Release();
         }
     }
 
@@ -186,7 +194,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // TODO: close this up
         }
 
-        Close();
+        Close().Wait();
     }
 
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
@@ -310,8 +318,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
         //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
-
-        var effectiveCancellationToken = cancellationToken ?? CancellationToken.None;
 
         while (!_port.IsOpen)
         {
@@ -492,7 +498,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             if (disposing)
             {
-                Close();
+                Close().Wait();
                 _port.Dispose();
             }
 
