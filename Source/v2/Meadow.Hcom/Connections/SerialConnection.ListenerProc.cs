@@ -109,6 +109,11 @@
                             }
                             goto read;
                         }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error reading from port: {ex.Message}");
+                            await Task.Delay(1000);
+                        }
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 
