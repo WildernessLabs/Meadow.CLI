@@ -149,11 +149,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 }
                 catch (UnauthorizedAccessException uae)
                 {
-                    throw new Exception($"{uae.Message}");
+                    throw new Exception($"Not authorised to open serial port '{_port.PortName}' - {uae.Message}");
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
+                    throw new Exception($"Unable to open serial port '{_port.PortName}' - {ex.Message}");
                 }
             }
         }
@@ -1320,13 +1320,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
         var debuggingServer = new DebuggingServer(this, port, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         _ = debuggingServer.StartListening(cancellationToken);
 
-        logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
+        await WaitForMeadowAttach(cancellationToken);
 
         return debuggingServer;
     }
