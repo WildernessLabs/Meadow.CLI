@@ -3,7 +3,6 @@
     public partial class SerialConnection
     {
         private volatile bool reconnectInProgress = false;
-        private volatile bool isDisposed = false;
 
         public event EventHandler<Exception> FileException = delegate { };
 
@@ -15,7 +14,7 @@
             var delimiter = new byte[] { 0x00 };
             var receivedLength = 0;
 
-            while (!isDisposed)
+            while (!_isDisposed)
             {
                 if (_port.IsOpen)
                 {
