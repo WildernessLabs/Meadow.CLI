@@ -526,6 +526,52 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public int CommandTimeoutSeconds { get; set; } = 30;
 
+    private readonly SemaphoreSlim meadowAttachLock = new SemaphoreSlim(1, 1);
+
+    public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
+    {
+        var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None);
+        combinedTokenSource.CancelAfter(TimeSpan.FromSeconds(20));
+
+        await meadowAttachLock.WaitAsync(combinedTokenSource.Token);
+        try
+        {
+            while (!combinedTokenSource.Token.IsCancellationRequested)
+            {
+                if (State == ConnectionState.MeadowAttached)
+                {
+                    if (Device == null)
+                    {
+                        // no device set - this happens when we are waiting for attach from DFU mode
+                        await Attach(combinedTokenSource.Token, 5);
+                    }
+                    return;
+                }
+
+                await Task.Delay(500, combinedTokenSource.Token);
+
+                try
+                {
+                    await Open();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Unable to open port: {ex.Message}");
+                }
+            }
+
+            throw new TimeoutException("Operation timed out while waiting for Meadow to attach.");
+        }
+        catch (OperationCanceledException)
+        {
+            throw new TaskCanceledException("The operation was canceled.");
+        }
+        finally
+        {
+            meadowAttachLock.Release();
+        }
+    }
+
     private async Task<bool> WaitForFileReadCompleted(CancellationToken? cancellationToken)
     {
         var timeout = CommandTimeoutSeconds * 2;
