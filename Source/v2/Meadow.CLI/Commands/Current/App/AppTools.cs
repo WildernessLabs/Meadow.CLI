@@ -63,15 +63,24 @@ internal static class AppTools
 
         if (configuration is not null)
         {
-            file = candidates
-                .Where(c => c.DirectoryName.IndexOf(configuration, StringComparison.OrdinalIgnoreCase) >= 0)
+            var foundConfiguration = candidates.Where(c => c.DirectoryName?.IndexOf(configuration, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (foundConfiguration.Count() == 0)
+            {
+                logger?.LogError($"{Strings.NoCompiledApplicationFound} {Strings.WithConfiguration} '{configuration}' {Strings.At} '{path}'");
+                return false;
+            }
+            else
+            {
+                file = foundConfiguration
                 .OrderByDescending(c => c.LastWriteTime)
                 .First();
 
-            if (file == null)
-            {
-                logger?.LogError($"{Strings.NoCompiledApplicationFound} at '{path}'");
-                return false;
+                if (file == null)
+                {
+                    logger?.LogError($"{Strings.NoCompiledApplicationFound} {Strings.At} '{path}'");
+                    return false;
+                }
             }
         }
         else
