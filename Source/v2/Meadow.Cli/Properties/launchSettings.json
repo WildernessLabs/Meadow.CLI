@@ -105,7 +105,7 @@
     },
     "File initial": {
       "commandName": "Project",
-      "commandLineArgs": "file initial meadow.log"
+      "commandLineArgs": "file initial app.build.yaml"
     },
     "File Read Large": {
       "commandName": "Project",
