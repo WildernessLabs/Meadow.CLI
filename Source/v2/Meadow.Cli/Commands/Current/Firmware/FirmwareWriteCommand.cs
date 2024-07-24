@@ -404,6 +404,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             foreach (var file in fileList)
             {
                 await connection!.Device!.WriteFile(file, $"/{AppTools.MeadowRootFolder}/update/os/{Path.GetFileName(file)}");
+                await Task.Delay(500);
             }
         }
     }
