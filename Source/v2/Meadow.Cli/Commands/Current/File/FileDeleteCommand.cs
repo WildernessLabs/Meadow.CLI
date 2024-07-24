@@ -92,5 +92,6 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         Logger?.LogInformation($"Deleting file '{meadowFile}' from device...");
 
         await device.DeleteFile(meadowFile, cancellationToken);
+        await Task.Delay(100);
     }
 }
