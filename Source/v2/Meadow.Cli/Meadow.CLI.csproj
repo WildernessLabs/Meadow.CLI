@@ -47,6 +47,7 @@
     <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
     <ProjectReference Include="..\Meadow.Tooling.Core\Meadow.Tooling.Core.csproj" />
     <ProjectReference Include="..\Meadow.UsbLib\Meadow.UsbLib.csproj" />
+    <ProjectReference Include="..\Meadow.HCom\Meadow.HCom.csproj" />
   </ItemGroup>
   
   <ItemGroup>

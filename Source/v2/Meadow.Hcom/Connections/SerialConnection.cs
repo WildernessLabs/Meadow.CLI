@@ -189,46 +189,51 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
     {
+        CancellationTokenSource? timeoutCts = null;
         try
         {
             // ensure the port is open
             Open();
 
+            timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds * 2));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken ?? CancellationToken.None);
+            var ct = linkedCts.Token;
+
             // search for the device via HCOM - we'll use a simple command since we don't have a "ping"
             var command = RequestBuilder.Build<GetDeviceInfoRequest>();
 
             // sequence numbers are only for file retrieval - Setting it to non-zero will cause it to hang
-
             _port.DiscardInBuffer();
-
-            // wait for a response
-            var timeout = timeoutSeconds * 2;
-            var dataReceived = false;
 
             // local function so we can unsubscribe
             var count = _messageCount;
 
-            _pendingCommands.Enqueue(command);
-            _commandEvent.Set();
+            EnqueueRequest(command);
 
-            while (timeout-- > 0)
+            // Wait for a response
+            var taskCompletionSource = new TaskCompletionSource<bool>();
+
+            _ = Task.Run(async () =>
             {
-                if (cancellationToken?.IsCancellationRequested ?? false) return null;
-                if (timeout <= 0) throw new TimeoutException();
-
-                if (count != _messageCount)
+                while (!ct.IsCancellationRequested)
                 {
-                    dataReceived = true;
-                    break;
+                    if (count != _messageCount)
+                    {
+                        taskCompletionSource.TrySetResult(true);
+                        break;
+                    }
+                    await Task.Delay(500, ct);
                 }
-
-                await Task.Delay(500);
-            }
+                if (!taskCompletionSource.Task.IsCompleted)
+                {
+                    taskCompletionSource.TrySetException(new TimeoutException("Timeout waiting for device response"));
+                }
+            }, ct);
 
             // if HCOM fails, check for DFU/bootloader mode?  only if we're doing an OS thing, so maybe no
 
-            // create the device instance
-            if (dataReceived)
+            // Create the device instance if the response is received
+            if (await taskCompletionSource.Task)
             {
                 Device = new MeadowDevice(this);
             }
@@ -239,6 +244,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             _logger?.LogError(e, "Failed to connect");
             throw;
+        }
+        finally
+        {
+            timeoutCts?.Dispose();
         }
     }
 
