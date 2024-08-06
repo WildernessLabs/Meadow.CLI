@@ -133,7 +133,7 @@ public static class AppManager
         foreach (var file in removeFiles)
         {
             logger?.LogInformation($"Deleting '{file}'");
-            var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"{file.Path}";
+            var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"/{MeadowRootFolder}/{file.Path}/";
 
             await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
         }
