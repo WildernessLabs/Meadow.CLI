@@ -14,13 +14,14 @@ namespace Meadow.CLI;
 
 public static class AppManager
 {
-    static readonly string MeadowRootFolder = "meadow0";
+    public static readonly string MeadowRootFolder = "meadow0";
 
-    static readonly string[] PersistantFolders = new string[]
+    public static readonly string[] PersistantFolders = new string[]
     {
         "Data",
         "Documents",
         "update-store",
+        "system",
     };
 
     private static bool MatchingDllExists(string file)
@@ -132,6 +133,11 @@ public static class AppManager
         // delete those files
         foreach (var file in removeFiles)
         {
+            if (PersistantFolders.Contains(file.Path))
+            {
+                continue;
+            }
+
             logger?.LogInformation($"Deleting '{file}'");
             var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"/{MeadowRootFolder}/{file.Path}/";
 
