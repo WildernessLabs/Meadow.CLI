@@ -223,7 +223,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             }
             else
             {
-                await connection!.Device!.WriteFile(osFileWithoutBootloader, $"/{AppTools.MeadowRootFolder}/update/os/{package.OsWithoutBootloader}");
+                await connection!.Device!.WriteFile(osFileWithoutBootloader, $"/{AppManager.MeadowRootFolder}/update/os/{package.OsWithoutBootloader}");
             }
         }
 
@@ -361,7 +361,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         }
         else
         {
-            await connection.Device!.WriteFile(runtimePath, $"/{AppTools.MeadowRootFolder}/update/os/{destinationFilename}");
+            await connection.Device!.WriteFile(runtimePath, $"/{AppManager.MeadowRootFolder}/update/os/{destinationFilename}");
         }
 
         return connection;
@@ -403,7 +403,7 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
         {
             foreach (var file in fileList)
             {
-                await connection!.Device!.WriteFile(file, $"/{AppTools.MeadowRootFolder}/update/os/{Path.GetFileName(file)}");
+                await connection!.Device!.WriteFile(file, $"/{AppManager.MeadowRootFolder}/update/os/{Path.GetFileName(file)}");
                 await Task.Delay(500);
             }
         }
