@@ -35,7 +35,7 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await device.GetFileList(Folder ?? $"/{AppTools.MeadowRootFolder}/", Verbose, CancellationToken);
+        var files = await device.GetFileList(Folder ?? $"/{AppManager.MeadowRootFolder}/", Verbose, CancellationToken);
 
         if (files == null || files.Length == 0)
         {
