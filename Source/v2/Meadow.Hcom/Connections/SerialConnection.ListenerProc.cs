@@ -8,7 +8,7 @@
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
-            var timeout = 20;
+            var timeout = 500;
 
             while (timeout-- > 0)
             {
@@ -26,7 +26,7 @@
                     return;
                 }
 
-                await Task.Delay(500);
+                await Task.Delay(20);
 
                 if (!_port.IsOpen)
                 {
