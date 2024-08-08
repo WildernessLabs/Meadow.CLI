@@ -137,9 +137,22 @@ public static class AppManager
             {
                 continue;
             }
-
+            //the CLI and VS2022 handle the file paths differently, should rationalize in the future
             logger?.LogInformation($"Deleting '{file}'");
-            var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"/{MeadowRootFolder}/{file.Path}/";
+            var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"{file.Path}";
+            if (folder.StartsWith("/") == false)
+            {
+                folder = "/" + folder;
+            }
+            if (folder.EndsWith("/") == false)
+            {
+                folder += "/";
+            }
+
+            if (folder.Contains(MeadowRootFolder) == false)
+            {
+                folder = $"/{MeadowRootFolder}{folder}";
+            }
 
             await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
         }
