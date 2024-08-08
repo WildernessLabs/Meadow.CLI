@@ -202,7 +202,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             _port.DiscardInBuffer();
 
             // wait for a response
-            var timeout = timeoutSeconds * 20;
+            var timeout = timeoutSeconds * 50;
             var dataReceived = false;
 
             // local function so we can unsubscribe
@@ -222,7 +222,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                     break;
                 }
 
-                await Task.Delay(50);
+                await Task.Delay(20);
             }
 
             // if HCOM fails, check for DFU/bootloader mode?  only if we're doing an OS thing, so maybe no
