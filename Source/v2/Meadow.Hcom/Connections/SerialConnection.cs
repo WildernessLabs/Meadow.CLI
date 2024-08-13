@@ -530,25 +530,25 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
     {
-        var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None);
-        combinedTokenSource.CancelAfter(TimeSpan.FromSeconds(20));
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(CommandTimeoutSeconds * 2));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken ?? CancellationToken.None);
 
-        await meadowAttachLock.WaitAsync(combinedTokenSource.Token);
+        await meadowAttachLock.WaitAsync(timeoutCts.Token);
         try
         {
-            while (!combinedTokenSource.Token.IsCancellationRequested)
+            while (!timeoutCts.Token.IsCancellationRequested)
             {
                 if (State == ConnectionState.MeadowAttached)
                 {
                     if (Device == null)
                     {
                         // no device set - this happens when we are waiting for attach from DFU mode
-                        await Attach(combinedTokenSource.Token, 5);
+                        await Attach(timeoutCts.Token, 5);
                     }
                     return;
                 }
 
-                await Task.Delay(500, combinedTokenSource.Token);
+                await Task.Delay(500, timeoutCts.Token);
 
                 try
                 {
@@ -616,41 +616,55 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private async Task<bool> WaitForResult(Func<bool> checkAction, CancellationToken? cancellationToken)
     {
-        var timeout = CommandTimeoutSeconds * 2;
-
-        while (timeout-- > 0)
+        try
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (_lastException != null) return false;
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(CommandTimeoutSeconds * 2));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken ?? CancellationToken.None);
 
-            if (timeout <= 0) throw new TimeoutException();
-
-            if (checkAction())
+            while (!linkedCts.Token.IsCancellationRequested)
             {
-                break;
-            }
+                if (_lastException != null)
+                {
+                    return false;
+                }
 
-            await Task.Delay(500);
-        }
-
-        return true;
-    }
-
-    private async Task<bool> WaitForResponseText(string textToAwait, CancellationToken? cancellationToken = null)
-    {
-        return await WaitForResult(() =>
-        {
-            if (InfoMessages.Count > 0)
-            {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(textToAwait));
-                if (m != null)
+                if (checkAction())
                 {
                     return true;
                 }
+
+                await Task.Delay(500, linkedCts.Token);
+            }
+
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                return false; // The operation was canceled by the caller.
+            }
+
+            throw new TimeoutException("Operation timed out while waiting for a result.");
+        }
+    }
+
+    private async Task<(bool success, string? message)> WaitForResponseText(string textToAwait, CancellationToken? cancellationToken = null)
+    {
+        string matchedText = string.Empty;
+
+        var success = await WaitForResult(() =>
+        {
+            if (InfoMessages.Count > 0)
+            {
+                matchedText = InfoMessages.FirstOrDefault(i => i.Contains(textToAwait));
+                return !string.IsNullOrWhiteSpace(matchedText);
             }
 
             return false;
         }, cancellationToken);
+
+        return (success, matchedText);
     }
 
     private async Task<bool> WaitForConcluded(RequestType? requestType = null, CancellationToken? cancellationToken = null)
@@ -699,21 +713,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         DateTimeOffset? now = null;
 
-        var success = await WaitForResult(() =>
-        {
-            if (InfoMessages.Count > 0)
-            {
-                var m = InfoMessages.FirstOrDefault(i => i.Contains(RtcRetrievalToken));
-                if (m != null)
-                {
-                    var timeString = m.Substring(m.IndexOf(RtcRetrievalToken) + RtcRetrievalToken.Length);
-                    now = DateTimeOffset.Parse(timeString);
-                    return true;
-                }
-            }
+        var response = await WaitForResponseText(RtcRetrievalToken, cancellationToken);
 
-            return false;
-        }, cancellationToken);
+        if (response.success && string.IsNullOrWhiteSpace(response.message))
+        {
+            var timeString = response.message?.Substring(response.message.IndexOf(RtcRetrievalToken) + RtcRetrievalToken.Length);
+            now = DateTimeOffset.Parse(timeString);
+        }
 
         return now;
     }
@@ -726,33 +732,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        // wait for an information response
-        var timeout = CommandTimeoutSeconds * 2;
-        while (timeout-- > 0)
-        {
-            if (cancellationToken?.IsCancellationRequested ?? false)
-            {
-                return false;
-            }
-            if (timeout <= 0)
-            {
-                throw new TimeoutException();
-            }
+        var response = await WaitForResponseText(RuntimeIsEnabledToken, cancellationToken);
 
-            if (InfoMessages.Count > 0)
-            {
-                var m = InfoMessages.FirstOrDefault(i =>
-                    i.Contains(RuntimeStateToken) ||
-                    i.Contains(MonoStateToken));
-                if (m != null)
-                {
-                    return (m == RuntimeIsEnabledToken) || (m == MonoIsEnabledToken);
-                }
-            }
-
-            await Task.Delay(500);
-        }
-        return false;
+        return response.success;
     }
 
     public override async Task RuntimeEnable(CancellationToken? cancellationToken = null)
