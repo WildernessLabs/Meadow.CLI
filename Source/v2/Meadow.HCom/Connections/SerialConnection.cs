@@ -1251,13 +1251,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
         var debuggingServer = new DebuggingServer(this, port, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         _ = debuggingServer.StartListening(cancellationToken);
-
-        logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
 
         return debuggingServer;
     }
