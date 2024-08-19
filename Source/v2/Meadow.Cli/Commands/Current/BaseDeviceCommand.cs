@@ -29,11 +29,11 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 
         if (route != null)
         {
-            connection = ConnectionManager.GetConnectionForRoute(route, forceReconnect);
+            connection = await MeadowConnectionManager.GetConnectionForRoute(route, forceReconnect);
         }
         else
         {
-            connection = ConnectionManager.GetCurrentConnection(forceReconnect);
+            connection = await ConnectionManager.GetCurrentConnection(forceReconnect);
         }
 
         if (connection != null)
