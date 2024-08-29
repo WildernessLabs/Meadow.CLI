@@ -1310,8 +1310,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
         _ = debuggingServer.StartListening(cancellationToken);
 
-        await WaitForMeadowAttach(cancellationToken);
-
         return debuggingServer;
     }
 
