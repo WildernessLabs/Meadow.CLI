@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
 
@@ -21,8 +22,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private bool _isDisposed;
     private ConnectionState _state;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
-    private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
-    private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
+    private readonly ConcurrentQueue<IRequest> _pendingCommands = new ConcurrentQueue<IRequest>();
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
     private readonly List<string> _textList = new List<string>();
@@ -208,8 +208,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // local function so we can unsubscribe
             var count = _messageCount;
 
-            _pendingCommands.Enqueue(command);
-            _commandEvent.Set();
+            EnqueueRequest(command);
 
             while (timeout-- > 0)
             {
@@ -242,18 +241,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void CommandManager()
+    private async void CommandManager()
     {
         while (!_isDisposed)
         {
-            _commandEvent.WaitOne(1000);
-
-            while (_pendingCommands.Count > 0)
+            if (_pendingCommands.TryDequeue(out var pendingCommand))
             {
-                Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
-
-                var command = _pendingCommands.Dequeue() as Request;
-                if (command != null)
+                if (pendingCommand is Request command)
                 {
                     // if this is a file write, we need to packetize for progress
 
@@ -262,6 +256,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
                     // TODO: re-queue on fail?
                 }
+            }
+            else
+            {
+                // If no commands to dequeue, delay a bit to avoid busy waiting
+                await Task.Delay(100);
             }
         }
     }
@@ -298,7 +297,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         _pendingCommands.Enqueue(command);
-        _commandEvent.Set();
     }
 
     private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
