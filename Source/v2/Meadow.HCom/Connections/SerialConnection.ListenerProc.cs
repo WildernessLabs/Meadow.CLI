@@ -6,44 +6,6 @@
 
         public event EventHandler<Exception> FileException = delegate { };
 
-        public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
-        {
-            var timeout = 500;
-
-            while (timeout-- > 0)
-            {
-                if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
-                if (timeout <= 0) throw new TimeoutException();
-
-                if (State == ConnectionState.MeadowAttached)
-                {
-                    if (Device == null)
-                    {
-                        // no device set - this happens when we are waiting for attach from DFU mode
-                        await Attach(cancellationToken, 5);
-                    }
-
-                    return;
-                }
-
-                await Task.Delay(20);
-
-                if (!_port.IsOpen)
-                {
-                    try
-                    {
-                        Open();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Unable to open port: {ex.Message}");
-                    }
-                }
-            }
-
-            throw new TimeoutException();
-        }
-
         private async Task ListenerProc()
         {
             var readBuffer = new byte[ReadBufferSizeBytes];

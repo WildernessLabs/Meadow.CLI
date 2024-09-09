@@ -21,10 +21,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private readonly ILogger? _logger;
     private bool _isDisposed;
     private ConnectionState _state;
-    private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
+    // TODO Not currently used private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private readonly ConcurrentQueue<IRequest> _pendingCommands = new ConcurrentQueue<IRequest>();
-    private bool _maintainConnection;
-    private Thread? _connectionManager = null;
+    // TODO Not currently used private bool _maintainConnection;
+    // TODO Not currently used private Thread? _connectionManager = null;
     private readonly List<string> _textList = new List<string>();
     private int _messageCount = 0;
     private ReadFileInfo? _readFileInfo = null;
@@ -58,7 +58,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         .Start();
     }
 
-    private bool MaintainConnection
+    /* TODO Not currently used private bool MaintainConnection
     {
         get => _maintainConnection;
         set
@@ -127,7 +127,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         // TODO: stop maintaining connection?
-    }
+    }*/
 
     public override ConnectionState State
     {
@@ -148,7 +148,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             try
             {
+                Debug.WriteLine($"Opening '{_port.PortName}' port...");
                 _port.Open();
+                Debug.WriteLine($"Opened '{_port.PortName}' port...");
+                State = ConnectionState.Connected;
             }
             catch (FileNotFoundException)
             {
@@ -162,8 +165,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
             }
-
-            State = ConnectionState.Connected;
         }
     }
 
@@ -171,18 +172,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         if (_port.IsOpen)
         {
+            Debug.WriteLine($"Closing '{_port.PortName}' port...");
             _port.Close();
+            Debug.WriteLine($"Closed '{_port.PortName}' port...");
+            State = ConnectionState.Disconnected;
         }
-
-        State = ConnectionState.Disconnected;
     }
 
     public override void Detach()
     {
-        if (MaintainConnection)
+        /* TODO Not currently usedif (MaintainConnection)
         {
             // TODO: close this up
-        }
+        }*/
 
         Close();
     }
@@ -596,6 +598,34 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             return false;
         }, cancellationToken);
+    }
+
+    public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
+    {
+        var timeout = 500;
+
+        while (timeout-- > 0)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false) throw new TaskCanceledException();
+            if (timeout <= 0) throw new TimeoutException();
+
+            if (State == ConnectionState.MeadowAttached)
+            {
+                if (Device == null)
+                {
+                    // no device set - this happens when we are waiting for attach from DFU mode
+                    await Attach(cancellationToken, 5);
+                }
+
+                return;
+            }
+
+            await Task.Delay(20);
+
+            Open();
+        }
+
+        throw new TimeoutException();
     }
 
     public override async Task SetRtcTime(DateTimeOffset dateTime, CancellationToken? cancellationToken = null)
