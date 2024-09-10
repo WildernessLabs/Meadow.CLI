@@ -73,7 +73,7 @@ public static class DfuUtils
 
         if (!File.Exists(fileName))
         {
-            logger.LogError($"Unable to find file '{fileName}'. Please specify valid --File or download the latest with: meadow download os");
+            logger.LogError($"Unable to find file '{fileName}'. Please specify valid --File or download the latest with: meadow firmware download");
             return false;
         }
 
