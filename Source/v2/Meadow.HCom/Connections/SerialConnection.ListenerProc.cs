@@ -26,7 +26,7 @@
                     return;
                 }
 
-                await Task.Delay(20);
+                await Task.Delay(timeout);
 
                 if (!_port.IsOpen)
                 {
