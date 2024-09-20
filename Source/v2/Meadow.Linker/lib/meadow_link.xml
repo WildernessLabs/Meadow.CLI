@@ -8,5 +8,5 @@
     <assembly fullname="Meadow.Logging" />
     <assembly fullname="SQLite-net" />
     <assembly fullname="MQTTnet" />
-    <assembly fullname="ProjectLab" />
+    <assembly fullname="Meadow.ProjectLab" />
 </linker>
