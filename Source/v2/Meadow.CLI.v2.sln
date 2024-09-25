@@ -40,7 +40,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Dfu", "Meadow.Dfu\Me
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Firmware", "Meadow.Firmware\Meadow.Firmware.csproj", "{D2274F30-A001-482A-99E3-0AB1970CF695}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Tooling.Core", "Meadow.Tooling.Core\Meadow.Tooling.Core.csproj", "{A22DBF4A-E472-445E-96C0-930C126039C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.Tooling.Core", "Meadow.Tooling.Core\Meadow.Tooling.Core.csproj", "{A22DBF4A-E472-445E-96C0-930C126039C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meadow.Repository", "Meadow.Repository\Meadow.Repository.csproj", "{66E4476E-41C6-4618-BBC2-98C6277757E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,6 +50,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66E4476E-41C6-4618-BBC2-98C6277757E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66E4476E-41C6-4618-BBC2-98C6277757E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66E4476E-41C6-4618-BBC2-98C6277757E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66E4476E-41C6-4618-BBC2-98C6277757E6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C2FA084-701B-4A28-8775-BF18B84E366B}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -80,6 +80,9 @@ public partial class DebuggingServer
                                                             .ToLowerInvariant());
 
                             await _connection.SendDebuggerData(meadowBuffer, 0, _cts.Token);
+
+                            Debug.WriteLine($"ToMeadow: {BitConverter.ToString(meadowBuffer)}");
+
                             meadowBuffer = Array.Empty<byte>();
                         } while (_networkStream.DataAvailable);
                     }
@@ -115,7 +118,7 @@ public partial class DebuggingServer
                 {
                     if (_networkStream != null && _networkStream.CanWrite)
                     {
-                        _vsDebugDataReady.WaitOne(1000);
+                        _vsDebugDataReady.WaitOne(500);
 
                         while (_debuggerMessages.Count > 0)
                         {
@@ -130,6 +133,8 @@ public partial class DebuggingServer
 
                             await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
                             _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+
+                            Debug.WriteLine($"ToVisStu: {BitConverter.ToString(byteData)}");
                         }
                     }
                     else

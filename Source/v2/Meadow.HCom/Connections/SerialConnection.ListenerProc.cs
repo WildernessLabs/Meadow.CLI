@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Meadow.Hcom
+﻿namespace Meadow.Hcom
 {
     public partial class SerialConnection
     {
@@ -10,7 +8,7 @@ namespace Meadow.Hcom
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
-            var timeout = 20;
+            var timeout = 500;
 
             while (timeout-- > 0)
             {
@@ -28,7 +26,7 @@ namespace Meadow.Hcom
                     return;
                 }
 
-                await Task.Delay(500);
+                await Task.Delay(20);
 
                 if (!_port.IsOpen)
                 {
@@ -315,7 +313,6 @@ namespace Meadow.Hcom
                     }
                     catch (IOException ioe)
                     {
-
                         FileException?.Invoke(this, ioe);
                         // attempt to read timed out (i.e. there's just no data)
                         // NOP

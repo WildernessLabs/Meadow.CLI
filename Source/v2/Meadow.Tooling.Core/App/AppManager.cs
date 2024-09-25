@@ -14,13 +14,14 @@ namespace Meadow.CLI;
 
 public static class AppManager
 {
-    static readonly string MeadowRootFolder = "meadow0";
+    public static readonly string MeadowRootFolder = "meadow0";
 
-    static readonly string[] PersistantFolders = new string[]
+    public static readonly string[] PersistantFolders = new string[]
     {
         "Data",
         "Documents",
         "update-store",
+        "system",
     };
 
     private static bool MatchingDllExists(string file)
@@ -132,8 +133,26 @@ public static class AppManager
         // delete those files
         foreach (var file in removeFiles)
         {
+            if (PersistantFolders.Contains(file.Path))
+            {
+                continue;
+            }
+            //the CLI and VS2022 handle the file paths differently, should rationalize in the future
             logger?.LogInformation($"Deleting '{file}'");
             var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"{file.Path}";
+            if (folder.StartsWith("/") == false)
+            {
+                folder = "/" + folder;
+            }
+            if (folder.EndsWith("/") == false)
+            {
+                folder += "/";
+            }
+
+            if (folder.Contains(MeadowRootFolder) == false)
+            {
+                folder = $"/{MeadowRootFolder}{folder}";
+            }
 
             await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
         }

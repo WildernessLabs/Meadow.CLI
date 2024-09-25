@@ -8,8 +8,6 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 
 internal static class AppTools
 {
-    internal const string MeadowRootFolder = "meadow0";
-
     internal static string ValidateAndSanitizeAppPath(string? path)
     {
         path ??= Directory.GetCurrentDirectory();
@@ -64,15 +62,24 @@ internal static class AppTools
 
         if (configuration is not null)
         {
-            file = candidates
-                .Where(c => c.DirectoryName.IndexOf(configuration, StringComparison.OrdinalIgnoreCase) >= 0)
+            var foundConfiguration = candidates.Where(c => c.DirectoryName?.IndexOf(configuration, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (foundConfiguration.Count() == 0)
+            {
+                logger?.LogError($"{Strings.NoCompiledApplicationFound} {Strings.WithConfiguration} '{configuration}' {Strings.At} '{path}'");
+                return false;
+            }
+            else
+            {
+                file = foundConfiguration
                 .OrderByDescending(c => c.LastWriteTime)
                 .First();
 
-            if (file == null)
-            {
-                logger?.LogError($"{Strings.NoCompiledApplicationFound} at '{path}'");
-                return false;
+                if (file == null)
+                {
+                    logger?.LogError($"{Strings.NoCompiledApplicationFound} {Strings.At} '{path}'");
+                    return false;
+                }
             }
         }
         else
@@ -116,15 +123,15 @@ internal static class AppTools
 
         if (string.IsNullOrWhiteSpace(folder))
         {
-            folder = Path.DirectorySeparatorChar + MeadowRootFolder;
+            folder = Path.DirectorySeparatorChar + AppManager.MeadowRootFolder;
         }
         else
         {
             if (!folder.StartsWith(Path.DirectorySeparatorChar))
             {
-                if (!folder.StartsWith($"{MeadowRootFolder}"))
+                if (!folder.StartsWith($"{AppManager.MeadowRootFolder}"))
                 {
-                    folder = $"{Path.DirectorySeparatorChar}{MeadowRootFolder}{Path.DirectorySeparatorChar}{folder}";
+                    folder = $"{Path.DirectorySeparatorChar}{AppManager.MeadowRootFolder}{Path.DirectorySeparatorChar}{folder}";
                 }
                 else
                 {

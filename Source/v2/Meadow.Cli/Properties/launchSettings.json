@@ -105,7 +105,7 @@
     },
     "File initial": {
       "commandName": "Project",
-      "commandLineArgs": "file initial meadow.log"
+      "commandLineArgs": "file initial app.build.yaml"
     },
     "File Read Large": {
       "commandName": "Project",
@@ -306,6 +306,30 @@
     "legacy flash os": {
       "commandName": "Project",
       "commandLineArgs": "flash os"
+    },
+    "source status": {
+      "commandName": "Project",
+      "commandLineArgs": "source status"
+    },
+    "source checkout": {
+      "commandName": "Project",
+      "commandLineArgs": "source checkout develop"
+    },
+    "source fetch": {
+      "commandName": "Project",
+      "commandLineArgs": "source fetch"
+    },
+    "source pull": {
+      "commandName": "Project",
+      "commandLineArgs": "source pull"
+    },
+    "source clone": {
+      "commandName": "Project",
+      "commandLineArgs": "source clone"
+    },
+    "config source": {
+      "commandName": "Project",
+      "commandLineArgs": "config source 'C:\\repos\\wilderness'"
     },
     "WSL": {
       "commandName": "WSL2",

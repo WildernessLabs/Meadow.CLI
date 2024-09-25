@@ -71,6 +71,8 @@ public static class Strings
     public const string AppDeployFailed = "Application deploy failed";
     public const string AppDeployedSuccessfully = "Application deployed successfully";
     public const string AppTrimFailed = "Application trimming failed";
+	  public const string WithConfiguration = "with configuration";
+	  public const string At = "at";
 
     public static class Telemetry
     {

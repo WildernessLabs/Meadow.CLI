@@ -76,6 +76,15 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
     private async Task DeleteFileRecursive(IMeadowDevice device, string directoryname, MeadowFileInfo fileInfo, CancellationToken cancellationToken)
     {
         var meadowFile = AppTools.SanitizeMeadowFilename(Path.Combine(directoryname, fileInfo.Name));
+
+        foreach (var folder in AppManager.PersistantFolders)
+        {
+            if (meadowFile.StartsWith($"/{AppManager.MeadowRootFolder}/{folder}"))
+            {
+                return;
+            }
+        }
+
         if (fileInfo.IsDirectory)
         {
             // Add a backslash as we're a directory and not a file
@@ -92,5 +101,6 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
         Logger?.LogInformation($"Deleting file '{meadowFile}' from device...");
 
         await device.DeleteFile(meadowFile, cancellationToken);
+        await Task.Delay(100);
     }
 }

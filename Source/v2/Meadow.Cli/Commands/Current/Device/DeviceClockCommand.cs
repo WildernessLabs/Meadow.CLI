@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
-[Command("device clock", Description = "Gets or sets the device clock (in UTC time)")]
+[Command("device clock", Description = "Gets or sets the device clock (in UTC time). Use either 'now' or a date/time inside single quotes")]
 public class DeviceClockCommand : BaseDeviceCommand<DeviceInfoCommand>
 {
     [CommandParameter(0, Name = "Time", IsRequired = false)]
