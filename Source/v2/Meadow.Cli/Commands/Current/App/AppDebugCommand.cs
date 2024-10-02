@@ -12,6 +12,9 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
     [CommandOption("Port", 'p', Description = "The port to run the debug server on", IsRequired = false)]
     public int Port { get; init; } = 4024;
 
+    [CommandOption("Verbose", 'v', Description = "Enable verbose messages", IsRequired = false)]
+    public bool Verbose { get; init; } = false;
+
     public AppDebugCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
@@ -24,6 +27,24 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
         {
             Logger?.LogInformation(e.message);
         };
+
+        if (Verbose)
+        {
+            connection.ConnectionMessage += (o, m) =>
+            {
+                Logger?.LogInformation(m);
+            };
+
+            connection.ConnectionError +=(o, e) =>
+            {
+                Logger?.LogInformation(e.Message);
+            };
+
+            connection.DebuggerMessageReceived += (s, e) =>
+            {
+                Logger?.LogInformation(e.ToString());
+            };
+        }
 
         using var server = await connection.StartDebuggingSession(Port, Logger, CancellationToken);
 
