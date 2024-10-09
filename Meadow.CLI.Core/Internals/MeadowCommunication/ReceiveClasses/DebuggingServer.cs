@@ -189,10 +189,9 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
             {
                 try
                 {
-                    using var md5 = MD5.Create();
                     // Receive from Visual Studio and send to Meadow
                     var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
-                    var meadowBuffer = Array.Empty<byte>();
+
                     while (!_cts.IsCancellationRequested)
                     {
                         if (_networkStream != null && _networkStream.CanRead)
@@ -204,18 +203,12 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                                 if (bytesRead == 0 || _cts.IsCancellationRequested)
                                     continue;
 
-                                var destIndex = meadowBuffer.Length;
-                                Array.Resize(ref meadowBuffer, destIndex + bytesRead);
-                                Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
-
                                 // Forward the RECIEVE_BUFFER_SIZE chunk to Meadow immediately
-                                _logger.LogTrace("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
-                                                    meadowBuffer.Length,
-                                                    BitConverter.ToString(md5.ComputeHash(meadowBuffer))
-                                                                .Replace ("-", string.Empty)
-                                                                .ToLowerInvariant());
-                                await _meadow.ForwardVisualStudioDataToMono(meadowBuffer, 0);
-                                meadowBuffer = Array.Empty<byte>();
+                                _logger.LogTrace("Received {count} bytes from VS, will forward to HCOM/Meadow. Msg: {msg}",
+                                                    bytesRead,
+                                                    receiveBuffer[..bytesRead]);
+
+                                await _meadow.ForwardVisualStudioDataToMono(receiveBuffer[..bytesRead], 0);
 
                                 // Ensure we read all the data in this message before passing it along
                                 // I'm not sure this is actually needed, the whole message should get read at once.
@@ -225,7 +218,6 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                         {
                             // User probably hit stop
                             _logger.LogInformation("Unable to Read Data from Visual Studio");
-                            _logger.LogTrace("Unable to Read Data from Visual Studio");
                         }
                     }
                 }
@@ -233,13 +225,11 @@ namespace Meadow.CLI.Core.Internals.MeadowCommunication.ReceiveClasses
                 {
                     // VS client probably died
                     _logger.LogInformation("Visual Studio has Disconnected" + Environment.NewLine);
-                    _logger.LogTrace(ioe, "Visual Studio has Disconnected");
                 }
                 catch (ObjectDisposedException ode)
                 {
                     // User probably hit stop
                     _logger.LogInformation("Visual Studio has stopped debugging" + Environment.NewLine);
-                    _logger.LogTrace(ode, "Visual Studio has stopped debugging");
                 }
                 catch (Exception ex)
                 {
