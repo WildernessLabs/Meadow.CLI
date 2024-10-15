@@ -62,8 +62,17 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
         ConnectionMessage?.Invoke(this, message);
     }
 
-    protected void RaiseDebuggerMessage(byte[] data)
+    bool firstRun = true;
+
+    protected async Task RaiseDebuggerMessage(byte[] data)
     {
+        if (firstRun)
+        {
+            await Task.Delay(2000);
+            firstRun = false;
+        }
+
+        Debug.WriteLine($"*************************** RaiseDebuggerMessage: {data.Length}");
         DebuggerMessageReceived?.Invoke(this, data);
     }
 
