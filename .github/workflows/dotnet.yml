@@ -1,7 +1,7 @@
 name: Meadow.CLI Packaging
 env:
   CLI_RELEASE_VERSION_1: 1.9.4.0
-  CLI_RELEASE_VERSION_2: 2.0.54.0
+  CLI_RELEASE_VERSION_2: 2.0.17.0
   IDE_TOOLS_RELEASE_VERSION: 1.9.4
   MEADOW_OS_VERSION: 1.9.0.0
   VS_MAC_2019_VERSION: 8.10
@@ -88,7 +88,7 @@ jobs:
       run: dotnet build main/MeadowCLI.Classic.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
@@ -100,7 +100,7 @@ jobs:
       run: dotnet build main/MeadowCLI.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
         path: 'main\Meadow.CLI\bin\Release\*.nupkg'
@@ -117,7 +117,7 @@ jobs:
       run: dotnet build main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
     - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}
         path: 'main\Source\v2\Meadow.CLI\bin\Release\*.nupkg'
@@ -185,7 +185,7 @@ jobs:
   #       DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
 
   #   - name: Upload VS2019 VSIX Artifacts
-  #     uses: actions/upload-artifact@v2
+  #     uses: actions/upload-artifact@v4
   #     with:
   #       name: Meadow.Win.VS2019.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
   #       path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
@@ -254,7 +254,7 @@ jobs:
         DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
         
     - name: Upload VS2022 VSIX Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.Win.VS2022.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
@@ -326,7 +326,7 @@ jobs:
   #       msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Build /p:Configuration=Release /p:CreatePackage=true
 
   #   - name: Upload Mac VS2019 mpack Artifacts
-  #     uses: actions/upload-artifact@v2
+  #     uses: actions/upload-artifact@v4
   #     with:
   #       name: Meadow.Mac.2019.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
   #       path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
@@ -435,7 +435,7 @@ jobs:
         dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
     
     - name: Upload VS2022 mpack Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.Mac.2022.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
@@ -532,10 +532,10 @@ jobs:
     - name: Setup Nuget
       uses: Nuget/setup-nuget@v1.0.5
 
-    - name: Setup Node.js 16
-      uses: actions/setup-node@v2
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
       with:
-        node-version: '16'
+        node-version: '20'
 
     - name: Install NPM
       run: |
@@ -584,7 +584,7 @@ jobs:
         vsce package
 
     - name: Upload VSIX Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Meadow.VSCode.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
         path: 'vs-code/*.vsix'
