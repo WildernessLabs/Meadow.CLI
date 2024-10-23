@@ -1,4 +1,4 @@
-﻿namespace Meadow.Hcom
+namespace Meadow.Hcom
 {
     public partial class SerialConnection
     {
@@ -52,6 +52,34 @@
             var delimiter = new byte[] { 0x00 };
             var receivedLength = 0;
 
+            async Task ReOpen() // local function
+            {
+                Debug.WriteLine($"Device reset detected");
+
+                var timeout = 20;
+                try { _port.Close(); } catch { }
+
+                while (!_port.IsOpen)
+                {
+                    await Task.Delay(500);
+
+                    if (timeout-- < 0)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        Open();
+                        Debug.WriteLine($"Port re-opened");
+                    }
+                    catch
+                    {
+                        Debug.WriteLine($"Failed to re-open port");
+                    }
+                }
+            }
+
             while (!_isDisposed)
             {
                 if (_port.IsOpen)
@@ -64,32 +92,20 @@
                         try
                         {
                             receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
+                            if (receivedLength == 0)
+                            {
+                                Debug.WriteLine($"Received 0 bytes");
+                                throw new OperationCanceledException();
+                            }
                         }
                         catch (OperationCanceledException)
                         {
-                            Debug.WriteLine($"Device reset detected");
-
-                            var timeout = 20;
-
-                            while (!_port.IsOpen)
-                            {
-                                await Task.Delay(500);
-
-                                if (timeout-- < 0)
-                                {
-                                    return;
-                                }
-
-                                try
-                                {
-                                    Open();
-                                    Debug.WriteLine($"Port re-opened");
-                                }
-                                catch
-                                {
-                                    Debug.WriteLine($"Failed to re-open port");
-                                }
-                            }
+                            await ReOpen();
+                            goto read;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            await ReOpen();
                             goto read;
                         }
 

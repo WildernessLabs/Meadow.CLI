@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.IO.Ports;
 using System.Security.Cryptography;
 
@@ -1254,7 +1254,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var debuggingServer = new DebuggingServer(this, port, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
-        _ = debuggingServer.StartListening(cancellationToken);
+        await debuggingServer.StartListening(cancellationToken);
 
         logger?.LogDebug($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
