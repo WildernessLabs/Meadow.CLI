@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 
 namespace Meadow.Hcom;
@@ -50,8 +50,7 @@ public partial class DebuggingServer : IDisposable
         _logger?.LogInformation($"Listening for Visual Studio to connect");
 
         // This call will wait for the client to connect, before continuing.
-        var tcpClient = await _listener.AcceptTcpClientAsync();
-        _activeClient = CreateActiveClient(tcpClient);
+        _activeClient = await CreateActiveClient(_listener);
     }
 
     /// <summary>
@@ -70,23 +69,22 @@ public partial class DebuggingServer : IDisposable
         }
     }
 
-    private ActiveClient? CreateActiveClient(TcpClient tcpClient)
+    private async Task<ActiveClient?> CreateActiveClient(TcpListener listener)
     {
         try
         {
-            lock (_lck)
+            if (_activeClient != null)
             {
-                _logger?.LogInformation("Visual Studio has Connected" + Environment.NewLine);
-
-                if (_activeClient != null)
-                {
-                    _logger?.LogDebug("Closing active client");
-                    _activeClient?.Dispose();
-                    _activeClient = null;
-                }
-
-                return new ActiveClient(_connection, tcpClient, _logger, _cancellationTokenSource?.Token);
+                _logger?.LogDebug("Closing active client");
+                _activeClient?.Dispose();
+                _activeClient = null;
             }
+            
+
+            var client = new ActiveClient(_connection, _logger, _cancellationTokenSource?.Token);
+            await client.Start(listener);
+            _logger?.LogInformation("Debugger has connected" + Environment.NewLine);
+            return client;
         }
         catch (Exception ex)
         {
