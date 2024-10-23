@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 
 namespace Meadow.Hcom;
 
@@ -13,13 +12,13 @@ public partial class DebuggingServer
         private TcpClient _tcpClient;
         private NetworkStream _networkStream;
         private readonly CancellationTokenSource _cts;
-        private  Task _receiveVsDebugDataTask;
-        private  Task _receiveMeadowDebugDataTask;
+        private Task _receiveVsDebugDataTask;
+        private Task _receiveMeadowDebugDataTask;
         private readonly ILogger? _logger;
         private bool _disposed;
         private readonly BlockingCollection<byte[]> _debuggerMessages = new();
 
-        internal ActiveClient(IMeadowConnection connection,  ILogger? logger, CancellationToken? cancellationToken)
+        internal ActiveClient(IMeadowConnection connection, ILogger? logger, CancellationToken? cancellationToken)
         {
             _cts = cancellationToken != null
                 ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value)
@@ -27,14 +26,14 @@ public partial class DebuggingServer
 
             _logger = logger;
             _connection = connection;
-            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;         
+            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
         }
 
         public async Task Start(TcpListener tcpListener)
         {
             _tcpClient = await tcpListener.AcceptTcpClientAsync();
             _networkStream = _tcpClient.GetStream();
-            
+
             _logger?.LogDebug("Starting receive task");
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
