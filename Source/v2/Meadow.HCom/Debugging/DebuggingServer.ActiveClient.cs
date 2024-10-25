@@ -109,10 +109,8 @@ public partial class DebuggingServer
             {
                 while (!_cts.IsCancellationRequested)
                 {
-                    byte[] byteData = null;
-                    if (!_debuggerMessages.TryTake(out byteData, 500, _cts.Token))
+                    if (!_debuggerMessages.TryTake(out var byteData, 500, _cts.Token))
                     {
-                        Console.WriteLine("No data from Meadow");
                         continue;
                     }
 
