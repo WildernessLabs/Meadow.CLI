@@ -1,7 +1,6 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 
 namespace Meadow.Hcom;
 
@@ -10,17 +9,16 @@ public partial class DebuggingServer
     private class ActiveClient : IDisposable
     {
         private readonly IMeadowConnection _connection;
-        private readonly TcpClient _tcpClient;
-        private readonly NetworkStream _networkStream;
+        private TcpClient _tcpClient;
+        private NetworkStream _networkStream;
         private readonly CancellationTokenSource _cts;
-        private readonly Task _receiveVsDebugDataTask;
-        private readonly Task _receiveMeadowDebugDataTask;
+        private Task _receiveVsDebugDataTask;
+        private Task _receiveMeadowDebugDataTask;
         private readonly ILogger? _logger;
         private bool _disposed;
         private readonly BlockingCollection<byte[]> _debuggerMessages = new();
-        private readonly AutoResetEvent _vsDebugDataReady = new(false);
 
-        internal ActiveClient(IMeadowConnection connection, TcpClient tcpClient, ILogger? logger, CancellationToken? cancellationToken)
+        internal ActiveClient(IMeadowConnection connection, ILogger? logger, CancellationToken? cancellationToken)
         {
             _cts = cancellationToken != null
                 ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value)
@@ -28,13 +26,15 @@ public partial class DebuggingServer
 
             _logger = logger;
             _connection = connection;
-            _tcpClient = tcpClient;
-            _networkStream = tcpClient.GetStream();
+            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
+        }
+
+        public async Task Start(TcpListener tcpListener)
+        {
+            _tcpClient = await tcpListener.AcceptTcpClientAsync();
+            _networkStream = _tcpClient.GetStream();
 
             _logger?.LogDebug("Starting receive task");
-
-            _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
-
             _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
@@ -42,7 +42,6 @@ public partial class DebuggingServer
         private void MeadowConnection_DebuggerMessageReceived(object sender, byte[] e)
         {
             _debuggerMessages.Add(e);
-            _vsDebugDataReady.Set();
         }
 
         private const int RECEIVE_BUFFER_SIZE = 256;
@@ -51,9 +50,7 @@ public partial class DebuggingServer
         {
             try
             {
-                using var md5 = MD5.Create();
                 var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
-                var meadowBuffer = Array.Empty<byte>();
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
@@ -69,13 +66,12 @@ public partial class DebuggingServer
                                 continue;
                             }
 
-                            var destIndex = meadowBuffer.Length;
-                            Array.Resize(ref meadowBuffer, destIndex + bytesRead);
-                            Array.Copy(receiveBuffer, 0, meadowBuffer, destIndex, bytesRead);
+                            var meadowBuffer = new byte[bytesRead];
+                            Array.Copy(receiveBuffer, 0, meadowBuffer, 0, bytesRead);
 
                             _logger?.LogTrace("Received {count} bytes from VS, will forward to HCOM/Meadow. {hash}",
                                                 meadowBuffer.Length,
-                                                BitConverter.ToString(md5.ComputeHash(meadowBuffer))
+                                                BitConverter.ToString(meadowBuffer)
                                                             .Replace("-", string.Empty)
                                                             .ToLowerInvariant());
 
@@ -83,7 +79,6 @@ public partial class DebuggingServer
 
                             Debug.WriteLine($"ToMeadow: {BitConverter.ToString(meadowBuffer)}");
 
-                            meadowBuffer = Array.Empty<byte>();
                         } while (_networkStream.DataAvailable);
                     }
                     else
@@ -96,12 +91,10 @@ public partial class DebuggingServer
             catch (IOException ioe)
             {
                 _logger?.LogInformation("Visual Studio has Disconnected");
-                _logger?.LogTrace(ioe, "Visual Studio has Disconnected");
             }
             catch (ObjectDisposedException ode)
             {
                 _logger?.LogInformation("Visual Studio has stopped debugging");
-                _logger?.LogTrace(ode, "Visual Studio has stopped debugging");
             }
             catch (Exception ex)
             {
@@ -114,33 +107,23 @@ public partial class DebuggingServer
         {
             try
             {
-                while (!_cts.Token.IsCancellationRequested)
+                while (!_cts.IsCancellationRequested)
                 {
-                    if (_networkStream != null && _networkStream.CanWrite)
+                    if (!_debuggerMessages.TryTake(out var byteData, 500, _cts.Token))
                     {
-                        _vsDebugDataReady.WaitOne(500);
-
-                        while (_debuggerMessages.Count > 0)
-                        {
-                            var byteData = _debuggerMessages.Take(_cts.Token);
-
-                            _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
-                            if (!_tcpClient.Connected)
-                            {
-                                _logger?.LogDebug("Cannot forward data, Visual Studio is not connected");
-                                return;
-                            }
-
-                            await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
-                            _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
-
-                            Debug.WriteLine($"ToVisStu: {BitConverter.ToString(byteData)}");
-                        }
+                        continue;
                     }
-                    else
+
+                    _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
+                    if (!_tcpClient.Connected || _networkStream == null || !_networkStream.CanWrite)
                     {
-                        _logger?.LogInformation("Unable to Write Data from Visual Studio");
+                        _logger?.LogDebug("Cannot forward data, Visual Studio is not connected");
+                        break;
                     }
+
+                    await _networkStream.WriteAsync(byteData, 0, byteData.Length, _cts.Token);
+                    _logger?.LogTrace("Forwarded {count} bytes to VS", byteData.Length);
+                    Debug.WriteLine($"ToVisStu: {BitConverter.ToString(byteData)}");
                 }
             }
             catch (OperationCanceledException oce)
