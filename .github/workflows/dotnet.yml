@@ -1,7 +1,7 @@
 name: Meadow.CLI Packaging
 env:
   CLI_RELEASE_VERSION_1: 1.9.4.0
-  CLI_RELEASE_VERSION_2: 2.0.17.0
+  CLI_RELEASE_VERSION_2: 2.0.61.0
   IDE_TOOLS_RELEASE_VERSION: 1.9.4
   MEADOW_OS_VERSION: 1.9.0.0
   VS_MAC_2019_VERSION: 8.10
@@ -19,33 +19,33 @@ jobs:
       
     steps:
     - name: Checkout Meadow.CLI
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: main
 
     - name: Checkout Meadow.Contracts side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Contracts
         path: Meadow.Contracts
         ref: main
 
     - name: Checkout Meadow.Logging side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Logging
         path: Meadow.Logging
         ref: main
 
     - name: Checkout Meadow.Units side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Units
         path: Meadow.Units
         ref: main
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -53,7 +53,7 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update CLI Version Numbers
@@ -79,7 +79,7 @@ jobs:
         $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Restore Classic dependencies
       run: dotnet restore main/MeadowCLI.Classic.sln /p:Configuration=Release
@@ -134,14 +134,14 @@ jobs:
 
   #   steps:
   #   - name: Checkout Meadow.CLI.Core side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       repository: WildernessLabs/Meadow.CLI
   #       path: Meadow.CLI
 
   #   - if: ${{ github.ref == 'refs/heads/main' }}
   #     name: Checkout Win Extension side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       repository: WildernessLabs/VS_Win_Meadow_Extension
   #       path: vs-win
@@ -149,13 +149,13 @@ jobs:
 
   #   - if: ${{ github.ref != 'refs/heads/main' }}
   #     name: Checkout Win Extension side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       repository: WildernessLabs/VS_Win_Meadow_Extension
   #       path: vs-win
 
   #   - name: Setup .NET Core SDK 5.0.x, 6.0.x & 7.0.x
-  #     uses: actions/setup-dotnet@v1
+  #     uses: actions/setup-dotnet@v4
   #     with:
   #       dotnet-version: |
   #         6.0.x
@@ -163,10 +163,10 @@ jobs:
   #         8.0.x
 
   #   - name: Setup NuGet
-  #     uses: NuGet/setup-nuget@v1.0.5
+  #     uses: NuGet/setup-nuget@v2
 
   #   - name: Add MSBuild to Path
-  #     uses: microsoft/setup-msbuild@v1.1
+  #     uses: microsoft/setup-msbuild@v2
 
   #   - if: ${{ github.event_name == 'workflow_dispatch' }}
   #     name: Update VS2019 Version Numbers
@@ -202,14 +202,14 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.CLI
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
@@ -217,13 +217,13 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Win_Meadow_Extension
         path: vs-win
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x, 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -231,10 +231,10 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
       with:
         vs-version: '[17.0, 18.0)'
 
@@ -271,13 +271,13 @@ jobs:
 
   #   steps:
   #   - name: Checkout Meadow.CLI.Core side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       path: Meadow.CLI
 
   #   - if: ${{ github.ref == 'refs/heads/main' }}
   #     name: Checkout Mac Extension side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       repository: WildernessLabs/VS_Mac_Meadow_Extension
   #       path: vs-mac
@@ -285,7 +285,7 @@ jobs:
 
   #   - if: ${{ github.ref != 'refs/heads/main' }}
   #     name: Checkout Mac Extension side-by-side
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v4
   #     with:
   #       repository: WildernessLabs/VS_Mac_Meadow_Extension
   #       path: vs-mac
@@ -297,7 +297,7 @@ jobs:
   #       sudo xcode-select -s $XCODE_ROOT
 
   #   - name: Setup .NET Core SDK 5.0.x, 6.0.x & 7.0.x
-  #     uses: actions/setup-dotnet@v1
+  #     uses: actions/setup-dotnet@v4
   #     with:
   #       dotnet-version: |
   #         6.0.x
@@ -305,7 +305,7 @@ jobs:
   #         8.0.x
 
   #   - name: Setup NuGet
-  #     uses: NuGet/setup-nuget@v1.0.5
+  #     uses: NuGet/setup-nuget@v2
 
   #   - name: Work around so that VS2019 is picked up.
   #     run: |
@@ -334,7 +334,7 @@ jobs:
     #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     #  name: Get Commit Messages
     #  id: commit_messages
-    #  uses: actions/github-script@v6
+    #  uses: actions/github-script@v7
     #  with:
     #    github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
     #    script: |
@@ -391,13 +391,13 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
@@ -405,13 +405,13 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VS_Mac_Meadow_Extension
         path: vs-mac
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -419,7 +419,7 @@ jobs:
           8.0.x
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      uses: NuGet/setup-nuget@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VS2022 Version Numbers
@@ -443,7 +443,7 @@ jobs:
     - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
       name: Get Commit Messages
       id: commit_messages
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
         script: |
@@ -500,13 +500,13 @@ jobs:
 
     steps:
     - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
 
     - if: ${{ github.ref == 'refs/heads/main' }}
       name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
@@ -515,14 +515,14 @@ jobs:
 
     - if: ${{ github.ref != 'refs/heads/main' }}
       name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/VSCode_Meadow_Extension
         path: vs-code
         submodules: true
 
     - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
           6.0.x
@@ -530,7 +530,7 @@ jobs:
           8.0.x
 
     - name: Setup Nuget
-      uses: Nuget/setup-nuget@v1.0.5
+      uses: Nuget/setup-nuget@v2
 
     - name: Setup Node.js 16
       uses: actions/setup-node@v2
@@ -548,7 +548,7 @@ jobs:
         npm i -g @vscode/vsce
 
     - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
 
     - if: ${{ github.event_name == 'workflow_dispatch' }}
       name: Update VSCode Version Numbers
