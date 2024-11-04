@@ -242,7 +242,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void CommandManager()
+    private async void CommandManager()
     {
         while (!_isDisposed)
         {
@@ -252,13 +252,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 Debug.WriteLine($"There are {_commandQueue.Count} pending commands");
 
-                _commandQueue.TryDequeue(out var pendingCommand);
-
-                if (pendingCommand is Request command)
+                if (_commandQueue.TryDequeue(out var pendingCommand))
                 {
-                    // if this is a file write, we need to packetize for progress
-                    var payload = command.Serialize();
-                    EncodeAndSendPacket(payload);
+                    if (pendingCommand is Request command)
+                    {
+                        // if this is a file write, we need to packetize for progress
+                        var payload = command.Serialize();
+                        EncodeAndSendPacket(payload);
+                    }
+                }
+                else
+                {
+                    // If no commands to dequeue, delay a bit to avoid busy waiting
+                    await Task.Delay(100);
                 }
             }
         }
@@ -1249,13 +1255,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        logger?.LogDebug($"Start Debugging on port: {port}");
+        await Device.StartDebugging(port, logger, cancellationToken);
+
         var debuggingServer = new DebuggingServer(this, port, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
-        await debuggingServer.StartListening(cancellationToken);
-
-        logger?.LogDebug($"Start Debugging on port: {port}");
-        await Device.StartDebugging(port, logger, cancellationToken);
+        _ = debuggingServer.StartListening(cancellationToken);
 
         return debuggingServer;
     }
