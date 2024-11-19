@@ -8,7 +8,7 @@ namespace Meadow.Hcom
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
-            var timeout = 500;
+            var timeout = 50;
 
             while (timeout-- > 0)
             {
@@ -26,7 +26,7 @@ namespace Meadow.Hcom
                     return;
                 }
 
-                await Task.Delay(20);
+                await Task.Delay(100);
 
                 if (!_port.IsOpen)
                 {
