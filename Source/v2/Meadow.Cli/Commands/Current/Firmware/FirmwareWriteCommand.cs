@@ -255,6 +255,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             await WriteEspFiles(connection, deviceInfo, package);
 
+            await connection.WaitForMeadowAttach();
+
             // reset device
             if (connection != null && connection.Device != null)
             {

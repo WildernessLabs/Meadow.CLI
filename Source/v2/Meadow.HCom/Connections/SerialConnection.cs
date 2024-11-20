@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
 
@@ -21,7 +22,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private bool _isDisposed;
     private ConnectionState _state;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
-    private readonly Queue<IRequest> _pendingCommands = new Queue<IRequest>();
+    private readonly ConcurrentQueue<IRequest> _commandQueue = new ConcurrentQueue<IRequest>();
     private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
     private bool _maintainConnection;
     private Thread? _connectionManager = null;
@@ -208,8 +209,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             // local function so we can unsubscribe
             var count = _messageCount;
 
-            _pendingCommands.Enqueue(command);
-            _commandEvent.Set();
+            EnqueueRequest(command);
 
             while (timeout-- > 0)
             {
@@ -248,19 +248,17 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             _commandEvent.WaitOne(1000);
 
-            while (_pendingCommands.Count > 0)
+            while (_commandQueue.Count > 0)
             {
-                Debug.WriteLine($"There are {_pendingCommands.Count} pending commands");
+                Debug.WriteLine($"There are {_commandQueue.Count} pending commands");
 
-                var command = _pendingCommands.Dequeue() as Request;
-                if (command != null)
+                _commandQueue.TryDequeue(out var pendingCommand);
+
+                if (pendingCommand is Request command)
                 {
                     // if this is a file write, we need to packetize for progress
-
                     var payload = command.Serialize();
                     EncodeAndSendPacket(payload);
-
-                    // TODO: re-queue on fail?
                 }
             }
         }
@@ -297,7 +295,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             };
         }
 
-        _pendingCommands.Enqueue(command);
+        _commandQueue.Enqueue(command);
         _commandEvent.Set();
     }
 
