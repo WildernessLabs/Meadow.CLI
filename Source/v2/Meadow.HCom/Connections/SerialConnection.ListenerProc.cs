@@ -1,4 +1,4 @@
-namespace Meadow.Hcom
+﻿namespace Meadow.Hcom
 {
     public partial class SerialConnection
     {
@@ -8,7 +8,7 @@ namespace Meadow.Hcom
 
         public override async Task WaitForMeadowAttach(CancellationToken? cancellationToken)
         {
-            var timeout = 50;
+            var timeout = 500;
 
             while (timeout-- > 0)
             {
@@ -26,7 +26,7 @@ namespace Meadow.Hcom
                     return;
                 }
 
-                await Task.Delay(100);
+                await Task.Delay(20);
 
                 if (!_port.IsOpen)
                 {
@@ -52,34 +52,6 @@ namespace Meadow.Hcom
             var delimiter = new byte[] { 0x00 };
             var receivedLength = 0;
 
-            async Task ReOpen() // local function
-            {
-                Debug.WriteLine($"Device reset detected");
-
-                var timeout = 20;
-                try { _port.Close(); } catch { } // Swallow any exceptions on close - there is nothing we can do about it
-
-                while (!_port.IsOpen)
-                {
-                    await Task.Delay(500);
-
-                    if (timeout-- < 0)
-                    {
-                        return;
-                    }
-
-                    try
-                    {
-                        Open();
-                        Debug.WriteLine($"Port re-opened");
-                    }
-                    catch
-                    {
-                        Debug.WriteLine($"Failed to re-open port");
-                    }
-                }
-            }
-
             while (!_isDisposed)
             {
                 if (_port.IsOpen)
@@ -92,20 +64,32 @@ namespace Meadow.Hcom
                         try
                         {
                             receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
-                            if (receivedLength == 0)
-                            {
-                                Debug.WriteLine($"Received 0 bytes");
-                                throw new OperationCanceledException();
-                            }
                         }
                         catch (OperationCanceledException)
                         {
-                            await ReOpen();
-                            goto read;
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            await ReOpen();
+                            Debug.WriteLine($"Device reset detected");
+
+                            var timeout = 20;
+
+                            while (!_port.IsOpen)
+                            {
+                                await Task.Delay(500);
+
+                                if (timeout-- < 0)
+                                {
+                                    return;
+                                }
+
+                                try
+                                {
+                                    Open();
+                                    Debug.WriteLine($"Port re-opened");
+                                }
+                                catch
+                                {
+                                    Debug.WriteLine($"Failed to re-open port");
+                                }
+                            }
                             goto read;
                         }
 
