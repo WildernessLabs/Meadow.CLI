@@ -87,7 +87,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         return file;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string path, CancellationToken GetAvailableBuiltConfigurations)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string path, CancellationToken cancellationToken)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
@@ -103,7 +103,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, osVersion, file.DirectoryName!, true, false, Logger, GetAvailableBuiltConfigurations);
+        await AppManager.DeployApplication(_packageManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 
