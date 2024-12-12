@@ -75,7 +75,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             throw new CommandException(Strings.AppTrimFailed, CommandExitCode.GeneralError);
         }
 
-        if (!await DeployApplication(connection, path, CancellationToken))
+        if (!await DeployApplication(connection, path, Configuration, CancellationToken))
         {
             throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
@@ -94,7 +94,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         Logger?.LogInformation("Listen cancelled...");
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, string configuration, CancellationToken cancellationToken)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
@@ -113,7 +113,14 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             return false;
         }
 
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
+        //get the file that matches the configuration
+        var file = candidates.FirstOrDefault(c => c.DirectoryName.Contains(configuration, StringComparison.OrdinalIgnoreCase));
+
+        if (file == null)
+        {
+            Logger?.LogError($"Cannot find a compiled application for configuration '{configuration}'");
+            return false;
+        }
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
