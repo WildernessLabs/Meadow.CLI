@@ -1,4 +1,4 @@
-﻿namespace Meadow.Hcom
+namespace Meadow.Hcom
 {
     public partial class SerialConnection
     {
@@ -52,6 +52,33 @@
             var delimiter = new byte[] { 0x00 };
             var receivedLength = 0;
 
+            async Task ReOpen() // local function
+            {
+                Debug.WriteLine($"Device reset detected");
+
+                var timeout = 20;
+                try { _port.Close(); } catch { } // Swallow any exceptions on close - there is nothing we can do about it
+
+                while (!_port.IsOpen)
+                {
+                    if (timeout-- < 0)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        Open();
+                        Debug.WriteLine($"Port re-opened");
+                    }
+                    catch
+                    {
+                        Debug.WriteLine($"Failed to re-open port");
+                    }
+                    await Task.Delay(100);
+                }
+            }            
+
             while (!_isDisposed)
             {
                 if (_port.IsOpen)
@@ -65,31 +92,9 @@
                         {
                             receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
                         }
-                        catch (OperationCanceledException)
-                        {
-                            Debug.WriteLine($"Device reset detected");
-
-                            var timeout = 20;
-
-                            while (!_port.IsOpen)
+                        catch (InvalidOperationException)
                             {
-                                await Task.Delay(500);
-
-                                if (timeout-- < 0)
-                                {
-                                    return;
-                                }
-
-                                try
-                                {
-                                    Open();
-                                    Debug.WriteLine($"Port re-opened");
-                                }
-                                catch
-                                {
-                                    Debug.WriteLine($"Failed to re-open port");
-                                }
-                            }
+                            await ReOpen();
                             goto read;
                         }
 
@@ -335,7 +340,9 @@
                     catch (OperationCanceledException)
                     {
                         // this happens on disconnect - could be cable pulled, could be device reset
-                        Debug.WriteLine($"Operation Cancelled");
+                        Debug.WriteLine($"Operation Cancelled. Port open: {_port.IsOpen}");
+                        if (!_port.IsOpen) { await ReOpen();
+                        }
                     }
                     catch (Exception ex)
                     {
