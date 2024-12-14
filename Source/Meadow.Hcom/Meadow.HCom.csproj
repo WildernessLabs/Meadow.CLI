@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\..\Meadow.Contracts\Source\Meadow.Contracts\CircularBuffer.cs" Link="CircularBuffer.cs" />
+    <Compile Include="..\..\..\Meadow.Contracts\Source\Meadow.Contracts\CircularBuffer.cs" Link="CircularBuffer.cs" />
   </ItemGroup>
 
   <ItemGroup>
