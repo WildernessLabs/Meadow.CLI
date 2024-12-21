@@ -94,7 +94,6 @@ namespace Meadow.Hcom
                         }
                         catch (InvalidOperationException)
                         {
-                            Debug.WriteLine($"InvalidOperationException...");
                             if (AggressiveReconnectEnabled)
                             {
                                 await ReOpen();
