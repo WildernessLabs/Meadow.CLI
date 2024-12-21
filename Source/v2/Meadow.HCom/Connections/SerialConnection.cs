@@ -33,6 +33,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override string Name { get; }
 
+    public bool AggressiveReconnectEnabled { get; set; } = false;
+
     public SerialConnection(string port, ILogger? logger = default)
     {
         if (!SerialPort.GetPortNames().Contains(port, StringComparer.InvariantCultureIgnoreCase))
@@ -1249,6 +1251,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        AggressiveReconnectEnabled = true;
+
         var debuggingServer = new DebuggingServer(this, port, logger);
 
         logger?.LogDebug("Tell the Debugging Server to Start Listening");
@@ -1256,6 +1260,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         logger?.LogDebug($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
+
+        AggressiveReconnectEnabled = false;
 
         return debuggingServer;
     }
