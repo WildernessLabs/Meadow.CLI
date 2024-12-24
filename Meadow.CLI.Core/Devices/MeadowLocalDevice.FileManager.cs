@@ -641,7 +641,22 @@ namespace Meadow.CLI.Core.Devices
                     var crc = CrcTools.Crc32part(bytes, len, 0); // 0x04C11DB7);
 
                     Logger.LogDebug("{file} crc is {crc:X8}", file, crc);
-                    files.Add(file, crc);
+                    if (files.ContainsKey(file))
+                    {
+                        // file already exists in our list?
+                        // this feels like a bug, but for now we'll see if it has the same CRC
+                        if (crc != files[file])
+                        {
+                            throw new Exception($"To differing (by CRC) versions of file '{file}' exist in the build output");
+                        }
+
+                        // same file CRC, just ignore the new call to add it
+                    }
+                    else
+                    {
+                        files.Add(file, crc);
+                    }
+
                     if (includePdbs)
                     {
                         var pdbFile = Path.ChangeExtension(file, "pdb");
