@@ -1255,13 +1255,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var debuggingServer = new DebuggingServer(this, port, logger);
 
-        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        Debug.WriteLine("Tell the Debugging Server to Start Listening");
         await debuggingServer.StartListening(cancellationToken);
 
-        logger?.LogDebug($"Start Debugging on port: {port}");
+        Debug.WriteLine($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
-
-        AggressiveReconnectEnabled = false;
 
         return debuggingServer;
     }

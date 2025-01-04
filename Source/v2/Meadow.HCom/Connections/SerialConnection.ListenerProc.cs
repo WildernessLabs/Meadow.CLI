@@ -96,6 +96,7 @@ namespace Meadow.Hcom
                         {
                             if (AggressiveReconnectEnabled)
                             {
+                                Debug.WriteLine("Aggressively re-connecting");
                                 await ReOpen();
                             }
                             goto read;
@@ -344,8 +345,9 @@ namespace Meadow.Hcom
                     {
                         // this happens on disconnect - could be cable pulled, could be device reset
                         Debug.WriteLine($"Operation Cancelled. Port open: {_port.IsOpen}");
-                        if (!_port.IsOpen)
+                        if (AggressiveReconnectEnabled && !_port.IsOpen)
                         {
+                            Debug.WriteLine("Aggressively re-connecting");
                             await ReOpen();
                         }
                     }
