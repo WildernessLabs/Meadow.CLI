@@ -77,7 +77,7 @@ namespace Meadow.Hcom
                     }
                     await Task.Delay(100);
                 }
-            }            
+            }
 
             while (!_isDisposed)
             {
@@ -93,8 +93,12 @@ namespace Meadow.Hcom
                             receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
                         }
                         catch (InvalidOperationException)
+                        {
+                            if (AggressiveReconnectEnabled)
                             {
-                            await ReOpen();
+                                Debug.WriteLine("Aggressively re-connecting");
+                                await ReOpen();
+                            }
                             goto read;
                         }
 
@@ -341,7 +345,10 @@ namespace Meadow.Hcom
                     {
                         // this happens on disconnect - could be cable pulled, could be device reset
                         Debug.WriteLine($"Operation Cancelled. Port open: {_port.IsOpen}");
-                        if (!_port.IsOpen) { await ReOpen();
+                        if (AggressiveReconnectEnabled && !_port.IsOpen)
+                        {
+                            Debug.WriteLine("Aggressively re-connecting");
+                            await ReOpen();
                         }
                     }
                     catch (Exception ex)

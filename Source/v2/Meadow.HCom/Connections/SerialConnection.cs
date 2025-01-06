@@ -33,6 +33,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public override string Name { get; }
 
+    public bool AggressiveReconnectEnabled { get; set; } = false;
+
     public SerialConnection(string port, ILogger? logger = default)
     {
         if (!SerialPort.GetPortNames().Contains(port, StringComparer.InvariantCultureIgnoreCase))
@@ -306,8 +308,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
-        //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
-
         while (!_port.IsOpen)
         {
             _state = ConnectionState.Disconnected;
@@ -1249,12 +1249,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             throw new DeviceNotFoundException();
         }
 
+        AggressiveReconnectEnabled = true;
+
         var debuggingServer = new DebuggingServer(this, port, logger);
 
-        logger?.LogDebug("Tell the Debugging Server to Start Listening");
+        Debug.WriteLine("Tell the Debugging Server to Start Listening");
         await debuggingServer.StartListening(cancellationToken);
 
-        logger?.LogDebug($"Start Debugging on port: {port}");
+        Debug.WriteLine($"Start Debugging on port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
 
         return debuggingServer;
