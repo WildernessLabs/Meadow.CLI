@@ -79,7 +79,6 @@ public partial class DebuggingServer : IDisposable
                 _activeClient?.Dispose();
                 _activeClient = null;
             }
-            
 
             var client = new ActiveClient(_connection, _logger, _cancellationTokenSource?.Token);
             await client.Start(listener);
