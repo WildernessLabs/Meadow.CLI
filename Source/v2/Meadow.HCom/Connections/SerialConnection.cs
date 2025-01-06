@@ -308,8 +308,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
-        //Debug.WriteLine($"+EncodeAndSendPacket({length} bytes)");
-
         while (!_port.IsOpen)
         {
             _state = ConnectionState.Disconnected;
