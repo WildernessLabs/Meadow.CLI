@@ -88,7 +88,7 @@ public class DeviceInfo
             {
                 deviceInfo.AppendLine("    MAC Address - ");
             }
-            deviceInfo.AppendLine($"{macAddresses}");
+            deviceInfo.Append($"{macAddresses}");
         }
 
         deviceInfo.AppendLine();
