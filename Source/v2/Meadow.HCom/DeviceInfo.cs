@@ -30,6 +30,7 @@ public class DeviceInfo
     public string? SerialNumber => this["SerialNo"];
     public string? MacAddress => this["WiFiMAC"];
     public string? SoftAPMacAddress => this["SoftAPMac"];
+    public string?BluetoothMacAddress => this["BtMac"];
 
     /// <summary>
     /// String representation of an unknown MAC address.
@@ -71,6 +72,11 @@ public class DeviceInfo
         {
             macCount++;
             macAddresses += $"\tAP: {SoftAPMacAddress}{Environment.NewLine}";
+        }
+        if (!string.IsNullOrEmpty(BluetoothMacAddress) && BluetoothMacAddress != UNKNOWN_MAC_ADDRESS)
+        {
+            macCount++;
+            macAddresses += $"\tBluetooth: {BluetoothMacAddress}{Environment.NewLine}";
         }
         if (macCount > 0)
         {
