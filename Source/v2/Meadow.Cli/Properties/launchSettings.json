@@ -101,7 +101,7 @@
     },
     "File Delete All": {
       "commandName": "Project",
-      "commandLineArgs": "file delete all"
+      "commandLineArgs": "file delete-all"
     },
     "File initial": {
       "commandName": "Project",

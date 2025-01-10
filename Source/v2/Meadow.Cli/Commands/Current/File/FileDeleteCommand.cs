@@ -27,14 +27,7 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             await device.RuntimeDisable(CancellationToken);
         }
 
-        if (MeadowFile == "all")
-        {
-            Logger?.LogInformation($"Looking for files...");
-        }
-        else
-        {
-            Logger?.LogInformation($"Looking for file {MeadowFile}...");
-        }
+        Logger?.LogInformation($"Looking for file {MeadowFile}...");
 
         var folder = AppTools.SanitizeMeadowFolderName(Path.GetDirectoryName(MeadowFile)!);
 
@@ -46,30 +39,20 @@ public class FileDeleteCommand : BaseDeviceCommand<FileDeleteCommand>
             return;
         }
 
-        if (MeadowFile == "all")
+        var requested = Path.GetFileName(MeadowFile);
+
+        var exists = fileList?.Any(f => Path.GetFileName(f.Name) == requested) ?? false;
+
+        var file = AppTools.SanitizeMeadowFilename(MeadowFile);
+
+        if (!exists)
         {
-            foreach (var file in fileList)
-            {
-                await DeleteFileRecursive(device, folder, file, CancellationToken);
-            }
+            Logger?.LogError($"File '{file}' not found on device");
         }
         else
         {
-            var requested = Path.GetFileName(MeadowFile);
-
-            var exists = fileList?.Any(f => Path.GetFileName(f.Name) == requested) ?? false;
-
-            var file = AppTools.SanitizeMeadowFilename(MeadowFile);
-
-            if (!exists)
-            {
-                Logger?.LogError($"File '{file}' not found on device");
-            }
-            else
-            {
-                Logger?.LogInformation($"Deleting '{file}'");
-                await device.DeleteFile(file, CancellationToken);
-            }
+            Logger?.LogInformation($"Deleting '{file}'");
+            await device.DeleteFile(file, CancellationToken);
         }
     }
 
