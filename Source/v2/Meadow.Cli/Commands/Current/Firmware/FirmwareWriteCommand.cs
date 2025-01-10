@@ -393,6 +393,14 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
             };
         }
 
+        foreach (var file in fileList)
+        {
+            if (!File.Exists(file))
+            {
+                throw new CommandException(string.Format(Strings.InvalidFirmwareForSpecifiedPath, file), CommandExitCode.FileNotFound);
+            }
+        }
+
         deviceInfo ??= await connection.GetDeviceInfo(CancellationToken);
 
         if (deviceInfo == null) { throw new CommandException(Strings.UnableToGetDeviceInfo); }
