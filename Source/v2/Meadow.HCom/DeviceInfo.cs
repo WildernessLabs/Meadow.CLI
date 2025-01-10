@@ -30,7 +30,7 @@ public class DeviceInfo
     public string? SerialNumber => this["SerialNo"];
     public string? MacAddress => this["WiFiMAC"];
     public string? SoftAPMacAddress => this["SoftAPMac"];
-    public string?BluetoothMacAddress => this["BtMac"];
+    public string? BluetoothMacAddress => this["BtMac"];
 
     /// <summary>
     /// String representation of an unknown MAC address.
@@ -82,11 +82,11 @@ public class DeviceInfo
         {
             if (macCount > 1)
             {
-                deviceInfo.AppendLine("    MAC Addresses - ");
+                deviceInfo.AppendLine("    MAC Addresses");
             }
             else
             {
-                deviceInfo.AppendLine("    MAC Address - ");
+                deviceInfo.AppendLine("    MAC Address");
             }
             deviceInfo.Append($"{macAddresses}");
         }
