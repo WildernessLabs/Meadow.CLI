@@ -14,28 +14,28 @@ jobs:
     
     steps:
     - name: Checkout Meadow.Logging
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Logging
         path: Meadow.Logging
         ref: develop
         
     - name: Checkout Meadow.Units
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Units
         path: Meadow.Units
         ref: develop
 
     - name: Checkout Meadow.Contracts
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: WildernessLabs/Meadow.Contracts
         path: Meadow.Contracts
         ref: develop
 
     - name: Checkout Meadow.CLI
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: Meadow.CLI
     
@@ -45,13 +45,10 @@ jobs:
         dotnet-version:
           8.0.x
     
-    - name: Build CLI v1
-      run: dotnet build -c Release Meadow.CLI/MeadowCLI.sln
+    - name: Build CLI
+      run: dotnet build -c Release Meadow.CLI/Source/Meadow.CLI.sln
 
-    - name: Build CLI v2
-      run: dotnet build -c Release Meadow.CLI/Source/v2/Meadow.CLI.v2.sln
-
-    - name: Unit Test CLI v2
-      run: dotnet test -c Release --no-build --no-restore --filter "FullyQualifiedName~.Unit.Tests" .\Meadow.CLI\Source\v2\Meadow.CLI.v2.sln
+    - name: Unit Test CLI
+      run: dotnet test -c Release --no-build --no-restore --filter "FullyQualifiedName~.Unit.Tests" .\Meadow.CLI\Source\Meadow.CLI.sln
 
       
