@@ -4,7 +4,6 @@ env:
   CLI_RELEASE_VERSION_2: 2.0.17.0
   IDE_TOOLS_RELEASE_VERSION: 1.9.4
   MEADOW_OS_VERSION: 1.9.0.0
-  VS_MAC_2019_VERSION: 8.10
   VS_MAC_2022_VERSION: 17.6
 
 on:
@@ -18,182 +17,110 @@ jobs:
     name: Build and Optionally Publish Meadow.CLI nuget
       
     steps:
-    - name: Checkout Meadow.CLI
-      uses: actions/checkout@v2
-      with:
-        path: main
+      - name: Checkout Meadow.CLI
+        uses: actions/checkout@v2
+        with:
+          path: main
 
-    - name: Checkout Meadow.Contracts side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/Meadow.Contracts
-        path: Meadow.Contracts
-        ref: main
+      - name: Checkout Meadow.Contracts side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/Meadow.Contracts
+          path: Meadow.Contracts
+          ref: main
 
-    - name: Checkout Meadow.Logging side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/Meadow.Logging
-        path: Meadow.Logging
-        ref: main
+      - name: Checkout Meadow.Logging side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/Meadow.Logging
+          path: Meadow.Logging
+          ref: main
 
-    - name: Checkout Meadow.Units side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/Meadow.Units
-        path: Meadow.Units
-        ref: main
+      - name: Checkout Meadow.Units side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/Meadow.Units
+          path: Meadow.Units
+          ref: main
 
-    - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: |
-          6.0.x
-          7.0.x
-          8.0.x
+      - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
+            8.0.x
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' }}
-      name: Update CLI Version Numbers
-      run: |
-        $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
-        $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION_1 }}</PackageVersion>'
-        $newcontent | Set-Content main/Meadow.CLI/Meadow.CLI.csproj
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Update CLI Version Numbers
+        run: |
+          $content = Get-Content main/Meadow.CLI/Meadow.CLI.csproj | Out-String
+          $newcontent = $content -replace '<PackageVersion>.*</PackageVersion>', '<PackageVersion>${{ ENV.CLI_RELEASE_VERSION_1 }}</PackageVersion>'
+          $newcontent | Set-Content main/Meadow.CLI/Meadow.CLI.csproj
 
-        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
-        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
+          $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj | Out-String
+          $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
+          $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.csproj
 
-        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
-        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
+          $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj | Out-String
+          $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
+          $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.6.0.0.csproj
 
-        $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj | Out-String
-        $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
-        $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
+          $content = Get-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj | Out-String
+          $newcontent = $content -replace '<Version>.*</Version>', '<Version>${{ ENV.CLI_RELEASE_VERSION_1 }}</Version>'
+          $newcontent | Set-Content main/Meadow.CLI.Core/Meadow.CLI.Core.VS2019.csproj
 
-        $content = Get-Content main/Meadow.CLI.Core/Constants.cs | Out-String
-        $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ ENV.CLI_RELEASE_VERSION_1 }}";'
-        $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
+          $content = Get-Content main/Meadow.CLI.Core/Constants.cs | Out-String
+          $newcontent = $content -replace 'CLI_VERSION = \".*\";', 'CLI_VERSION = "${{ ENV.CLI_RELEASE_VERSION_1 }}";'
+          $newcontent | Set-Content main/Meadow.CLI.Core/Constants.cs
 
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      - name: Add MSBuild to Path
+        uses: microsoft/setup-msbuild@v1.1
 
-    - name: Restore Classic dependencies
-      run: dotnet restore main/MeadowCLI.Classic.sln /p:Configuration=Release
+      - name: Restore Classic dependencies
+        run: dotnet restore main/MeadowCLI.Classic.sln /p:Configuration=Release
 
-    - name: Build Classic CLI
-      run: dotnet build main/MeadowCLI.Classic.sln /p:Configuration=Release
+      - name: Build Classic CLI
+        run: dotnet build main/MeadowCLI.Classic.sln /p:Configuration=Release
 
-    - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
-        path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
+      - name: Upload nuget Artifacts for internal testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.CLI.Classic.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
+          path: 'main\Meadow.CLI.Classic\bin\Release\*.nupkg'
 
-    - name: Restore normal dependencies
-      run: dotnet restore main/MeadowCLI.sln /p:Configuration=Release
+      - name: Restore normal dependencies
+        run: dotnet restore main/MeadowCLI.sln /p:Configuration=Release
 
-    - name: Build normal CLI
-      run: dotnet build main/MeadowCLI.sln /p:Configuration=Release
+      - name: Build normal CLI
+        run: dotnet build main/MeadowCLI.sln /p:Configuration=Release
 
-    - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
-        path: 'main\Meadow.CLI\bin\Release\*.nupkg'
+      - name: Upload nuget Artifacts for internal testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_1 }}
+          path: 'main\Meadow.CLI\bin\Release\*.nupkg'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Publish Meadow.CLI Nuget publically
-      run: |
-        nuget push main\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        name: Publish Meadow.CLI Nuget publically
+        run: |
+          nuget push main\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
 
-    - name: Restore V2 dependencies
-      run: dotnet restore main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
+      - name: Restore V2 dependencies
+        run: dotnet restore main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
-    - name: Build V2 CLI
-      run: dotnet build main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
+      - name: Build V2 CLI
+        run: dotnet build main/Source/v2/Meadow.CLI.v2.sln /p:Configuration=Release
 
-    - name: Upload nuget Artifacts for internal testing
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}
-        path: 'main\Source\v2\Meadow.CLI\bin\Release\*.nupkg'
+      - name: Upload nuget Artifacts for internal testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}
+          path: 'main\Source\v2\Meadow.CLI\bin\Release\*.nupkg'
 
-    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #  name: Publish Meadow.CLI v2.0 Nuget publically
-    #  run: |
-    #    nuget push main\Source\v2\Meadow.CLI\bin\Release\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey ${{secrets.NUGET_API_KEY}}
-
-  # build-vswin-2019:
-  #   runs-on: windows-2019
-  #   needs: [build-and-optionally-publish-nuget]
-  #   name: Build Win 2019 Extension
-
-  #   steps:
-  #   - name: Checkout Meadow.CLI.Core side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       repository: WildernessLabs/Meadow.CLI
-  #       path: Meadow.CLI
-
-  #   - if: ${{ github.ref == 'refs/heads/main' }}
-  #     name: Checkout Win Extension side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       repository: WildernessLabs/VS_Win_Meadow_Extension
-  #       path: vs-win
-  #       ref: main
-
-  #   - if: ${{ github.ref != 'refs/heads/main' }}
-  #     name: Checkout Win Extension side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       repository: WildernessLabs/VS_Win_Meadow_Extension
-  #       path: vs-win
-
-  #   - name: Setup .NET Core SDK 5.0.x, 6.0.x & 7.0.x
-  #     uses: actions/setup-dotnet@v1
-  #     with:
-  #       dotnet-version: |
-  #         6.0.x
-  #         7.0.x
-  #         8.0.x
-
-  #   - name: Setup NuGet
-  #     uses: NuGet/setup-nuget@v1.0.5
-
-  #   - name: Add MSBuild to Path
-  #     uses: microsoft/setup-msbuild@v1.1
-
-  #   - if: ${{ github.event_name == 'workflow_dispatch' }}
-  #     name: Update VS2019 Version Numbers
-  #     run: |
-  #       $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest | Out-String
-  #       $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.IDE_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
-  #       $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2019/source.extension.vsixmanifest
-
-  #   - name: Restore VS2019 dependencies
-  #     run: dotnet restore vs-win/VS_Meadow_Extension.2019.sln /p:Configuration=Release
-
-  #   - name: Build VS2019 Extension
-  #     id: VS2019-Extension
-  #     run: msbuild vs-win/VS_Meadow_Extension.2019.sln  /t:Rebuild /p:Configuration=Release
-  #     env:
-  #       DevEnvDir: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE'
-
-  #   - name: Upload VS2019 VSIX Artifacts
-  #     uses: actions/upload-artifact@v4
-  #     with:
-  #       name: Meadow.Win.VS2019.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-  #       path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\*.vsix'
-        
-    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #  name: Publish VS2019 Extension
-    #  run: |
-    #    & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2019\bin\Release\Meadow.2019.vsix" -publishManifest "vs-win\publishManifest.json" -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
 
   build-vswin-2022:
     runs-on: windows-2022
@@ -201,188 +128,68 @@ jobs:
     name: Build Win 2022 Extension
 
     steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/Meadow.CLI
-        path: Meadow.CLI
+      - name: Checkout Meadow.CLI.Core side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/Meadow.CLI
+          path: Meadow.CLI
 
-    - if: ${{ github.ref == 'refs/heads/main' }}
-      name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VS_Win_Meadow_Extension
-        path: vs-win
-        ref: main
+      - if: ${{ github.ref == 'refs/heads/main' }}
+        name: Checkout Win Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VS_Win_Meadow_Extension
+          path: vs-win
+          ref: main
 
-    - if: ${{ github.ref != 'refs/heads/main' }}
-      name: Checkout Win Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VS_Win_Meadow_Extension
-        path: vs-win
+      - if: ${{ github.ref != 'refs/heads/main' }}
+        name: Checkout Win Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VS_Win_Meadow_Extension
+          path: vs-win
 
-    - name: Setup .NET Core SDK 6.0.x, 7.0.x, 8.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: |
-          6.0.x
-          7.0.x
-          8.0.x
+      - name: Setup .NET Core SDK 6.0.x, 7.0.x, 8.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
+            8.0.x
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
-      with:
-        vs-version: '[17.0, 18.0)'
+      - name: Add MSBuild to Path
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '[17.0, 18.0)'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' }}
-      name: Update VS2022 Version Numbers
-      run: |
-        $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
-        $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.IDE_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
-        $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Update VS2022 Version Numbers
+        run: |
+          $content = Get-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest | Out-String
+          $newcontent = $content -replace 'Version="1.*" Language="en-US" Publisher="Wilderness Labs"', 'Version="${{ ENV.IDE_TOOLS_RELEASE_VERSION }}" Language="en-US" Publisher="Wilderness Labs"'
+          $newcontent | Set-Content vs-win/VS_Meadow_Extension/VS_Meadow_Extension.2022/source.extension.vsixmanifest
 
-    - name: Restore VS2022 dependencies
-      run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln /p:Configuration=Release
+      - name: Restore VS2022 dependencies
+        run: dotnet restore vs-win/VS_Meadow_Extension.2022.sln /p:Configuration=Release
 
-    - name: Build VS2022 Extension
-      run: msbuild vs-win/VS_Meadow_Extension.2022.sln  /t:Rebuild /p:Configuration=Release
-      env:
-        DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
+      - name: Build VS2022 Extension
+        run: msbuild vs-win/VS_Meadow_Extension.2022.sln /t:Rebuild /p:Configuration=Release
+        env:
+          DevEnvDir: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE'
         
-    - name: Upload VS2022 VSIX Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.Win.VS2022.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-        path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
+      - name: Upload VS2022 VSIX Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.Win.VS2022.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
+          path: 'vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\*.vsix'
           
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Publish VS2022 Extension
-      run: |
-        & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\Meadow.2022.vsix" -publishManifest "vs-win\publishManifest.2022.json" -ignoreWarnings "None" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
-
-  # build-vsmac-2019:
-  #   name: Build Mac 2019 Extension
-  #   needs: [build-and-optionally-publish-nuget]
-  #   runs-on: macos-11
-
-  #   steps:
-  #   - name: Checkout Meadow.CLI.Core side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       path: Meadow.CLI
-
-  #   - if: ${{ github.ref == 'refs/heads/main' }}
-  #     name: Checkout Mac Extension side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       repository: WildernessLabs/VS_Mac_Meadow_Extension
-  #       path: vs-mac
-  #       ref: main
-
-  #   - if: ${{ github.ref != 'refs/heads/main' }}
-  #     name: Checkout Mac Extension side-by-side
-  #     uses: actions/checkout@v2
-  #     with:
-  #       repository: WildernessLabs/VS_Mac_Meadow_Extension
-  #       path: vs-mac
-
-  #   - name: Set default Xcode 13.0
-  #     run: |
-  #       XCODE_ROOT=/Applications/Xcode_13.0.0.app
-  #       echo "MD_APPLE_SDK_ROOT=$XCODE_ROOT" >> $GITHUB_ENV
-  #       sudo xcode-select -s $XCODE_ROOT
-
-  #   - name: Setup .NET Core SDK 5.0.x, 6.0.x & 7.0.x
-  #     uses: actions/setup-dotnet@v1
-  #     with:
-  #       dotnet-version: |
-  #         6.0.x
-  #         7.0.x
-  #         8.0.x
-
-  #   - name: Setup NuGet
-  #     uses: NuGet/setup-nuget@v1.0.5
-
-  #   - name: Work around so that VS2019 is picked up.
-  #     run: |
-  #       mv "/Applications/Visual Studio.app" "/Applications/Visual Studio 2022.app"
-  #       mv "/Applications/Visual Studio 2019.app" "/Applications/Visual Studio.app"
-
-  #   - if: ${{ github.event_name == 'workflow_dispatch' }}
-  #     name: Update VS2019 Version Numbers
-  #     run: |
-  #       sed -i "" "s/Version = \"1.*\"/Version = \"${{ENV.IDE_TOOLS_RELEASE_VERSION}}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.cs
-
-  #   - name: Restore our VS2019 project
-  #     run: |
-  #       msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Restore /p:Configuration=Release
-
-  #   - name: Build and Package the VS2019 Extension
-  #     run: |
-  #       msbuild vs-mac/VS4Mac_Meadow_Extension.sln /t:Build /p:Configuration=Release /p:CreatePackage=true
-
-  #   - name: Upload Mac VS2019 mpack Artifacts
-  #     uses: actions/upload-artifact@v4
-  #     with:
-  #       name: Meadow.Mac.2019.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-  #       path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack'
-
-    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #  name: Get Commit Messages
-    #  id: commit_messages
-    #  uses: actions/github-script@v6
-    #  with:
-    #    github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
-    #    script: |
-    #      const { owner, repo } = context.repo;
-
-    #      const latestRelease = await github.rest.repos.getLatestRelease({
-    #        owner: 'WildernessLabs',
-    #        repo: 'VS_Mac_Meadow_Extension',
-    #      });
-
-    #      const commits = await github.rest.repos.listCommits({
-    #        owner: 'WildernessLabs',
-    #        repo: 'VS_Mac_Meadow_Extension',
-    #        since: latestRelease.created_at
-    #      });
-
-    #      const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
-    #      const formattedMessages = `## What's Changed  \n${messages}`;
-
-    #      return formattedMessages;
-
-    #- if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #  name: Create VS2019 Release
-    #  id: create_release
-    #  uses: actions/create-release@v1
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
-    #  with:
-    #    owner: WildernessLabs
-    #    repo: VS_Mac_Meadow_Extension
-    #    tag_name: v${{ ENV.IDE_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2019_VERSION }}
-    #    release_name: VS Mac VS2019 Extension v${{ ENV.IDE_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
-    #    body: | 
-    #      ${{ steps.commit_messages.outputs.result }}
-    #    draft: true
-    #    prerelease: false
-    #    commitish: main
-  
-    # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.1.0
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
-    #  with:
-    #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net472/*.mpack
-    #    asset_name: Meadow.Mac.2019.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-    #    asset_content_type: application/zip
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        name: Publish VS2022 Extension
+        run: |
+          & "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" publish -payload "vs-win\VS_Meadow_Extension\VS_Meadow_Extension.2022\bin\Release\Meadow.2022.vsix" -publishManifest "vs-win\publishManifest.2022.json" -ignoreWarnings "None" -personalAccessToken "${{secrets.MARKETPLACE_PUBLISH_PAT}}"
 
   build-vsmac-2022:
     name: Build Mac 2022 Extension
@@ -390,108 +197,96 @@ jobs:
     runs-on: macos-12
 
     steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
-      with:
-        path: Meadow.CLI
+      - name: Checkout Meadow.CLI.Core side-by-side
+        uses: actions/checkout@v2
+        with:
+          path: Meadow.CLI
 
-    - if: ${{ github.ref == 'refs/heads/main' }}
-      name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VS_Mac_Meadow_Extension
-        path: vs-mac
-        ref: main
+      - if: ${{ github.ref == 'refs/heads/main' }}
+        name: Checkout Mac Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VS_Mac_Meadow_Extension
+          path: vs-mac
+          ref: main
 
-    - if: ${{ github.ref != 'refs/heads/main' }}
-      name: Checkout Mac Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VS_Mac_Meadow_Extension
-        path: vs-mac
+      - if: ${{ github.ref != 'refs/heads/main' }}
+        name: Checkout Mac Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VS_Mac_Meadow_Extension
+          path: vs-mac
 
-    - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: |
-          6.0.x
-          7.0.x
-          8.0.x
+      - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
+            8.0.x
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
 
-    - if: ${{ github.event_name == 'workflow_dispatch' }}
-      name: Update VS2022 Version Numbers
-      run: |
-        sed -i "" "s/Version = \"1.*\"/Version = \"${{ ENV.IDE_TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Update VS2022 Version Numbers
+        run: |
+          sed -i "" "s/Version = \"1.*\"/Version = \"${{ ENV.IDE_TOOLS_RELEASE_VERSION }}\"/" vs-mac/VS4Mac_Meadow_Extension/Properties/AddinInfo.2022.cs
 
-    - name: Restore our VS2022 project
-      run: |
-        dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Restore /p:Configuration=Release
+      - name: Restore our VS2022 project
+        run: |
+          dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Restore /p:Configuration=Release
 
-    - name: Build and Package the VS2022 Extension
-      run: |
-        dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
+      - name: Build and Package the VS2022 Extension
+        run: |
+          dotnet msbuild vs-mac/VS4Mac_Meadow_Extension/Meadow.Sdks.IdeExtensions.Vs4Mac.2022.csproj /t:Build /p:Configuration=Release /p:CreatePackage=true
     
-    - name: Upload VS2022 mpack Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.Mac.2022.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-        path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
+      - name: Upload VS2022 mpack Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.Mac.2022.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
+          path: 'vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Get Commit Messages
-      id: commit_messages
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
-        script: |
-          const { owner, repo } = context.repo;
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        name: Get Commit Messages
+        id: commit_messages
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.MEADOW_MAC_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const latestRelease = await github.rest.repos.getLatestRelease({
+              owner: 'WildernessLabs',
+              repo: 'VS_Mac_Meadow_Extension',
+            });
 
-          const latestRelease = await github.rest.repos.getLatestRelease({
-            owner: 'WildernessLabs',
-            repo: 'VS_Mac_Meadow_Extension',
-          });
+            const commits = await github.rest.repos.listCommits({
+              owner: 'WildernessLabs',
+              repo: 'VS_Mac_Meadow_Extension',
+              since: latestRelease.created_at
+            });
 
-          const commits = await github.rest.repos.listCommits({
-            owner: 'WildernessLabs',
-            repo: 'VS_Mac_Meadow_Extension',
-            since: latestRelease.created_at
-          });
+            const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
+            const formattedMessages = `## What's Changed  \n${messages}`;
+            
+            return formattedMessages;
 
-          const messages = commits.data.map(commit => `* ${commit.commit.message}`).join('  \n');
-          const formattedMessages = `## What's Changed  \n${messages}`;
-          
-          return formattedMessages;
-
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Create VS2022 Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
-      with:
-        owner: WildernessLabs
-        repo: VS_Mac_Meadow_Extension
-        tag_name: v${{ ENV.IDE_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2022_VERSION }}
-        release_name: VS Mac VS2022 Extension v${{ ENV.IDE_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
-        body: | 
-          ${{ steps.commit_messages.outputs.result }}
-        draft: true
-        prerelease: false
-        commitish: main
-
-    # - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-    #- name: Upload Release Asset
-    #  uses: actions/upload-release-asset@v1.1.0
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
-    #  with:
-    #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #    asset_path: vs-mac/VS4Mac_Meadow_Extension/bin/Release/net7.0/*.mpack
-    #    asset_name: Meadow.Mac.2022.mpack.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-    #    asset_content_type: application/zip
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        name: Create VS2022 Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MEADOW_MAC_TOKEN }}
+        with:
+          owner: WildernessLabs
+          repo: VS_Mac_Meadow_Extension
+          tag_name: v${{ ENV.IDE_TOOLS_RELEASE_VERSION }}-vsm${{ ENV.VS_MAC_2022_VERSION }}
+          release_name: VS Mac VS2022 Extension v${{ ENV.IDE_TOOLS_RELEASE_VERSION }} for Meadow OS v${{ ENV.MEADOW_OS_VERSION }}
+          body: | 
+            ${{ steps.commit_messages.outputs.result }}
+          draft: true
+          prerelease: false
+          commitish: main
 
   build-vscode:
     runs-on: windows-latest
@@ -499,98 +294,98 @@ jobs:
     name: Build VSCode Extension
 
     steps:
-    - name: Checkout Meadow.CLI.Core side-by-side
-      uses: actions/checkout@v2
-      with:
-        path: Meadow.CLI
+      - name: Checkout Meadow.CLI.Core side-by-side
+        uses: actions/checkout@v2
+        with:
+          path: Meadow.CLI
 
-    - if: ${{ github.ref == 'refs/heads/main' }}
-      name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VSCode_Meadow_Extension
-        path: vs-code
-        submodules: true
-        ref: main
+      - if: ${{ github.ref == 'refs/heads/main' }}
+        name: Checkout VSCode Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VSCode_Meadow_Extension
+          path: vs-code
+          submodules: true
+          ref: main
 
-    - if: ${{ github.ref != 'refs/heads/main' }}
-      name: Checkout VSCode Extension side-by-side
-      uses: actions/checkout@v2
-      with:
-        repository: WildernessLabs/VSCode_Meadow_Extension
-        path: vs-code
-        submodules: true
+      - if: ${{ github.ref != 'refs/heads/main' }}
+        name: Checkout VSCode Extension side-by-side
+        uses: actions/checkout@v2
+        with:
+          repository: WildernessLabs/VSCode_Meadow_Extension
+          path: vs-code
+          submodules: true
 
-    - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: |
-          6.0.x
-          7.0.x
-          8.0.x
+      - name: Setup .NET Core SDK 6.0.x, 7.0.x & 8.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
+            8.0.x
 
-    - name: Setup Nuget
-      uses: Nuget/setup-nuget@v1.0.5
+      - name: Setup Nuget
+        uses: NuGet/setup-nuget@v1.0.5
 
-    - name: Setup Node.js 16
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
 
-    - name: Install NPM
-      run: |
-        cd vs-code
-        npm install
-        npm update
+      - name: Install NPM
+        run: |
+          cd vs-code
+          npm install
+          npm update
 
-    - name: Install vsce
-      run: |
-        npm i -g @vscode/vsce
+      - name: Install vsce
+        run: |
+          npm i -g @vscode/vsce
 
-    - name: Add MSBuild to Path
-      uses: microsoft/setup-msbuild@v1.1
+      - name: Add MSBuild to Path
+        uses: microsoft/setup-msbuild@v1.1
 
-    - if: ${{ github.event_name == 'workflow_dispatch' }}
-      name: Update VSCode Version Numbers
-      run: |
-        $content = Get-Content vs-code/package.json | Out-String
-        $newcontent = $content -replace '"version": "1.*",', '"version": "${{ENV.IDE_TOOLS_RELEASE_VERSION}}",'
-        $newcontent | Set-Content vs-code/package.json
+      - if: ${{ github.event_name == 'workflow_dispatch' }}
+        name: Update VSCode Version Numbers
+        run: |
+          $content = Get-Content vs-code/package.json | Out-String
+          $newcontent = $content -replace '"version": "1.*",', '"version": "${{ENV.IDE_TOOLS_RELEASE_VERSION}}",'
+          $newcontent | Set-Content vs-code/package.json
 
-    - name: Restore VSCode Extension dependencies
-      run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
+      - name: Restore VSCode Extension dependencies
+        run: dotnet restore vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
 
-    - name: Build VSCode Extension
-      id: VSCode-Extension
-      run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
+      - name: Build VSCode Extension
+        id: VSCode-Extension
+        run: dotnet build vs-code/src/csharp/VSCodeMeadow.csproj /p:Configuration=Debug
 
-    - name: Build WebPack
-      run: |
-        cd vs-code
-        npm install -g webpack
-        npm install -D ts-loader
-        npm run webpack
+      - name: Build WebPack
+        run: |
+          cd vs-code
+          npm install -g webpack
+          npm install -D ts-loader
+          npm run webpack
 
-    - if: ${{ github.ref != 'refs/heads/main' }}
-      name: Build Pre-Release VSIX on non main branch
-      run: |
-        cd vs-code
-        vsce package --pre-release
+      - if: ${{ github.ref != 'refs/heads/main' }}
+        name: Build Pre-Release VSIX on non main branch
+        run: |
+          cd vs-code
+          vsce package --pre-release
 
-    - if: ${{ github.ref == 'refs/heads/main' }}
-      name: Build Release VSIX on main branch
-      run: |
-        cd vs-code
-        vsce package
+      - if: ${{ github.ref == 'refs/heads/main' }}
+        name: Build Release VSIX on main branch
+        run: |
+          cd vs-code
+          vsce package
 
-    - name: Upload VSIX Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Meadow.VSCode.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
-        path: 'vs-code/*.vsix'
+      - name: Upload VSIX Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meadow.VSCode.vsix.${{ ENV.IDE_TOOLS_RELEASE_VERSION }}
+          path: 'vs-code/*.vsix'
 
-    - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
-      name: Publish VSCode Extension
-      run: |
-        cd vs-code
-        vsce publish -p ${{ secrets.MARKETPLACE_PUBLISH_PAT }}
+      - if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+        name: Publish VSCode Extension
+        run: |
+          cd vs-code
+          vsce publish -p ${{ secrets.MARKETPLACE_PUBLISH_PAT }}
