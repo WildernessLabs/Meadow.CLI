@@ -52,10 +52,10 @@ jobs:
       - name: Restore CLI dependencies
         run: dotnet restore main/Source/Meadow.CLI.sln /p:Configuration=Release
 
-      - name: Build v2 CLI
+      - name: Build CLI
         run: dotnet build main/Source/Meadow.CLI.sln /p:Configuration=Release
 
-      - name: Upload v2 NuGet Artifacts
+      - name: Upload NuGet Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Meadow.CLI.nuget.${{ ENV.CLI_RELEASE_VERSION_2 }}

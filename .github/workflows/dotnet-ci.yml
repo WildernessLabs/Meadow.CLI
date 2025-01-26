@@ -48,7 +48,7 @@ jobs:
     - name: Build CLI
       run: dotnet build -c Release Meadow.CLI/Source/Meadow.CLI.sln
 
-    - name: Unit Test CLI v2
+    - name: Unit Test CLI
       run: dotnet test -c Release --no-build --no-restore --filter "FullyQualifiedName~.Unit.Tests" .\Meadow.CLI\Source\Meadow.CLI.sln
 
       
