@@ -3,6 +3,16 @@ using System.Diagnostics;
 
 namespace Meadow.HCom.Integration.Tests;
 
+public class SettingsManagerTests
+{
+    [Fact]
+    public void TestSerializingWiFiConfig()
+    {
+        var m = new MeadowSettingsManager(null);
+        m.WriteWiFiSettings("my-SSID", "Pa$$w0rd");
+    }
+}
+
 public class ConnectionManagerTests
 {
     public string ValidPortName { get; } = "COM3";

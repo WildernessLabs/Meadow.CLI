@@ -331,6 +331,22 @@
       "commandName": "Project",
       "commandLineArgs": "config source 'C:\\repos\\wilderness'"
     },
+    "device config wifi": {
+      "commandName": "Project",
+      "commandLineArgs": "device config wifi -s interwebs -p 1234567890"
+    },
+    "device config show": {
+      "commandName": "Project",
+      "commandLineArgs": "device config show"
+    },
+    "device config set": {
+      "commandName": "Project",
+      "commandLineArgs": "device config set Device:Name=MyDevice Network:DefaultInterface=WiFi"
+    },
+    "app config show": {
+      "commandName": "Project",
+      "commandLineArgs": "app config show"
+    },
     "WSL": {
       "commandName": "WSL2",
       "distributionName": ""
