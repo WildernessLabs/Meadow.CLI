@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\..\Meadow.Contracts\Source\Meadow.Contracts\CircularBuffer.cs" Link="CircularBuffer.cs" />
+    <Compile Include="..\..\..\Meadow.Contracts\Source\Meadow.Contracts\CircularBuffer.cs" Link="CircularBuffer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="System.IO.Ports" Version="7.0.0" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    <PackageReference Include="YamlDotNet" Version="13.7.1" />
   </ItemGroup>
 
 </Project>
