@@ -1,0 +1,355 @@
+{
+  "profiles": {
+    "Meadow.CLI": {
+      "commandName": "Project"
+    },
+    "App Build": {
+      "commandName": "Project",
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+    },
+    "App Build Debug": {
+      "commandName": "Project",
+      "commandLineArgs": "app build H:\\WL\\Blinky\\Blinky\\BlinkyCs -c Debug"
+    },
+    "App Deploy (project folder)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+    },
+    "App Deploy (untrimmed output)": {
+      "commandName": "Project",
+      "commandLineArgs": "app deploy F:\\temp\\MeadowApplication1\\bin\\Debug\\netstandard2.1"
+    },
+    "App Run": {
+      "commandName": "Project",
+      "commandLineArgs": "app run H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+    },
+    "App Trim": {
+      "commandName": "Project",
+      "commandLineArgs": "app trim H:\\WL\\Blinky\\Blinky\\BlinkyCs --nolink BlinkyLib"
+    },
+    "Config: Set Route local": {
+      "commandName": "Project",
+      "commandLineArgs": "config route local"
+    },
+    "Config: Set Route Serial": {
+      "commandName": "Project",
+      "commandLineArgs": "config route COM5"
+    },
+    "Config: Set Route TCP": {
+      "commandName": "Project",
+      "commandLineArgs": "config route 172.26.8.20"
+    },
+    "Config: List": {
+      "commandName": "Project",
+      "commandLineArgs": "config --list"
+    },
+    "Config: Help": {
+      "commandName": "Project",
+      "commandLineArgs": "config --help"
+    },
+    "Developer": {
+      "commandName": "Project",
+      "commandLineArgs": "developer -p 2 -v 20"
+    },
+    "Device Info": {
+      "commandName": "Project",
+      "commandLineArgs": "device info"
+    },
+    "Device Public Key": {
+      "commandName": "Project",
+      "commandLineArgs": "device info -k"
+    },
+    "Device Reset": {
+      "commandName": "Project",
+      "commandLineArgs": "device reset"
+    },
+    "Device Clock Read": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock"
+    },
+    "Device Clock Set": {
+      "commandName": "Project",
+      "commandLineArgs": "device clock now"
+    },
+    "Dfu Install": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install"
+    },
+    "Dfu Install 0.10": {
+      "commandName": "Project",
+      "commandLineArgs": "dfu install -v 0.10"
+    },
+    "File List": {
+      "commandName": "Project",
+      "commandLineArgs": "file list"
+    },
+    "File List folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file list Temp"
+    },
+    "File List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "file list --verbose"
+    },
+    "File Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete /yo2.txt"
+    },
+    "File Delete folder": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete /Temp/yo3.txt"
+    },
+    "File Delete All": {
+      "commandName": "Project",
+      "commandLineArgs": "file delete-all"
+    },
+    "File initial": {
+      "commandName": "Project",
+      "commandLineArgs": "file initial app.build.yaml"
+    },
+    "File Read Large": {
+      "commandName": "Project",
+      "commandLineArgs": "file read Meadow.F7.dll"
+    },
+    "File Read": {
+      "commandName": "Project",
+      "commandLineArgs": "file read test.txt \"f:\\temp\\test2.txt\""
+    },
+    "File Write": {
+      "commandName": "Project",
+      "commandLineArgs": "file write -f .\\yo2.txt"
+    },
+    "Firmware List": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list"
+    },
+    "Firmware List verbose": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware list --verbose"
+    },
+    "Firmware Download latest": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download"
+    },
+    "Firmware Download version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware download -v 1.9.1.8 --force"
+    },
+    "Firmware Default get": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware default"
+    },
+    "Firmware Default set": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware default 1.10.0.2"
+    },
+    "Firmware Delete": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware delete 1.99.0.0"
+    },
+    "Firmware Write all": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write"
+    },
+    "Firmware Write version": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write -v 2.0.0.3"
+    },
+    "Firmware Write runtime": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write runtime"
+    },
+    "Firmware Write runtime local file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write runtime -f g:\\Meadow.OS.Runtime.bin"
+    },
+    "Firmware Write esp": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write esp"
+    },
+    "Firmware Write esp with file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write esp -f C:\\Users\\ctack\\AppData\\Local\\WildernessLabs\\Firmware\\2.0.0.3\\MeadowComms.bin"
+    },
+    "Firmware Write os DFU": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write os -v 1.2.0.1"
+    },
+    "Firmware Write OS local file": {
+      "commandName": "Project",
+      "commandLineArgs": "firmware write OS -f g:\\Meadow.OS.bin"
+    },
+    "Flash erase": {
+      "commandName": "Project",
+      "commandLineArgs": "flash erase"
+    },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
+    "Listen": {
+      "commandName": "Project",
+      "commandLineArgs": "listen"
+    },
+    "Listen (no prefix)": {
+      "commandName": "Project",
+      "commandLineArgs": "listen -n"
+    },
+    "Port List": {
+      "commandName": "Project",
+      "commandLineArgs": "port list"
+    },
+    "Port Select": {
+      "commandName": "Project",
+      "commandLineArgs": "port select"
+    },
+    "Runtime Enable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime enable"
+    },
+    "Runtime Disable": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime disable"
+    },
+    "Runtime State": {
+      "commandName": "Project",
+      "commandLineArgs": "runtime state"
+    },
+    "Version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
+    "Trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace enable"
+    },
+    "Trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "trace disable"
+    },
+    "Trace level": {
+      "commandName": "Project",
+      "commandLineArgs": "trace level 2"
+    },
+    "Uart trace enable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace enable"
+    },
+    "Uart trace disable": {
+      "commandName": "Project",
+      "commandLineArgs": "uart trace disable"
+    },
+    "Device provision": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision -o christacke6612"
+    },
+    "Device provision command": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision --gen-command"
+    },
+    "Device provision other": {
+      "commandName": "Project",
+      "commandLineArgs": "device provision -o christacke6612 --id 2258a2fa0739491aa484a0d6b95c3e15 -k \"-----BEGIN RSA PUBLIC KEY-----\nMIIBigKCAYEA2kj+97LvLa9tZhn9rLBGNgJIEw+Wl+qJXHXW1AmAv3zcytXJ5uGJ\nJjrU7V/y/R6R/TizZRY57puz/mG5BMopdtdNx3Cpfb35SaGmIiSiAVpELci/Ldpd\ntsGJphfSxslVkc3/s2LEZ416pybzGoTb4+KGj+L+GcNYoe6rxFgVJEv3PTlpBWbv\nCUZGBb/0twedNmmXZzq9W79UYIMQaB53fgdH9qFOvBIw9zcG2a6MY/MBGU6nr7BY\nwShjMV9AwP3z1ao6X4nbpfPtBRPjyyyGdVH4bKF7dLgBGZnShmvGfhGpaxWJlBIk\n3IJYgJbd8y5MVVhsJv6AmBmm84dyDX2Tn5wKvZ+Fbmpeez87rosm+C80VnO6Kz4E\nFmIErHGGaoBoX9L7cf33yMwty2glCNW7HYUl/YWJPg+8eyuEjOpGHqJSAW4AlfgY\n0FDNj/AR0Pni0wfQ+DUpBt5i2kgUw0MDWlWVYYbgxmO1VbvofWJwYLYgeiCxNPBj\nopp0RZfm/brRAgMBAAE=\n-----END RSA PUBLIC KEY-----\""
+    },
+    "Login": {
+      "commandName": "Project",
+      "commandLineArgs": "login"
+    },
+    "Logout": {
+      "commandName": "Project",
+      "commandLineArgs": "logout"
+    },
+    "Cloud collection list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud collection list -o christacke6612"
+    },
+    "Cloud package create": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package create H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+    },
+    "Cloud package upload": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package upload F:\\temp\\MeadowApplication1\\bin\\Release\\netstandard2.1\\mpak\\2023100330.mpak -o christacke6612"
+    },
+    "Cloud package list": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package list -o christacke6612"
+    },
+    "Cloud package publish": {
+      "commandName": "Project",
+      "commandLineArgs": "cloud package publish d867bb8b6e56418ba26ebe4e2b3ef6db -c 9d5f9780e6964c22b4ec15c44b886545"
+    },
+    "legacy list ports": {
+      "commandName": "Project",
+      "commandLineArgs": "list ports"
+    },
+    "legacy use port": {
+      "commandName": "Project",
+      "commandLineArgs": "use port COM1"
+    },
+    "legacy mono state": {
+      "commandName": "Project",
+      "commandLineArgs": "mono state"
+    },
+    "legacy mono enable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono enable"
+    },
+    "legacy mono disable": {
+      "commandName": "Project",
+      "commandLineArgs": "mono disable"
+    },
+    "legacy download os": {
+      "commandName": "Project",
+      "commandLineArgs": "download os"
+    },
+    "legacy flash os": {
+      "commandName": "Project",
+      "commandLineArgs": "flash os"
+    },
+    "source status": {
+      "commandName": "Project",
+      "commandLineArgs": "source status"
+    },
+    "source checkout": {
+      "commandName": "Project",
+      "commandLineArgs": "source checkout develop"
+    },
+    "source fetch": {
+      "commandName": "Project",
+      "commandLineArgs": "source fetch"
+    },
+    "source pull": {
+      "commandName": "Project",
+      "commandLineArgs": "source pull"
+    },
+    "source clone": {
+      "commandName": "Project",
+      "commandLineArgs": "source clone"
+    },
+    "config source": {
+      "commandName": "Project",
+      "commandLineArgs": "config source 'C:\\repos\\wilderness'"
+    },
+    "device config wifi": {
+      "commandName": "Project",
+      "commandLineArgs": "device config wifi -s interwebs -p 1234567890"
+    },
+    "device config show": {
+      "commandName": "Project",
+      "commandLineArgs": "device config show"
+    },
+    "device config set": {
+      "commandName": "Project",
+      "commandLineArgs": "device config set Device:Name=MyDevice Network:DefaultInterface=WiFi"
+    },
+    "app config show": {
+      "commandName": "Project",
+      "commandLineArgs": "app config show"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}
