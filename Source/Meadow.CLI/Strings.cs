@@ -1,7 +1,4 @@
-﻿using Meadow.Telemetry;
-using Spectre.Console;
-
-namespace Meadow.CLI;
+﻿namespace Meadow.CLI;
 
 public static class Strings
 {
@@ -71,8 +68,9 @@ public static class Strings
     public const string AppDeployFailed = "Application deploy failed";
     public const string AppDeployedSuccessfully = "Application deployed successfully";
     public const string AppTrimFailed = "Application trimming failed";
-	  public const string WithConfiguration = "with configuration";
-	  public const string At = "at";
+    public const string WithConfiguration = "with configuration";
+    public const string At = "at";
+    public const string DfuUsbErrorMessage = "Found a DFU device but couldn't identify it as Meadow hardware. \r\nEnsure your device is in DFU mode and is correctly recognized by the host development machine.";
 
     public static class Telemetry
     {

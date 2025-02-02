@@ -33,6 +33,8 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
 
+    private string DFU_USB_ERROR_MESSAGE = "Operation not supported or unimplemented on this platform";
+
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
@@ -181,7 +183,22 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
             // do we have a dfu device attached, or is DFU specified?
             var provider = new LibUsbProvider();
-            var dfuDevice = GetLibUsbDeviceForCurrentEnvironment(provider);
+
+            ILibUsbDevice? dfuDevice = null;
+
+            try
+            {
+                dfuDevice = GetLibUsbDeviceForCurrentEnvironment(provider);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains(DFU_USB_ERROR_MESSAGE))
+                {
+                    var msg = "Exception: " + ex.Message + Environment.NewLine + Environment.NewLine + Strings.DfuUsbErrorMessage;
+                    throw new CommandException(msg, ex);
+                }
+            }
+
             bool ignoreSerial = IgnoreSerialNumberForDfu(provider);
 
             if (dfuDevice != null)
