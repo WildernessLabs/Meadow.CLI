@@ -1253,11 +1253,12 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         var debuggingServer = new DebuggingServer(this, port, logger);
 
-        Debug.WriteLine("Tell the Debugging Server to Start Listening");
+        Debug.WriteLine("You can now connect the debugger client to the local tunnel port");
         await debuggingServer.StartListening(cancellationToken);
 
-        Debug.WriteLine($"Start Debugging on port: {port}");
+        Debug.WriteLine($"Debugger client is connected!!! Port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
+        Debug.WriteLine("Debugging has fully started!!");
 
         return debuggingServer;
     }

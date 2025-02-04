@@ -101,6 +101,15 @@ namespace Meadow.Hcom
                             }
                             goto read;
                         }
+                        catch (IOException)
+                        {
+                            if (AggressiveReconnectEnabled)
+                            {
+                                Debug.WriteLine("Aggressively re-connecting");
+                                await ReOpen();
+                            }
+                            goto read;
+                        }
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 
