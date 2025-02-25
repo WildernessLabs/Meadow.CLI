@@ -132,7 +132,17 @@ public class SettingsManager : ISettingsManager
         if (File.Exists(Path))
         {
             var json = File.ReadAllText(Path);
-            return JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    return JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+                }
+                catch
+                {
+                    //TODO: maybe log this
+                }
+            }
         }
 
         return new Settings();
