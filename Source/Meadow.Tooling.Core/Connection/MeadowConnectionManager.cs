@@ -100,24 +100,23 @@ public class MeadowConnectionManager
         return _currentConnection;
     }
 
-    public static async Task<IList<string>> GetSerialPorts()
+    public static async Task<IList<string>> GetSerialPorts(string? serialNumber = null)
     {
         try
         {
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return await GetMeadowSerialPortsForLinux();
+                return await GetMeadowSerialPortsForLinux(serialNumber);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return await GetMeadowSerialPortsForOsx();
+                return await GetMeadowSerialPortsForOsx(serialNumber);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 lock (_lockObject)
                 {
-                    return GetMeadowSerialPortsForWindows();
+                    return GetMeadowSerialPortsForWindows(serialNumber);
                 }
             }
             else
@@ -131,7 +130,7 @@ public class MeadowConnectionManager
         }
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForOsx()
+    public static async Task<IList<string>> GetMeadowSerialPortsForOsx(string? serialNumber)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) == false)
         {
@@ -187,6 +186,12 @@ public class MeadowConnectionManager
 
                     var port = line.Substring(startIndex, endIndex - startIndex);
 
+                    if (!string.IsNullOrWhiteSpace(serialNumber)
+                    && !port.Contains(serialNumber))
+                    {
+                        continue;
+                    }
+
                     ports.Add(port);
                     foundMeadow = false;
                 }
@@ -196,7 +201,7 @@ public class MeadowConnectionManager
         });
     }
 
-    public static async Task<IList<string>> GetMeadowSerialPortsForLinux()
+    public static async Task<IList<string>> GetMeadowSerialPortsForLinux(string? serialNumber)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) == false)
         {
@@ -205,13 +210,15 @@ public class MeadowConnectionManager
 
         return await Task.Run(() =>
         {
-            const string devicePath = "/dev/serial/by-id";
+            const string devicePath = "/dev/serial/by-id/";
             var psi = new ProcessStartInfo()
             {
                 FileName = "ls",
                 Arguments = $"-l {devicePath}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
-                RedirectStandardOutput = true
+                CreateNoWindow = true
             };
 
             using var proc = Process.Start(psi);
@@ -223,7 +230,8 @@ public class MeadowConnectionManager
                 return Array.Empty<string>();
             }
 
-            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+            var wlSerialPorts = output
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                   .Where(x => x.Contains("Wilderness_Labs"))
                   .Select(
                       line =>
@@ -232,11 +240,22 @@ public class MeadowConnectionManager
                           var target = parts[1];
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
                           return port;
-                      }).ToArray();
+                      });
+
+            if (string.IsNullOrWhiteSpace(serialNumber))
+            {
+                return wlSerialPorts.ToArray();
+            }
+            else
+            {
+                return wlSerialPorts
+                      .Where(line => !string.IsNullOrWhiteSpace(serialNumber) && line.Contains(serialNumber))
+                      .ToArray();
+            }
         });
     }
 
-    public static IList<string> GetMeadowSerialPortsForWindows()
+    public static IList<string> GetMeadowSerialPortsForWindows(string? serialNumber)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
         {
@@ -286,7 +305,11 @@ public class MeadowConnectionManager
                 // the characters: USB\VID_XXXX&PID_XXXX\
                 // so we'll just split is on \ and grab the 3rd element as the format is standard, but the length may vary.
                 var splits = pnpDeviceId.Split('\\');
-                var serialNumber = splits[2];
+
+                if (!string.IsNullOrWhiteSpace(serialNumber)
+                && !string.IsNullOrWhiteSpace(splits[2])
+                && !splits[2].Contains(serialNumber))
+                    continue;
 
                 results.Add($"{port}"); // removed serial number for consistency and will break fallback ({serialNumber})");
             }
@@ -303,5 +326,11 @@ public class MeadowConnectionManager
 
             return ports;
         }
+    }
+
+    public static async Task<string?> GetRouteFromSerialNumber(string? serialNumber)
+    {
+        var results = await GetSerialPorts(serialNumber);
+        return results.FirstOrDefault();
     }
 }

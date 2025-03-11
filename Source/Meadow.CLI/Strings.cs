@@ -114,4 +114,12 @@ You can change your mind at any time by running the ""{0}"" command or by settin
     public const string UnsupportedOperatingSystem = "Unsupported Operating System";
     public const string Enter = "Enter";
     public const string Space = "Space";
+
+    public static class FirmwareUpdater
+    {
+        public const string FlashingOS = "Flashing OS";
+        public const string WritingRuntime = "Writing Runtime";
+        public const string WritingESP = "Writing ESP";
+        public const string SwitchingToLibUsbClassic = "This machine requires an older version of LibUsb. The CLI settings have been updated, re-run the 'firmware write' command to update your device.";
+    }
 }
