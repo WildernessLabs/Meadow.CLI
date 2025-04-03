@@ -97,8 +97,14 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         IMeadowConnection? connection = null;
         DeviceInfo? deviceInfo = null;
 
+        int firmwareTypeCount = firmwareFileTypes.Length + 1;
+        int progressIncrement = 100 / firmwareTypeCount;
+        int currentProgress = 0;
+
         if (firmwareFileTypes.Contains(FirmwareType.OS))
         {
+            currentProgress += progressIncrement;
+            UpdateProgress?.Invoke(this, (Strings.FirmwareUpdater.FlashingOS, currentProgress));
             string? osFileWithBootloader = null;
             string? osFileWithoutBootloader = null;
 
@@ -181,6 +187,9 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         if (firmwareFileTypes.Contains(FirmwareType.Runtime) || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.RuntimeFile)
         {
+            currentProgress += progressIncrement;
+            UpdateProgress?.Invoke(this, (Strings.FirmwareUpdater.WritingRuntime, currentProgress));
+
             if (string.IsNullOrEmpty(individualFile))
             {
                 connection = await WriteRuntime(connection, deviceInfo, package);
@@ -203,6 +212,9 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocApplicationFile
              || Path.GetFileName(individualFile) == F7FirmwarePackageCollection.F7FirmwareFiles.CoprocBootloaderFile)
         {
+            currentProgress += progressIncrement;
+            UpdateProgress?.Invoke(this, (Strings.FirmwareUpdater.WritingESP, currentProgress));
+
             connection = await GetConnectionAndDisableRuntime();
 
             await WriteEspFiles(connection, deviceInfo, package);
