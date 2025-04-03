@@ -97,8 +97,8 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         IMeadowConnection? connection = null;
         DeviceInfo? deviceInfo = null;
 
-        int firmwareCount = firmwareFileTypes.Length;
-        int progressIncrement = 100 / firmwareCount;
+        int firmwareTypeCount = firmwareFileTypes.Length + 1;
+        int progressIncrement = 100 / firmwareTypeCount;
         int currentProgress = 0;
 
         if (firmwareFileTypes.Contains(FirmwareType.OS))
