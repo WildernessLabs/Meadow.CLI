@@ -22,7 +22,10 @@ public class SourceCheckoutCommand : BaseCommand<AppBuildCommand>
     {
         var root = new MeadowRoot(_settingsManager);
 
-        root.Checkout(Branch);
+        if (root.Checkout(Branch) == false)
+        {
+            throw new CommandException($"Failed to checkout branch {Branch} in source repositories", CommandExitCode.GeneralError);
+        }
 
         return default;
     }
