@@ -40,7 +40,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         // TODO: add switch and support for other platforms
         var collection = _fileManager.Firmware["Meadow F7"];
 
-        if (collection == null || collection.Count() == 0)
+        if (collection == null || !collection.Any())
         {
             throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
         }

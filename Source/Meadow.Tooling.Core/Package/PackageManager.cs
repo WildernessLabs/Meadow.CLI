@@ -98,6 +98,8 @@ public partial class PackageManager : IPackageManager
             // this gets called (with empty data) even on a successful build
             Debug.WriteLine(errorLine.Data);
         };
+
+        string lastMessage = string.Empty;
         proc.OutputDataReceived += (sendingProcess, dataLine) =>
         {
             if (dataLine.Data != null)
@@ -106,10 +108,15 @@ public partial class PackageManager : IPackageManager
                 if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed") ||
                     dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("does not exist"))
                 {
-                    Debug.WriteLine("Build failed");
+                    Debug.WriteLine($"Build failed: {lastMessage}");
                     success = false;
                 }
+                else if (string.IsNullOrEmpty(dataLine.Data) == false)
+                {
+                    lastMessage = dataLine.Data;
+                }
             }
+
             // TODO: look for "X Warning(s)" and "X Error(s)"?
             // TODO: do we want to enable forwarding these messages for "verbose" output?
         };
