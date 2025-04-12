@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace Meadow.Package;
+namespace Meadow.CLI;
 
-public partial class PackageManager
+public partial class BuildManager
 {
     private record BuildOptions
     {
