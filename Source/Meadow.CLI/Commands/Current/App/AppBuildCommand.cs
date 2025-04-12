@@ -32,6 +32,10 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
         if (!success)
         {
+            foreach (var line in _buildManager.BuildErrorText)
+            {
+                Logger?.LogInformation(line);
+            }
             throw new CommandException("Build failed", CommandExitCode.GeneralError);
         }
         else

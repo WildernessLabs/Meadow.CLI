@@ -13,6 +13,8 @@ using YamlDotNet.Serialization;
 namespace Meadow.CLI;
 public partial class BuildManager : IBuildManager
 {
+    public List<string> BuildErrorText { get; } = new();
+
     public const string PreLinkDirectoryName = "prelink_bin";
     public const string PostLinkDirectoryName = "postlink_bin";
     public const string PackageOutputDirectoryName = "mpak";
@@ -34,7 +36,7 @@ public partial class BuildManager : IBuildManager
 
     internal bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
     {
-        var proc = new Process();
+        using var proc = new Process();
         proc.StartInfo.FileName = "dotnet";
         proc.StartInfo.Arguments = $"clean \"{projectFilePath}\" -c {configuration}";
 
@@ -48,23 +50,19 @@ public partial class BuildManager : IBuildManager
 
         proc.ErrorDataReceived += (sendingProcess, errorLine) =>
         {
-            // this gets called (with empty data) even on a successful build
             Debug.WriteLine(errorLine.Data);
         };
         proc.OutputDataReceived += (sendingProcess, dataLine) =>
         {
-            // look for "Build FAILED"
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
+                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("clean failed"))
                 {
-                    Debug.WriteLine("Build failed");
+                    Debug.WriteLine("Clean failed");
                     success = false;
                 }
             }
-            // TODO: look for "X Warning(s)" and "X Error(s)"?
-            // TODO: do we want to enable forwarding these messages for "verbose" output?
         };
 
         proc.Start();
@@ -80,49 +78,35 @@ public partial class BuildManager : IBuildManager
 
     public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
     {
+        BuildErrorText.Clear();
+
+        if (cancellationToken?.IsCancellationRequested == true)
+        {
+            return false;
+        }
+
         if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
         {
             return false;
         }
 
-        var proc = new Process();
+        using var proc = new Process();
         proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"build \"{projectFilePath}\" -c {configuration}";
-
+        proc.StartInfo.Arguments = $"build \"{projectFilePath}\" -c \"{configuration}\"";
         proc.StartInfo.CreateNoWindow = true;
         proc.StartInfo.ErrorDialog = false;
         proc.StartInfo.RedirectStandardError = true;
         proc.StartInfo.RedirectStandardOutput = true;
         proc.StartInfo.UseShellExecute = false;
 
-        var success = true;
-
-        proc.ErrorDataReceived += (sendingProcess, errorLine) =>
-        {
-            // this gets called (with empty data) even on a successful build
-            Debug.WriteLine(errorLine.Data);
-        };
-
         string lastMessage = string.Empty;
         proc.OutputDataReceived += (sendingProcess, dataLine) =>
         {
             if (dataLine.Data != null)
             {
+                BuildErrorText.Add(dataLine.Data);
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed") ||
-                    dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("does not exist"))
-                {
-                    Debug.WriteLine($"Build failed: {lastMessage}");
-                    success = false;
-                }
-                else if (string.IsNullOrEmpty(dataLine.Data) == false)
-                {
-                    lastMessage = dataLine.Data;
-                }
             }
-
-            // TODO: look for "X Warning(s)" and "X Error(s)"?
-            // TODO: do we want to enable forwarding these messages for "verbose" output?
         };
 
         proc.Start();
@@ -133,7 +117,12 @@ public partial class BuildManager : IBuildManager
         var exitCode = proc.ExitCode;
         proc.Close();
 
-        return success;
+        if (exitCode == 0)
+        {
+            BuildErrorText.Clear();
+        }
+
+        return exitCode == 0;
     }
 
     public Task TrimApplication(

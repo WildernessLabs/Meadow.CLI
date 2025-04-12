@@ -7,6 +7,8 @@ namespace Meadow.CLI;
 
 public interface IBuildManager
 {
+    List<string> BuildErrorText { get; }
+
     List<string> GetDependencies(FileInfo file, string? osVerion);
 
     bool BuildApplication(

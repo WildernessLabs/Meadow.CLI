@@ -67,6 +67,10 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (!_buildManager.BuildApplication(path, Configuration))
         {
+            foreach (var line in _buildManager.BuildErrorText)
+            {
+                Logger?.LogInformation(line);
+            }
             throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
         }
 
