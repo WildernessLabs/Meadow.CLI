@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Package;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +7,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app trim", Description = "Trim a pre-compiled Meadow application")]
 public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
 {
-    private readonly IPackageManager _packageManager;
+    private readonly IBuildManager _buildManager;
 
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
@@ -21,10 +20,10 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
 
     readonly FileManager _fileManager;
 
-    public AppTrimCommand(FileManager fileManager, IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public AppTrimCommand(FileManager fileManager, IBuildManager buildManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
+        _buildManager = buildManager;
         _fileManager = fileManager;
     }
 
@@ -66,7 +65,7 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
         var package = collection.GetClosestLocalPackage(deviceInfo.OsVersion);
 
         Logger.LogInformation($"Preparing to trim using v{package?.Version ?? " unknown"} assemblies...");
-        await AppTools.TrimApplication(path, _packageManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken);
+        await AppTools.TrimApplication(path, _buildManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken);
         Logger.LogInformation("Application trimmed successfully");
     }
 }

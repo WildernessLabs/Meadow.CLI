@@ -44,7 +44,7 @@ public static class AppManager
     }
 
     public static async Task DeployApplication(
-        IPackageManager packageManager,
+        IBuildManager buildManager,
         IMeadowConnection connection,
         string osVersion,
         string localBinaryDirectory,
@@ -82,7 +82,7 @@ public static class AppManager
         {
             logger?.LogInformation($"Did not find trimmed binaries folder...");
 
-            dependencies = packageManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
+            dependencies = buildManager.GetDependencies(new FileInfo(Path.Combine(processedAppPath, "App.dll")), osVersion);
         }
         dependencies.Add(Path.Combine(localBinaryDirectory, "App.dll"));
 

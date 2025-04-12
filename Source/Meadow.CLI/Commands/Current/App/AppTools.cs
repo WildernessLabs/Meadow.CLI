@@ -1,8 +1,8 @@
-﻿using System.Diagnostics;
-using CliFx.Infrastructure;
+﻿using CliFx.Infrastructure;
 using Meadow.Hcom;
 using Meadow.Package;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
@@ -41,7 +41,7 @@ internal static class AppTools
     }
 
     internal static async Task<bool> TrimApplication(string path,
-        IPackageManager packageManager,
+        IBuildManager buildManager,
         string osVersion,
         string? configuration,
         IEnumerable<string>? noLinkAssemblies,
@@ -100,7 +100,7 @@ internal static class AppTools
             logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await packageManager.TrimApplication(file, osVersion, false, noLinkAssemblies, cancellationToken);
+        await buildManager.TrimApplication(file, osVersion, false, noLinkAssemblies, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s
