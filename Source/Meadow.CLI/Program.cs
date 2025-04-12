@@ -39,6 +39,7 @@ public class Program
         services.AddSingleton<MeadowConnectionManager>();
         services.AddSingleton<FileManager>();
         services.AddSingleton<ISettingsManager, SettingsManager>();
+        services.AddSingleton<IBuildManager, BuildManager>();
         services.AddSingleton<IPackageManager, PackageManager>();
         services.AddSingleton<UserService>();
         services.AddSingleton<DeviceService>();

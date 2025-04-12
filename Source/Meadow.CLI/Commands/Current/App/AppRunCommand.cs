@@ -9,7 +9,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app run", Description = "Build, trim and deploy a Meadow application to a target device")]
 public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 {
-    private readonly IPackageManager _packageManager;
+    private readonly IBuildManager _buildManager;
 
     [CommandOption("prefix", 'p', Description = "When set, the message source prefix (e.g. 'stdout>') is shown during 'listen'", IsRequired = false)]
     public bool Prefix { get; init; } = false;
@@ -25,10 +25,10 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
     readonly FileManager _fileManager;
 
-    public AppRunCommand(FileManager fileManager, IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public AppRunCommand(FileManager fileManager, IBuildManager buildManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
+        _buildManager = buildManager;
         _fileManager = fileManager;
     }
 
@@ -40,7 +40,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         // TODO: add switch and support for other platforms
         var collection = _fileManager.Firmware["Meadow F7"];
 
-        if (collection == null || collection.Count() == 0)
+        if (collection == null || !collection.Any())
         {
             throw new CommandException(Strings.NoFirmwarePackagesFound, CommandExitCode.GeneralError);
         }
@@ -65,12 +65,16 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path} for Meadow v{deviceInfo.OsVersion}...");
 
-        if (!_packageManager.BuildApplication(path, Configuration))
+        if (!_buildManager.BuildApplication(path, Configuration))
         {
+            foreach (var line in _buildManager.BuildErrorText)
+            {
+                Logger?.LogInformation(line);
+            }
             throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
         }
 
-        if (!await AppTools.TrimApplication(path, _packageManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken))
+        if (!await AppTools.TrimApplication(path, _buildManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken))
         {
             throw new CommandException(Strings.AppTrimFailed, CommandExitCode.GeneralError);
         }
@@ -124,7 +128,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        await AppManager.DeployApplication(_buildManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

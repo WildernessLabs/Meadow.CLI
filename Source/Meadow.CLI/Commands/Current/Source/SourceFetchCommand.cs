@@ -19,7 +19,10 @@ public class SourceFetchCommand : BaseCommand<AppBuildCommand>
     {
         var root = new MeadowRoot(_settingsManager);
 
-        root.Fetch();
+        if (root.Fetch() == false)
+        {
+            throw new CommandException("Failed to fetch source repositories, ensure you've cloned first before fetching", CommandExitCode.GeneralError);
+        }
 
         return default;
     }

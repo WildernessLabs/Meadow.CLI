@@ -1,27 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using Meadow.CLI;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.Package;
 
-public interface IPackageManager
+public interface IPackageManager : IBuildManager
 {
-    List<string> GetDependencies(FileInfo file, string? osVerion);
-
-    bool BuildApplication(
-        string projectFilePath,
-        string configuration = "Release",
-        bool clean = true,
-        CancellationToken? cancellationToken = null);
-
-    Task TrimApplication(
-        FileInfo applicationFilePath,
-        string osVerion,
-        bool includePdbs = false,
-        IEnumerable<string>? noLink = null,
-        CancellationToken? cancellationToken = null);
-
     Task<string> AssemblePackage(string contentSourceFolder,
         string outputFolder,
         string osVersion,

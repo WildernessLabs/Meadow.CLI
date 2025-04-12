@@ -1,11 +1,9 @@
 ﻿using GlobExpressions;
+using Meadow.CLI;
 using Meadow.Cloud.Client;
-using Meadow.Linker;
 using Meadow.Software;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -13,159 +11,13 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Meadow.Package;
 
-public partial class PackageManager : IPackageManager
+public class PackageManager : BuildManager, IPackageManager
 {
-    public const string BuildOptionsFileName = "app.build.yaml";
-
-    private readonly FileManager _fileManager;
-
-    public PackageManager(FileManager fileManager)
+    public PackageManager(FileManager fileManager) : base(fileManager)
     {
-        _fileManager = fileManager;
-    }
-
-    private bool CleanApplication(string projectFilePath, string configuration = "Release", CancellationToken? cancellationToken = null)
-    {
-        var proc = new Process();
-        proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"clean \"{projectFilePath}\" -c {configuration}";
-
-        proc.StartInfo.CreateNoWindow = true;
-        proc.StartInfo.ErrorDialog = false;
-        proc.StartInfo.RedirectStandardError = true;
-        proc.StartInfo.RedirectStandardOutput = true;
-        proc.StartInfo.UseShellExecute = false;
-
-        var success = true;
-
-        proc.ErrorDataReceived += (sendingProcess, errorLine) =>
-        {
-            // this gets called (with empty data) even on a successful build
-            Debug.WriteLine(errorLine.Data);
-        };
-        proc.OutputDataReceived += (sendingProcess, dataLine) =>
-        {
-            // look for "Build FAILED"
-            if (dataLine.Data != null)
-            {
-                Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed"))
-                {
-                    Debug.WriteLine("Build failed");
-                    success = false;
-                }
-            }
-            // TODO: look for "X Warning(s)" and "X Error(s)"?
-            // TODO: do we want to enable forwarding these messages for "verbose" output?
-        };
-
-        proc.Start();
-        proc.BeginErrorReadLine();
-        proc.BeginOutputReadLine();
-
-        proc.WaitForExit();
-        var exitCode = proc.ExitCode;
-        proc.Close();
-
-        return success;
-    }
-
-    public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
-    {
-        if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
-        {
-            return false;
-        }
-
-        var proc = new Process();
-        proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"build \"{projectFilePath}\" -c {configuration}";
-
-        proc.StartInfo.CreateNoWindow = true;
-        proc.StartInfo.ErrorDialog = false;
-        proc.StartInfo.RedirectStandardError = true;
-        proc.StartInfo.RedirectStandardOutput = true;
-        proc.StartInfo.UseShellExecute = false;
-
-        var success = true;
-
-        proc.ErrorDataReceived += (sendingProcess, errorLine) =>
-        {
-            // this gets called (with empty data) even on a successful build
-            Debug.WriteLine(errorLine.Data);
-        };
-        proc.OutputDataReceived += (sendingProcess, dataLine) =>
-        {
-            if (dataLine.Data != null)
-            {
-                Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("build failed") ||
-                    dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("does not exist"))
-                {
-                    Debug.WriteLine("Build failed");
-                    success = false;
-                }
-            }
-            // TODO: look for "X Warning(s)" and "X Error(s)"?
-            // TODO: do we want to enable forwarding these messages for "verbose" output?
-        };
-
-        proc.Start();
-        proc.BeginErrorReadLine();
-        proc.BeginOutputReadLine();
-
-        proc.WaitForExit();
-        var exitCode = proc.ExitCode;
-        proc.Close();
-
-        return success;
-    }
-
-    public Task TrimApplication(
-        FileInfo applicationFilePath,
-        string osVersion,
-        bool includePdbs = false,
-        IEnumerable<string>? noLink = null,
-        CancellationToken? cancellationToken = null)
-    {
-        if (!applicationFilePath.Exists)
-        {
-            throw new FileNotFoundException($"{applicationFilePath} not found");
-        }
-
-        // does a meadow.build.yml file exist?
-        var buildOptionsFile = Path.Combine(
-            applicationFilePath.DirectoryName ?? string.Empty,
-            BuildOptionsFileName);
-
-        if (File.Exists(buildOptionsFile))
-        {
-            var yaml = File.ReadAllText(buildOptionsFile);
-            var deserializer = new DeserializerBuilder()
-                .IgnoreUnmatchedProperties()
-                .Build();
-            var opts = deserializer.Deserialize<BuildOptions>(yaml);
-
-            if (opts != null && opts.Deploy != null)
-            {
-                if (opts.Deploy.NoLink != null && opts.Deploy.NoLink.Count > 0)
-                {
-                    noLink = opts.Deploy.NoLink;
-                }
-                if (opts.Deploy.IncludePDBs != null)
-                {
-                    includePdbs = opts.Deploy.IncludePDBs.Value;
-                }
-            }
-        }
-
-        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion));
-
-        return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
 
     public const string PackageMetadataFileName = "info.json";

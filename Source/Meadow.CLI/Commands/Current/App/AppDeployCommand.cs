@@ -8,7 +8,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app deploy", Description = "Deploys a previously compiled Meadow application to a target device")]
 public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 {
-    private readonly IPackageManager _packageManager;
+    private readonly IBuildManager _buildManager;
 
     private readonly string AppFileName = "App.dll";
 
@@ -18,10 +18,10 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     [CommandParameter(0, Description = Strings.PathMeadowApplication, IsRequired = false)]
     public string? Path { get; init; }
 
-    public AppDeployCommand(IPackageManager packageManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
+    public AppDeployCommand(IBuildManager buildManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     {
-        _packageManager = packageManager;
+        _buildManager = buildManager;
     }
 
     protected override async ValueTask ExecuteCommand()
@@ -103,7 +103,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_packageManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

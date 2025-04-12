@@ -67,7 +67,7 @@ public class MeadowRoot
         }
     }
 
-    public void Clone()
+    public bool Clone()
     {
         foreach (var repo in _repositories)
         {
@@ -79,38 +79,58 @@ public class MeadowRoot
             else
             {
                 Console.WriteLine($"cloning [{repo.Name}]...", ConsoleColor.White);
-                repo.Clone();
+                if (repo.Clone() == false)
+                {
+                    Console.WriteLine($"cloning [{repo.Name}]...failed", ConsoleColor.Red);
+                    return false;
+                }
             }
         }
+        return true;
     }
 
-    public void Pull()
+    public bool Pull()
     {
         foreach (var repo in _repositories)
         {
             Console.WriteLine($"pulling [{repo.Name}]...", ConsoleColor.White);
-            repo.Pull();
+            if (repo.Pull() == false)
+            {
+                Console.WriteLine($"pulling [{repo.Name}]...failed", ConsoleColor.Red);
+                return false;
+            }
         }
+        return true;
     }
 
-    public void Fetch()
+    public bool Fetch()
     {
         foreach (var repo in _repositories)
         {
             Console.WriteLine($"fetching [{repo.Name}]...", ConsoleColor.White);
-            repo.Fetch();
+            if (repo.Fetch() == false)
+            {
+                Console.WriteLine($"fetching [{repo.Name}]...failed", ConsoleColor.Red);
+                return false;
+            }
         }
+        return true;
     }
 
-    public void Checkout(string branch)
+    public bool Checkout(string branch)
     {
         Console.WriteLine($"Checking out [{branch}]...", ConsoleColor.White);
 
         foreach (var repo in _repositories)
         {
             Console.WriteLine($"  repo [{repo.Name}]...", ConsoleColor.White);
-            repo.Checkout(branch);
+            if (repo.Checkout(branch) == false)
+            {
+                Console.WriteLine($"  repo [{repo.Name}]...failed", ConsoleColor.Red);
+                return false;
+            }
         }
+        return true;
     }
 
     public void Status()

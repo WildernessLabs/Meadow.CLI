@@ -1,5 +1,4 @@
 ﻿using CliFx.Attributes;
-using Meadow.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -7,7 +6,7 @@ namespace Meadow.CLI.Commands.DeviceManagement;
 [Command("app build", Description = "Compile a Meadow application")]
 public class AppBuildCommand : BaseCommand<AppBuildCommand>
 {
-    private readonly IPackageManager _packageManager;
+    private readonly IBuildManager _buildManager;
 
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
@@ -15,10 +14,10 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
     [CommandParameter(0, Description = Strings.PathToMeadowProject, IsRequired = false)]
     public string? Path { get; init; }
 
-    public AppBuildCommand(IPackageManager packageManager, ILoggerFactory loggerFactory)
+    public AppBuildCommand(IBuildManager buildManager, ILoggerFactory loggerFactory)
         : base(loggerFactory)
     {
-        _packageManager = packageManager;
+        _buildManager = buildManager;
     }
 
     protected override ValueTask ExecuteCommand()
@@ -29,10 +28,14 @@ public class AppBuildCommand : BaseCommand<AppBuildCommand>
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path}...");
 
-        var success = _packageManager.BuildApplication(path, Configuration);
+        var success = _buildManager.BuildApplication(path, Configuration);
 
         if (!success)
         {
+            foreach (var line in _buildManager.BuildErrorText)
+            {
+                Logger?.LogInformation(line);
+            }
             throw new CommandException("Build failed", CommandExitCode.GeneralError);
         }
         else
