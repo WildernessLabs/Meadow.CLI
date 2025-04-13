@@ -868,8 +868,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         EnqueueRequest(command);
 
         if (!await WaitForResult(
-            () => _textListComplete ?? false,
-            cancellationToken))
+            () =>
+            {
+                if (!string.IsNullOrWhiteSpace(_lastError))
+                {
+                    throw new Exception(_lastError);
+                }
+
+                return _textListComplete ?? false;
+            }, cancellationToken))
         {
             _textListComplete = null;
             return null;

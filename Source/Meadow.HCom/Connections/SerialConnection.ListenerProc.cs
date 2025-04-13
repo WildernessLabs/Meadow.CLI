@@ -294,6 +294,7 @@ namespace Meadow.Hcom
                                         Debug.WriteLine(ret.Text);
                                         RaiseDeviceMessageReceived(ret.Text, "hcom");
                                         _lastError = ret.Text;
+                                        throw new Exception(_lastError ?? "unknown error");
                                     }
                                     else if (response is FileWriteInitFailedSerialResponse fwf)
                                     {
