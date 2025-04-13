@@ -35,7 +35,16 @@ public class FileListCommand : BaseDeviceCommand<FileListCommand>
             Logger?.LogInformation($"Getting file list...");
         }
 
-        var files = await device.GetFileList(Folder ?? $"/{AppManager.MeadowRootFolder}/", Verbose, CancellationToken);
+        MeadowFileInfo[]? files = null;
+
+        try
+        {
+            files = await device.GetFileList(Folder ?? $"/{AppManager.MeadowRootFolder}/", Verbose, CancellationToken);
+        }
+        catch (Exception ex)
+        {
+            throw new CommandException($"Could not get file list: {ex.Message}", CommandExitCode.GeneralError);
+        }
 
         if (files == null || files.Length == 0)
         {
