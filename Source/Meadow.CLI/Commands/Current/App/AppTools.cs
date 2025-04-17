@@ -100,7 +100,7 @@ internal static class AppTools
             logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await buildManager.TrimApplication(file, osVersion, false, noLinkAssemblies, cancellationToken);
+        await buildManager.TrimApplication(file, osVersion, false, noLinkAssemblies, logger, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s
