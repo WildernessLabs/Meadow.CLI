@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,5 +23,6 @@ public interface IBuildManager
         string osVerion,
         bool includePdbs = false,
         IEnumerable<string>? noLink = null,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null);
 }

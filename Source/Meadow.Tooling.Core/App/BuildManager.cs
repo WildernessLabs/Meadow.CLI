@@ -1,5 +1,6 @@
 ﻿using Meadow.Linker;
 using Meadow.Software;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -130,6 +131,7 @@ public partial class BuildManager : IBuildManager
         string osVersion,
         bool includePdbs = false,
         IEnumerable<string>? noLink = null,
+        ILogger? logger = null,
         CancellationToken? cancellationToken = null)
     {
         if (!applicationFilePath.Exists)
@@ -163,7 +165,7 @@ public partial class BuildManager : IBuildManager
             }
         }
 
-        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion));
+        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion, logger));
 
         return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
@@ -216,7 +218,7 @@ public partial class BuildManager : IBuildManager
         return files.ToArray();
     }
 
-    private string GetAssemblyPathForOS(string? osVersion)
+    private string GetAssemblyPathForOS(string? osVersion, ILogger? logger = null)
     {
         if (string.IsNullOrWhiteSpace(osVersion))
         {
@@ -229,6 +231,8 @@ public partial class BuildManager : IBuildManager
             store.Refresh();
 
             var package = store.GetClosestLocalPackage(osVersion!);
+
+            logger?.Log(LogLevel.Information, $"Found firmware package for Meadow OS v{osVersion}");
 
             if (package == null)
             {
