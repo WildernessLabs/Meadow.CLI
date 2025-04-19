@@ -27,10 +27,6 @@ public class DeveloperCommand : BaseDeviceCommand<DeveloperCommand>
         {
             Logger?.LogInformation(e.message);
         };
-        connection.ConnectionError += (s, e) =>
-        {
-            Logger?.LogError(e.Message);
-        };
 
         await device.SetDeveloperParameter(Parameter, Value, CancellationToken);
     }

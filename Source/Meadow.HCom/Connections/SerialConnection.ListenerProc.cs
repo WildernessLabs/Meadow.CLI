@@ -292,7 +292,6 @@ namespace Meadow.Hcom
                                     else if (response is RequestErrorTextResponse ret)
                                     {
                                         Debug.WriteLine(ret.Text);
-                                        RaiseDeviceMessageReceived(ret.Text, "hcom");
                                         _lastError = ret.Text;
                                         throw new Exception(_lastError ?? "unknown error");
                                     }

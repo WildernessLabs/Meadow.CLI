@@ -594,6 +594,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 }
             }
 
+            if(_lastError != null)
+            {
+                return true;
+            }
+
             return false;
         }, cancellationToken);
     }
