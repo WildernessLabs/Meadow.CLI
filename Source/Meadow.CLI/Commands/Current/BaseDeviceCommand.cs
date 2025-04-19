@@ -23,8 +23,15 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
     internal Task<IMeadowConnection> GetConnectionForRoute(string route, bool forceReconnect = false)
         => GetConnection(route, forceReconnect);
 
+    IMeadowConnection? _connection = null;
+
     private async Task<IMeadowConnection> GetConnection(string? route, bool forceReconnect = false)
     {
+        if(_connection != null)
+        {
+            return _connection;
+        }
+
         IMeadowConnection? connection = null;
 
         if (route != null)
@@ -38,6 +45,8 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 
         if (connection != null)
         {
+            _connection = connection;
+
             connection.ConnectionError += (s, e) =>
             {
                 Logger?.LogError(e.Message);
