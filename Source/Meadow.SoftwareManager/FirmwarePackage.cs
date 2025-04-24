@@ -4,6 +4,7 @@ namespace Meadow.Software;
 
 public class FirmwarePackage
 {
+    private string _rawVersion;
     internal IFirmwarePackageCollection _collection;
 
     internal FirmwarePackage(IFirmwarePackageCollection collection)
@@ -16,7 +17,18 @@ public class FirmwarePackage
         return Path.Combine(_collection.PackageFileRoot, Version, file);
     }
 
-    public string Version { get; set; }
+    public string Version
+    {
+        get => _rawVersion;
+        set
+        {
+            if (!System.Version.TryParse(value, out var _))
+            {
+                throw new System.ArgumentException($"Invalid version string: {value}");
+            }
+            _rawVersion = value;
+        }
+    }
     public string Targets { get; set; }
     public string? CoprocBootloader { get; set; }
     public string? CoprocPartitionTable { get; set; }

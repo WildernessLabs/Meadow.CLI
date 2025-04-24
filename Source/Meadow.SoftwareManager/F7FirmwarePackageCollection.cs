@@ -268,9 +268,16 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
         {
             var hasFiles = false;
 
+            var name = Path.GetFileName(directory);
+
+            if (!Version.TryParse(name, out var candidate))
+            {
+                continue;
+            }
+
             var package = new FirmwarePackage(this)
             {
-                Version = Path.GetFileName(directory)
+                Version = Path.GetFileName(name)
             };
 
             foreach (var file in Directory.GetFiles(directory))
@@ -353,11 +360,19 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
             throw new ArgumentException("Version cannot be null or empty", nameof(osVersion));
         }
 
-        var versionToCompare = new Version(osVersion);
+        if (!Version.TryParse(osVersion, out var versionToCompare))
+        {
+            throw new ArgumentException($"Unable to parse version number '{osVersion}'");
+        }
+
         return _f7Packages
             .Where(p =>
             {
-                var packageVersion = new Version(p.Version);
+                if (!Version.TryParse(p.Version, out var packageVersion))
+                {
+                    return false;
+                }
+
                 return packageVersion.Major == versionToCompare.Major &&
                        packageVersion.Minor == versionToCompare.Minor &&
                        packageVersion <= versionToCompare;
