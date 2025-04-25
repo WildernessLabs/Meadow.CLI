@@ -153,25 +153,25 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             if (!_port.IsOpen)
             {
-				try
-				{
-					_port.Open();
-				}
-				catch (FileNotFoundException)
-				{
-					throw new Exception($"Serial port '{_port.PortName}' not found");
-				}
-				catch (UnauthorizedAccessException uae)
-				{
-					throw new Exception($"{uae.Message}");
-				}
-				catch (Exception ex)
-				{
-					throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
-				}
+                try
+                {
+                    _port.Open();
+                }
+                catch (FileNotFoundException)
+                {
+                    throw new Exception($"Serial port '{_port.PortName}' not found");
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    throw new Exception($"{uae.Message}");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
+                }
 
-				State = ConnectionState.Connected;
-			}
+                State = ConnectionState.Connected;
+            }
         }
     }
 
