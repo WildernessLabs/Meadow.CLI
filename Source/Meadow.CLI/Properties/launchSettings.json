@@ -47,7 +47,11 @@
       "commandName": "Project",
       "commandLineArgs": "config --help"
     },
-    "Developer": {
+    "Developer P0": {
+      "commandName": "Project",
+      "commandLineArgs": "developer -p 0"
+    },
+    "Developer P2": {
       "commandName": "Project",
       "commandLineArgs": "developer -p 2 -v 20"
     },

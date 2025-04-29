@@ -289,11 +289,11 @@ namespace Meadow.Hcom
                                         _readFileInfo = null;
                                         throw new Exception(_lastError ?? "unknown error");
                                     }
-                                    else if (response is RequestErrorTextResponse ret)
+                                    else if (response is RequestErrorTextResponse ret) //HCOM_HOST_REQUEST_TEXT_ERROR
                                     {
                                         Debug.WriteLine(ret.Text);
                                         _lastError = ret.Text;
-                                        throw new Exception(_lastError ?? "unknown error");
+                                        RaiseDeviceMessageReceived(ret.Text, "error");
                                     }
                                     else if (response is FileWriteInitFailedSerialResponse fwf)
                                     {
