@@ -38,7 +38,7 @@ public abstract class ConnectionBase : IMeadowConnection, IDisposable
     public abstract Task TraceEnable(CancellationToken? cancellationToken = null);
     public abstract Task TraceDisable(CancellationToken? cancellationToken = null);
     public abstract Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
-    public abstract Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
+    public abstract Task SetDeveloperParameter(ushort parameter, uint value, TimeSpan timeout, CancellationToken? cancellationToken = null);
     public abstract Task UartTraceEnable(CancellationToken? cancellationToken = null);
     public abstract Task UartTraceDisable(CancellationToken? cancellationToken = null);
     public abstract Task UartProfilerEnable(CancellationToken? cancellationToken = null);

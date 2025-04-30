@@ -18,7 +18,7 @@ public interface IMeadowDevice
     Task TraceEnable(CancellationToken? cancellationToken = null);
     Task TraceDisable(CancellationToken? cancellationToken = null);
     Task SetTraceLevel(int level, CancellationToken? cancellationToken = null);
-    Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null);
+    Task SetDeveloperParameter(ushort parameter, uint value, TimeSpan timeout, CancellationToken? cancellationToken = null);
     Task UartTraceEnable(CancellationToken? cancellationToken = null);
     Task UartTraceDisable(CancellationToken? cancellationToken = null);
     Task UartProfilerEnable(CancellationToken? cancellationToken = null);

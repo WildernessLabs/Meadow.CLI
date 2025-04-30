@@ -53,7 +53,7 @@
     },
     "Developer P2": {
       "commandName": "Project",
-      "commandLineArgs": "developer -p 2 -v 20"
+      "commandLineArgs": "developer -p 2 -v 20 -t 120"
     },
     "Device Info": {
       "commandName": "Project",
