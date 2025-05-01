@@ -594,7 +594,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 }
             }
 
-            if(_lastError != null)
+            if (_lastError != null)
             {
                 return true;
             }
@@ -819,11 +819,13 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         await WaitForConcluded(null, cancellationToken);
     }
 
-    public override async Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+    public override async Task SetDeveloperParameter(ushort parameter, uint value, TimeSpan timeout, CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<DeveloperRequest>();
         command.ExtraData = parameter;
         command.UserData = value;
+
+        CommandTimeoutSeconds = (int)timeout.TotalSeconds;
 
         _lastRequestConcluded = null;
 

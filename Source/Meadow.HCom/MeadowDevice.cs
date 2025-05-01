@@ -135,9 +135,9 @@ public partial class MeadowDevice : IMeadowDevice
         await _connection.SetTraceLevel(level, cancellationToken);
     }
 
-    public async Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+    public async Task SetDeveloperParameter(ushort parameter, uint value, TimeSpan timeout, CancellationToken? cancellationToken = null)
     {
-        await _connection.SetDeveloperParameter(parameter, value, cancellationToken);
+        await _connection.SetDeveloperParameter(parameter, value, timeout, cancellationToken);
     }
 
     public async Task DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)

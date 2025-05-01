@@ -142,7 +142,7 @@ public class TcpConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task SetDeveloperParameter(ushort parameter, uint value, CancellationToken? cancellationToken = null)
+    public override Task SetDeveloperParameter(ushort parameter, uint value, TimeSpan timeout, CancellationToken? cancellationToken = null)
     {
         throw new NotImplementedException();
     }
