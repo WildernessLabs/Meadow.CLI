@@ -57,7 +57,7 @@ namespace Meadow.Hcom
                 Debug.WriteLine($"Device reset detected");
 
                 var timeout = 20;
-                try { _port.Close(); } catch { } // Swallow any exceptions on close - there is nothing we can do about it
+                try { Close(); } catch { } // Swallow any exceptions on close - there is nothing we can do about it
 
                 while (!_port.IsOpen)
                 {
