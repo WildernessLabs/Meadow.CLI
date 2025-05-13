@@ -17,8 +17,9 @@ public partial class DebuggingServer
         private readonly ILogger? _logger;
         private bool _disposed;
         private readonly BlockingCollection<byte[]> _debuggerMessages = new();
+        private readonly string _debuggerName;
 
-        internal ActiveClient(IMeadowConnection connection, ILogger? logger, CancellationToken? cancellationToken)
+        internal ActiveClient(IMeadowConnection connection, ILogger? logger, CancellationToken? cancellationToken, string debuggerName = "Visual Studio")
         {
             _cts = cancellationToken != null
                 ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value)
@@ -27,6 +28,7 @@ public partial class DebuggingServer
             _logger = logger;
             _connection = connection;
             _connection.DebuggerMessageReceived += MeadowConnection_DebuggerMessageReceived;
+            _debuggerName = debuggerName;
         }
 
         public async Task Start(TcpListener tcpListener)
@@ -83,22 +85,22 @@ public partial class DebuggingServer
                     }
                     else
                     {
-                        _logger?.LogInformation("Unable to Read Data from Visual Studio");
-                        _logger?.LogTrace("Unable to Read Data from Visual Studio");
+                        _logger?.LogInformation($"Unable to Read Data from {_debuggerName}");
+                        _logger?.LogTrace($"Unable to Read Data from {_debuggerName}");
                     }
                 }
             }
             catch (IOException ioe)
             {
-                _logger?.LogInformation("Visual Studio has Disconnected");
+                _logger?.LogInformation($"{_debuggerName} has Disconnected");
             }
             catch (ObjectDisposedException ode)
             {
-                _logger?.LogInformation("Visual Studio has stopped debugging");
+                _logger?.LogInformation($"{_debuggerName} has stopped debugging");
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error receiving data from Visual Studio.\nError: {ex.Message}\nStackTrace:\n{ex.StackTrace}");
+                _logger?.LogError($"Error receiving data from {_debuggerName}.\nError: {ex.Message}\nStackTrace:\n{ex.StackTrace}");
                 throw;
             }
         }
@@ -117,7 +119,7 @@ public partial class DebuggingServer
                     _logger?.LogTrace("Received {count} bytes from Meadow, will forward to VS", byteData.Length);
                     if (!_tcpClient.Connected || _networkStream == null || !_networkStream.CanWrite)
                     {
-                        _logger?.LogDebug("Cannot forward data, Visual Studio is not connected");
+                        _logger?.LogDebug($"Cannot forward data, {_debuggerName} is not connected");
                         break;
                     }
 
@@ -133,7 +135,7 @@ public partial class DebuggingServer
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error sending data to Visual Studio.\nError: {ex.Message}\nStackTrace:\n{ex.StackTrace}");
+                _logger?.LogError($"Error sending data to {_debuggerName}.\nError: {ex.Message}\nStackTrace:\n{ex.StackTrace}");
 
                 if (!_cts.Token.IsCancellationRequested)
                 {

@@ -15,6 +15,7 @@ public partial class DebuggingServer : IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
     private readonly ILogger? _logger;
     private readonly IMeadowConnection _connection;
+    private readonly string _debuggerName;
     private ActiveClient? _activeClient;
     private readonly TcpListener _listener;
     private readonly Task? _listenerTask;
@@ -27,10 +28,11 @@ public partial class DebuggingServer : IDisposable
     /// <param name="connection">The <see cref="IMeadowConnection"/>meadow connection</param>
     /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
     /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
-    public DebuggingServer(IMeadowConnection connection, int port, ILogger? logger)
+    public DebuggingServer(IMeadowConnection connection, int port, ILogger? logger, string debuggerName = "Visual Studo")
     {
         _logger = logger;
         _connection = connection;
+        _debuggerName = debuggerName;
 
         var endPoint = new IPEndPoint(IPAddress.Loopback, port);
 
@@ -47,7 +49,7 @@ public partial class DebuggingServer : IDisposable
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         _listener.Start();
-        _logger?.LogInformation($"Listening for Visual Studio to connect");
+        _logger?.LogInformation($"Listening for {_debuggerName} to connect");
 
         // This call will wait for the client to connect, before continuing.
         _activeClient = await CreateActiveClient(_listener);
@@ -87,7 +89,7 @@ public partial class DebuggingServer : IDisposable
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "An error occurred while connecting to Visual Studio");
+            _logger?.LogError(ex, $"An error occurred while connecting to {_debuggerName}");
         }
         return null;
     }
