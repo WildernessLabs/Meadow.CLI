@@ -1256,7 +1256,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return contents;
     }
 
-    public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
+    public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken, string debuggerName = "Visual Studio")
     {
         if (Device == null)
         {
@@ -1265,7 +1265,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         AggressiveReconnectEnabled = true;
 
-        var debuggingServer = new DebuggingServer(this, port, logger);
+        var debuggingServer = new DebuggingServer(this, port, logger, debuggerName);
 
         Debug.WriteLine("You can now connect the debugger client to the local tunnel port");
         await debuggingServer.StartListening(cancellationToken);

@@ -28,7 +28,7 @@ public partial class DebuggingServer : IDisposable
     /// <param name="connection">The <see cref="IMeadowConnection"/>meadow connection</param>
     /// <param name="localEndpoint">The <see cref="IPEndPoint"/> to listen for incoming debugger connections</param>
     /// <param name="logger">The <see cref="ILogger"/> to logging state information</param>
-    public DebuggingServer(IMeadowConnection connection, int port, ILogger? logger, string debuggerName = "Visual Studo")
+    public DebuggingServer(IMeadowConnection connection, int port, ILogger? logger, string debuggerName = "Visual Studio")
     {
         _logger = logger;
         _connection = connection;

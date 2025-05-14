@@ -48,7 +48,7 @@ public interface IMeadowConnection : IDisposable
 
     Task EraseFlash(CancellationToken? cancellationToken = null);
     Task<string> GetPublicKey(CancellationToken? cancellationToken = null);
-    Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken);
+    Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken, string debuggerName = "Visual Studio");
     Task StartDebugging(int port, ILogger? logger, CancellationToken? cancellationToken);
     Task SendDebuggerData(byte[] debuggerData, uint userData, CancellationToken? cancellationToken);
 

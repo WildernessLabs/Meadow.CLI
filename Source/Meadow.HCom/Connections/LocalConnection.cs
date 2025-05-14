@@ -221,7 +221,7 @@ public class LocalConnection : ConnectionBase
         throw new NotImplementedException();
     }
 
-    public override Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken)
+    public override Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken, string debuggerName = "Visual Studio")
     {
         throw new NotImplementedException();
     }
