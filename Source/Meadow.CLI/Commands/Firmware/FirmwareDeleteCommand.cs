@@ -1,8 +1,9 @@
 ﻿using CliFx.Attributes;
+using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.DeviceManagement;
+namespace Meadow.CLI.Commands.Firmware;
 
 [Command("firmware delete", Description = "Delete a local firmware package")]
 public class FirmwareDeleteCommand : BaseFileCommand<FirmwareDeleteCommand>

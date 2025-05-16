@@ -87,6 +87,7 @@ internal static class AppTools
             file = candidates.OrderByDescending(c => c.LastWriteTime).First();
         }
 
+        bool includePdbs = file.FullName.Contains("\\Debug\\", StringComparison.OrdinalIgnoreCase);
         var cts = new CancellationTokenSource();
 
         if (console is not null)
@@ -100,7 +101,7 @@ internal static class AppTools
             logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await buildManager.TrimApplication(file, osVersion, false, noLinkAssemblies, logger, cancellationToken);
+        await buildManager.TrimApplication(file, osVersion, includePdbs, noLinkAssemblies, logger, cancellationToken);
         cts.Cancel();
 
         // illink returns before all files are written - attempt a delay of 1s

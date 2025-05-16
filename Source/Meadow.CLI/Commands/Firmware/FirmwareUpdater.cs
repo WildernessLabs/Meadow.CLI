@@ -6,7 +6,7 @@ using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.Current.Firmware;
+namespace Meadow.CLI.Commands.Firmware;
 
 public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 {
