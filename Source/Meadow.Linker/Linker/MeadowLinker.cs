@@ -100,11 +100,11 @@ public class MeadowLinker
 
         if (noLink?.Count() > 0)
         {
-            _logger.LogInformation("NoLink assemblies: [{0}]", string.Join(", ", noLink));
+            _logger?.LogInformation("NoLink assemblies: [{0}]", string.Join(", ", noLink));
         }
         else
         {
-            _logger.LogInformation("NoLink assemblies is empty");
+            _logger?.LogInformation("NoLink assemblies is empty");
         }
 
         //prepare _linker arguments
