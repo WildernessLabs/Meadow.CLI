@@ -98,6 +98,15 @@ public class MeadowLinker
         var illinker_path = Path.Combine(base_path!, IL_LINKER_DIR, IL_LINKER_DLL);
         var descriptor_path = Path.Combine(base_path!, IL_LINKER_DIR, MEADOW_LINK_XML);
 
+        if (noLink?.Count() > 0)
+        {
+            _logger.LogInformation("NoLink assemblies: [{0}]", string.Join(", ", noLink));
+        }
+        else
+        {
+            _logger.LogInformation("NoLink assemblies is empty");
+        }
+
         //prepare _linker arguments
         var no_link_args = noLink != null ? string.Join(" ", noLink.Select(o => $"-p copy \"{o}\"")) : string.Empty;
 
