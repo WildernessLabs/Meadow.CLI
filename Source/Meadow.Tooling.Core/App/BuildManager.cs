@@ -165,7 +165,12 @@ public partial class BuildManager : IBuildManager
             }
         }
 
-        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion, logger));
+        if (includePdbs)
+        {
+            logger?.LogInformation("Including PDBs in the output");
+        }
+
+        var linker = new MeadowLinker(GetAssemblyPathForOS(osVersion, logger), logger);
 
         return linker.Trim(applicationFilePath, includePdbs, noLink);
     }
