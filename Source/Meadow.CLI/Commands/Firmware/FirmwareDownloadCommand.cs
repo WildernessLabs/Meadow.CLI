@@ -1,9 +1,10 @@
 ﻿using CliFx.Attributes;
+using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Cloud.Client;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.DeviceManagement;
+namespace Meadow.CLI.Commands.Firmware;
 
 [Command("firmware download", Description = "Download a firmware package")]
 public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>

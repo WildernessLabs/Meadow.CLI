@@ -1,4 +1,4 @@
-﻿namespace Meadow.CLI.Commands.Current.Firmware;
+﻿namespace Meadow.CLI.Commands.Firmware;
 
 public enum FirmwareType
 {

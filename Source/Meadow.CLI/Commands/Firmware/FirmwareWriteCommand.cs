@@ -1,9 +1,9 @@
 ﻿using CliFx.Attributes;
-using Meadow.CLI.Commands.Current.Firmware;
+using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
-namespace Meadow.CLI.Commands.DeviceManagement;
+namespace Meadow.CLI.Commands.Firmware;
 
 [Command("firmware write", Description = "Writes firmware files to a connected meadow device")]
 public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
@@ -25,8 +25,6 @@ public class FirmwareWriteCommand : BaseDeviceCommand<FirmwareWriteCommand>
 
     private FileManager FileManager { get; }
     private ISettingsManager Settings { get; }
-
-    private string DFU_USB_ERROR_MESSAGE = "Operation not supported or unimplemented on this platform";
 
     public FirmwareWriteCommand(ISettingsManager settingsManager, FileManager fileManager, MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
