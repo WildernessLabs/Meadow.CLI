@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Meadow.Software;
@@ -21,6 +22,9 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// The default root directory for storing F7 firmware packages.
     /// </summary>
     public static string DefaultF7FirmwareStoreRoot = Path.Combine(
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Library", "Application Support") :
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "WildernessLabs",
         "Firmware");
