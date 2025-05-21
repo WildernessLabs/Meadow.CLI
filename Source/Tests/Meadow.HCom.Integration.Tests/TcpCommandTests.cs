@@ -7,7 +7,7 @@ namespace Meadow.HCom.Integration.Tests
         public string ValidPortName { get; } = "http://172.26.8.20:5000";
 
         [Fact]
-        public async void TestGetDeviceInfo()
+        public async Task TestGetDeviceInfo()
         {
             using (var connection = new TcpConnection(ValidPortName))
             {

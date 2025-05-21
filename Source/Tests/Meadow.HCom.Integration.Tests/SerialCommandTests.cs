@@ -7,7 +7,7 @@ namespace Meadow.HCom.Integration.Tests
         public string ValidPortName { get; } = "COM10";
 
         [Fact]
-        public async void TestDeviceReset()
+        public async Task TestDeviceReset()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {
@@ -20,7 +20,7 @@ namespace Meadow.HCom.Integration.Tests
         }
 
         [Fact]
-        public async void TestGetDeviceInfo()
+        public async Task TestGetDeviceInfo()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {
@@ -33,7 +33,7 @@ namespace Meadow.HCom.Integration.Tests
         }
 
         [Fact]
-        public async void TestGetFileListNoCrc()
+        public async Task TestGetFileListNoCrc()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {
@@ -47,7 +47,7 @@ namespace Meadow.HCom.Integration.Tests
         }
 
         [Fact]
-        public async void TestGetFileListWithCrc()
+        public async Task TestGetFileListWithCrc()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {

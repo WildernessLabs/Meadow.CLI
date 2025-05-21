@@ -47,7 +47,7 @@ namespace Meadow.HCom.Integration.Tests
         }
 
         [Fact]
-        public async void TestAttachPositive()
+        public async Task TestAttachPositive()
         {
             using (var connection = new SerialConnection(ValidPortName))
             {
