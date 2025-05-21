@@ -57,7 +57,7 @@ public static class DfuUtils
                     logger?.LogInformation(progress);
                 }
             }
-            else
+            else if (!logLine.Contains("[null]"))
             {
                 logger?.LogInformation(logLine);
             }
