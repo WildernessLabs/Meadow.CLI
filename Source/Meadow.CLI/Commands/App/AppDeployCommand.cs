@@ -15,6 +15,9 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     [CommandOption('c', Description = Strings.BuildConfiguration, IsRequired = false)]
     public string? Configuration { get; private set; }
 
+    [CommandOption('s', Description = Strings.MeadowSerialPort, IsRequired = false)]
+    public string? SerialPort { get; private set; }
+
     [CommandParameter(0, Description = Strings.PathMeadowApplication, IsRequired = false)]
     public string? Path { get; init; }
 
@@ -30,7 +33,15 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         var file = GetMeadowAppFile(path);
 
-        var connection = await GetCurrentConnection();
+        IMeadowConnection? connection;
+        if (SerialPort is not null)
+        {
+            connection = await GetConnectionForRoute(SerialPort);
+        }
+        else
+        {
+            connection = await GetCurrentConnection();
+        }
 
         await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
