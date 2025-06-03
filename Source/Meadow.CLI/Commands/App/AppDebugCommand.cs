@@ -1,4 +1,5 @@
 ﻿using CliFx.Attributes;
+using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
@@ -12,13 +13,24 @@ public class AppDebugCommand : BaseDeviceCommand<AppDebugCommand>
     [CommandOption("Port", 'p', Description = "The port to run the debug server on", IsRequired = false)]
     public int Port { get; init; } = 4024;
 
+    [CommandOption('s', Description = Strings.MeadowSerialPort, IsRequired = false)]
+    public string? SerialPort { get; private set; }
+
     public AppDebugCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory)
         : base(connectionManager, loggerFactory)
     { }
 
     protected override async ValueTask ExecuteCommand()
     {
-        var connection = await GetCurrentConnection();
+        IMeadowConnection? connection;
+        if (SerialPort is not null)
+        {
+            connection = await GetConnectionForRoute(SerialPort);
+        }
+        else
+        {
+            connection = await GetCurrentConnection();
+        }
 
         connection.DeviceMessageReceived += (s, e) =>
         {
