@@ -1,10 +1,15 @@
 ﻿using Meadow.Hcom;
 using Microsoft.Extensions.Logging;
+using CliFx.Attributes;
+using Meadow.CLI;
 
 namespace Meadow.CLI.Commands.DeviceManagement;
 
 public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 {
+    [CommandOption('s', Description = Strings.MeadowSerialPort, IsRequired = false)]
+    public string? SerialPort { get; protected set; }
+
     protected MeadowConnectionManager ConnectionManager { get; }
 
     public BaseDeviceCommand(MeadowConnectionManager connectionManager, ILoggerFactory loggerFactory) : base(loggerFactory)
@@ -18,7 +23,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
     }
 
     internal Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
-        => GetConnection(null, forceReconnect);
+        => GetConnection(SerialPort, forceReconnect);
 
     internal Task<IMeadowConnection> GetConnectionForRoute(string route, bool forceReconnect = false)
         => GetConnection(route, forceReconnect);
@@ -34,14 +39,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 
         IMeadowConnection? connection = null;
 
-        if (route != null)
-        {
-            connection = ConnectionManager.GetConnectionForRoute(route, forceReconnect);
-        }
-        else
-        {
-            connection = ConnectionManager.GetCurrentConnection(forceReconnect);
-        }
+        connection = ConnectionManager.GetConnection(route, forceReconnect);
 
         if (connection != null)
         {
