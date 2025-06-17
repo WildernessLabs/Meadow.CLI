@@ -1,10 +1,10 @@
-﻿using System.Runtime.InteropServices;
-using Meadow.CLI.Commands.DeviceManagement;
+﻿using Meadow.CLI.Commands.DeviceManagement;
 using Meadow.CLI.Core.Internals.Dfu;
 using Meadow.Hcom;
 using Meadow.LibUsb;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
+using System.Runtime.InteropServices;
 
 namespace Meadow.CLI.Commands.Firmware;
 
@@ -231,6 +231,8 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         return true;
     }
 
+    bool isLoggingEnabled = false;
+
     private async Task<IMeadowConnection> GetConnectionAndDisableRuntime(string? route = null)
     {
         IMeadowConnection connection;
@@ -250,6 +252,17 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
             await connection.Device.RuntimeDisable();
         }
 
+        if (isLoggingEnabled == false)
+        {
+            LogTransferProgress(connection);
+            isLoggingEnabled = true;
+        }
+
+        return connection;
+    }
+
+    private void LogTransferProgress(IMeadowConnection connection)
+    {
         lastWriteProgress = 0;
 
         connection.FileWriteProgress += (s, e) =>
@@ -272,12 +285,11 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 logger?.LogInformation(e.message);
             }
         };
+
         connection.ConnectionMessage += (s, message) =>
         {
             logger?.LogInformation(message);
         };
-
-        return connection;
     }
 
     private bool RequiresDfuForRuntimeUpdates(DeviceInfo info)
