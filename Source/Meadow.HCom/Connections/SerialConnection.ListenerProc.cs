@@ -79,7 +79,8 @@ namespace Meadow.Hcom
                 }
             }
 
-            while (!_isDisposed)
+            while (_disposalCts != null
+                   && !_disposalCts.Token.IsCancellationRequested)
             {
                 if (_port.IsOpen)
                 {
@@ -87,29 +88,7 @@ namespace Meadow.Hcom
                     {
                         Debug.WriteLine($"listening...");
 
-                    read:
-                        try
-                        {
-                            receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            if (AggressiveReconnectEnabled)
-                            {
-                                Debug.WriteLine("Aggressively re-connecting");
-                                await ReOpen();
-                            }
-                            goto read;
-                        }
-                        catch (IOException)
-                        {
-                            if (AggressiveReconnectEnabled)
-                            {
-                                Debug.WriteLine("Aggressively re-connecting");
-                                await ReOpen();
-                            }
-                            goto read;
-                        }
+                        receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 
@@ -334,6 +313,11 @@ namespace Meadow.Hcom
                         FileException?.Invoke(this, ioe);
                         // attempt to read timed out (i.e. there's just no data)
                         // NOP
+                        if (AggressiveReconnectEnabled && !_port.IsOpen)
+                        {
+                            Debug.WriteLine("Aggressively re-connecting");
+                            await ReOpen();
+                        }
                     }
                     catch (TimeoutException)
                     {
@@ -349,6 +333,11 @@ namespace Meadow.Hcom
                     {
                         // common if the port is reset/closed (e.g. mono enable/disable) - don't spew confusing info
                         Debug.WriteLine($"listen on closed port");
+                        if (AggressiveReconnectEnabled && !_port.IsOpen)
+                        {
+                            Debug.WriteLine("Aggressively re-connecting");
+                            await ReOpen();
+                        }
                     }
                     catch (OperationCanceledException)
                     {

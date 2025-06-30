@@ -20,11 +20,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private readonly SerialPort _port;
     private readonly ILogger? _logger;
     private bool _isDisposed;
-    private ConnectionState _state;
+    private ConnectionState _state = ConnectionState.Disconnected;
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private readonly ConcurrentQueue<IRequest> _commandQueue = new ConcurrentQueue<IRequest>();
     private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
-    private bool _maintainConnection;
     private Thread? _connectionManager = null;
     private readonly List<string> _textList = new List<string>();
     private int _messageCount = 0;
@@ -34,6 +33,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     public override string Name { get; }
 
     public bool AggressiveReconnectEnabled { get; set; } = false;
+
+    private CancellationTokenSource? _disposalCts = new();
 
     public SerialConnection(string port, ILogger? logger = default)
     {
@@ -61,77 +62,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         .Start();
     }
 
-    private bool MaintainConnection
-    {
-        get => _maintainConnection;
-        set
-        {
-            if (value == MaintainConnection) return;
-
-            _maintainConnection = value;
-
-            if (value)
-            {
-                if (_connectionManager == null || _connectionManager.ThreadState != System.Threading.ThreadState.Running)
-                {
-                    _connectionManager = new Thread(ConnectionManagerProc)
-                    {
-                        IsBackground = true,
-                        Name = "HCOM Connection Manager"
-                    };
-                    _connectionManager.Start();
-                }
-            }
-        }
-    }
-
-    private void ConnectionManagerProc()
-    {
-        while (_maintainConnection)
-        {
-            if (!_port.IsOpen)
-            {
-                try
-                {
-                    Debug.WriteLine("Opening COM port...");
-                    Open();
-                    Debug.WriteLine("Opened COM port");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"{ex.Message}");
-                    Thread.Sleep(1000);
-                }
-            }
-            else
-            {
-                Thread.Sleep(1000);
-            }
-        }
-    }
-
-    public void AddListener(IConnectionListener listener)
-    {
-        lock (_listeners)
-        {
-            _listeners.Add(listener);
-        }
-
-        Open();
-
-        MaintainConnection = true;
-    }
-
-    public void RemoveListener(IConnectionListener listener)
-    {
-        lock (_listeners)
-        {
-            _listeners.Remove(listener);
-        }
-
-        // TODO: stop maintaining connection?
-    }
-
     public override ConnectionState State
     {
         get => _state;
@@ -147,47 +77,55 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void Open()
     {
-        if (!_port.IsOpen)
+        try
         {
-            try
+            if (!_port.IsOpen)
             {
                 _port.Open();
             }
-            catch (FileNotFoundException)
-            {
-                throw new Exception($"Serial port '{_port.PortName}' not found");
-            }
-            catch (UnauthorizedAccessException uae)
-            {
-                throw new Exception($"{uae.Message}");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
-            }
-
             State = ConnectionState.Connected;
+        }
+        catch (FileNotFoundException)
+        {
+            throw new Exception($"Serial port '{_port.PortName}' not found");
+        }
+        catch (UnauthorizedAccessException uae)
+        {
+            throw new Exception($"{uae.Message}");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
         }
     }
 
     private void Close()
     {
-        if (_port.IsOpen)
+        try
         {
-            _port.Close();
+            if (_port.IsOpen)
+            {
+                _port.Close();
+            }
+            State = ConnectionState.Disconnected;
         }
-
-        State = ConnectionState.Disconnected;
+        catch (Exception ex)
+        {
+            throw new Exception($"Unable to close port '{_port.PortName}' - {ex.Message}");
+        }
     }
 
     public override void Detach()
     {
-        if (MaintainConnection)
+        if (_disposalCts != null
+            && !_disposalCts.IsCancellationRequested)
         {
-            // TODO: close this up
-        }
+            AggressiveReconnectEnabled = false;
 
-        Close();
+            _disposalCts.Cancel();
+
+            Close();
+        }
     }
 
     public override async Task<IMeadowDevice?> Attach(CancellationToken? cancellationToken = null, int timeoutSeconds = 10)
@@ -246,7 +184,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void CommandManager()
     {
-        while (!_isDisposed)
+        while (_disposalCts != null
+               && !_disposalCts.Token.IsCancellationRequested)
         {
             _commandEvent.WaitOne(1000);
 
@@ -473,8 +412,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             if (disposing)
             {
-                Close();
+                Detach();
+
                 _port.Dispose();
+
+                _disposalCts?.Dispose();
             }
 
             _isDisposed = true;
@@ -549,10 +491,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         while (timeout-- > 0)
         {
-            if (cancellationToken?.IsCancellationRequested ?? false) return false;
-            if (_lastException != null) return false;
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return false;
 
-            if (timeout <= 0) throw new TimeoutException();
+            if (_lastException != null)
+                return false;
+
+            if (timeout <= 0)
+                throw new TimeoutException();
 
             if (checkAction())
             {
