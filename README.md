@@ -1,6 +1,3 @@
-## Build Status
-[![Build](https://github.com/WildernessLabs/Meadow.CLI/actions/workflows/dotnet.yml/badge.svg)](https://github.com/WildernessLabs/Meadow.CLI/actions)
-
 ## Getting Started
 
 To install the latest Meadow.CLI release, run the .NET tool install command to get the latest package from NuGet.
@@ -17,26 +14,26 @@ Once installed, run the Meadow.CLI from a command line with `meadow`.
 
 ## Options
 
-To see the options, run the application with the --help arg.
+To see the options, run the application with the `--help` arg.
 
 ## Useful commands
 
-### Download Meadow OS
+**Download Meadow OS**
 
 ```
 meadow firmware download
 ```
 
-### Update the Meadow OS
+**Update the Meadow OS**
 
 ```
-meadow firmware write
+**meadow firmware write**
 ```
 
-### List available Meadow devices
+**List available Meadow devices**
 
 ```
-meadow list ports
+**meadow list ports**
 ```
 
 You can then specify which port to use for future commands (replace `{port-name}` to your desired device port, such as `COM3` on Windows or `/dev/tty.usbmodem336F336D30361` on macOS).
@@ -55,7 +52,7 @@ meadow listen
 
 ## Uninstall the Meadow.CLI tool
 
-If you ever need to remove the Meadow.CLI tool, you can remove it through the .NET command-line tool as you would any other global tool.
+To uninstall the Meadow.CLI, remove it using the .NET command-line tool:
 
 ```console
 dotnet tool uninstall WildernessLabs.Meadow.CLI --global
@@ -63,7 +60,7 @@ dotnet tool uninstall WildernessLabs.Meadow.CLI --global
 
 ## Install a downloaded pre-release version
 
-If you want to test one of the automated pre-release builds of the Meadow.CLI tool you have downloaded, you'll need to specific some extra parameters.
+To test an unpublished pre-release builds of the Meadow.CLI tool you have downloaded, you'll need to specify some extra parameters.
 
 1. Download a pre-release version, typically from an [automated build](https://github.com/WildernessLabs/Meadow.CLI/actions).
 1. Extract the package .nupkg file from the downloaded archive.
@@ -85,9 +82,9 @@ If you want to test one of the automated pre-release builds of the Meadow.CLI to
     meadow --version
     ```
 
-### Return to an official release version
+### Re-install the official release
 
-After you are done testing a pre-release build, you can return to the official Meadow.CLI release by uninstalling and reinstalling without the local overrides.
+You can return to the official Meadow.CLI release by uninstalling and reinstalling without the local overrides:
 
 ```console
 dotnet tool uninstall WildernessLabs.Meadow.CLI --global
@@ -102,3 +99,11 @@ If you need to find or clear out any of the OS download files retrieved by Meado
 * macOS
   * .NET 8 or newer: `~/Library/Application Support/WildernessLabs/Firmware`
   * .NET 7 or earlier: `~/.local/share/WildernessLabs/Firmware/`
+
+## Building the CLI
+
+To build the CLI from source, you'll need to clone the `Meadow.CLI` repo. You'll also need several other repos cloned at the same folder level:
+
+* [Meadow.Units](https://github.com/WildernessLabs/Meadow.Units)
+* [Meadow.Contracts](https://github.com/WildernessLabs/Meadow.Contracts)
+* [Meadow.Logging](https://github.com/WildernessLabs/Meadow.Logging)
