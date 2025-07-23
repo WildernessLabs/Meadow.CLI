@@ -22,11 +22,11 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
         return (await GetCurrentConnection()).Device ?? throw CommandException.MeadowDeviceNotFound;
     }
 
-    internal Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
-        => GetConnection(SerialPort, forceReconnect);
+    internal async Task<IMeadowConnection> GetCurrentConnection(bool forceReconnect = false)
+        => await GetConnection(SerialPort, forceReconnect);
 
-    internal Task<IMeadowConnection> GetConnectionForRoute(string route, bool forceReconnect = false)
-        => GetConnection(route, forceReconnect);
+    internal async Task<IMeadowConnection> GetConnectionForRoute(string route, bool forceReconnect = false)
+        => await GetConnection(route, forceReconnect);
 
     IMeadowConnection? _connection = null;
 
@@ -39,7 +39,7 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
 
         IMeadowConnection? connection = null;
 
-        connection = ConnectionManager.GetConnection(route, forceReconnect);
+        connection = await ConnectionManager.GetConnection(route, forceReconnect);
 
         if (connection != null)
         {

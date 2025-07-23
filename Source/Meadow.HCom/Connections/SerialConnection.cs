@@ -36,6 +36,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private CancellationTokenSource? _disposalCts = new();
 
+    private readonly object _portLock = new();
+
     public SerialConnection(string port, ILogger? logger = default)
     {
         if (!SerialPort.GetPortNames().Contains(port, StringComparer.InvariantCultureIgnoreCase))
@@ -54,11 +56,9 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             TaskCreationOptions.LongRunning)
         .Start();
 
-        new Thread(CommandManager)
-        {
-            IsBackground = true,
-            Name = "HCOM Sender"
-        }
+        new Task(
+            () => _ = CommandManager(),
+            TaskCreationOptions.LongRunning)
         .Start();
     }
 
@@ -77,41 +77,47 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void Open()
     {
-        try
+        lock (_portLock)
         {
-            if (!_port.IsOpen)
+            try
             {
-                _port.Open();
+                if (!_port.IsOpen)
+                {
+                    _port.Open();
+                }
+                State = ConnectionState.Connected;
             }
-            State = ConnectionState.Connected;
-        }
-        catch (FileNotFoundException)
-        {
-            throw new Exception($"Serial port '{_port.PortName}' not found");
-        }
-        catch (UnauthorizedAccessException uae)
-        {
-            throw new Exception($"{uae.Message}");
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
+            catch (FileNotFoundException)
+            {
+                throw new Exception($"Serial port '{_port.PortName}' not found");
+            }
+            catch (UnauthorizedAccessException uae)
+            {
+                throw new Exception($"{uae.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to open port '{_port.PortName}' - {ex.Message}");
+            }
         }
     }
 
     private void Close()
     {
-        try
+        lock (_portLock)
         {
-            if (_port.IsOpen)
+            try
             {
-                _port.Close();
+                if (_port.IsOpen)
+                {
+                    _port.Close();
+                }
+                State = ConnectionState.Disconnected;
             }
-            State = ConnectionState.Disconnected;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Unable to close port '{_port.PortName}' - {ex.Message}");
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to close port '{_port.PortName}' - {ex.Message}");
+            }
         }
     }
 
@@ -182,7 +188,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
     }
 
-    private void CommandManager()
+    private async Task CommandManager()
     {
         while (_disposalCts != null
                && !_disposalCts.Token.IsCancellationRequested)
@@ -199,7 +205,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                 {
                     // if this is a file write, we need to packetize for progress
                     var payload = command.Serialize();
-                    EncodeAndSendPacket(payload);
+                    await EncodeAndSendPacket(payload);
                 }
             }
         }
@@ -240,21 +246,22 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _commandEvent.Set();
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, CancellationToken? cancellationToken = null)
     {
-        EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
+        await EncodeAndSendPacket(messageBytes, messageBytes.Length, cancellationToken);
     }
 
-    private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
+    private async Task EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
-        while (!_port.IsOpen)
+        lock (_portLock)
         {
-            _state = ConnectionState.Disconnected;
-            Thread.Sleep(100);
-            // wait for the port to open
+            if (!_port.IsOpen)
+            {
+                State = ConnectionState.Disconnected;
+                throw new InvalidOperationException("Serial port is not open.");
+            }
+            State = ConnectionState.Connected;
         }
-
-        _state = ConnectionState.Connected;
 
         try
         {
@@ -308,15 +315,18 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // This should drop the connection and retry
                 Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
-                Thread.Sleep(500);    // Place for break point
+                await Task.Delay(500, cancellationToken ?? CancellationToken.None); 
                 throw;
             }
 
             try
             {
                 // Send the data to Meadow
-                // DO NOT USE _port.BaseStream.  It disables port timeouts!
-                _port.Write(encodedBytes, 0, encodedToSend);
+                using var writeCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    _disposalCts.Token,
+                    new CancellationTokenSource(_port.WriteTimeout > 0 ? _port.WriteTimeout : DefaultTimeout).Token);
+
+                await _port.BaseStream.WriteAsync(encodedBytes, 0, encodedToSend, writeCts.Token);
             }
             catch (InvalidOperationException ioe)  // Port not opened
             {
@@ -994,82 +1004,87 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
 
-        EnqueueRequest(command);
-
-        // this will wait for a "file write accepted" from the target
-        if (!await WaitForResult(
-                () =>
-                {
-                    if (ex != null) throw ex;
-                    return accepted;
-                },
-                cancellationToken))
+        try
         {
-            return false;
-        }
+            EnqueueRequest(command);
 
-        // now send the file data
-        // The maximum data bytes is max packet size - 2 bytes for the sequence number
-        byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
-        ushort sequenceNumber = 0;
-
-        var progress = 0;
-        var expected = fileBytes.Length;
-
-        var fileName = Path.GetFileName(localFileName);
-
-        base.RaiseFileWriteProgress(fileName, progress, expected);
-
-        var oldTimeout = _port.ReadTimeout;
-        _port.ReadTimeout = 60000;
-
-        while (true && !needsRetry)
-        {
-            if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+            // this will wait for a "file write accepted" from the target
+            if (!await WaitForResult(
+                    () =>
+                    {
+                        if (ex != null) throw ex;
+                        return accepted;
+                    },
+                    cancellationToken))
             {
                 return false;
             }
 
-            sequenceNumber++;
+            // now send the file data
+            // The maximum data bytes is max packet size - 2 bytes for the sequence number
+            byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
+            ushort sequenceNumber = 0;
 
-            Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+            var progress = 0;
+            var expected = fileBytes.Length;
 
-            var toRead = fileBytes.Length - progress;
-            if (toRead > packet.Length - 2)
-            {
-                toRead = packet.Length - 2;
-            }
-            Array.Copy(fileBytes, progress, packet, 2, toRead);
-            try
-            {
-                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
-            }
-            catch (Exception)
-            {
-                break;
-            }
+            var fileName = Path.GetFileName(localFileName);
 
-            progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
-            if (progress >= fileBytes.Length) break;
-        }
 
-        if (!needsRetry)
+            var oldTimeout = _port.ReadTimeout;
+            _port.ReadTimeout = 60000;
+
+            while (true && !needsRetry)
+            {
+                if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+                {
+                    return false;
+                }
+
+                sequenceNumber++;
+
+                Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+
+                var toRead = fileBytes.Length - progress;
+                if (toRead > packet.Length - 2)
+                {
+                    toRead = packet.Length - 2;
+                }
+                Array.Copy(fileBytes, progress, packet, 2, toRead);
+                try
+                {
+                    await EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+                }
+                catch (Exception)
+                {
+                    break;
+                }
+
+                progress += toRead;
+                base.RaiseFileWriteProgress(fileName, progress, expected);
+                if (progress >= fileBytes.Length) break;
+            }
+
+            if (!needsRetry)
+            {
+                _port.ReadTimeout = oldTimeout;
+
+                base.RaiseFileWriteProgress(fileName, expected, expected);
+
+                // finish with an "end" message - not enqued because this is all a serial operation
+                var request = RequestBuilder.Build<EndFileWriteRequest>();
+                request.SetRequestType(endRequestType);
+                var p = request.Serialize();
+                await EncodeAndSendPacket(p, cancellationToken);
+            }
+        }
+        finally
         {
-            _port.ReadTimeout = oldTimeout;
-
-            base.RaiseFileWriteProgress(fileName, expected, expected);
-
-            // finish with an "end" message - not enqued because this is all a serial operation
-            var request = RequestBuilder.Build<EndFileWriteRequest>();
-            request.SetRequestType(endRequestType);
-            var p = request.Serialize();
-            EncodeAndSendPacket(p, cancellationToken);
+            FileWriteAccepted -= OnFileWriteAccepted;
+            FileException -= OnFileError;
+            FileWriteFailed -= OnFileRetry;
         }
-
-        FileWriteAccepted -= OnFileWriteAccepted;
-        FileException -= OnFileError;
-        FileWriteFailed -= OnFileRetry;
 
         return !needsRetry;
     }
@@ -1111,6 +1126,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             FileReadCompleted -= OnFileReadCompleted;
             FileException -= OnFileError;
+            ConnectionError += OnFileError;
         }
     }
 
@@ -1128,12 +1144,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         FileTextReceived += OnFileDataReceived;
 
-        _lastRequestConcluded = null;
-        EnqueueRequest(command);
+        try
+        {
+            _lastRequestConcluded = null;
+            EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+            await WaitForConcluded(null, cancellationToken);
 
-        return contents;
+            return contents;
+        }
+        finally
+        {
+            FileTextReceived -= OnFileDataReceived;
+        }
     }
 
     public override async Task<bool> DeleteFile(string meadowFileName, CancellationToken? cancellationToken = null)
@@ -1179,27 +1202,34 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         FileTextReceived += OnFileDataReceived;
 
-        var lastTimeout = CommandTimeoutSeconds;
-
-        CommandTimeoutSeconds = 5 * 60;
-
-        _lastRequestConcluded = null;
-        EnqueueRequest(command);
-
-        if (!await WaitForResult(
-                        () =>
-                        {
-                            return contents != string.Empty;
-                        },
-                        cancellationToken))
+        try
         {
+            var lastTimeout = CommandTimeoutSeconds;
+
+            CommandTimeoutSeconds = 5 * 60;
+
+            _lastRequestConcluded = null;
+            EnqueueRequest(command);
+
+            if (!await WaitForResult(
+                            () =>
+                            {
+                                return contents != string.Empty;
+                            },
+                            cancellationToken))
+            {
+                CommandTimeoutSeconds = lastTimeout;
+                return string.Empty;
+            }
+
             CommandTimeoutSeconds = lastTimeout;
-            return string.Empty;
+
+            return contents;
         }
-
-        CommandTimeoutSeconds = lastTimeout;
-
-        return contents;
+        finally
+        {
+            FileTextReceived -= OnFileDataReceived;
+        }
     }
 
     public override async Task<DebuggingServer> StartDebuggingSession(int port, ILogger? logger, CancellationToken cancellationToken, string debuggerName = "Visual Studio")
@@ -1210,15 +1240,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         AggressiveReconnectEnabled = true;
-
+        
         var debuggingServer = new DebuggingServer(this, port, logger, debuggerName);
-
-        Debug.WriteLine("You can now connect the debugger client to the local tunnel port");
-        await debuggingServer.StartListening(cancellationToken);
-
+        
         Debug.WriteLine($"Debugger client is connected!!! Port: {port}");
         await Device.StartDebugging(port, logger, cancellationToken);
         Debug.WriteLine("Debugging has fully started!!");
+
+        Debug.WriteLine("You can now connect the debugger client to the local tunnel port");
+        await debuggingServer.StartListening(cancellationToken);
 
         return debuggingServer;
     }

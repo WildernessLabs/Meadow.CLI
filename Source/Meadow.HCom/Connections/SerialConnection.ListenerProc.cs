@@ -88,7 +88,16 @@ namespace Meadow.Hcom
                     {
                         Debug.WriteLine($"listening...");
 
-                        receivedLength = _port.Read(readBuffer, 0, readBuffer.Length);
+                        using var readCts = CancellationTokenSource.CreateLinkedTokenSource(
+                            _disposalCts.Token,
+                            new CancellationTokenSource(_port.ReadTimeout > 0 ? _port.ReadTimeout : DefaultTimeout).Token);
+
+                        receivedLength = await _port.BaseStream.ReadAsync(
+                            readBuffer,
+                            0,
+                            readBuffer.Length,
+                            readCts.Token);
+
 
                         Debug.WriteLine($"Received {receivedLength} bytes");
 

@@ -26,7 +26,7 @@ public class MeadowConnectionManager
         _settingsManager = settingsManager;
     }
 
-    public IMeadowConnection? GetConnection(string? route = null, bool forceReconnect = false)
+    public async Task<IMeadowConnection?> GetConnection(string? route = null, bool forceReconnect = false)
     {
         if (route is null)
         {
@@ -89,7 +89,7 @@ public class MeadowConnectionManager
                 {
                     throw new Exception($"Cannot find port {route}");
                 }
-                Thread.Sleep(500);
+                await Task.Delay(500);
                 goto get_serial_connection;
             }
         }
