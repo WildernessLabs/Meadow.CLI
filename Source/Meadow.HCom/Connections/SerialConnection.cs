@@ -51,15 +51,11 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         _port = new SerialPort(port);
         _port.ReadTimeout = _port.WriteTimeout = DefaultTimeout;
 
-        new Task(
-            () => _ = ListenerProc(),
-            TaskCreationOptions.LongRunning)
-        .Start();
+        Debug.WriteLine($"Starting ListenerProc()");
+        Task.Run(() => ListenerProc(), _disposalCts.Token);
 
-        new Task(
-            () => _ = CommandManager(),
-            TaskCreationOptions.LongRunning)
-        .Start();
+        Debug.WriteLine($"Starting CommandManager()");
+        Task.Run(() => CommandManager(), _disposalCts.Token);
     }
 
     public override ConnectionState State
@@ -315,7 +311,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 // This should drop the connection and retry
                 Debug.WriteLine($"Adding encodeBytes delimiter threw: {encodedBytesEx}");
-                await Task.Delay(500, cancellationToken ?? CancellationToken.None); 
+                await Task.Delay(500, cancellationToken ?? CancellationToken.None);
                 throw;
             }
 
@@ -1240,15 +1236,18 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
 
         AggressiveReconnectEnabled = true;
-        
-        var debuggingServer = new DebuggingServer(this, port, logger, debuggerName);
-        
-        Debug.WriteLine($"Debugger client is connected!!! Port: {port}");
+
+        Debug.WriteLine("StartDebugging....");
         await Device.StartDebugging(port, logger, cancellationToken);
         Debug.WriteLine("Debugging has fully started!!");
 
-        Debug.WriteLine("You can now connect the debugger client to the local tunnel port");
+        Debug.WriteLine($"Creating DebuggingServer on Port: {port}");
+        var debuggingServer = new DebuggingServer(this, port, logger, debuggerName);
+        Debug.WriteLine($"Debugger client is connected on Port: {port}!!");
+
+        Debug.WriteLine("DebuggingServer.StartListening....");
         await debuggingServer.StartListening(cancellationToken);
+        Debug.WriteLine($"DebuggingServer is now  listening on Port:{port}");
 
         return debuggingServer;
     }
