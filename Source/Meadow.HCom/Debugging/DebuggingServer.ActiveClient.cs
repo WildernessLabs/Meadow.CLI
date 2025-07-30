@@ -36,9 +36,11 @@ public partial class DebuggingServer
             _tcpClient = await tcpListener.AcceptTcpClientAsync();
             _networkStream = _tcpClient.GetStream();
 
-            _logger?.LogDebug("Starting receive task");
-            _receiveVsDebugDataTask = Task.Factory.StartNew(SendToMeadowAsync, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            _receiveMeadowDebugDataTask = Task.Factory.StartNew(SendToVisualStudio, _cts.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            _logger?.LogDebug("Starting SendToMeadowAsync");
+            _receiveVsDebugDataTask = Task.Run(() => SendToMeadowAsync(), _cts.Token);
+
+            _logger?.LogDebug("Starting SendToVisualStudio");
+            _receiveMeadowDebugDataTask = Task.Run(() => SendToVisualStudio(), _cts.Token);
         }
 
         private void MeadowConnection_DebuggerMessageReceived(object sender, byte[] e)
@@ -50,10 +52,9 @@ public partial class DebuggingServer
 
         private async Task SendToMeadowAsync()
         {
+            var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
             try
             {
-                var receiveBuffer = ArrayPool<byte>.Shared.Rent(RECEIVE_BUFFER_SIZE);
-
                 while (!_cts.Token.IsCancellationRequested)
                 {
                     if (_networkStream != null && _networkStream.CanRead)
@@ -65,7 +66,7 @@ public partial class DebuggingServer
 
                             if (bytesRead == 0 || _cts.Token.IsCancellationRequested)
                             {
-                                continue;
+                                break;
                             }
 
                             var meadowBuffer = new byte[bytesRead];
@@ -87,21 +88,26 @@ public partial class DebuggingServer
                     {
                         _logger?.LogInformation($"Unable to Read Data from {_debuggerName}");
                         _logger?.LogTrace($"Unable to Read Data from {_debuggerName}");
+                        break;
                     }
                 }
             }
             catch (IOException ioe)
             {
-                _logger?.LogInformation($"{_debuggerName} has Disconnected");
+                _logger?.LogInformation($"{_debuggerName} has Disconnected: {ioe.Message}");
             }
             catch (ObjectDisposedException ode)
             {
-                _logger?.LogInformation($"{_debuggerName} has stopped debugging");
+                _logger?.LogInformation($"{_debuggerName} has stopped debugging: {ode.Message}");
             }
             catch (Exception ex)
             {
                 _logger?.LogError($"Error receiving data from {_debuggerName}.\nError: {ex.Message}\nStackTrace:\n{ex.StackTrace}");
                 throw;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(receiveBuffer);
             }
         }
 
@@ -155,20 +161,35 @@ public partial class DebuggingServer
             _cts.Cancel();
             try
             {
-                Task.WhenAll(_receiveVsDebugDataTask, _receiveMeadowDebugDataTask).Wait(TimeSpan.FromSeconds(10));
+                Task[] tasks = new[] { _receiveVsDebugDataTask, _receiveMeadowDebugDataTask }
+                    .Where(t => t != null)
+                    .ToArray();
+
+                if (tasks.Length > 0)
+                {
+                    Task.WaitAll(tasks, TimeSpan.FromSeconds(10));
+                }
             }
             catch (AggregateException ex)
             {
                 _logger?.LogError("Error waiting for tasks to complete during dispose", ex);
             }
-            _tcpClient.Dispose();
-            _networkStream.Dispose();
+            catch (Exception ex)
+            {
+                _logger?.LogError("Unexpected error during task shutdown", ex);
+            }
+
+            // Dispose of all the things
+            _networkStream?.Dispose();
+            _tcpClient?.Dispose();
             _cts.Dispose();
+            _debuggerMessages.Dispose();
 
             if (_connection != null)
             {
                 _connection.DebuggerMessageReceived -= MeadowConnection_DebuggerMessageReceived;
             }
+
             _disposed = true;
         }
     }
