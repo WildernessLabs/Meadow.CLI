@@ -1134,12 +1134,10 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         command.MeadowFileName = meadowFileName;
         command.LocalFileName = localFileName;
 
-        var completed = false;
         Exception? ex = null;
 
         void OnFileReadCompleted(object? sender, string filename)
         {
-            completed = true;
         }
         void OnFileError(object? sender, Exception exception)
         {
