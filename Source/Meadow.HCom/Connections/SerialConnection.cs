@@ -1134,13 +1134,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         command.MeadowFileName = meadowFileName;
         command.LocalFileName = localFileName;
 
-        var completed = false;
         Exception? ex = null;
 
-        void OnFileReadCompleted(object? sender, string filename)
-        {
-            completed = true;
-        }
         void OnFileError(object? sender, Exception exception)
         {
             ex = exception;
@@ -1148,7 +1143,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         try
         {
-            FileReadCompleted += OnFileReadCompleted;
             FileException += OnFileError;
             ConnectionError += OnFileError;
 
@@ -1163,7 +1157,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
         finally
         {
-            FileReadCompleted -= OnFileReadCompleted;
             FileException -= OnFileError;
         }
     }

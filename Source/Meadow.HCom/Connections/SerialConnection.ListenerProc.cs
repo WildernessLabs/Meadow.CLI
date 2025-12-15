@@ -251,7 +251,10 @@ namespace Meadow.Hcom
                                         // HCOM_HOST_REQUEST_UPLOAD_FILE_COMPLETED message. When it is received
                                         // we then close the open file and the process is completed.
                                         var folder = Path.GetDirectoryName(_readFileInfo!.LocalFileName);
-                                        if (!Directory.Exists(folder)) throw new DirectoryNotFoundException(folder);
+                                        if (!Directory.Exists(folder))
+                                        {
+                                            Directory.CreateDirectory(folder!);
+                                        }
 
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
 
