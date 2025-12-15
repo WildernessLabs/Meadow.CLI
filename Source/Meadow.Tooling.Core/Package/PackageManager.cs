@@ -130,11 +130,21 @@ public class PackageManager : BuildManager, IPackageManager
                     {
                         // ignore this specific directory and continue searching others
                     }
+                    catch (IOException)
+                    {
+                        // ignore IO errors (e.g., network path issues) and continue searching
+                    }
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                // if we can't even enumerate the directories in rootFolder, we can't search subdirectories
+                // if we can't enumerate the directories in rootFolder, we can't search subdirectories
+                // continuing silently as the main error will be thrown below if no bin folders are found
+            }
+            catch (IOException)
+            {
+                // handle IO errors when enumerating directories (e.g., network issues, disk errors)
+                // continuing silently as the main error will be thrown below if no bin folders are found
             }
         }
 
