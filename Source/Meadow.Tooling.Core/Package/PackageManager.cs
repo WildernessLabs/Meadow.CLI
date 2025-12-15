@@ -126,13 +126,14 @@ public class PackageManager : BuildManager, IPackageManager
             }
             catch (UnauthorizedAccessException)
             {
-                // ignore directories we can't access
+                // ignore directories we can't access (e.g., system directories, protected folders)
+                // this prevents the search from failing when the root folder contains inaccessible subdirectories
             }
         }
 
         if (binPaths.Count == 0)
         {
-            throw new DirectoryNotFoundException($"No 'bin' directory found under '{rootFolder}'. Have you compiled?");
+            throw new DirectoryNotFoundException($"No 'bin' directory found under '{rootFolder}' or its immediate subdirectories. Have you compiled?");
         }
 
         var files = new List<FileInfo>();
