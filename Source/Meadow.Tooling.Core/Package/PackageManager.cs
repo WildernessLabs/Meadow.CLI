@@ -113,21 +113,30 @@ public class PackageManager : BuildManager, IPackageManager
         {
             // if not found, check for 'bin' folders in immediate subdirectories
             // this handles the case where .sln and .csproj are at the same level
+            // collect all bin folders to support multiple projects in the same solution
             try
             {
-                foreach (var subDir in Directory.GetDirectories(rootFolder))
+                var subdirectories = Directory.GetDirectories(rootFolder);
+                foreach (var subDir in subdirectories)
                 {
-                    var subDirBinPath = Path.Combine(subDir, "bin");
-                    if (Directory.Exists(subDirBinPath))
+                    try
                     {
-                        binPaths.Add(subDirBinPath);
+                        var subDirBinPath = Path.Combine(subDir, "bin");
+                        if (Directory.Exists(subDirBinPath))
+                        {
+                            binPaths.Add(subDirBinPath);
+                        }
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // ignore this specific directory and continue searching others
+                        continue;
                     }
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                // ignore directories we can't access (e.g., system directories, protected folders)
-                // this prevents the search from failing when the root folder contains inaccessible subdirectories
+                // if we can't even enumerate the directories in rootFolder, we can't search subdirectories
             }
         }
 
