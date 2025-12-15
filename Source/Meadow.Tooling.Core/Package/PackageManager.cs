@@ -91,7 +91,7 @@ public class PackageManager : BuildManager, IPackageManager
         // check if we were give path to a project file, not the folder of the project file
         if (File.Exists(rootFolder))
         {
-            rootFolder = Path.GetDirectoryName(rootFolder) ?? ""; // extreact the folder name or if invalid, use the current directory
+            rootFolder = Path.GetDirectoryName(rootFolder) ?? ""; // extract the folder name or if invalid, use the current directory
         }
         if (!Directory.Exists(rootFolder)) { throw new DirectoryNotFoundException($"Directory not found '{rootFolder}'. Check path to project file."); }
 
@@ -132,7 +132,7 @@ public class PackageManager : BuildManager, IPackageManager
                     }
                     catch (IOException)
                     {
-                        // ignore IO errors (e.g., network path issues) and continue searching
+                        // ignore IO errors (e.g., network path issues, disk access errors, corrupted directories) and continue searching
                     }
                 }
             }
@@ -143,7 +143,7 @@ public class PackageManager : BuildManager, IPackageManager
             }
             catch (IOException)
             {
-                // handle IO errors when enumerating directories (e.g., network issues, disk errors)
+                // handle IO errors when enumerating directories (e.g., network issues, disk access errors, corrupted directories)
                 // continuing silently as the main error will be thrown below if no bin folders are found
             }
         }
