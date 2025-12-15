@@ -116,8 +116,7 @@ public class PackageManager : BuildManager, IPackageManager
             // collect all bin folders to support multiple projects in the same solution
             try
             {
-                var subdirectories = Directory.GetDirectories(rootFolder);
-                foreach (var subDir in subdirectories)
+                foreach (var subDir in Directory.EnumerateDirectories(rootFolder))
                 {
                     try
                     {
@@ -130,7 +129,6 @@ public class PackageManager : BuildManager, IPackageManager
                     catch (UnauthorizedAccessException)
                     {
                         // ignore this specific directory and continue searching others
-                        continue;
                     }
                 }
             }
