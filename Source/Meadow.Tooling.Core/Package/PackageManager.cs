@@ -132,7 +132,7 @@ public class PackageManager : BuildManager, IPackageManager
                     }
                     catch (IOException)
                     {
-                        // ignore IO errors (e.g., network path issues, disk access errors, corrupted directories) and continue searching
+                        // ignore IO errors (e.g., network path issues, disk access errors) and continue searching
                     }
                 }
             }
@@ -143,7 +143,7 @@ public class PackageManager : BuildManager, IPackageManager
             }
             catch (IOException)
             {
-                // handle IO errors when enumerating directories (e.g., network issues, disk access errors, corrupted directories)
+                // handle IO errors when enumerating directories (e.g., network path issues, disk access errors)
                 // continuing silently as the main error will be thrown below if no bin folders are found
             }
         }
