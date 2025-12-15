@@ -101,12 +101,46 @@ public class PackageManager : BuildManager, IPackageManager
             return new FileInfo[] { new(Path.Combine(rootFolder, appName)) };
         }
 
-        // look for a 'bin' folder
+        // look for a 'bin' folder - first check directly under rootFolder
+        var binPaths = new List<string>();
         var path = Path.Combine(rootFolder, "bin");
-        if (!Directory.Exists(path)) throw new DirectoryNotFoundException($"No 'bin' directory found under '{rootFolder}'. Have you compiled?");
+        
+        if (Directory.Exists(path))
+        {
+            binPaths.Add(path);
+        }
+        else
+        {
+            // if not found, check for 'bin' folders in immediate subdirectories
+            // this handles the case where .sln and .csproj are at the same level
+            try
+            {
+                foreach (var subDir in Directory.GetDirectories(rootFolder))
+                {
+                    var subDirBinPath = Path.Combine(subDir, "bin");
+                    if (Directory.Exists(subDirBinPath))
+                    {
+                        binPaths.Add(subDirBinPath);
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // ignore directories we can't access
+            }
+        }
+
+        if (binPaths.Count == 0)
+        {
+            throw new DirectoryNotFoundException($"No 'bin' directory found under '{rootFolder}'. Have you compiled?");
+        }
 
         var files = new List<FileInfo>();
-        FindApp(path, files);
+        
+        foreach (var binPath in binPaths)
+        {
+            FindApp(binPath, files);
+        }
 
         void FindApp(string directory, List<FileInfo> fileList)
         {
