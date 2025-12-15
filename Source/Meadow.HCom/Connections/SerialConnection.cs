@@ -1136,9 +1136,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         Exception? ex = null;
 
-        void OnFileReadCompleted(object? sender, string filename)
-        {
-        }
         void OnFileError(object? sender, Exception exception)
         {
             ex = exception;
@@ -1146,7 +1143,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         try
         {
-            FileReadCompleted += OnFileReadCompleted;
             FileException += OnFileError;
             ConnectionError += OnFileError;
 
@@ -1161,7 +1157,6 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         }
         finally
         {
-            FileReadCompleted -= OnFileReadCompleted;
             FileException -= OnFileError;
         }
     }
