@@ -9,7 +9,7 @@ namespace Meadow.Cloud.Client.Identity;
 public class IdentityManager
 {
     public const string WlRefreshCredentialName = "WL:Identity:Refresh";
-    private const string authority = "https://clerk.wildernesslabs.co/.well-known/openid-configuration";
+    private const string authority = "https://clerk.wildernesslabs.co";
     private const string redirectUri = "http://localhost:8877/";
     private const string clientId = "N1lhRklZW34yt5Ur";
     private readonly ILogger _logger;
@@ -136,6 +136,21 @@ public class IdentityManager
 
             var client = GetOidcClient();
             var result = await client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
+
+            if (result.IsError)
+            {
+                // Refresh token expired or invalid - clear credentials and require re-login
+                DeleteCredential(WlRefreshCredentialName);
+                CachedAccessToken = null;
+                return string.Empty;
+            }
+
+            // Save the new refresh token (Clerk uses rotating refresh tokens)
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+            {
+                SaveCredential(WlRefreshCredentialName, emailAddress, result.RefreshToken);
+            }
+
             CachedAccessToken = new AccessToken(result.AccessToken, DateTimeOffset.UtcNow.AddSeconds(result.ExpiresIn), emailAddress);
             return CachedAccessToken.Token;
         }
