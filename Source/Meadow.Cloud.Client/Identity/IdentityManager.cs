@@ -9,9 +9,9 @@ namespace Meadow.Cloud.Client.Identity;
 public class IdentityManager
 {
     public const string WlRefreshCredentialName = "WL:Identity:Refresh";
-    private const string authority = "https://identity.wildernesslabs.co/oauth2/default";
+    private const string authority = "https://clerk.wildernesslabs.co/.well-known/openid-configuration";
     private const string redirectUri = "http://localhost:8877/";
-    private const string clientId = "0oa3axsuyupb7J6E15d6";
+    private const string clientId = "N1lhRklZW34yt5Ur";
     private readonly ILogger _logger;
 
     private static AccessToken? CachedAccessToken;
@@ -214,7 +214,7 @@ public class IdentityManager
                     ValidateEndpoints = false
                 }
             },
-            Scope = "openid email profile groups offline_access",
+            Scope = "openid email profile",
             Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode,
             ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect,
         };
