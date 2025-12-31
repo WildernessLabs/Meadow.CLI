@@ -302,7 +302,12 @@ public class IdentityManager
     {
         try
         {
-            Process.Start(url);
+            var psi = new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            };
+            Process.Start(psi);
         }
         catch
         {
@@ -332,8 +337,8 @@ public class IdentityManager
     {
         public AccessToken(string token, DateTimeOffset expiresAt, string emailAddress)
         {
-            Token = token; 
-            ExpiresAtUtc = expiresAt; 
+            Token = token;
+            ExpiresAtUtc = expiresAt;
             EmailAddress = emailAddress;
         }
 
