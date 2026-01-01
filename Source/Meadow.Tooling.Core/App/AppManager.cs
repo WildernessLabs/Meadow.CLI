@@ -22,6 +22,7 @@ public static class AppManager
         "Documents",
         "update-store",
         "system",
+        "cloud"
     };
 
     private static bool MatchingDllExists(string file)
@@ -202,7 +203,7 @@ public static class AppManager
         logger?.LogInformation(string.Empty);
     }
 
-    static async Task<List<MeadowFileInfo>> GetFilesInFolder(IMeadowConnection connection, string folder, CancellationToken? cancellationToken)
+    private static async Task<List<MeadowFileInfo>> GetFilesInFolder(IMeadowConnection connection, string folder, CancellationToken? cancellationToken)
     {
         var deviceFiles = new List<MeadowFileInfo>();
 
@@ -234,7 +235,7 @@ public static class AppManager
         return deviceFiles;
     }
 
-    static string GetTargetMeadowFileName(string localBinaryFolder, string fullyQualifiedFilePath)
+    private static string GetTargetMeadowFileName(string localBinaryFolder, string fullyQualifiedFilePath)
     {
         string relativePath = string.Empty;
         string fileName = Path.GetFileName(fullyQualifiedFilePath);
