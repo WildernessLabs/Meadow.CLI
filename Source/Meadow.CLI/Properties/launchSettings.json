@@ -13,7 +13,7 @@
     },
     "App Deploy (project folder)": {
       "commandName": "Project",
-      "commandLineArgs": "app deploy H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+      "commandLineArgs": "app deploy F:\\repos\\wilderness\\AquaMira\\Source\\AquaMira.F7 -c Debug"
     },
     "App Deploy (untrimmed output)": {
       "commandName": "Project",
@@ -21,7 +21,7 @@
     },
     "App Run": {
       "commandName": "Project",
-      "commandLineArgs": "app run H:\\WL\\Blinky\\Blinky\\BlinkyCs"
+      "commandLineArgs": "app run F:\\repos\\wilderness\\AquaMira\\Source\\AquaMira.F7 -c Debug"
     },
     "App Trim": {
       "commandName": "Project",
@@ -202,6 +202,10 @@
     "Listen (no prefix)": {
       "commandName": "Project",
       "commandLineArgs": "listen -n"
+    },
+    "Listen (with save)": {
+      "commandName": "Project",
+      "commandLineArgs": "listen -l meadow-output.log"
     },
     "Port List": {
       "commandName": "Project",
