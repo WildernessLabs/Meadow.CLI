@@ -297,6 +297,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             };
         }
 
+        _logger?.LogTrace($"Enqueueing command: {command.GetType().Name}");
         _commandQueue.Enqueue(command);
         _commandEvent.Set();
     }
@@ -308,11 +309,30 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     private void EncodeAndSendPacket(byte[] messageBytes, int length, CancellationToken? cancellationToken = null)
     {
+        var portOpenAttempts = 0;
+        const int maxPortOpenAttempts = 50; // 5 seconds max wait
+
         while (!_port.IsOpen)
         {
+            if (portOpenAttempts >= maxPortOpenAttempts)
+            {
+                throw new TimeoutException($"Serial port '{_port.PortName}' did not open within the expected time");
+            }
+
             _state = ConnectionState.Disconnected;
-            Thread.Sleep(100);
-            // wait for the port to open
+
+            // Attempt to open the port
+            try
+            {
+                Open();
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogTrace($"Attempt {portOpenAttempts + 1}/{maxPortOpenAttempts} to open port failed: {ex.Message}");
+                portOpenAttempts++;
+                Thread.Sleep(100);
+            }
         }
 
         _state = ConnectionState.Connected;
@@ -546,17 +566,28 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     private async Task<bool> WaitForResult(Func<bool> checkAction, CancellationToken? cancellationToken)
     {
         var timeout = CommandTimeoutSeconds * 2;
+        var startTimeout = timeout;
 
         while (timeout-- > 0)
         {
             if (cancellationToken?.IsCancellationRequested ?? false) return false;
             if (_lastException != null) return false;
 
-            if (timeout <= 0) throw new TimeoutException();
+            if (timeout <= 0)
+            {
+                _logger?.LogError($"Command timed out after {startTimeout * 0.5} seconds. Port open: {_port.IsOpen}, State: {State}");
+                throw new TimeoutException();
+            }
 
             if (checkAction())
             {
                 break;
+            }
+
+            // Log a warning if we're halfway through the timeout
+            if (timeout == startTimeout / 2)
+            {
+                _logger?.LogWarning($"Command still waiting after {timeout * 0.5} seconds. Port open: {_port.IsOpen}, State: {State}");
             }
 
             await Task.Delay(500);

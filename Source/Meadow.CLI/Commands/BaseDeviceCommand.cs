@@ -53,6 +53,16 @@ public abstract class BaseDeviceCommand<T> : BaseCommand<T>
             try
             {
                 await connection.Attach(CancellationToken);
+
+                // Enable automatic reconnection to handle device resets during command execution
+                // Many commands (like runtime disable, app deploy) cause the device to reset,
+                // which temporarily disconnects the serial port. AggressiveReconnectEnabled
+                // allows the connection to automatically recover when the port comes back.
+                if (connection is Hcom.SerialConnection serialConnection)
+                {
+                    serialConnection.AggressiveReconnectEnabled = true;
+                }
+
                 return connection;
             }
             catch (TimeoutException)
