@@ -19,7 +19,8 @@ public class DeviceConfigSetCommand : DeviceConfigCommand<DeviceConfigSetCommand
     {
         var keyValuePairs = Settings.Select(s =>
         {
-            var parts = s.Split('=');
+            var parts = s.Split('=', 2);
+            if (parts.Length < 2) throw new ArgumentException($"Invalid setting format '{s}' — expected key=value");
             return new KeyValuePair<string, string>(parts[0], parts[1]);
         });
 
