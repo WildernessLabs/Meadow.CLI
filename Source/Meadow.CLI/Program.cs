@@ -100,7 +100,7 @@ public class Program
             MeadowTelemetry.Current.Dispose();
         }
 
-        VersionChecker.CheckForUpdates(Log.Logger, serviceProvider.GetService<ISettingsManager>()).Wait();
+        await VersionChecker.CheckForUpdates(Log.Logger, serviceProvider.GetService<ISettingsManager>());
 
         return returnCode;
     }
