@@ -234,10 +234,13 @@ public class MeadowConnectionManager
                       line =>
                       {
                           var parts = line.Split(new[] { "-> " }, StringSplitOptions.RemoveEmptyEntries);
+                          if (parts.Length < 2) return null;
                           var target = parts[1];
                           var port = Path.GetFullPath(Path.Combine(devicePath, target));
                           return port;
-                      });
+                      })
+                  .Where(p => p != null)
+                  .Select(p => p!);
 
             if (string.IsNullOrWhiteSpace(serialNumber))
             {

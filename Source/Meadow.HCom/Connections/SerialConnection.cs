@@ -1158,6 +1158,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         finally
         {
             FileException -= OnFileError;
+            ConnectionError -= OnFileError;
         }
     }
 
