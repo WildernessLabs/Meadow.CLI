@@ -83,6 +83,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
             collection.DownloadProgress += OnDownloadProgress;
 
             var result = await collection.RetrievePackage(Version, Force);
+            Console.Output.WriteLine();
 
             if (!result)
             {

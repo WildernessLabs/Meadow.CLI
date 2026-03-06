@@ -131,6 +131,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         await AppManager.DeployApplication(_buildManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
+        Console?.Output.WriteLine();
 
         return true;
     }

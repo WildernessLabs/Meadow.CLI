@@ -106,6 +106,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
 
         connection.FileWriteProgress -= OnFileWriteProgress;
+        Console?.Output.WriteLine();
 
         Logger?.LogInformation($"{Strings.AppDeployedSuccessfully}");
 

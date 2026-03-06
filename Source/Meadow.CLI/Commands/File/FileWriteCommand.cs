@@ -81,8 +81,8 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
             }
         }
 
-        //add a black line after writing the file write progress
-        Logger?.LogInformation(string.Empty);
+        // advance past the \r-terminated progress line before any subsequent output
+        Console?.Output.WriteLine();
     }
 
     private string GetTargetFileName(int i)
