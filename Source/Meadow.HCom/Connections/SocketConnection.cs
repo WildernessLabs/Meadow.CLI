@@ -23,6 +23,7 @@ public partial class SocketConnection : ConnectionBase, IDisposable
     private readonly List<IConnectionListener> _listeners = new List<IConnectionListener>();
     private readonly ConcurrentQueue<IRequest> _commandQueue = new ConcurrentQueue<IRequest>();
     private readonly AutoResetEvent _commandEvent = new AutoResetEvent(false);
+    private readonly object _connectLock = new object();
     private readonly List<string> _textList = new List<string>();
     private int _messageCount = 0;
     private ReadFileInfo? _readFileInfo = null;
@@ -66,24 +67,29 @@ public partial class SocketConnection : ConnectionBase, IDisposable
 
     private void Open()
     {
-        if (!IsConnected)
+        lock (_connectLock)
         {
-            try
+            if (!IsConnected)
             {
-                _tcpClient = new TcpClient();
-                _tcpClient.Connect(_host, _port);
-                _tcpClient.ReceiveTimeout = DefaultTimeout;
-                _tcpClient.SendTimeout = DefaultTimeout;
-                _networkStream = _tcpClient.GetStream();
-                State = ConnectionState.Connected;
-            }
-            catch (SocketException se)
-            {
-                throw new Exception($"Unable to connect to socket '{_host}:{_port}' - {se.Message}");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Unable to connect to socket '{_host}:{_port}' - {ex.Message}");
+                try
+                {
+                    var client = new TcpClient();
+                    client.Connect(_host, _port);
+                    client.Client.NoDelay = true; // disable Nagle — send HCOM packets immediately
+                    client.ReceiveTimeout = DefaultTimeout;
+                    client.SendTimeout = DefaultTimeout;
+                    _networkStream = client.GetStream();
+                    _tcpClient = client;
+                    State = ConnectionState.Connected;
+                }
+                catch (SocketException se)
+                {
+                    throw new Exception($"Unable to connect to socket '{_host}:{_port}' - {se.Message}");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to connect to socket '{_host}:{_port}' - {ex.Message}");
+                }
             }
         }
     }
