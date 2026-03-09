@@ -50,6 +50,20 @@ public class MeadowConnectionManager
             return new LocalConnection();
         }
 
+        // socket:// routes use raw HCOM/COBS over TCP (e.g. Renode emulator)
+        if (route.StartsWith("socket://"))
+        {
+            var socketRoute = route.Substring("socket://".Length);
+            var colonIndex = socketRoute.LastIndexOf(':');
+            if (colonIndex < 0 || !int.TryParse(socketRoute.Substring(colonIndex + 1), out var socketPort))
+            {
+                throw new Exception($"Invalid socket route '{route}'. Expected format: socket://host:port");
+            }
+            var socketHost = socketRoute.Substring(0, colonIndex);
+            _currentConnection = new SocketConnection(socketHost, socketPort);
+            return _currentConnection;
+        }
+
         // try to determine what the route is
         string? uri = null;
         if (route.StartsWith("http"))
