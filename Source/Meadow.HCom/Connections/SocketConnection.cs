@@ -713,11 +713,35 @@ public partial class SocketConnection : ConnectionBase, IDisposable
         string? meadowFileName = null,
         CancellationToken? cancellationToken = null)
     {
-        return await WriteFile(localFileName, meadowFileName,
-            RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
-            RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
-            0,
-            cancellationToken);
+        const int maxRetries = 10;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false) return false;
+
+            try
+            {
+                var result = await WriteFile(localFileName, meadowFileName,
+                    RequestType.HCOM_MDOW_REQUEST_START_FILE_TRANSFER,
+                    RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER,
+                    0,
+                    cancellationToken);
+
+                if (result)
+                {
+                    return true;
+                }
+            }
+            catch (TimeoutException)
+            {
+                // WaitForResult timed out waiting for firmware acknowledgment
+            }
+
+            Debug.WriteLine($"WriteFile attempt {attempt}/{maxRetries} failed for '{Path.GetFileName(localFileName)}', retrying...");
+            await Task.Delay(200);
+        }
+
+        return false;
     }
 
     public override async Task<bool> WriteRuntime(
@@ -827,14 +851,24 @@ public partial class SocketConnection : ConnectionBase, IDisposable
 
         void OnFileWriteAccepted(object? sender, EventArgs a)
         {
+            Debug.WriteLine($"WriteFile: FileWriteAccepted event fired");
             accepted = true;
         }
         void OnFileError(object? sender, Exception exception)
         {
+            Debug.WriteLine($"WriteFile: FileException event fired: {exception.Message}");
             ex = exception;
         }
+        var dataTransferStarted = false;
+
         void OnFileRetry(object? sender, EventArgs e)
         {
+            if (!dataTransferStarted)
+            {
+                Debug.WriteLine($"WriteFile: FileWriteFailed before data transfer — ignoring stale watchdog");
+                return;
+            }
+            Debug.WriteLine($"WriteFile: FileWriteFailed event fired (needsRetry)");
             needsRetry = true;
         }
 
@@ -842,6 +876,7 @@ public partial class SocketConnection : ConnectionBase, IDisposable
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
 
+        Debug.WriteLine($"WriteFile: EnqueueRequest for '{meadowFileName ?? Path.GetFileName(localFileName)}'");
         EnqueueRequest(command);
 
         if (!await WaitForResult(
@@ -852,8 +887,11 @@ public partial class SocketConnection : ConnectionBase, IDisposable
                 },
                 cancellationToken))
         {
+            Debug.WriteLine($"WriteFile: WaitForResult returned false (accepted={accepted}, needsRetry={needsRetry})");
             return false;
         }
+
+        Debug.WriteLine($"WriteFile: WaitForResult returned true (accepted={accepted}, needsRetry={needsRetry})");
 
         byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
         ushort sequenceNumber = 0;
@@ -865,6 +903,8 @@ public partial class SocketConnection : ConnectionBase, IDisposable
 
         base.RaiseFileWriteProgress(fileName, progress, expected);
 
+        dataTransferStarted = true;
+        Debug.WriteLine($"WriteFile: entering data loop, needsRetry={needsRetry}, fileSize={expected}");
         while (true && !needsRetry)
         {
             if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
@@ -896,6 +936,8 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             if (progress >= fileBytes.Length) break;
         }
 
+        Debug.WriteLine($"WriteFile: data loop done, progress={progress}/{expected}, needsRetry={needsRetry}");
+
         if (!needsRetry)
         {
             base.RaiseFileWriteProgress(fileName, expected, expected);
@@ -904,6 +946,11 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
             EncodeAndSendPacket(p, cancellationToken);
+            Debug.WriteLine($"WriteFile: EndFileWrite sent, returning true");
+        }
+        else
+        {
+            Debug.WriteLine($"WriteFile: needsRetry=true, returning false");
         }
 
         FileWriteAccepted -= OnFileWriteAccepted;
