@@ -185,6 +185,12 @@ namespace Meadow.Hcom
                                         await Task.Delay(3000);
 
                                         Open();
+
+                                        // Signal that the preceding command completed — the device
+                                        // restarted as requested. Without this, WaitForConcluded
+                                        // never unblocks because the firmware doesn't send
+                                        // TextConcluded after a reconnect-inducing command.
+                                        _lastRequestConcluded = (RequestType)rrr.RequestType;
                                     }
                                     else if (response is FileReadInitOkResponse fri)
                                     {
