@@ -876,6 +876,11 @@ public partial class SocketConnection : ConnectionBase, IDisposable
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
 
+        // Increase timeout for file operations — emulated targets need more time
+        // for flash writes (virtual-time UART + LittleFS operations are slower).
+        var savedTimeout = CommandTimeoutSeconds;
+        CommandTimeoutSeconds = Math.Max(CommandTimeoutSeconds, 120);
+
         Debug.WriteLine($"WriteFile: EnqueueRequest for '{meadowFileName ?? Path.GetFileName(localFileName)}'");
         EnqueueRequest(command);
 
@@ -934,6 +939,11 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
             if (progress >= fileBytes.Length) break;
+
+            // Yield briefly to allow the receiving end to process data.
+            // Critical for emulated targets where the firmware's virtual-time
+            // UART processing lags behind wall-clock TCP sends.
+            await Task.Delay(1);
         }
 
         Debug.WriteLine($"WriteFile: data loop done, progress={progress}/{expected}, needsRetry={needsRetry}");
@@ -945,8 +955,24 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             var request = RequestBuilder.Build<EndFileWriteRequest>();
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
+
             EncodeAndSendPacket(p, cancellationToken);
-            Debug.WriteLine($"WriteFile: EndFileWrite sent, returning true");
+
+            // After END_FILE_TRANSFER, the firmware closes the file, reads it back
+            // for CRC verification, then sends TEXT_INFORMATION and clears download
+            // state. We must wait for this to complete before starting the next file.
+            // On real hardware this is near-instant, but under emulation the firmware's
+            // virtual-time processing can lag significantly behind wall time.
+            // Wait for a TEXT_INFORMATION response (download result) or timeout.
+            var infoCountBefore = InfoMessages.Count;
+            var endWaitStart = Environment.TickCount;
+            while (InfoMessages.Count <= infoCountBefore)
+            {
+                if (cancellationToken?.IsCancellationRequested ?? false) break;
+                if (Environment.TickCount - endWaitStart > CommandTimeoutSeconds * 1000) break;
+                await Task.Delay(100);
+            }
+            Debug.WriteLine($"WriteFile: EndFileWrite wait done ({Environment.TickCount - endWaitStart}ms, newMsgs={InfoMessages.Count - infoCountBefore})");
         }
         else
         {
@@ -957,6 +983,7 @@ public partial class SocketConnection : ConnectionBase, IDisposable
         FileException -= OnFileError;
         FileWriteFailed -= OnFileRetry;
 
+        CommandTimeoutSeconds = savedTimeout;
         return !needsRetry;
     }
 
