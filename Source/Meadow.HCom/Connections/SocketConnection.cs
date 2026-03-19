@@ -946,9 +946,33 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             request.SetRequestType(endRequestType);
             var p = request.Serialize();
 
-            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: sending END for {fileName} ({fileBytes.Length}B), InfoMessages.Count={InfoMessages.Count}");
+            // Scale timeout to file size: the firmware must process every data packet
+            // sequentially (each triggers a flash write), then do a CRC readback.
+            // Under emulation, each ~512B packet takes ~0.3-0.5s wall time to process
+            // through the LittleFS/QSPI path, so a 300KB file needs ~300s.
+            var savedTimeout = CommandTimeoutSeconds;
+            CommandTimeoutSeconds = Math.Max(CommandTimeoutSeconds, 60 + fileBytes.Length / 1000);
+
+            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: sending END for {fileName} ({fileBytes.Length}B), timeout={CommandTimeoutSeconds}s");
+            _lastRequestConcluded = null;
             EncodeAndSendPacket(p, cancellationToken);
-            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: END sent for {fileName}");
+
+            // Wait for firmware to finish processing the file. After END_FILE_TRANSFER,
+            // the firmware must process all buffered data packets (each written to flash
+            // via LittleFS/QSPI), then close the file, read it back for CRC verification,
+            // and send TEXT_ERROR/TEXT_INFORMATION + TEXT_CONCLUDED. Under emulation, the
+            // data packets queue up in the UART RX FIFO and are processed at virtual-time
+            // speed, so this can take much longer than wall time suggests.
+            var endWaitStart = Environment.TickCount;
+            await WaitForConcluded(null, cancellationToken);
+            CommandTimeoutSeconds = savedTimeout;
+            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: END concluded for {fileName} ({Environment.TickCount - endWaitStart}ms)");
+
+            // Brief pause between files to let the emulated UART drain any
+            // buffered duplicate bytes before the next file transfer starts.
+            // Without this, rapid multi-file sequences get CRC errors under
+            // emulation due to data duplication in the UART bypass path.
+            await Task.Delay(500);
         }
         else
         {
