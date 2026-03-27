@@ -47,22 +47,50 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
         var projectPath = ProjectPath ?? AppTools.ValidateAndSanitizeAppPath(ProjectPath);
 
-        BuildApp(projectPath);
+        string sourceDir;
+        string packageDir;
 
-        var buildPath = GetAppBuildPath(projectPath);
+        if (MeadowVersion.IsV3OrLater(osVersion))
+        {
+            // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
+            Logger?.LogInformation($"Publishing {Configuration} configuration of {projectPath} (Meadow v3)...");
+            var success = _packageManager.PublishApplication(projectPath, Configuration);
+            if (!success)
+            {
+                throw new CommandException("Publish failed", CommandExitCode.GeneralError);
+            }
 
-        await AppTools.TrimApplication(projectPath, _packageManager, osVersion, Configuration, null, Logger, Console, CancellationToken);
-        Logger.LogInformation(string.Format(Strings.TrimmedApplicationForSpecifiedVersion, osVersion));
+            var buildPath = GetAppBuildPath(projectPath);
+            var publishDir = Path.Combine(buildPath, "publish");
+            if (!Directory.Exists(publishDir))
+            {
+                throw new CommandException($"Cannot find publish output at '{publishDir}'", CommandExitCode.GeneralError);
+            }
 
-        // package
-        var packageDir = Path.Combine(buildPath, PackageManager.PackageOutputDirectoryName);
-        var postlinkDir = Path.Combine(buildPath, PackageManager.PostLinkDirectoryName);
+            sourceDir = publishDir;
+            packageDir = Path.Combine(buildPath, PackageManager.PackageOutputDirectoryName);
+        }
+        else
+        {
+            // Meadow 2.x: dotnet build + custom ILLink trimming
+            BuildApp(projectPath);
 
-        //copy non-assembly files to the postlink directory
-        CopyContentFiles(buildPath, postlinkDir);
+            var buildPath = GetAppBuildPath(projectPath);
+
+            await AppTools.TrimApplication(projectPath, _packageManager, osVersion, Configuration, null, Logger, Console, CancellationToken);
+            Logger.LogInformation(string.Format(Strings.TrimmedApplicationForSpecifiedVersion, osVersion));
+
+            var postlinkDir = Path.Combine(buildPath, PackageManager.PostLinkDirectoryName);
+
+            // copy non-assembly files to the postlink directory
+            CopyContentFiles(buildPath, postlinkDir);
+
+            sourceDir = postlinkDir;
+            packageDir = Path.Combine(buildPath, PackageManager.PackageOutputDirectoryName);
+        }
 
         Logger.LogInformation(Strings.AssemblingCloudPackage);
-        var packagePath = await _packageManager.AssemblePackage(postlinkDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
+        var packagePath = await _packageManager.AssemblePackage(sourceDir, packageDir, osVersion, MpakName, Filter, true, CancellationToken);
 
         if (packagePath != null)
         {

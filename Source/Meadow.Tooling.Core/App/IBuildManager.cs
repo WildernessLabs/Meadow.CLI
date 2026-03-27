@@ -25,4 +25,14 @@ public interface IBuildManager
         IEnumerable<string>? noLink = null,
         ILogger? logger = null,
         CancellationToken? cancellationToken = null);
+
+    /// <summary>
+    /// Builds and publishes the application using dotnet publish.
+    /// For Meadow OS 3.x+, the project's built-in trimming is used instead of custom ILLink.
+    /// </summary>
+    bool PublishApplication(
+        string projectFilePath,
+        string configuration = "Release",
+        bool clean = true,
+        CancellationToken? cancellationToken = null);
 }

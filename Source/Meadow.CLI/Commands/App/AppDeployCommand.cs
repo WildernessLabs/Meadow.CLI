@@ -103,7 +103,14 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
 
-        await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        if (MeadowVersion.IsV3OrLater(osVersion))
+        {
+            await AppManagerV3.DeployApplication(connection, file.DirectoryName!, true, false, Logger, cancellationToken);
+        }
+        else
+        {
+            await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        }
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

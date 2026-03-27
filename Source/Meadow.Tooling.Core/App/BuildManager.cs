@@ -223,6 +223,54 @@ public partial class BuildManager : IBuildManager
         return files.ToArray();
     }
 
+    public bool PublishApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
+    {
+        BuildErrorText.Clear();
+
+        if (cancellationToken?.IsCancellationRequested == true)
+        {
+            return false;
+        }
+
+        if (clean && !CleanApplication(projectFilePath, configuration, cancellationToken))
+        {
+            return false;
+        }
+
+        using var proc = new Process();
+        proc.StartInfo.FileName = "dotnet";
+        proc.StartInfo.Arguments = $"publish \"{projectFilePath}\" -c \"{configuration}\"";
+        proc.StartInfo.CreateNoWindow = true;
+        proc.StartInfo.ErrorDialog = false;
+        proc.StartInfo.RedirectStandardError = true;
+        proc.StartInfo.RedirectStandardOutput = true;
+        proc.StartInfo.UseShellExecute = false;
+
+        proc.OutputDataReceived += (sendingProcess, dataLine) =>
+        {
+            if (dataLine.Data != null)
+            {
+                BuildErrorText.Add(dataLine.Data);
+                Debug.WriteLine(dataLine.Data);
+            }
+        };
+
+        proc.Start();
+        proc.BeginErrorReadLine();
+        proc.BeginOutputReadLine();
+
+        proc.WaitForExit();
+        var exitCode = proc.ExitCode;
+        proc.Close();
+
+        if (exitCode == 0)
+        {
+            BuildErrorText.Clear();
+        }
+
+        return exitCode == 0;
+    }
+
     private string GetAssemblyPathForOS(string? osVersion, ILogger? logger = null)
     {
         if (string.IsNullOrWhiteSpace(osVersion))
