@@ -223,7 +223,7 @@ public partial class BuildManager : IBuildManager
         return files.ToArray();
     }
 
-    public bool PublishApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
+    public bool PublishApplication(string projectFilePath, string osVersion, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
     {
         BuildErrorText.Clear();
 
@@ -237,39 +237,76 @@ public partial class BuildManager : IBuildManager
             return false;
         }
 
-        using var proc = new Process();
-        proc.StartInfo.FileName = "dotnet";
-        proc.StartInfo.Arguments = $"publish \"{projectFilePath}\" -c \"{configuration}\"";
-        proc.StartInfo.CreateNoWindow = true;
-        proc.StartInfo.ErrorDialog = false;
-        proc.StartInfo.RedirectStandardError = true;
-        proc.StartInfo.RedirectStandardOutput = true;
-        proc.StartInfo.UseShellExecute = false;
+        var meadowAssembliesPath = GetAssemblyPathForOS(osVersion);
+        var targetsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.targets");
 
-        proc.OutputDataReceived += (sendingProcess, dataLine) =>
+        try
         {
-            if (dataLine.Data != null)
+            File.WriteAllText(targetsFile, MeadowTrimmingTargets);
+
+            using var proc = new Process();
+            proc.StartInfo.FileName = "dotnet";
+            proc.StartInfo.Arguments = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
+                $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
+                $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
+            proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.ErrorDialog = false;
+            proc.StartInfo.RedirectStandardError = true;
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+
+            proc.OutputDataReceived += (sendingProcess, dataLine) =>
             {
-                BuildErrorText.Add(dataLine.Data);
-                Debug.WriteLine(dataLine.Data);
+                if (dataLine.Data != null)
+                {
+                    BuildErrorText.Add(dataLine.Data);
+                    Debug.WriteLine(dataLine.Data);
+                }
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+
+            proc.WaitForExit();
+            var exitCode = proc.ExitCode;
+            proc.Close();
+
+            if (exitCode == 0)
+            {
+                BuildErrorText.Clear();
             }
-        };
 
-        proc.Start();
-        proc.BeginErrorReadLine();
-        proc.BeginOutputReadLine();
-
-        proc.WaitForExit();
-        var exitCode = proc.ExitCode;
-        proc.Close();
-
-        if (exitCode == 0)
-        {
-            BuildErrorText.Clear();
+            return exitCode == 0;
         }
-
-        return exitCode == 0;
+        finally
+        {
+            try { File.Delete(targetsFile); } catch { }
+        }
     }
+
+    // MSBuild targets injected into dotnet publish to swap standard .NET BCL assemblies
+    // with Meadow's custom BCL (System.Private.CoreLib, etc.) for trimming.
+    private const string MeadowTrimmingTargets = @"<Project>
+  <Target Name=""_InjectMeadowAssemblies""
+          BeforeTargets=""_ComputeManagedAssemblyToLink""
+          Condition=""'$(MeadowAssembliesPath)' != ''"">
+    <ItemGroup>
+      <_MeadowAssembly Include=""$(MeadowAssembliesPath)/*.dll"" />
+
+      <!-- Remove standard runtime assemblies that Meadow provides custom versions of -->
+      <ResolvedFileToPublish Remove=""@(ResolvedFileToPublish)""
+          Condition=""Exists('$(MeadowAssembliesPath)/%(Filename)%(Extension)')"" />
+
+      <!-- Add Meadow's custom BCL assemblies -->
+      <ResolvedFileToPublish Include=""@(_MeadowAssembly)"">
+        <PostprocessAssembly>true</PostprocessAssembly>
+        <RelativePath>%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+</Project>";
 
     private string GetAssemblyPathForOS(string? osVersion, ILogger? logger = null)
     {

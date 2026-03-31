@@ -29,9 +29,11 @@ public interface IBuildManager
     /// <summary>
     /// Builds and publishes the application using dotnet publish.
     /// For Meadow OS 3.x+, the project's built-in trimming is used instead of custom ILLink.
+    /// Injects Meadow's custom BCL assemblies into the trimming pipeline.
     /// </summary>
     bool PublishApplication(
         string projectFilePath,
+        string osVersion,
         string configuration = "Release",
         bool clean = true,
         CancellationToken? cancellationToken = null);

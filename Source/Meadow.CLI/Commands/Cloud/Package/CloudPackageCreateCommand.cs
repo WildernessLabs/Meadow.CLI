@@ -54,7 +54,7 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
         {
             // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
             Logger?.LogInformation($"Publishing {Configuration} configuration of {projectPath} (Meadow v3)...");
-            var success = _packageManager.PublishApplication(projectPath, Configuration);
+            var success = _packageManager.PublishApplication(projectPath, osVersion, Configuration);
             if (!success)
             {
                 throw new CommandException("Publish failed", CommandExitCode.GeneralError);

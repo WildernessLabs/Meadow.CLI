@@ -68,7 +68,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
         {
             // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
-            if (!_buildManager.PublishApplication(path, Configuration))
+            if (!_buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration))
             {
                 foreach (var line in _buildManager.BuildErrorText)
                 {
