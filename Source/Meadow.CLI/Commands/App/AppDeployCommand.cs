@@ -41,7 +41,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
-        if (!await DeployApplication(connection, deviceInfo.OsVersion, file.FullName, CancellationToken))
+        if (!await DeployApplication(connection, deviceInfo.OsVersion, path, file, CancellationToken))
         {
             throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
@@ -87,29 +87,46 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         return file;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string projectPath, FileInfo appFile, CancellationToken cancellationToken)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName);
-
-        if (candidates.Length == 0)
-        {
-            Logger?.LogError($"Cannot find a compiled application at '{path}'");
-            return false;
-        }
-
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
-
-        Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
-
         if (MeadowVersion.IsV3OrLater(osVersion))
         {
-            await AppManagerV3.DeployApplication(connection, file.DirectoryName!, true, false, Logger, cancellationToken);
+            var publishDir = System.IO.Path.Combine(appFile.DirectoryName!, "publish");
+
+            if (!Directory.Exists(publishDir))
+            {
+                Logger?.LogInformation("No trimmed publish output found, publishing with trimming enabled...");
+
+                // Find the .csproj to avoid dotnet picking up a .sln
+                var csproj = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
+                var publishPath = csproj ?? projectPath;
+
+                if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false))
+                {
+                    foreach (var line in _buildManager.BuildErrorText)
+                    {
+                        Logger?.LogInformation(line);
+                    }
+                    Logger?.LogError("Publish failed");
+                    return false;
+                }
+            }
+
+            if (!Directory.Exists(publishDir))
+            {
+                Logger?.LogError($"Cannot find publish output at '{publishDir}'");
+                return false;
+            }
+
+            Logger?.LogInformation($"Deploying app from {publishDir}...");
+            await AppManagerV3.DeployApplication(connection, publishDir, true, false, Logger, cancellationToken);
         }
         else
         {
-            await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+            Logger?.LogInformation($"Deploying app from {appFile.DirectoryName}...");
+            await AppManager.DeployApplication(_buildManager, connection, osVersion, appFile.DirectoryName!, true, false, Logger, cancellationToken);
         }
 
         connection.FileWriteProgress -= OnFileWriteProgress;

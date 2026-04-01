@@ -247,6 +247,9 @@ public partial class BuildManager : IBuildManager
             using var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
             proc.StartInfo.Arguments = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
+                $" -p:PublishTrimmed=true" +
+                $" -p:TargetFrameworkIdentifier=.NETCoreApp" +
+                $" -p:TargetFrameworkVersion=v10.0" +
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
                 $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
             proc.StartInfo.CreateNoWindow = true;
@@ -285,8 +288,9 @@ public partial class BuildManager : IBuildManager
         }
     }
 
-    // MSBuild targets injected into dotnet publish to swap standard .NET BCL assemblies
-    // with Meadow's custom BCL (System.Private.CoreLib, etc.) for trimming.
+    // MSBuild targets injected into dotnet publish to configure trimming for Meadow:
+    // - Swaps standard .NET BCL assemblies with Meadow's custom BCL
+    // - Treats App.dll as a library root (no entry point required)
     private const string MeadowTrimmingTargets = @"<Project>
   <Target Name=""_InjectMeadowAssemblies""
           BeforeTargets=""_ComputeManagedAssemblyToLink""
@@ -304,6 +308,17 @@ public partial class BuildManager : IBuildManager
         <RelativePath>%(Filename)%(Extension)</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <!-- Meadow apps are libraries loaded by the Meadow runtime (Meadow.dll has the entry point).
+       Override the default root so the trimmer doesn't expect App.dll to have Main(). -->
+  <Target Name=""_SetMeadowTrimmerRoots""
+          AfterTargets=""PrepareForILLink"">
+    <ItemGroup>
+      <TrimmerRootAssembly Remove=""@(TrimmerRootAssembly)"" />
+      <TrimmerRootAssembly Include=""Meadow"" RootMode=""EntryPoint"" />
+      <TrimmerRootAssembly Include=""App"" />
     </ItemGroup>
   </Target>
 </Project>";
