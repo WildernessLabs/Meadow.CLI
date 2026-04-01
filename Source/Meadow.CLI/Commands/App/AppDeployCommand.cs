@@ -93,7 +93,10 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
         if (MeadowVersion.IsV3OrLater(osVersion))
         {
-            var publishDir = System.IO.Path.Combine(appFile.DirectoryName!, "publish");
+            var appDir = appFile.DirectoryName!;
+            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
+                ? appDir
+                : System.IO.Path.Combine(appDir, "publish");
 
             if (!Directory.Exists(publishDir))
             {
