@@ -223,7 +223,7 @@ public partial class BuildManager : IBuildManager
         return files.ToArray();
     }
 
-    public bool PublishApplication(string projectFilePath, string osVersion, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
+    public bool PublishApplication(string projectFilePath, string osVersion, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null, string? publishDir = null)
     {
         BuildErrorText.Clear();
 
@@ -240,18 +240,39 @@ public partial class BuildManager : IBuildManager
         var meadowAssembliesPath = GetAssemblyPathForOS(osVersion);
         var targetsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.targets");
 
+        // Only override TFM for legacy projects (e.g. netstandard2.1) that can't natively
+        // use PublishTrimmed. Modern net10.0+ projects don't need this and it breaks
+        // Microsoft.NET.Build.Containers.targets in referenced projects.
+        var needsTfmOverride = NeedsTfmOverrideForTrimming(projectFilePath);
+
         try
         {
             File.WriteAllText(targetsFile, MeadowTrimmingTargets);
 
             using var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
-            proc.StartInfo.Arguments = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
-                $" -p:PublishTrimmed=true" +
-                $" -p:TargetFrameworkIdentifier=.NETCoreApp" +
-                $" -p:TargetFrameworkVersion=v10.0" +
+            // PublishTrimmed is set in the targets file (not here) so it doesn't
+            // cascade to netstandard2.1 referenced projects and trigger NETSDK1124.
+            // Self-contained + linux-arm RID is required for trimming to include BCL assemblies.
+            // PublishDir ensures output goes where the CLI expects (not under a RID subfolder).
+            var args = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
+                $" --self-contained -r linux-arm" +
+                $" -p:AppendRuntimeIdentifierToOutputPath=false" +
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
                 $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
+
+            if (publishDir != null)
+            {
+                args += $" -p:PublishDir=\"{publishDir}\"";
+            }
+
+            if (needsTfmOverride)
+            {
+                args += $" -p:TargetFrameworkIdentifier=.NETCoreApp" +
+                        $" -p:TargetFrameworkVersion=v10.0";
+            }
+
+            proc.StartInfo.Arguments = args;
             proc.StartInfo.CreateNoWindow = true;
             proc.StartInfo.ErrorDialog = false;
             proc.StartInfo.RedirectStandardError = true;
@@ -292,6 +313,15 @@ public partial class BuildManager : IBuildManager
     // - Swaps standard .NET BCL assemblies with Meadow's custom BCL
     // - Treats App.dll as a library root (no entry point required)
     private const string MeadowTrimmingTargets = @"<Project>
+  <!-- Enable trimming only for .NETCoreApp projects so netstandard2.1 referenced
+       projects don't fail with NETSDK1124. Set as a property (not via -p: on the
+       command line) to avoid cascading to all projects in the build graph. -->
+  <PropertyGroup Condition=""'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"">
+    <PublishTrimmed>true</PublishTrimmed>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+
   <Target Name=""_InjectMeadowAssemblies""
           BeforeTargets=""_ComputeManagedAssemblyToLink""
           Condition=""'$(MeadowAssembliesPath)' != ''"">
@@ -322,6 +352,29 @@ public partial class BuildManager : IBuildManager
     </ItemGroup>
   </Target>
 </Project>";
+
+    private static bool NeedsTfmOverrideForTrimming(string projectFilePath)
+    {
+        // Read the project file to check the TargetFramework.
+        // Projects targeting netstandard or netcoreapp3.x and below need the TFM override
+        // to enable PublishTrimmed. Modern net5.0+ projects support it natively.
+        var projectFile = File.Exists(projectFilePath)
+            ? projectFilePath
+            : Directory.GetFiles(projectFilePath, "*.csproj").FirstOrDefault();
+
+        if (projectFile != null)
+        {
+            var content = File.ReadAllText(projectFile);
+            // Look for <TargetFramework>netstandard... or <TargetFramework>netcoreapp...
+            if (content.Contains("netstandard", StringComparison.OrdinalIgnoreCase) ||
+                content.Contains("netcoreapp", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private string GetAssemblyPathForOS(string? osVersion, ILogger? logger = null)
     {

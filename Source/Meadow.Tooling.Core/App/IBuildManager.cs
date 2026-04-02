@@ -36,5 +36,6 @@ public interface IBuildManager
         string osVersion,
         string configuration = "Release",
         bool clean = true,
-        CancellationToken? cancellationToken = null);
+        CancellationToken? cancellationToken = null,
+        string? publishDir = null);
 }

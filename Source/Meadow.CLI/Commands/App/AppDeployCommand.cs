@@ -106,7 +106,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 var csproj = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
                 var publishPath = csproj ?? projectPath;
 
-                if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false))
+                if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
                 {
                     foreach (var line in _buildManager.BuildErrorText)
                     {

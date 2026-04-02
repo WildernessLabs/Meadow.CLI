@@ -29,8 +29,11 @@ public static class AppManagerV3
 
         logger?.LogInformation("Generating list of files to deploy (Meadow v3)...");
 
+        var runtimesDir = Path.Combine(localBinaryDirectory, "runtimes") + Path.DirectorySeparatorChar;
         var files = Directory.EnumerateFiles(localBinaryDirectory, "*.*", SearchOption.AllDirectories)
+            .Where(f => !f.StartsWith(runtimesDir, StringComparison.OrdinalIgnoreCase))
             .Where(f => !f.Contains(".DS_Store"))
+            .Where(f => IsDeployableFile(f))
             .Where(f => !IsPdb(f) || includePdbs)
             .Where(f => !IsXmlDoc(f) || includeXmlDocs);
 
@@ -164,6 +167,19 @@ public static class AppManagerV3
         }
 
         return $"/{AppManager.MeadowRootFolder}/" + relativePath + fileName;
+    }
+
+    // Only deploy managed assemblies and config files. Self-contained publish includes
+    // native runtime files (libcoreclr.so, apphost, etc.) that Meadow doesn't need.
+    private static readonly HashSet<string> DeployableExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".dll", ".pdb", ".json", ".xml", ".yaml", ".yml", ".config",
+    };
+
+    private static bool IsDeployableFile(string file)
+    {
+        var ext = Path.GetExtension(file);
+        return !string.IsNullOrEmpty(ext) && DeployableExtensions.Contains(ext);
     }
 
     private static bool IsPdb(string file)
