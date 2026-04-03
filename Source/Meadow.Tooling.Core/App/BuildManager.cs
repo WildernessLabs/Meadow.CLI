@@ -322,8 +322,12 @@ public partial class BuildManager : IBuildManager
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
   </PropertyGroup>
 
+  <!-- Run after all runtime pack assemblies are resolved but before the trimmer.
+       ComputeFilesToPublish populates ResolvedFileToPublish with self-contained
+       runtime assemblies; we need to swap those with Meadow's custom BCL. -->
   <Target Name=""_InjectMeadowAssemblies""
-          BeforeTargets=""_ComputeManagedAssemblyToLink""
+          AfterTargets=""ComputeFilesToPublish""
+          BeforeTargets=""_RunILLink""
           Condition=""'$(MeadowAssembliesPath)' != ''"">
     <ItemGroup>
       <_MeadowAssembly Include=""$(MeadowAssembliesPath)/*.dll"" />
@@ -349,6 +353,17 @@ public partial class BuildManager : IBuildManager
       <TrimmerRootAssembly Remove=""@(TrimmerRootAssembly)"" />
       <TrimmerRootAssembly Include=""Meadow"" RootMode=""EntryPoint"" />
       <TrimmerRootAssembly Include=""App"" />
+    </ItemGroup>
+  </Target>
+
+  <!-- After trimming, the trimmed assemblies are added to ResolvedFileToPublish from linked/.
+       Remove the original untrimmed Meadow assemblies to avoid NETSDK1152 duplicate conflicts. -->
+  <Target Name=""_CleanupMeadowAssembliesAfterTrimming""
+          AfterTargets=""_RunILLink""
+          Condition=""'$(MeadowAssembliesPath)' != ''"">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove=""@(ResolvedFileToPublish)""
+          Condition=""$([System.String]::new('%(Identity)').StartsWith('$(MeadowAssembliesPath)'))"" />
     </ItemGroup>
   </Target>
 </Project>";
