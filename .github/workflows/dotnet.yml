@@ -14,26 +14,26 @@ jobs:
       
     steps:
       - name: Checkout Meadow.CLI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: main
 
       - name: Checkout Meadow.Contracts side-by-side
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: WildernessLabs/Meadow.Contracts
           path: Meadow.Contracts
           ref: main
 
       - name: Checkout Meadow.Logging side-by-side
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: WildernessLabs/Meadow.Logging
           path: Meadow.Logging
           ref: main
 
       - name: Checkout Meadow.Units side-by-side
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: WildernessLabs/Meadow.Units
           path: Meadow.Units
