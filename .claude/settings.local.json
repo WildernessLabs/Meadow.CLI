@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(meadow firmware update:*)",
+      "Bash(meadow firmware download:*)",
+      "Bash(meadow firmware write:*)",
+      "Bash(dotnet build:*)",
+      "Bash(\"E:/WL/Meadow.CLI/Source/Meadow.CLI/bin/Debug/meadow.exe\" firmware write)",
+      "Bash(git config:*)",
+      "Bash(\"E:/WL/Meadow.CLI/Source/Meadow.CLI/bin/Debug/meadow.exe\" firmware write:*)",
+      "Bash(\"E:/WL/Meadow.CLI/Source/Meadow.CLI/bin/Debug/meadow.exe\" firmware write ESP)",
+      "Bash(xargs grep:*)",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet:*)",
+      "Bash(powershell -Command \"\nNew-Item -ItemType Directory -Force -Path 'C:\\\\Temp' | Out-Null\n\\\\$lines = 0..99999 | ForEach-Object { 'LINE_{0:D6}_{1}' -f \\\\$_, \\([System.Guid]::NewGuid\\(\\).ToString\\('N'\\).Substring\\(0,32\\)\\) }\n[System.IO.File]::WriteAllLines\\('C:\\\\Temp\\\\test_large.txt', \\\\$lines, [System.Text.Encoding]::UTF8\\)\n\\(Get-Item 'C:\\\\Temp\\\\test_large.txt'\\).Length\n\" 2>&1)"
+    ]
+  }
+}

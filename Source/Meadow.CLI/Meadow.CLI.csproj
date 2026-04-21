@@ -23,7 +23,7 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <AssemblyName>meadow</AssemblyName>
     <LangVersion>11.0</LangVersion>
-    <Copyright>Copyright 2020-2025 Wilderness Labs</Copyright>
+    <Copyright>Copyright 2020-2026 Wilderness Labs</Copyright>
     <Nullable>enable</Nullable>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

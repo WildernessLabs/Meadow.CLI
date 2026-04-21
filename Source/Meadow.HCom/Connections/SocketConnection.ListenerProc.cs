@@ -47,8 +47,7 @@ namespace Meadow.Hcom
         {
             var readBuffer = new byte[ReadBufferSizeBytes];
             var decodedBuffer = new byte[8192];
-            var messageBytes = new CircularBuffer<byte>(8192 * 2);
-            var delimiter = new byte[] { 0x00 };
+            var messageBytes = new List<byte>();
             var receivedLength = 0;
 
             while (!_isDisposed)
@@ -85,11 +84,11 @@ namespace Meadow.Hcom
 
                         if (receivedLength > 0)
                         {
-                            messageBytes.Append(readBuffer, 0, receivedLength);
+                            for (var i = 0; i < receivedLength; i++) messageBytes.Add(readBuffer[i]);
 
                             while (messageBytes.Count > 0)
                             {
-                                var index = messageBytes.FirstIndexOf(delimiter);
+                                var index = messageBytes.IndexOf((byte)0x00);
 
                                 if (index < 0)
                                 {
@@ -99,7 +98,10 @@ namespace Meadow.Hcom
                                     }
                                     break;
                                 }
-                                var packetBytes = messageBytes.Remove(index + 1);
+                                var packetCount = index + 1;
+                                var packetBytes = new byte[packetCount];
+                                messageBytes.CopyTo(0, packetBytes, 0, packetCount);
+                                messageBytes.RemoveRange(0, packetCount);
 
                                 if (packetBytes.Length == 1)
                                 {
@@ -109,7 +111,7 @@ namespace Meadow.Hcom
                                 {
                                     Debug.WriteLine($"Received a {packetBytes.Length} byte packet");
 
-                                    var decodedSize = CobsTools.CobsDecoding(packetBytes, packetBytes.Length - delimiter.Length, ref decodedBuffer);
+                                    var decodedSize = CobsTools.CobsDecoding(packetBytes, packetBytes.Length - 1, ref decodedBuffer);
 
                                     var response = SerialResponse.Parse(decodedBuffer, decodedSize);
 
@@ -201,6 +203,7 @@ namespace Meadow.Hcom
                                         }
 
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
+                                        _readFileInfo.ExpectedCrc = fri.UserData;
 
                                         var uploadRequest = RequestBuilder.Build<StartFileDataRequest>();
                                         EncodeAndSendPacket(uploadRequest.Serialize());
@@ -213,6 +216,7 @@ namespace Meadow.Hcom
                                         }
 
                                         _readFileInfo.FileStream.Write(udp.FileData, 0, udp.FileData.Length);
+                                        _readFileInfo.ActualCrc = NuttxCrc.Crc32part(udp.FileData, (uint)udp.FileData.Length, _readFileInfo.ActualCrc);
 
                                         RaiseFileBytesReceived(udp.FileData.Length);
                                     }
@@ -224,10 +228,20 @@ namespace Meadow.Hcom
                                         }
 
                                         var fn = _readFileInfo.LocalFileName;
+                                        var expectedCrc = _readFileInfo.ExpectedCrc;
+                                        var actualCrc = _readFileInfo.ActualCrc;
 
                                         _readFileInfo.FileStream.Flush();
                                         _readFileInfo.FileStream.Dispose();
                                         _readFileInfo = null;
+
+                                        if (expectedCrc != 0 && actualCrc != expectedCrc)
+                                        {
+                                            File.Delete(fn);
+                                            var crcError = new Exception($"File CRC mismatch: expected 0x{expectedCrc:X8}, received 0x{actualCrc:X8}");
+                                            _logger?.LogError(crcError.Message);
+                                            RaiseConnectionError(crcError);
+                                        }
 
                                         RaiseFileReadCompleted(fn ?? string.Empty);
                                     }

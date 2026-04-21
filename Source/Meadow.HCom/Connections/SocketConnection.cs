@@ -193,6 +193,8 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             set => _localFileName = value;
         }
         public FileStream FileStream { get; set; } = default!;
+        public uint ExpectedCrc { get; set; }
+        public uint ActualCrc { get; set; }
     }
 
     public void EnqueueRequest(IRequest command)
