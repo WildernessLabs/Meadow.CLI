@@ -261,10 +261,34 @@ public partial class BuildManager : IBuildManager
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
                 $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
 
-            if (publishDir != null)
+            // Always set PublishDir explicitly. Without it, --self-contained -r linux-arm
+            // creates a {RID}/ subdirectory that doesn't match where the CLI looks for output.
+            if (publishDir == null)
             {
-                args += $" -p:PublishDir=\"{publishDir}\"";
+                var projDir = File.Exists(projectFilePath)
+                    ? Path.GetDirectoryName(Path.GetFullPath(projectFilePath))!
+                    : Path.GetFullPath(projectFilePath);
+
+                // Determine TFM directory name from existing build output or from the csproj
+                var binDir = Path.Combine(projDir, "bin", configuration);
+                var tfmDir = Directory.Exists(binDir)
+                    ? Directory.GetDirectories(binDir)
+                        .Select(Path.GetFileName)
+                        .FirstOrDefault(d => d!.StartsWith("net", StringComparison.OrdinalIgnoreCase))
+                    : null;
+
+                // Fallback: read TargetFramework from the csproj (needed on clean builds)
+                if (tfmDir == null)
+                {
+                    tfmDir = GetTargetFrameworkFromProject(projectFilePath);
+                }
+
+                publishDir = tfmDir != null
+                    ? Path.Combine(binDir, tfmDir, "publish") + Path.DirectorySeparatorChar
+                    : Path.Combine(binDir, "publish") + Path.DirectorySeparatorChar;
             }
+
+            args += $" -p:PublishDir=\"{publishDir}\"";
 
             if (needsTfmOverride)
             {
@@ -280,6 +304,14 @@ public partial class BuildManager : IBuildManager
             proc.StartInfo.UseShellExecute = false;
 
             proc.OutputDataReceived += (sendingProcess, dataLine) =>
+            {
+                if (dataLine.Data != null)
+                {
+                    BuildErrorText.Add(dataLine.Data);
+                    Debug.WriteLine(dataLine.Data);
+                }
+            };
+            proc.ErrorDataReceived += (sendingProcess, dataLine) =>
             {
                 if (dataLine.Data != null)
                 {
@@ -310,7 +342,8 @@ public partial class BuildManager : IBuildManager
     }
 
     // MSBuild targets injected into dotnet publish to configure trimming for Meadow:
-    // - Swaps standard .NET BCL assemblies with Meadow's custom BCL
+    // - Swaps standard .NET BCL assemblies with Meadow's custom BCL in both
+    //   ResolvedFileToPublish (publish output) and ManagedAssemblyToLink (trimmer input)
     // - Treats App.dll as a library root (no entry point required)
     private const string MeadowTrimmingTargets = @"<Project>
   <!-- Enable trimming only for .NETCoreApp projects so netstandard2.1 referenced
@@ -345,14 +378,42 @@ public partial class BuildManager : IBuildManager
     </ItemGroup>
   </Target>
 
-  <!-- Meadow apps are libraries loaded by the Meadow runtime (Meadow.dll has the entry point).
-       Override the default root so the trimmer doesn't expect App.dll to have Main(). -->
-  <Target Name=""_SetMeadowTrimmerRoots""
-          AfterTargets=""PrepareForILLink"">
+  <!-- After PrepareForILLink populates ManagedAssemblyToLink from the runtime pack,
+       swap in Meadow's custom BCL so the trimmer processes the correct assemblies.
+       Without this, the trimmer operates on standard .NET CoreLib (which lacks Mono-internal
+       types like MonoStackFrame) and its output overwrites our ResolvedFileToPublish injection. -->
+  <Target Name=""_InjectMeadowIntoTrimmer""
+          AfterTargets=""PrepareForILLink""
+          BeforeTargets=""_RunILLink""
+          Condition=""'$(MeadowAssembliesPath)' != ''"">
     <ItemGroup>
+      <!-- Remove standard BCL assemblies that have Meadow equivalents -->
+      <ManagedAssemblyToLink Remove=""@(ManagedAssemblyToLink)""
+          Condition=""Exists('$(MeadowAssembliesPath)/%(Filename)%(Extension)')"" />
+
+      <!-- Add Meadow's BCL assemblies as trimmer input -->
+      <_MeadowTrimmerAssembly Include=""$(MeadowAssembliesPath)/*.dll"" />
+      <ManagedAssemblyToLink Include=""@(_MeadowTrimmerAssembly)"">
+        <IsTrimmable>true</IsTrimmable>
+      </ManagedAssemblyToLink>
+
+      <!-- Configure trimmer roots: Meadow.dll is the entry point (not App.dll),
+           App is a library root, and Meadow.F7 must be rooted because the runtime
+           creates device instances via Activator.CreateInstance (reflection). -->
       <TrimmerRootAssembly Remove=""@(TrimmerRootAssembly)"" />
       <TrimmerRootAssembly Include=""Meadow"" RootMode=""EntryPoint"" />
       <TrimmerRootAssembly Include=""App"" />
+      <TrimmerRootAssembly Include=""Meadow.F7"" />
+
+      <!-- If a Mono ILLink descriptor is provided alongside the BCL, use it to
+           selectively preserve only the CoreLib types that the native Mono runtime
+           loads by name (domain.c, mini-exceptions.c, etc.). This allows the trimmer
+           to strip unused CoreLib code and dramatically reduce its size.
+           Fallback: if no descriptor exists, root the entire assembly (safe but large). -->
+      <TrimmerRootDescriptors Include=""$(MeadowAssembliesPath)/ILLink.Descriptors.xml""
+          Condition=""Exists('$(MeadowAssembliesPath)/ILLink.Descriptors.xml')"" />
+      <TrimmerRootAssembly Include=""System.Private.CoreLib""
+          Condition=""!Exists('$(MeadowAssembliesPath)/ILLink.Descriptors.xml')"" />
     </ItemGroup>
   </Target>
 
@@ -390,6 +451,27 @@ public partial class BuildManager : IBuildManager
         }
 
         return false;
+    }
+
+    private static string? GetTargetFrameworkFromProject(string projectFilePath)
+    {
+        var projectFile = File.Exists(projectFilePath)
+            ? projectFilePath
+            : Directory.GetFiles(projectFilePath, "*.csproj").FirstOrDefault();
+
+        if (projectFile == null) return null;
+
+        var content = File.ReadAllText(projectFile);
+        // Extract <TargetFramework>...</TargetFramework> value
+        const string startTag = "<TargetFramework>";
+        const string endTag = "</TargetFramework>";
+        var start = content.IndexOf(startTag, StringComparison.OrdinalIgnoreCase);
+        if (start < 0) return null;
+        start += startTag.Length;
+        var end = content.IndexOf(endTag, start, StringComparison.OrdinalIgnoreCase);
+        if (end < 0) return null;
+        var tfm = content.Substring(start, end - start).Trim();
+        return string.IsNullOrEmpty(tfm) ? null : tfm;
     }
 
     private string GetAssemblyPathForOS(string? osVersion, ILogger? logger = null)

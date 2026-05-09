@@ -70,9 +70,10 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
             if (!_buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration))
             {
+                Logger?.LogError("Publish failed. Build output:");
                 foreach (var line in _buildManager.BuildErrorText)
                 {
-                    Logger?.LogInformation(line);
+                    Logger?.LogError(line);
                 }
                 throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
             }

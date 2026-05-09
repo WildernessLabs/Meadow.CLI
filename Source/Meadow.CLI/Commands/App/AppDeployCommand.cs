@@ -98,28 +98,27 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
                 ? appDir
                 : System.IO.Path.Combine(appDir, "publish");
 
-            if (!Directory.Exists(publishDir))
+            // Always publish for V3 — the publish step injects Meadow's custom BCL
+            // and configures trimming. Skipping it (e.g. after a manual dotnet publish)
+            // would deploy without BCL assemblies, causing silent boot failures.
+            Logger?.LogInformation("Publishing with Meadow BCL injection and trimming...");
+
+            var csproj = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
+            var publishPath = csproj ?? projectPath;
+
+            if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
             {
-                Logger?.LogInformation("No trimmed publish output found, publishing with trimming enabled...");
-
-                // Find the .csproj to avoid dotnet picking up a .sln
-                var csproj = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
-                var publishPath = csproj ?? projectPath;
-
-                if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
+                Logger?.LogError("Publish failed. Build output:");
+                foreach (var line in _buildManager.BuildErrorText)
                 {
-                    foreach (var line in _buildManager.BuildErrorText)
-                    {
-                        Logger?.LogInformation(line);
-                    }
-                    Logger?.LogError("Publish failed");
-                    return false;
+                    Logger?.LogError(line);
                 }
+                return false;
             }
 
             if (!Directory.Exists(publishDir))
             {
-                Logger?.LogError($"Cannot find publish output at '{publishDir}'");
+                Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
                 return false;
             }
 
