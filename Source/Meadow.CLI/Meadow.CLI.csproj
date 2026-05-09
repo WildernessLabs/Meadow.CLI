@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CliFx" Version="*" />
+    <PackageReference Include="CliFx" Version="2.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />

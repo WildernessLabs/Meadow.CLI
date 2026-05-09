@@ -381,8 +381,9 @@ public partial class BuildManager : IBuildManager
         {
             var content = File.ReadAllText(projectFile);
             // Look for <TargetFramework>netstandard... or <TargetFramework>netcoreapp...
-            if (content.Contains("netstandard", StringComparison.OrdinalIgnoreCase) ||
-                content.Contains("netcoreapp", StringComparison.OrdinalIgnoreCase))
+            // IndexOf used instead of Contains(string, StringComparison) for netstandard2.0 compatibility
+            if (content.IndexOf("netstandard", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                content.IndexOf("netcoreapp", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return true;
             }
