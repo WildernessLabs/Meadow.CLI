@@ -145,8 +145,13 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
         {
-            // For 3.x, dotnet publish outputs to a publish/ subfolder with trimmed assemblies
-            var publishDir = System.IO.Path.Combine(file.DirectoryName!, "publish");
+            // For 3.x, dotnet publish outputs to a publish/ subfolder. GetAvailableBuiltConfigurations
+            // returns the directory containing the newest App.dll — when a fresh publish exists, that's
+            // already the publish/ folder, so don't append another segment.
+            var appDir = file.DirectoryName!;
+            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
+                ? appDir
+                : System.IO.Path.Combine(appDir, "publish");
             if (!Directory.Exists(publishDir))
             {
                 Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");

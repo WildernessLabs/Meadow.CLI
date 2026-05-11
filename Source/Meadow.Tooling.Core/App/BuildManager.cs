@@ -292,8 +292,12 @@ public partial class BuildManager : IBuildManager
 
             if (needsTfmOverride)
             {
+                // Detect the latest installed .NETCoreApp SDK and target that — .NET is backwards-compatible
+                // so the highest available version is the safest choice for legacy projects whose own TFM
+                // (netstandard2.1, netcoreappX) can't natively use PublishTrimmed.
+                var tfmVersion = GetLatestNetCoreAppVersion();
                 args += $" -p:TargetFrameworkIdentifier=.NETCoreApp" +
-                        $" -p:TargetFrameworkVersion=v10.0";
+                        $" -p:TargetFrameworkVersion={tfmVersion}";
             }
 
             proc.StartInfo.Arguments = args;
@@ -451,6 +455,40 @@ public partial class BuildManager : IBuildManager
         }
 
         return false;
+    }
+
+    private static string GetLatestNetCoreAppVersion()
+    {
+        // Returns the highest installed .NET SDK major version as "vN.0" (e.g. "v10.0").
+        // Used as the TFM override for legacy projects that can't natively publish-trim.
+        // Falls back to v10.0 if `dotnet --list-sdks` can't be parsed.
+        try
+        {
+            using var proc = new Process();
+            proc.StartInfo.FileName = "dotnet";
+            proc.StartInfo.Arguments = "--list-sdks";
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.CreateNoWindow = true;
+            proc.Start();
+            var output = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit();
+
+            // Each line looks like "10.0.201 [/usr/local/share/dotnet/sdk]"
+            var maxMajor = output
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim().Split(' ').FirstOrDefault())
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Select(v => int.TryParse(v!.Split('.').FirstOrDefault(), out var major) ? major : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            return maxMajor > 0 ? $"v{maxMajor}.0" : "v10.0";
+        }
+        catch
+        {
+            return "v10.0";
+        }
     }
 
     private static string? GetTargetFrameworkFromProject(string projectFilePath)

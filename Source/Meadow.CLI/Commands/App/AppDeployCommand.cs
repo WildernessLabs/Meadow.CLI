@@ -103,8 +103,14 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             // would deploy without BCL assemblies, causing silent boot failures.
             Logger?.LogInformation("Publishing with Meadow BCL injection and trimming...");
 
-            var csproj = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
-            var publishPath = csproj ?? projectPath;
+            // projectPath may be a directory, a path to App.dll, or a path to a csproj.
+            // Walk up from the chosen App.dll until a csproj is found so we can publish that project.
+            var publishPath = FindProjectFile(projectPath, appFile);
+            if (publishPath == null)
+            {
+                Logger?.LogError($"Cannot locate a .csproj file from '{projectPath}'. Specify the path to your project directory or .csproj.");
+                return false;
+            }
 
             if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
             {
@@ -136,6 +142,26 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         Logger?.LogInformation($"{Strings.AppDeployedSuccessfully}");
 
         return true;
+    }
+
+    private static string? FindProjectFile(string projectPath, FileInfo appFile)
+    {
+        // If the caller passed a csproj directly, use it.
+        if (File.Exists(projectPath) && projectPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+        {
+            return projectPath;
+        }
+
+        // Otherwise search the project path (if a directory) and walk up from the App.dll until a csproj is found.
+        var startDir = Directory.Exists(projectPath) ? projectPath : appFile.DirectoryName;
+        var dir = startDir;
+        while (dir != null)
+        {
+            var csproj = Directory.GetFiles(dir, "*.csproj").FirstOrDefault();
+            if (csproj != null) return csproj;
+            dir = System.IO.Path.GetDirectoryName(dir);
+        }
+        return null;
     }
 
     private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)

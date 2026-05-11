@@ -61,14 +61,22 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
             }
 
             var buildPath = GetAppBuildPath(projectPath);
-            var publishDir = Path.Combine(buildPath, "publish");
+            // After publish, GetAppBuildPath returns the directory containing the newest App.dll,
+            // which is the publish/ folder itself — don't append another segment.
+            var publishDir = Path.GetFileName(buildPath) == "publish"
+                ? buildPath
+                : Path.Combine(buildPath, "publish");
+            // Place the .mpak alongside the project's bin/, not inside publish/, so a clean wipes it.
+            var packageBaseDir = Path.GetFileName(buildPath) == "publish"
+                ? Path.GetDirectoryName(buildPath)!
+                : buildPath;
             if (!Directory.Exists(publishDir))
             {
                 throw new CommandException($"Cannot find publish output at '{publishDir}'", CommandExitCode.GeneralError);
             }
 
             sourceDir = publishDir;
-            packageDir = Path.Combine(buildPath, PackageManager.PackageOutputDirectoryName);
+            packageDir = Path.Combine(packageBaseDir, PackageManager.PackageOutputDirectoryName);
         }
         else
         {
