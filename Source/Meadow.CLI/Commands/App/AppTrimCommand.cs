@@ -62,6 +62,13 @@ public class AppTrimCommand : BaseDeviceCommand<AppTrimCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
+        if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
+        {
+            Logger.LogInformation("Meadow OS 3.x+ uses the project's built-in .NET trimming via 'dotnet publish'. Custom trimming is not needed.");
+            Logger.LogInformation("Use 'app run' or 'dotnet publish' to build a trimmed application.");
+            return;
+        }
+
         var package = collection.GetClosestLocalPackage(deviceInfo.OsVersion);
 
         Logger.LogInformation($"Preparing to trim using v{package?.Version ?? " unknown"} assemblies...");

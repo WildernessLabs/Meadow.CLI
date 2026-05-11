@@ -65,18 +65,35 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
 
         Logger?.LogInformation($"Building {Configuration} configuration of {path} for Meadow v{deviceInfo.OsVersion}...");
 
-        if (!_buildManager.BuildApplication(path, Configuration))
+        if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
         {
-            foreach (var line in _buildManager.BuildErrorText)
+            // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
+            if (!_buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration))
             {
-                Logger?.LogInformation(line);
+                Logger?.LogError("Publish failed. Build output:");
+                foreach (var line in _buildManager.BuildErrorText)
+                {
+                    Logger?.LogError(line);
+                }
+                throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
             }
-            throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
         }
-
-        if (!await AppTools.TrimApplication(path, _buildManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken))
+        else
         {
-            throw new CommandException(Strings.AppTrimFailed, CommandExitCode.GeneralError);
+            // Meadow 2.x: dotnet build + custom ILLink trimming
+            if (!_buildManager.BuildApplication(path, Configuration))
+            {
+                foreach (var line in _buildManager.BuildErrorText)
+                {
+                    Logger?.LogInformation(line);
+                }
+                throw new CommandException(Strings.AppBuildFailed, CommandExitCode.GeneralError);
+            }
+
+            if (!await AppTools.TrimApplication(path, _buildManager, deviceInfo.OsVersion, Configuration, NoLink, Logger, Console, CancellationToken))
+            {
+                throw new CommandException(Strings.AppTrimFailed, CommandExitCode.GeneralError);
+            }
         }
 
         if (!await DeployApplication(connection, path, Configuration, CancellationToken))
@@ -126,9 +143,29 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             return false;
         }
 
-        Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
+        if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
+        {
+            // For 3.x, dotnet publish outputs to a publish/ subfolder. GetAvailableBuiltConfigurations
+            // returns the directory containing the newest App.dll — when a fresh publish exists, that's
+            // already the publish/ folder, so don't append another segment.
+            var appDir = file.DirectoryName!;
+            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
+                ? appDir
+                : System.IO.Path.Combine(appDir, "publish");
+            if (!Directory.Exists(publishDir))
+            {
+                Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
+                return false;
+            }
 
-        await AppManager.DeployApplication(_buildManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+            Logger?.LogInformation($"Deploying app from {publishDir}...");
+            await AppManagerV3.DeployApplication(connection, publishDir, true, false, Logger, cancellationToken);
+        }
+        else
+        {
+            Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
+            await AppManager.DeployApplication(_buildManager, connection, deviceInfo.OsVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        }
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 

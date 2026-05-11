@@ -938,8 +938,6 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             if (progress >= fileBytes.Length) break;
         }
 
-        Console.Error.WriteLine($"[HCOM-DBG] WriteFile: data loop done, progress={progress}/{expected}, needsRetry={needsRetry}");
-
         if (!needsRetry)
         {
             base.RaiseFileWriteProgress(fileName, expected, expected);
@@ -955,7 +953,6 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             var savedTimeout = CommandTimeoutSeconds;
             CommandTimeoutSeconds = Math.Max(CommandTimeoutSeconds, 60 + fileBytes.Length / 1000);
 
-            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: sending END for {fileName} ({fileBytes.Length}B), timeout={CommandTimeoutSeconds}s");
             _lastRequestConcluded = null;
             EncodeAndSendPacket(p, cancellationToken);
 
@@ -968,7 +965,6 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             var endWaitStart = Environment.TickCount;
             await WaitForConcluded(null, cancellationToken);
             CommandTimeoutSeconds = savedTimeout;
-            Console.Error.WriteLine($"[HCOM-DBG] WriteFile: END concluded for {fileName} ({Environment.TickCount - endWaitStart}ms)");
 
             // Brief pause between files to let the emulated UART drain any
             // buffered duplicate bytes before the next file transfer starts.

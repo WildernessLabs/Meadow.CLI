@@ -122,7 +122,6 @@ namespace Meadow.Hcom
                                     }
 
                                     Debug.WriteLine($"{response.RequestType}");
-                                    Console.Error.WriteLine($"[HCOM-DBG] Response: type={response.RequestType} ({response.GetType().Name})");
                                     _state = ConnectionState.MeadowAttached;
 
                                     if (response != null)
@@ -133,7 +132,6 @@ namespace Meadow.Hcom
                                     if (response is TextInformationResponse tir)
                                     {
                                         Debug.WriteLine($"INFO> {tir.Text}");
-                                        Console.Error.WriteLine($"[HCOM-DBG] INFO: {tir.Text}");
 
                                         InfoMessages.Add(tir.Text);
                                         base.RaiseDeviceMessageReceived(tir.Text, "info");
@@ -265,7 +263,6 @@ namespace Meadow.Hcom
                                     }
                                     else if (response is FileWriteInitOkSerialResponse)
                                     {
-                                        Console.Error.WriteLine($"[HCOM-DBG] FileWriteInitOk received");
                                         FileWriteAccepted?.Invoke(this, EventArgs.Empty);
                                     }
                                     else if (response is TextPayloadSerialResponse fib)

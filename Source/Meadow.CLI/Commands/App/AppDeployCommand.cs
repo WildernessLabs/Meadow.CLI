@@ -41,7 +41,7 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
-        if (!await DeployApplication(connection, deviceInfo.OsVersion, file.FullName, CancellationToken))
+        if (!await DeployApplication(connection, deviceInfo.OsVersion, path, file, CancellationToken))
         {
             throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
@@ -87,29 +87,81 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
         return file;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string path, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string projectPath, FileInfo appFile, CancellationToken cancellationToken)
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
-        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName);
-
-        if (candidates.Length == 0)
+        if (MeadowVersion.IsV3OrLater(osVersion))
         {
-            Logger?.LogError($"Cannot find a compiled application at '{path}'");
-            return false;
+            var appDir = appFile.DirectoryName!;
+            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
+                ? appDir
+                : System.IO.Path.Combine(appDir, "publish");
+
+            // Always publish for V3 — the publish step injects Meadow's custom BCL
+            // and configures trimming. Skipping it (e.g. after a manual dotnet publish)
+            // would deploy without BCL assemblies, causing silent boot failures.
+            Logger?.LogInformation("Publishing with Meadow BCL injection and trimming...");
+
+            // projectPath may be a directory, a path to App.dll, or a path to a csproj.
+            // Walk up from the chosen App.dll until a csproj is found so we can publish that project.
+            var publishPath = FindProjectFile(projectPath, appFile);
+            if (publishPath == null)
+            {
+                Logger?.LogError($"Cannot locate a .csproj file from '{projectPath}'. Specify the path to your project directory or .csproj.");
+                return false;
+            }
+
+            if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
+            {
+                Logger?.LogError("Publish failed. Build output:");
+                foreach (var line in _buildManager.BuildErrorText)
+                {
+                    Logger?.LogError(line);
+                }
+                return false;
+            }
+
+            if (!Directory.Exists(publishDir))
+            {
+                Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
+                return false;
+            }
+
+            Logger?.LogInformation($"Deploying app from {publishDir}...");
+            await AppManagerV3.DeployApplication(connection, publishDir, true, false, Logger, cancellationToken);
         }
-
-        var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
-
-        Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
-
-        await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, true, false, Logger, cancellationToken);
+        else
+        {
+            Logger?.LogInformation($"Deploying app from {appFile.DirectoryName}...");
+            await AppManager.DeployApplication(_buildManager, connection, osVersion, appFile.DirectoryName!, true, false, Logger, cancellationToken);
+        }
 
         connection.FileWriteProgress -= OnFileWriteProgress;
 
         Logger?.LogInformation($"{Strings.AppDeployedSuccessfully}");
 
         return true;
+    }
+
+    private static string? FindProjectFile(string projectPath, FileInfo appFile)
+    {
+        // If the caller passed a csproj directly, use it.
+        if (File.Exists(projectPath) && projectPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+        {
+            return projectPath;
+        }
+
+        // Otherwise search the project path (if a directory) and walk up from the App.dll until a csproj is found.
+        var startDir = Directory.Exists(projectPath) ? projectPath : appFile.DirectoryName;
+        var dir = startDir;
+        while (dir != null)
+        {
+            var csproj = Directory.GetFiles(dir, "*.csproj").FirstOrDefault();
+            if (csproj != null) return csproj;
+            dir = System.IO.Path.GetDirectoryName(dir);
+        }
+        return null;
     }
 
     private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)
