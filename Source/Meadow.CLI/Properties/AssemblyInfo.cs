@@ -10,5 +10,5 @@ public static class Constants
     public const string CLI_VERSION = "3.0.0.0";
     // AssemblyInformationalVersion accepts SemVer 2.0 strings including pre-release tags;
     // CliFx reads this for `--version` output
-    public const string CLI_INFORMATIONAL_VERSION = "3.0.0-beta1";
+    public const string CLI_INFORMATIONAL_VERSION = "3.0.0-beta2";
 }
