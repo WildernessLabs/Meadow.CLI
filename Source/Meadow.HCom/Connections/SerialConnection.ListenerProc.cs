@@ -386,7 +386,15 @@ namespace Meadow.Hcom
                 }
                 else
                 {
-                    await Task.Delay(500);
+                    if (AggressiveReconnectEnabled)
+                    {
+                        Debug.WriteLine("Port closed, attempting to reconnect...");
+                        await ReOpen();
+                    }
+                    else
+                    {
+                        await Task.Delay(500);
+                    }
                 }
             }
         }
