@@ -251,6 +251,10 @@ public partial class BuildManager : IBuildManager
                 $" --self-contained -r linux-arm" +
                 // avoids persistent build-server nodes locking outputs (CS2012) across runs
                 $" --disable-build-servers" +
+                // referenced projects pack-on-build (GeneratePackageOnBuild=true); during an app
+                // publish that races the normal build, locking obj outputs (CS2012). An app build
+                // never needs the dependency nupkgs, so suppress packing across the whole graph.
+                $" -p:GeneratePackageOnBuild=false" +
                 $" -p:AppendRuntimeIdentifierToOutputPath=false" +
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
                 $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
