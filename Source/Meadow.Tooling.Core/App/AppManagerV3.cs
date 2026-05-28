@@ -69,7 +69,7 @@ public static class AppManagerV3
                 continue;
             }
 
-            logger?.LogInformation($"Deleting '{file}'");
+            logger?.LogInformation($"Deleting '{file}'".PadRight(80));
             var folder = NormalizeDeviceFolder(file.Path);
             await connection.DeleteFile($"{folder}{file.Name}", cancellationToken);
         }
@@ -86,7 +86,7 @@ public static class AppManagerV3
                 var crc = uint.Parse(existing.Crc.Substring(2), System.Globalization.NumberStyles.HexNumber);
                 if (crc == localFile.Value)
                 {
-                    logger?.LogInformation($"Skipping '{Path.GetFileName(localFile.Key)}'");
+                    logger?.LogInformation($"Skipping '{Path.GetFileName(localFile.Key)}'".PadRight(80));
                     continue;
                 }
             }
@@ -102,7 +102,7 @@ public static class AppManagerV3
             }
         }
 
-        logger?.LogInformation(string.Empty);
+        logger?.LogInformation(string.Empty.PadRight(80));
     }
 
     private static async Task<List<MeadowFileInfo>> GetFilesInFolder(IMeadowConnection connection, string folder, CancellationToken? cancellationToken)

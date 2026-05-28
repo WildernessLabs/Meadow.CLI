@@ -14,6 +14,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Meadow.SoftwareManager")]
@@ -79,10 +80,14 @@ public class Program
 
         try
         {
+            var version = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
             returnCode = await new CliApplicationBuilder()
                 .AddCommandsFromThisAssembly()
                 .UseTypeActivator(serviceProvider.GetService!)
                 .SetExecutableName("meadow")
+                .SetVersion(version ?? "unknown")
                 .Build()
                 .RunAsync();
         }

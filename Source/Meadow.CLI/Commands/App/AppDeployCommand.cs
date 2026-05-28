@@ -91,6 +91,9 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
     {
         connection.FileWriteProgress += OnFileWriteProgress;
 
+        // only deploy PDBs for Debug builds - they're dead weight on a Release deployment
+        var includePdbs = (Configuration ?? "Release").Equals("Debug", StringComparison.OrdinalIgnoreCase);
+
         if (MeadowVersion.IsV3OrLater(osVersion))
         {
             var appDir = appFile.DirectoryName!;
@@ -129,12 +132,12 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             }
 
             Logger?.LogInformation($"Deploying app from {publishDir}...");
-            await AppManagerV3.DeployApplication(connection, publishDir, true, false, Logger, cancellationToken);
+            await AppManagerV3.DeployApplication(connection, publishDir, includePdbs, false, Logger, cancellationToken);
         }
         else
         {
             Logger?.LogInformation($"Deploying app from {appFile.DirectoryName}...");
-            await AppManager.DeployApplication(_buildManager, connection, osVersion, appFile.DirectoryName!, true, false, Logger, cancellationToken);
+            await AppManager.DeployApplication(_buildManager, connection, osVersion, appFile.DirectoryName!, includePdbs, false, Logger, cancellationToken);
         }
 
         connection.FileWriteProgress -= OnFileWriteProgress;

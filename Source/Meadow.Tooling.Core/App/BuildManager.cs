@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -47,8 +46,6 @@ public partial class BuildManager : IBuildManager
         proc.StartInfo.RedirectStandardOutput = true;
         proc.StartInfo.UseShellExecute = false;
 
-        var success = true;
-
         proc.ErrorDataReceived += (sendingProcess, errorLine) =>
         {
             Debug.WriteLine(errorLine.Data);
@@ -58,11 +55,6 @@ public partial class BuildManager : IBuildManager
             if (dataLine.Data != null)
             {
                 Debug.WriteLine(dataLine.Data);
-                if (dataLine.Data.ToLower(CultureInfo.InvariantCulture).Contains("clean failed"))
-                {
-                    Debug.WriteLine("Clean failed");
-                    success = false;
-                }
             }
         };
 
@@ -74,7 +66,7 @@ public partial class BuildManager : IBuildManager
         var exitCode = proc.ExitCode;
         proc.Close();
 
-        return success;
+        return exitCode == 0;
     }
 
     public bool BuildApplication(string projectFilePath, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null)
@@ -257,6 +249,8 @@ public partial class BuildManager : IBuildManager
             // PublishDir ensures output goes where the CLI expects (not under a RID subfolder).
             var args = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
                 $" --self-contained -r linux-arm" +
+                // avoids persistent build-server nodes locking outputs (CS2012) across runs
+                $" --disable-build-servers" +
                 $" -p:AppendRuntimeIdentifierToOutputPath=false" +
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
                 $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
@@ -408,6 +402,12 @@ public partial class BuildManager : IBuildManager
       <TrimmerRootAssembly Include=""Meadow"" RootMode=""EntryPoint"" />
       <TrimmerRootAssembly Include=""App"" />
       <TrimmerRootAssembly Include=""Meadow.F7"" />
+
+      <!-- Root the app's non-BCL deps (drivers, board-support); the runtime instantiates
+           some via reflection (e.g. IMeadowAppEmbeddedHardwareProvider.Create) so they
+           must not be trimmed. Meadow BCL (under MeadowAssembliesPath) is excluded. -->
+      <TrimmerRootAssembly Include=""@(ManagedAssemblyToLink->'%(FileName)')""
+          Condition=""!Exists('$(MeadowAssembliesPath)/%(FileName)%(Extension)')"" />
 
       <!-- If a Mono ILLink descriptor is provided alongside the BCL, use it to
            selectively preserve only the CoreLib types that the native Mono runtime

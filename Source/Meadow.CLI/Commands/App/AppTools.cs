@@ -87,7 +87,9 @@ internal static class AppTools
             file = candidates.OrderByDescending(c => c.LastWriteTime).First();
         }
 
-        bool includePdbs = file.FullName.Contains("\\Debug\\", StringComparison.OrdinalIgnoreCase);
+        bool includePdbs = file.FullName
+            .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Any(segment => segment.Equals("Debug", StringComparison.OrdinalIgnoreCase));
         var cts = new CancellationTokenSource();
 
         if (console is not null)

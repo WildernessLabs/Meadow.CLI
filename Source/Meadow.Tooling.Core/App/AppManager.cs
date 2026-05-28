@@ -139,7 +139,7 @@ public static class AppManager
                 continue;
             }
             //the CLI and VS2022 handle the file paths differently, should rationalize in the future
-            logger?.LogInformation($"Deleting '{file}'");
+            logger?.LogInformation($"Deleting '{file}'".PadRight(80));
             var folder = string.IsNullOrEmpty(file.Path) ? $"/{MeadowRootFolder}/" : $"{file.Path}";
             if (folder.StartsWith("/") == false)
             {
@@ -183,7 +183,7 @@ public static class AppManager
 
                 if (crc == localFile.Value)
                 {   // exists and has a matching CRC, skip it
-                    logger?.LogInformation($"Skipping '{Path.GetFileName(localFile.Key)}'");
+                    logger?.LogInformation($"Skipping '{Path.GetFileName(localFile.Key)}'".PadRight(80));
                     continue;
                 }
             }
@@ -200,7 +200,7 @@ public static class AppManager
         }
 
         //on macOS, if we don't write a blank line we lose the writing notifcation for the last file
-        logger?.LogInformation(string.Empty);
+        logger?.LogInformation(string.Empty.PadRight(80));
     }
 
     private static async Task<List<MeadowFileInfo>> GetFilesInFolder(IMeadowConnection connection, string folder, CancellationToken? cancellationToken)
