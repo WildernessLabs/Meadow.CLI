@@ -26,9 +26,8 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
 
     protected override async ValueTask ExecuteCommand()
     {
-        string path = AppTools.ValidateAndSanitizeAppPath(Path);
-
-        var file = GetMeadowAppFile(path);
+        var path = AppTools.ValidateAndSanitizeAppPath(Path);
+        var configuration = Configuration ?? "Release";
 
         var connection = await GetCurrentConnection();
 
@@ -41,130 +40,99 @@ public class AppDeployCommand : BaseDeviceCommand<AppDeployCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
-        if (!await DeployApplication(connection, deviceInfo.OsVersion, path, file, CancellationToken))
-        {
-            throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
-        }
+        var isV3 = MeadowVersion.IsV3OrLater(deviceInfo.OsVersion);
+        var deployDirectory = ResolveDeployDirectory(path, configuration, isV3);
+
+        await DeployApplication(connection, deviceInfo.OsVersion, deployDirectory, configuration, CancellationToken);
     }
 
-    private FileInfo GetMeadowAppFile(string path)
+    // Locates the already-compiled output to deploy. 'app deploy' never builds - that's 'app run' -
+    // so this resolves an existing output for the requested configuration and fails clearly if none exists.
+    private string ResolveDeployDirectory(string path, string configuration, bool isV3)
     {
-        // is the path a file?
-        FileInfo file;
-
-        if (!File.Exists(path))
+        // a direct path to App.dll
+        if (File.Exists(path))
         {
-            // is it a valid directory?
-            if (!Directory.Exists(path))
-            {
-                throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
-            }
-
-            // does the directory have an App.dll in it?
-            file = new FileInfo(System.IO.Path.Combine(path, AppFileName));
-            if (!file.Exists)
-            {
-                // it's a directory - we need to determine the latest build (they might have a Debug and a Release config)
-                var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName);
-
-                if (candidates.Length == 0)
-                {
-                    throw new CommandException($"Cannot find a compiled application at '{path}'", CommandExitCode.FileNotFound);
-                }
-
-                file = candidates.OrderByDescending(c => c.LastWriteTime).First();
-            }
-        }
-        else
-        {
-            if (System.IO.Path.GetFileName(path) != AppFileName)
+            if (string.Compare(System.IO.Path.GetFileName(path), AppFileName, true) != 0)
             {
                 throw new CommandException($"The file '{path}' is not a compiled Meadow application", CommandExitCode.FileNotFound);
             }
-
-            file = new FileInfo(path);
+            return System.IO.Path.GetDirectoryName(path)!;
         }
-        return file;
+
+        if (!Directory.Exists(path))
+        {
+            throw new CommandException($"{Strings.InvalidApplicationPath} '{path}'", CommandExitCode.FileNotFound);
+        }
+
+        // a directory that directly holds App.dll (e.g. a publish folder passed explicitly)
+        if (File.Exists(System.IO.Path.Combine(path, AppFileName)))
+        {
+            return path;
+        }
+
+        // otherwise locate the build output for the requested configuration
+        var candidates = PackageManager.GetAvailableBuiltConfigurations(path, AppFileName)
+            .Where(c => HasPathSegment(c.DirectoryName, configuration))
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            throw new CommandException($"Cannot find a compiled '{configuration}' application at '{path}'", CommandExitCode.FileNotFound);
+        }
+
+        if (isV3)
+        {
+            // 3.x must deploy the publish output - it has the Meadow BCL injected and trimming applied.
+            // Deploying a plain build output would boot-fail silently.
+            var publish = candidates.FirstOrDefault(c => HasPathSegment(c.DirectoryName, "publish"));
+
+            if (publish == null)
+            {
+                throw new CommandException(
+                    $"No publish output found for the '{configuration}' configuration at '{path}'. Run 'meadow app run' to build and deploy.",
+                    CommandExitCode.FileNotFound);
+            }
+
+            return publish.DirectoryName!;
+        }
+
+        // 2.x deploys the build output (newest if multiple target frameworks exist)
+        return candidates.OrderByDescending(c => c.LastWriteTime).First().DirectoryName!;
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string osVersion, string projectPath, FileInfo appFile, CancellationToken cancellationToken)
+    private static bool HasPathSegment(string? directory, string segment)
     {
-        connection.FileWriteProgress += OnFileWriteProgress;
+        return directory != null
+            && directory.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)
+                .Any(s => s.Equals(segment, StringComparison.OrdinalIgnoreCase));
+    }
 
+    private async Task DeployApplication(IMeadowConnection connection, string osVersion, string deployDirectory, string configuration, CancellationToken cancellationToken)
+    {
         // only deploy PDBs for Debug builds - they're dead weight on a Release deployment
-        var includePdbs = (Configuration ?? "Release").Equals("Debug", StringComparison.OrdinalIgnoreCase);
+        var includePdbs = configuration.Equals("Debug", StringComparison.OrdinalIgnoreCase);
 
-        if (MeadowVersion.IsV3OrLater(osVersion))
+        connection.FileWriteProgress += OnFileWriteProgress;
+        try
         {
-            var appDir = appFile.DirectoryName!;
-            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
-                ? appDir
-                : System.IO.Path.Combine(appDir, "publish");
+            Logger?.LogInformation($"Deploying app from {deployDirectory}...");
 
-            // Always publish for V3 — the publish step injects Meadow's custom BCL
-            // and configures trimming. Skipping it (e.g. after a manual dotnet publish)
-            // would deploy without BCL assemblies, causing silent boot failures.
-            Logger?.LogInformation("Publishing with Meadow BCL injection and trimming...");
-
-            // projectPath may be a directory, a path to App.dll, or a path to a csproj.
-            // Walk up from the chosen App.dll until a csproj is found so we can publish that project.
-            var publishPath = FindProjectFile(projectPath, appFile);
-            if (publishPath == null)
+            if (MeadowVersion.IsV3OrLater(osVersion))
             {
-                Logger?.LogError($"Cannot locate a .csproj file from '{projectPath}'. Specify the path to your project directory or .csproj.");
-                return false;
+                await AppManagerV3.DeployApplication(connection, deployDirectory, includePdbs, false, Logger, cancellationToken);
             }
-
-            if (!_buildManager.PublishApplication(publishPath, osVersion, Configuration ?? "Release", clean: false, publishDir: publishDir + System.IO.Path.DirectorySeparatorChar))
+            else
             {
-                Logger?.LogError("Publish failed. Build output:");
-                foreach (var line in _buildManager.BuildErrorText)
-                {
-                    Logger?.LogError(line);
-                }
-                return false;
+                await AppManager.DeployApplication(_buildManager, connection, osVersion, deployDirectory, includePdbs, false, Logger, cancellationToken);
             }
-
-            if (!Directory.Exists(publishDir))
-            {
-                Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
-                return false;
-            }
-
-            Logger?.LogInformation($"Deploying app from {publishDir}...");
-            await AppManagerV3.DeployApplication(connection, publishDir, includePdbs, false, Logger, cancellationToken);
         }
-        else
+        finally
         {
-            Logger?.LogInformation($"Deploying app from {appFile.DirectoryName}...");
-            await AppManager.DeployApplication(_buildManager, connection, osVersion, appFile.DirectoryName!, includePdbs, false, Logger, cancellationToken);
+            connection.FileWriteProgress -= OnFileWriteProgress;
         }
-
-        connection.FileWriteProgress -= OnFileWriteProgress;
 
         Logger?.LogInformation($"{Strings.AppDeployedSuccessfully}");
-
-        return true;
-    }
-
-    private static string? FindProjectFile(string projectPath, FileInfo appFile)
-    {
-        // If the caller passed a csproj directly, use it.
-        if (File.Exists(projectPath) && projectPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-        {
-            return projectPath;
-        }
-
-        // Otherwise search the project path (if a directory) and walk up from the App.dll until a csproj is found.
-        var startDir = Directory.Exists(projectPath) ? projectPath : appFile.DirectoryName;
-        var dir = startDir;
-        while (dir != null)
-        {
-            var csproj = Directory.GetFiles(dir, "*.csproj").FirstOrDefault();
-            if (csproj != null) return csproj;
-            dir = System.IO.Path.GetDirectoryName(dir);
-        }
-        return null;
     }
 
     private void OnFileWriteProgress(object? sender, (string fileName, long completed, long total) e)

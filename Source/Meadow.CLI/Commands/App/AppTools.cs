@@ -13,7 +13,6 @@ internal static class AppTools
         path ??= Directory.GetCurrentDirectory();
 
         path = path.Trim('\"');
-        path = path.TrimEnd('\"');
         path = path.TrimEnd(Path.DirectorySeparatorChar);
 
         if (!File.Exists(path))
@@ -100,7 +99,7 @@ internal static class AppTools
         logger?.LogInformation($"Trimming application {file.FullName}...");
         if (noLinkAssemblies != null && noLinkAssemblies.Count() > 0)
         {
-            logger?.LogInformation($"Skippping assemblies: {string.Join(", ", noLinkAssemblies)}");
+            logger?.LogInformation($"Skipping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
         await buildManager.TrimApplication(file, osVersion, includePdbs, noLinkAssemblies, logger, cancellationToken);

@@ -58,8 +58,6 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
         }
 
-        var lastFile = string.Empty;
-
         // in order to deploy, the runtime must be disabled
         await AppTools.DisableRuntimeIfEnabled(connection, Logger, CancellationToken);
 
@@ -96,7 +94,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             }
         }
 
-        if (!await DeployApplication(connection, path, Configuration, CancellationToken))
+        if (!await DeployApplication(connection, path, Configuration, deviceInfo.OsVersion, CancellationToken))
         {
             throw new CommandException(Strings.AppDeployFailed, CommandExitCode.GeneralError);
         }
@@ -115,17 +113,8 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         Logger?.LogInformation("Listen cancelled...");
     }
 
-    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, string configuration, CancellationToken cancellationToken)
+    private async Task<bool> DeployApplication(IMeadowConnection connection, string path, string configuration, string osVersion, CancellationToken cancellationToken)
     {
-        connection.FileWriteProgress += OnFileWriteProgress;
-
-        var deviceInfo = await connection.GetDeviceInfo();
-
-        if (deviceInfo == null || deviceInfo.OsVersion == null)
-        {
-            throw new CommandException(Strings.UnableToGetDeviceInfo, CommandExitCode.GeneralError);
-        }
-
         var candidates = PackageManager.GetAvailableBuiltConfigurations(path, "App.dll");
 
         if (candidates.Length == 0)
@@ -146,31 +135,37 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             return false;
         }
 
-        if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
+        connection.FileWriteProgress += OnFileWriteProgress;
+        try
         {
-            // For 3.x, dotnet publish outputs to a publish/ subfolder. GetAvailableBuiltConfigurations
-            // returns the directory containing the newest App.dll — when a fresh publish exists, that's
-            // already the publish/ folder, so don't append another segment.
-            var appDir = file.DirectoryName!;
-            var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
-                ? appDir
-                : System.IO.Path.Combine(appDir, "publish");
-            if (!Directory.Exists(publishDir))
+            if (MeadowVersion.IsV3OrLater(osVersion))
             {
-                Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
-                return false;
+                // For 3.x, dotnet publish outputs to a publish/ subfolder. GetAvailableBuiltConfigurations
+                // returns the directory containing the newest App.dll — when a fresh publish exists, that's
+                // already the publish/ folder, so don't append another segment.
+                var appDir = file.DirectoryName!;
+                var publishDir = System.IO.Path.GetFileName(appDir) == "publish"
+                    ? appDir
+                    : System.IO.Path.Combine(appDir, "publish");
+                if (!Directory.Exists(publishDir))
+                {
+                    Logger?.LogError($"Cannot find publish output at '{publishDir}'. Ensure the project published successfully.");
+                    return false;
+                }
+
+                Logger?.LogInformation($"Deploying app from {publishDir}...");
+                await AppManagerV3.DeployApplication(connection, publishDir, includePdbs, false, Logger, cancellationToken);
             }
-
-            Logger?.LogInformation($"Deploying app from {publishDir}...");
-            await AppManagerV3.DeployApplication(connection, publishDir, includePdbs, false, Logger, cancellationToken);
+            else
+            {
+                Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
+                await AppManager.DeployApplication(_buildManager, connection, osVersion, file.DirectoryName!, includePdbs, false, Logger, cancellationToken);
+            }
         }
-        else
+        finally
         {
-            Logger?.LogInformation($"Deploying app from {file.DirectoryName}...");
-            await AppManager.DeployApplication(_buildManager, connection, deviceInfo.OsVersion, file.DirectoryName!, includePdbs, false, Logger, cancellationToken);
+            connection.FileWriteProgress -= OnFileWriteProgress;
         }
-
-        connection.FileWriteProgress -= OnFileWriteProgress;
 
         return true;
     }
