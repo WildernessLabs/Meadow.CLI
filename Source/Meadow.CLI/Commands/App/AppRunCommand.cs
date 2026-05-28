@@ -66,7 +66,15 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         if (MeadowVersion.IsV3OrLater(deviceInfo.OsVersion))
         {
             // Meadow 3.x: dotnet publish handles trimming via the project's built-in linker
-            if (!_buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration))
+            var buildCts = new CancellationTokenSource();
+            if (Console is not null)
+            {
+                ConsoleSpinner.Spin(Console, cancellationToken: buildCts.Token);
+            }
+            var published = _buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration);
+            buildCts.Cancel();
+
+            if (!published)
             {
                 Logger?.LogError("Publish failed. Build output:");
                 foreach (var line in _buildManager.BuildErrorText)
@@ -79,7 +87,15 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         else
         {
             // Meadow 2.x: dotnet build + custom ILLink trimming
-            if (!_buildManager.BuildApplication(path, Configuration))
+            var buildCts = new CancellationTokenSource();
+            if (Console is not null)
+            {
+                ConsoleSpinner.Spin(Console, cancellationToken: buildCts.Token);
+            }
+            var built = _buildManager.BuildApplication(path, Configuration);
+            buildCts.Cancel();
+
+            if (!built)
             {
                 foreach (var line in _buildManager.BuildErrorText)
                 {

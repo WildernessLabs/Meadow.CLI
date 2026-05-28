@@ -31,7 +31,10 @@ namespace Meadow.CLI
                     console?.Output.WriteAsync($"{sequence[index % 4]}         \r");
                     await Task.Delay(udpateInterval_ms, CancellationToken.None);
                 }
-            }, cancellationToken);
+
+                console?.Output.WriteAsync("\r          \r");
+                token = null;
+            }, CancellationToken.None);
         }
     }
 }
