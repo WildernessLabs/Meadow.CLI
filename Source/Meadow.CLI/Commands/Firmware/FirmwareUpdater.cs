@@ -347,8 +347,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
         await connection!.WaitForMeadowAttach();
 
-        // configure the route to that port for the user
-        settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+        SaveRouteIfNotConfigured(newPort);
 
         return connection;
     }
@@ -399,8 +398,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
                 logger?.LogInformation($"{Strings.MeadowFoundAt} {newPort}");
 
-                // configure the route to that port for the user
-                settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+                SaveRouteIfNotConfigured(newPort);
             }
         }
         else
@@ -586,6 +584,17 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
         var ports = await WaitForNewSerialPorts(ignorePorts);
 
         return ports.FirstOrDefault();
+    }
+
+    private void SaveRouteIfNotConfigured(string newPort)
+    {
+        // Only save route if no route was previously configured
+        var existingRoute = settings.GetSetting(SettingsManager.PublicSettings.Route);
+        if (string.IsNullOrWhiteSpace(existingRoute))
+        {
+            // configure the route to that port for the user
+            settings.SaveSetting(SettingsManager.PublicSettings.Route, newPort);
+        }
     }
 
     private bool IgnoreSerialNumberForDfu(LibUsbProvider provider)
