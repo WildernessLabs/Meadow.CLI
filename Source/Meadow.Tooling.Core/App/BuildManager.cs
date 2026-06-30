@@ -231,15 +231,19 @@ public partial class BuildManager : IBuildManager
 
         var meadowAssembliesPath = GetAssemblyPathForOS(osVersion);
         var targetsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.targets");
+        var propsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.props");
 
         // Only override TFM for legacy projects (e.g. netstandard2.1) that can't natively
-        // use PublishTrimmed. Modern net10.0+ projects don't need this and it breaks
-        // Microsoft.NET.Build.Containers.targets in referenced projects.
+        // use PublishTrimmed. Modern net10.0+ projects don't need this.
         var needsTfmOverride = NeedsTfmOverrideForTrimming(projectFilePath);
+        var mainProjectFullPath = File.Exists(projectFilePath)
+            ? Path.GetFullPath(projectFilePath)
+            : (Directory.GetFiles(projectFilePath, "*.csproj").FirstOrDefault() is { } p ? Path.GetFullPath(p) : Path.GetFullPath(projectFilePath));
 
         try
         {
             File.WriteAllText(targetsFile, MeadowTrimmingTargets);
+            File.WriteAllText(propsFile, MeadowTrimmingProps);
 
             using var proc = new Process();
             proc.StartInfo.FileName = "dotnet";
@@ -247,14 +251,20 @@ public partial class BuildManager : IBuildManager
             // cascade to netstandard2.1 referenced projects and trigger NETSDK1124.
             // Self-contained + linux-arm RID is required for trimming to include BCL assemblies.
             // PublishDir ensures output goes where the CLI expects (not under a RID subfolder).
+            // CustomBeforeMicrosoftCommonProps loads the props file for every project in the graph,
+            // but its TFM override is scoped to MSBuildProjectFullPath == MeadowMainProject so
+            // referenced (e.g. netstandard2.0) projects keep their original TFM and don't trip
+            // Microsoft.NET.Build.Containers.targets with MSB4184.
             var args = $"publish \"{projectFilePath}\" -c \"{configuration}\"" +
                 $" --self-contained -r linux-arm" +
                 $" --disable-build-servers" +
                 $" -m:1" +
                 $" -p:GeneratePackageOnBuild=false" +
                 $" -p:AppendRuntimeIdentifierToOutputPath=false" +
+                $" -p:CustomBeforeMicrosoftCommonProps=\"{propsFile}\"" +
                 $" -p:CustomAfterMicrosoftCommonTargets=\"{targetsFile}\"" +
-                $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"";
+                $" -p:MeadowAssembliesPath=\"{meadowAssembliesPath}\"" +
+                $" -p:MeadowMainProject=\"{mainProjectFullPath}\"";
 
             // Always set PublishDir explicitly. Without it, --self-contained -r linux-arm
             // creates a {RID}/ subdirectory that doesn't match where the CLI looks for output.
@@ -289,10 +299,10 @@ public partial class BuildManager : IBuildManager
             {
                 // Detect the latest installed .NETCoreApp SDK and target that — .NET is backwards-compatible
                 // so the highest available version is the safest choice for legacy projects whose own TFM
-                // (netstandard2.1, netcoreappX) can't natively use PublishTrimmed.
+                // (netstandard2.1, netcoreappX) can't natively use PublishTrimmed. The props file applies
+                // this only to the main project, not its referenced projects.
                 var tfmVersion = GetLatestNetCoreAppVersion();
-                args += $" -p:TargetFrameworkIdentifier=.NETCoreApp" +
-                        $" -p:TargetFrameworkVersion={tfmVersion}";
+                args += $" -p:MeadowOverrideTfmVersion={tfmVersion}";
             }
 
             proc.StartInfo.Arguments = args;
@@ -337,8 +347,20 @@ public partial class BuildManager : IBuildManager
         finally
         {
             try { File.Delete(targetsFile); } catch { }
+            try { File.Delete(propsFile); } catch { }
         }
     }
+
+    // MSBuild .props injected via CustomBeforeMicrosoftCommonProps. Loaded for every project
+    // in the graph, but its overrides are scoped to the main project only via MeadowMainProject
+    // matching MSBuildProjectFullPath. Referenced (netstandard) projects keep their original TFM
+    // — without this scoping, the override would cascade and trip Containers.targets (MSB4184).
+    private const string MeadowTrimmingProps = @"<Project>
+  <PropertyGroup Condition=""'$(MeadowOverrideTfmVersion)' != '' AND '$(MSBuildProjectFullPath)' == '$(MeadowMainProject)'"">
+    <TargetFrameworkIdentifier>.NETCoreApp</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>$(MeadowOverrideTfmVersion)</TargetFrameworkVersion>
+  </PropertyGroup>
+</Project>";
 
     // MSBuild targets injected into dotnet publish to configure trimming for Meadow:
     // - Swaps standard .NET BCL assemblies with Meadow's custom BCL in both
