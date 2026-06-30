@@ -215,7 +215,7 @@ public partial class BuildManager : IBuildManager
         return files.ToArray();
     }
 
-    public bool PublishApplication(string projectFilePath, string osVersion, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null, string? publishDir = null)
+    public bool PublishApplication(string projectFilePath, string osVersion, string configuration = "Release", bool clean = true, CancellationToken? cancellationToken = null, string? publishDir = null, ILogger? logger = null)
     {
         BuildErrorText.Clear();
 
@@ -229,7 +229,24 @@ public partial class BuildManager : IBuildManager
             return false;
         }
 
-        var meadowAssembliesPath = GetAssemblyPathForOS(osVersion);
+        var meadowAssembliesPath = GetAssemblyPathForOS(osVersion, logger);
+
+        // Surface whether System.Private.CoreLib will actually be trimmed. The injected targets
+        // use ILLink.Descriptors.xml (when present in the BCL folder) to root only the CoreLib
+        // types the native Mono runtime loads by name, letting the trimmer strip the rest
+        // (~4.9MB -> ~2.4MB). When the descriptor is MISSING, the targets fall back to
+        // blanket-rooting CoreLib, shipping it untrimmed -- which has been observed to exhaust
+        // device memory (cloud/MQTT OOM on F7). That fallback is otherwise silent, so make it loud.
+        var descriptorPath = Path.Combine(meadowAssembliesPath, "ILLink.Descriptors.xml");
+        if (File.Exists(descriptorPath))
+        {
+            logger?.LogInformation($"ILLink descriptor found; System.Private.CoreLib will be trimmed ('{descriptorPath}')");
+        }
+        else
+        {
+            logger?.LogWarning($"ILLink descriptor not found in '{meadowAssembliesPath}'. System.Private.CoreLib will NOT be trimmed and will ship untrimmed (~4.9MB), which can exhaust device memory at runtime. Update the device's OS package to one that bundles ILLink.Descriptors.xml.");
+        }
+
         var targetsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.targets");
         var propsFile = Path.Combine(Path.GetTempPath(), $"Meadow.Trimming.{Guid.NewGuid():N}.props");
 

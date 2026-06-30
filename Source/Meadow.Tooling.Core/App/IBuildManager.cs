@@ -37,5 +37,6 @@ public interface IBuildManager
         string configuration = "Release",
         bool clean = true,
         CancellationToken? cancellationToken = null,
-        string? publishDir = null);
+        string? publishDir = null,
+        ILogger? logger = null);
 }

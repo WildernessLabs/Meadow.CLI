@@ -71,7 +71,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
             {
                 ConsoleSpinner.Spin(Console, cancellationToken: buildCts.Token);
             }
-            var published = _buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration);
+            var published = _buildManager.PublishApplication(path, deviceInfo.OsVersion, Configuration, logger: Logger);
             buildCts.Cancel();
 
             if (!published)
