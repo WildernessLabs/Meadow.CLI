@@ -89,21 +89,16 @@ internal static class AppTools
         bool includePdbs = file.FullName
             .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             .Any(segment => segment.Equals("Debug", StringComparison.OrdinalIgnoreCase));
-        var cts = new CancellationTokenSource();
-
-        if (console is not null)
-        {
-            ConsoleSpinner.Spin(console, cancellationToken: cts.Token);
-        }
-
         logger?.LogInformation($"Trimming application {file.FullName}...");
         if (noLinkAssemblies != null && noLinkAssemblies.Count() > 0)
         {
             logger?.LogInformation($"Skipping assemblies: {string.Join(", ", noLinkAssemblies)}");
         }
 
-        await buildManager.TrimApplication(file, osVersion, includePdbs, noLinkAssemblies, logger, cancellationToken);
-        cts.Cancel();
+        using (ConsoleSpinner.Start(console))
+        {
+            await buildManager.TrimApplication(file, osVersion, includePdbs, noLinkAssemblies, logger, cancellationToken);
+        }
 
         // illink returns before all files are written - attempt a delay of 1s
         await Task.Delay(1000, cancellationToken);
