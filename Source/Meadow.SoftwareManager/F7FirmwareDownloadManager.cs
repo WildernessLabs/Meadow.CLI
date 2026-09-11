@@ -1,19 +1,43 @@
 ﻿using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meadow.Software;
 
+/// <summary>
+/// Retrieves F7 firmware release metadata and packages from the public Wilderness Labs download bucket.
+/// No Meadow.Cloud account or authentication is required.
+/// </summary>
 internal class F7FirmwareDownloadManager
 {
-    private readonly IMeadowCloudClient _meadowCloudClient;
+    /// <summary>
+    /// The default (public, unauthenticated) firmware source. Release metadata is published as
+    /// <c>latest.json</c> and <c>{version}.json</c> under this root, alongside the package zips.
+    /// </summary>
+    public const string DefaultFirmwareSourceUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
+
+    private static readonly Lazy<HttpClient> s_defaultHttpClient = new(() => new HttpClient());
+
+    private readonly HttpClient _httpClient;
+    private readonly Uri _sourceRoot;
 
     public event EventHandler<long> DownloadProgress = default!;
 
-    public F7FirmwareDownloadManager(IMeadowCloudClient meadowCloudClient)
+    public F7FirmwareDownloadManager(HttpClient? httpClient = null, string? sourceUrl = null)
     {
-        _meadowCloudClient = meadowCloudClient;
+        _httpClient = httpClient ?? s_defaultHttpClient.Value;
+
+        var root = string.IsNullOrWhiteSpace(sourceUrl) ? DefaultFirmwareSourceUrl : sourceUrl!.Trim();
+        if (!root.EndsWith("/"))
+        {
+            root += "/";
+        }
+
+        _sourceRoot = new Uri(root, UriKind.Absolute);
     }
 
     public async Task<string> GetLatestAvailableVersion()
@@ -25,21 +49,28 @@ internal class F7FirmwareDownloadManager
 
     public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
-        version = string.IsNullOrWhiteSpace(version) ? "latest" : version;
-        var response = await _meadowCloudClient.Firmware.GetVersion("Meadow_Beta", version!, cancellationToken);
+        version = string.IsNullOrWhiteSpace(version) ? "latest" : version!.Trim();
+        var uri = new Uri(_sourceRoot, $"{version}.json");
 
-        if (response == null)
+        using var response = await _httpClient.GetAsync(uri, cancellationToken);
+
+        // S3 answers 404 (or 403 when listing is disabled) for a key that does not exist
+        if (response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden)
         {
             return null;
         }
 
-        return new F7ReleaseMetadata()
+        EnsureSuccess(response, uri);
+
+        var json = await response.Content.ReadAsStringAsync();
+        var metadata = JsonSerializer.Deserialize<F7ReleaseMetadata>(json);
+
+        if (metadata == null || string.IsNullOrWhiteSpace(metadata.Version))
         {
-            Version = response.Version,
-            MinCLIVersion = response.MinCLIVersion,
-            DownloadURL = response.DownloadUrl,
-            NetworkDownloadURL = response.NetworkDownloadUrl
-        };
+            return null;
+        }
+
+        return metadata;
     }
 
     public void SetDefaultVersion(string destinationRoot, string version)
@@ -140,13 +171,13 @@ internal class F7FirmwareDownloadManager
 
     private async Task<string> DownloadFile(Uri uri, CancellationToken cancellationToken = default)
     {
-        using var response = await _meadowCloudClient.Firmware.GetDownloadResponse(uri, cancellationToken);
+        using var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+        EnsureSuccess(response, uri);
 
         var downloadFileName = Path.GetTempFileName();
 
         using var stream = await response.Content.ReadAsStreamAsync();
-
-        var contentLength = response.Content.Headers.ContentLength;
 
         using var downloadFileStream = new DownloadFileStream(stream);
         using var firmwareFile = File.OpenWrite(downloadFileName);
@@ -156,5 +187,16 @@ internal class F7FirmwareDownloadManager
         await downloadFileStream.CopyToAsync(firmwareFile);
 
         return downloadFileName;
+    }
+
+    private static void EnsureSuccess(HttpResponseMessage response, Uri uri)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        throw new HttpRequestException(
+            $"Request to '{uri}' failed with status {(int)response.StatusCode} ({response.ReasonPhrase}).");
     }
 }
