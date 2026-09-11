@@ -23,8 +23,7 @@ public class F7FirmwarePackageCollectionTests : IDisposable
     public async Task Refresh_WithNoFiles_ShouldBeEmpty()
     {
         // Arrange
-        var client = A.Fake<IMeadowCloudClient>();
-        var collection = new F7FirmwarePackageCollection(_rootPath, client);
+        var collection = new F7FirmwarePackageCollection(_rootPath);
 
         // Act
         await collection.Refresh();
@@ -37,8 +36,7 @@ public class F7FirmwarePackageCollectionTests : IDisposable
     public async Task Refresh_WithASinglePackage_ShouldHaveOnePackage()
     {
         // Arrange
-        var client = A.Fake<IMeadowCloudClient>();
-        var collection = new F7FirmwarePackageCollection(_rootPath, client);
+        var collection = new F7FirmwarePackageCollection(_rootPath);
 
         var versionPath = Path.Combine(_rootPath, "1.8.0.0");
         Directory.CreateDirectory(versionPath);
@@ -64,8 +62,7 @@ public class F7FirmwarePackageCollectionTests : IDisposable
     public async Task Refresh_WithASinglePackageAndLatestFile_ShouldSetDefaultPackage()
     {
         // Arrange
-        var client = A.Fake<IMeadowCloudClient>();
-        var collection = new F7FirmwarePackageCollection(_rootPath, client);
+        var collection = new F7FirmwarePackageCollection(_rootPath);
 
         var versionPath = Path.Combine(_rootPath, "1.8.0.0");
         Directory.CreateDirectory(versionPath);

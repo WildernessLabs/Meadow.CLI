@@ -1,24 +1,21 @@
 ﻿using CliFx.Attributes;
 using Meadow.CLI.Commands.DeviceManagement;
-using Meadow.Cloud.Client;
 using Meadow.Software;
 using Microsoft.Extensions.Logging;
 
 namespace Meadow.CLI.Commands.Firmware;
 
 [Command("firmware download", Description = "Download a firmware package")]
-public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
+public class FirmwareDownloadCommand : BaseCommand<FirmwareDownloadCommand>
 {
     private readonly FileManager _fileManager;
 
     public FirmwareDownloadCommand(
         FileManager fileManager,
-        IMeadowCloudClient meadowCloudClient,
         ILoggerFactory loggerFactory)
-        : base(meadowCloudClient, loggerFactory)
+        : base(loggerFactory)
     {
         _fileManager = fileManager;
-        RequiresAuthentication = false;
     }
 
     [CommandOption("force", 'f', IsRequired = false)]
@@ -27,7 +24,7 @@ public class FirmwareDownloadCommand : BaseCloudCommand<FirmwareDownloadCommand>
     [CommandOption("version", 'v', IsRequired = false)]
     public string? Version { get; set; }
 
-    protected override async ValueTask ExecuteCloudCommand()
+    protected override async ValueTask ExecuteCommand()
     {
         await _fileManager.Refresh();
 
