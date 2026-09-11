@@ -2,38 +2,32 @@
 
 public class GetLatestAvailableVersionTests
 {
+    private const string Source = "https://example.org/firmware/";
+
     [Fact]
     public async Task GetLatestAvailableVersion_WithLatestVersionFound_ShouldReturnVersion()
     {
         // Arrange
-        var version = new GetFirmwareVersionResponse(
-            version: "1.8.0.0",
-            minCLIVersion: "1.8.0.0",
-            downloadUrl: $"https://example.org/api/v1/firmware/Meadow_Beta/Meadow.OS_1.8.0.0.zip",
-            networkDownloadUrl: $"https://example.org/api/v1/firmware/Meadow_Beta/Meadow.Network_1.8.0.0.zip");
-
-        var client = A.Fake<IMeadowCloudClient>();
-        var downloadManager = new F7FirmwareDownloadManager(client);
-
-        A.CallTo(() => client.Firmware.GetVersion("Meadow_Beta", "latest", A<CancellationToken>._))
-         .Returns(version);
+        var handler = new StubHttpMessageHandler()
+            .Map(Source + "latest.json", HttpStatusCode.OK, """
+                {"version":"1.8.0.0","minCLIVersion":"1.8.0.0","downloadUrl":"https://example.org/firmware/Meadow.OS_1.8.0.0.zip","networkDownloadUrl":"https://example.org/firmware/Meadow.Network_1.8.0.0.zip"}
+                """);
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();
 
         // Assert
         Assert.Equal("1.8.0.0", result);
+        Assert.Equal(new Uri(Source + "latest.json"), Assert.Single(handler.Requests));
     }
 
     [Fact]
     public async Task GetLatestAvailableVersion_WithLatestVersionNotFound_ShouldReturnEmptyString()
     {
         // Arrange
-        var client = A.Fake<IMeadowCloudClient>();
-        var downloadManager = new F7FirmwareDownloadManager(client);
-
-        A.CallTo(() => client.Firmware.GetVersion("Meadow_Beta", "latest", A<CancellationToken>._))
-         .Returns((GetFirmwareVersionResponse?)null);
+        var handler = new StubHttpMessageHandler();
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();
@@ -46,21 +40,29 @@ public class GetLatestAvailableVersionTests
     public async Task GetLatestAvailableVersion_WithVersionThatReturnsErrorResponse_ShouldThrowException()
     {
         // Arrange
-        var client = A.Fake<IMeadowCloudClient>();
-        var downloadManager = new F7FirmwareDownloadManager(client);
-
-        A.CallTo(() => client.Firmware.GetVersion("Meadow_Beta", "latest", A<CancellationToken>._))
-         .ThrowsAsync(new MeadowCloudException("Test message.", HttpStatusCode.Unauthorized, null, new Dictionary<string, IEnumerable<string>>(), null));
+        var handler = new StubHttpMessageHandler()
+            .Map(Source + "latest.json", HttpStatusCode.InternalServerError);
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
 
         // Act
-        var ex = await Assert.ThrowsAsync<MeadowCloudException>(() => downloadManager.GetLatestAvailableVersion());
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => downloadManager.GetLatestAvailableVersion());
 
         // Assert
-        Assert.Equal(@"Test message.
+        Assert.Contains("500", ex.Message);
+        Assert.Contains(Source + "latest.json", ex.Message);
+    }
 
-Status: Unauthorized
-Response: 
-(null)", ex.Message);
-        Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
+    [Fact]
+    public async Task GetLatestAvailableVersion_WithDefaultSource_ShouldUsePublicBucket()
+    {
+        // Arrange
+        var handler = new StubHttpMessageHandler();
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient());
+
+        // Act
+        await downloadManager.GetLatestAvailableVersion();
+
+        // Assert
+        Assert.Equal(new Uri(F7FirmwareDownloadManager.DefaultFirmwareSourceUrl + "latest.json"), Assert.Single(handler.Requests));
     }
 }

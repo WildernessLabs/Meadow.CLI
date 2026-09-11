@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Meadow.Cloud.Client\Meadow.Cloud.Client.csproj" />
     <ProjectReference Include="..\Meadow.HCom\Meadow.HCom.csproj" />
     <ProjectReference Include="..\Meadow.Linker\Meadow.Linker.csproj" />
     <ProjectReference Include="..\Meadow.SoftwareManager\Meadow.SoftwareManager.csproj" />
