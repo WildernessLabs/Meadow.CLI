@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -55,9 +56,9 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// <summary>
     /// Initializes a new instance of the <see cref="F7FirmwarePackageCollection"/> class.
     /// </summary>
-    /// <param name="meadowCloudClient">The Meadow cloud client.</param>
-    internal F7FirmwarePackageCollection(IMeadowCloudClient meadowCloudClient)
-        : this(DefaultF7FirmwareStoreRoot, meadowCloudClient)
+    /// <param name="httpClient">Optional HTTP client used to retrieve firmware packages.</param>
+    internal F7FirmwarePackageCollection(HttpClient? httpClient = null)
+        : this(DefaultF7FirmwareStoreRoot, httpClient)
     {
     }
 
@@ -65,10 +66,11 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// Initializes a new instance of the <see cref="F7FirmwarePackageCollection"/> class.
     /// </summary>
     /// <param name="rootPath">The root path for storing firmware packages.</param>
-    /// <param name="meadowCloudClient">The Meadow cloud client.</param>
-    public F7FirmwarePackageCollection(string rootPath, IMeadowCloudClient meadowCloudClient)
+    /// <param name="httpClient">Optional HTTP client used to retrieve firmware packages.</param>
+    /// <param name="firmwareSourceUrl">Optional base URL of the firmware package source. Defaults to the public Wilderness Labs download bucket.</param>
+    public F7FirmwarePackageCollection(string rootPath, HttpClient? httpClient = null, string? firmwareSourceUrl = null)
     {
-        _downloadManager = new F7FirmwareDownloadManager(meadowCloudClient);
+        _downloadManager = new F7FirmwareDownloadManager(httpClient, firmwareSourceUrl);
 
         if (!Directory.Exists(rootPath))
         {
@@ -92,7 +94,7 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     }
 
     /// <summary>
-    /// Checks the remote (i.e. cloud) store to see if a new firmware package is available.
+    /// Checks the remote firmware source to see if a new firmware package is available.
     /// </summary>
     /// <returns>A version number if an update is available, otherwise null.</returns>
     public async Task<string?> UpdateAvailable()
