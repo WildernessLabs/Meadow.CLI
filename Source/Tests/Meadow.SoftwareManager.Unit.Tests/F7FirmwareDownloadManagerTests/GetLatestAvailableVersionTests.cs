@@ -2,32 +2,57 @@
 
 public class GetLatestAvailableVersionTests
 {
-    private const string Source = "https://example.org/firmware/";
+    private const string Repository = "example/releases";
+    private const string ReleasesUrl = "https://api.github.com/repos/example/releases/releases?per_page=100";
+
+    private static string Manifest(string version) => ReleaseFixtures.Manifest(Repository, version);
 
     [Fact]
-    public async Task GetLatestAvailableVersion_WithLatestVersionFound_ShouldReturnVersion()
+    public async Task GetLatestAvailableVersion_ShouldReturnHighestFullRelease()
     {
         // Arrange
         var handler = new StubHttpMessageHandler()
-            .Map(Source + "latest.json", HttpStatusCode.OK, """
-                {"version":"1.8.0.0","minCLIVersion":"1.8.0.0","downloadUrl":"https://example.org/firmware/Meadow.OS_1.8.0.0.zip","networkDownloadUrl":"https://example.org/firmware/Meadow.Network_1.8.0.0.zip"}
-                """);
-        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
+            .Map(ReleasesUrl, HttpStatusCode.OK, """
+                [
+                  {"tag_name":"1.0.2.0","draft":false,"prerelease":false},
+                  {"tag_name":"2.5.0.0","draft":false,"prerelease":false},
+                  {"tag_name":"2.999.51.3","draft":false,"prerelease":true},
+                  {"tag_name":"3.0.0.0","draft":true,"prerelease":false},
+                  {"tag_name":"not-a-version","draft":false,"prerelease":false}
+                ]
+                """)
+            .Map(ReleaseFixtures.FileUrl(Repository, "2.5.0.0", "manifest.json"), HttpStatusCode.OK, Manifest("2.5.0.0"));
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Repository);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();
 
         // Assert
-        Assert.Equal("1.8.0.0", result);
-        Assert.Equal(new Uri(Source + "latest.json"), Assert.Single(handler.Requests));
+        Assert.Equal("2.5.0.0", result);
     }
 
     [Fact]
-    public async Task GetLatestAvailableVersion_WithLatestVersionNotFound_ShouldReturnEmptyString()
+    public async Task GetLatestAvailableVersion_ShouldSendUserAgent()
     {
         // Arrange
-        var handler = new StubHttpMessageHandler();
-        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
+        var handler = new StubHttpMessageHandler()
+            .Map(ReleasesUrl, HttpStatusCode.OK, "[]");
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Repository);
+
+        // Act
+        await downloadManager.GetLatestAvailableVersion();
+
+        // Assert
+        Assert.NotEmpty(Assert.Single(handler.RequestMessages).Headers.UserAgent);
+    }
+
+    [Fact]
+    public async Task GetLatestAvailableVersion_WithNoReleases_ShouldReturnEmptyString()
+    {
+        // Arrange
+        var handler = new StubHttpMessageHandler()
+            .Map(ReleasesUrl, HttpStatusCode.OK, "[]");
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Repository);
 
         // Act
         var result = await downloadManager.GetLatestAvailableVersion();
@@ -37,23 +62,23 @@ public class GetLatestAvailableVersionTests
     }
 
     [Fact]
-    public async Task GetLatestAvailableVersion_WithVersionThatReturnsErrorResponse_ShouldThrowException()
+    public async Task GetLatestAvailableVersion_WithErrorResponse_ShouldThrowException()
     {
         // Arrange
         var handler = new StubHttpMessageHandler()
-            .Map(Source + "latest.json", HttpStatusCode.InternalServerError);
-        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Source);
+            .Map(ReleasesUrl, HttpStatusCode.Forbidden);
+        var downloadManager = new F7FirmwareDownloadManager(handler.CreateClient(), Repository);
 
         // Act
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => downloadManager.GetLatestAvailableVersion());
 
         // Assert
-        Assert.Contains("500", ex.Message);
-        Assert.Contains(Source + "latest.json", ex.Message);
+        Assert.Contains("403", ex.Message);
+        Assert.Contains(ReleasesUrl, ex.Message);
     }
 
     [Fact]
-    public async Task GetLatestAvailableVersion_WithDefaultSource_ShouldUsePublicBucket()
+    public async Task GetLatestAvailableVersion_WithDefaultRepository_ShouldUseMeadowReleases()
     {
         // Arrange
         var handler = new StubHttpMessageHandler();
@@ -63,6 +88,8 @@ public class GetLatestAvailableVersionTests
         await downloadManager.GetLatestAvailableVersion();
 
         // Assert
-        Assert.Equal(new Uri(F7FirmwareDownloadManager.DefaultFirmwareSourceUrl + "latest.json"), Assert.Single(handler.Requests));
+        Assert.Equal(
+            new Uri("https://api.github.com/repos/WildernessLabs/Meadow.Releases/releases?per_page=100"),
+            Assert.Single(handler.Requests));
     }
 }
