@@ -67,10 +67,10 @@ public class F7FirmwarePackageCollection : IFirmwarePackageCollection
     /// </summary>
     /// <param name="rootPath">The root path for storing firmware packages.</param>
     /// <param name="httpClient">Optional HTTP client used to retrieve firmware packages.</param>
-    /// <param name="firmwareSourceUrl">Optional base URL of the firmware package source. Defaults to the public Wilderness Labs download bucket.</param>
-    public F7FirmwarePackageCollection(string rootPath, HttpClient? httpClient = null, string? firmwareSourceUrl = null)
+    /// <param name="releasesRepository">Optional GitHub repository (<c>owner/name</c>) publishing firmware releases. Defaults to WildernessLabs/Meadow.Releases.</param>
+    public F7FirmwarePackageCollection(string rootPath, HttpClient? httpClient = null, string? releasesRepository = null)
     {
-        _downloadManager = new F7FirmwareDownloadManager(httpClient, firmwareSourceUrl);
+        _downloadManager = new F7FirmwareDownloadManager(httpClient, releasesRepository);
 
         if (!Directory.Exists(rootPath))
         {

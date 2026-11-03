@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,36 +12,44 @@ using System.Threading.Tasks;
 namespace Meadow.Software;
 
 /// <summary>
-/// Retrieves F7 firmware release metadata and packages from the public Wilderness Labs download bucket.
-/// No Meadow.Cloud account or authentication is required.
+/// Retrieves F7 firmware release metadata and packages from the GitHub releases of the Meadow.Releases repository.
+/// No authentication is required.
 /// </summary>
 internal class F7FirmwareDownloadManager
 {
     /// <summary>
-    /// The default (public, unauthenticated) firmware source. Release metadata is published as
-    /// <c>latest.json</c> and <c>{version}.json</c> under this root, alongside the package zips.
+    /// The default GitHub repository (<c>owner/name</c>) that publishes firmware releases.
+    /// Each release carries a <c>manifest.json</c> plus the <c>Meadow.OS.zip</c> and <c>Meadow.Network.zip</c> packages.
     /// </summary>
-    public const string DefaultFirmwareSourceUrl = "https://s3-us-west-2.amazonaws.com/downloads.wildernesslabs.co/Meadow_Beta/";
+    public const string DefaultReleasesRepository = "WildernessLabs/Meadow.Releases";
+
+    public const string ManifestFile = "manifest.json";
+    public const string OSPackageFile = "Meadow.OS.zip";
+    public const string NetworkPackageFile = "Meadow.Network.zip";
+
+    private const string GitHubApiRoot = "https://api.github.com/repos/";
+    private const string GitHubRoot = "https://github.com/";
 
     private static readonly Lazy<HttpClient> s_defaultHttpClient = new(() => new HttpClient());
 
     private readonly HttpClient _httpClient;
-    private readonly Uri _sourceRoot;
+    private readonly string _repository;
 
     public event EventHandler<long> DownloadProgress = default!;
 
-    public F7FirmwareDownloadManager(HttpClient? httpClient = null, string? sourceUrl = null)
+    public F7FirmwareDownloadManager(HttpClient? httpClient = null, string? releasesRepository = null)
     {
         _httpClient = httpClient ?? s_defaultHttpClient.Value;
 
-        var root = string.IsNullOrWhiteSpace(sourceUrl) ? DefaultFirmwareSourceUrl : sourceUrl!.Trim();
-        if (!root.EndsWith("/"))
-        {
-            root += "/";
-        }
-
-        _sourceRoot = new Uri(root, UriKind.Absolute);
+        _repository = string.IsNullOrWhiteSpace(releasesRepository)
+            ? DefaultReleasesRepository
+            : releasesRepository!.Trim().Trim('/');
     }
+
+    public Uri ReleasesApiUri => new($"{GitHubApiRoot}{_repository}/releases?per_page=100");
+
+    public Uri GetReleaseFileUri(string tag, string fileName) =>
+        new($"{GitHubRoot}{_repository}/releases/download/{Uri.EscapeDataString(tag)}/{fileName}");
 
     public async Task<string> GetLatestAvailableVersion()
     {
@@ -47,15 +58,25 @@ internal class F7FirmwareDownloadManager
         return contents?.Version ?? string.Empty;
     }
 
+    /// <summary>
+    /// Gets the manifest of a release. With no version, uses the highest-versioned release that is neither a draft nor a pre-release.
+    /// </summary>
     public async Task<F7ReleaseMetadata?> GetReleaseMetadata(string? version = null, CancellationToken cancellationToken = default)
     {
-        version = string.IsNullOrWhiteSpace(version) ? "latest" : version!.Trim();
-        var uri = new Uri(_sourceRoot, $"{version}.json");
+        var tag = string.IsNullOrWhiteSpace(version)
+            ? await GetLatestReleaseTag(cancellationToken)
+            : version!.Trim();
+
+        if (tag == null)
+        {
+            return null;
+        }
+
+        var uri = GetReleaseFileUri(tag, ManifestFile);
 
         using var response = await _httpClient.GetAsync(uri, cancellationToken);
 
-        // S3 answers 404 (or 403 when listing is disabled) for a key that does not exist
-        if (response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.Forbidden)
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
         }
@@ -70,7 +91,41 @@ internal class F7FirmwareDownloadManager
             return null;
         }
 
+        if (string.IsNullOrWhiteSpace(metadata.Tag))
+        {
+            metadata.Tag = tag;
+        }
+
         return metadata;
+    }
+
+    private async Task<string?> GetLatestReleaseTag(CancellationToken cancellationToken)
+    {
+        var uri = ReleasesApiUri;
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.UserAgent.ParseAdd("Meadow.CLI");
+        request.Headers.Accept.ParseAdd("application/vnd.github+json");
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        EnsureSuccess(response, uri);
+
+        var json = await response.Content.ReadAsStringAsync();
+        var releases = JsonSerializer.Deserialize<List<GitHubRelease>>(json) ?? new();
+
+        return releases
+            .Where(r => !r.Draft && !r.Prerelease)
+            .Select(r => (r.TagName, Version: System.Version.TryParse(r.TagName, out var v) ? v : null))
+            .Where(r => r.Version != null)
+            .OrderByDescending(r => r.Version)
+            .Select(r => r.TagName)
+            .FirstOrDefault();
     }
 
     public void SetDefaultVersion(string destinationRoot, string version)
@@ -104,7 +159,7 @@ internal class F7FirmwareDownloadManager
 
         try
         {
-            await DownloadAndExtractFile(new Uri(meta.DownloadURL), local_path);
+            await DownloadAndExtractFile(meta, OSPackageFile, local_path);
         }
         catch (Exception ex)
         {
@@ -114,7 +169,7 @@ internal class F7FirmwareDownloadManager
 
         try
         {
-            await DownloadAndExtractFile(new Uri(meta.NetworkDownloadURL), local_path);
+            await DownloadAndExtractFile(meta, NetworkPackageFile, local_path);
         }
         catch (Exception ex)
         {
@@ -125,15 +180,39 @@ internal class F7FirmwareDownloadManager
         return true;
     }
 
-    private async Task DownloadAndExtractFile(Uri uri, string target_path, CancellationToken cancellationToken = default)
+    private async Task DownloadAndExtractFile(F7ReleaseMetadata meta, string fileName, string target_path, CancellationToken cancellationToken = default)
     {
-        var downloadFileName = await DownloadFile(uri, cancellationToken);
+        if (!meta.Files.TryGetValue(fileName, out var file) || string.IsNullOrWhiteSpace(file.Sha256))
+        {
+            throw new Exception($"Release manifest has no SHA-256 for {fileName}");
+        }
 
-        ZipFile.ExtractToDirectory(
-            downloadFileName,
-            target_path);
+        var downloadFileName = await DownloadFile(GetReleaseFileUri(meta.Tag, fileName), cancellationToken);
 
-        File.Delete(downloadFileName);
+        try
+        {
+            var actual = ComputeSha256(downloadFileName);
+            if (!string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception($"SHA-256 mismatch for {fileName}: expected {file.Sha256}, got {actual}");
+            }
+
+            ZipFile.ExtractToDirectory(
+                downloadFileName,
+                target_path);
+        }
+        finally
+        {
+            File.Delete(downloadFileName);
+        }
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using var sha = SHA256.Create();
+        using var stream = File.OpenRead(path);
+
+        return string.Concat(sha.ComputeHash(stream).Select(b => b.ToString("x2")));
     }
 
     private bool CreateFolder(string path, bool eraseIfExists = true)
@@ -198,5 +277,15 @@ internal class F7FirmwareDownloadManager
 
         throw new HttpRequestException(
             $"Request to '{uri}' failed with status {(int)response.StatusCode} ({response.ReasonPhrase}).");
+    }
+
+    private class GitHubRelease
+    {
+        [JsonPropertyName("tag_name")]
+        public string TagName { get; set; } = default!;
+        [JsonPropertyName("draft")]
+        public bool Draft { get; set; }
+        [JsonPropertyName("prerelease")]
+        public bool Prerelease { get; set; }
     }
 }
