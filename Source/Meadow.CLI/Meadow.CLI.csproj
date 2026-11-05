@@ -10,7 +10,7 @@
     <Authors>Wilderness Labs, Inc</Authors>
     <Company>Wilderness Labs, Inc</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>3.0.0-beta5</PackageVersion>
+    <Version>3.0.2</Version>
     <Platforms>AnyCPU</Platforms>
     <PackageProjectUrl>http://developer.wildernesslabs.co/Meadow/Meadow.CLI/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WildernessLabs/Meadow.CLI</RepositoryUrl>
@@ -18,9 +18,6 @@
     <PackageTags>Meadow,Meadow.Foundation,Meadow.CLI,CLI,command,line,interface,device,IoT</PackageTags>
     <Description>Command-line interface for Meadow</Description>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <AssemblyName>meadow</AssemblyName>
     <LangVersion>11.0</LangVersion>
     <Copyright>Copyright 2020-2026 Wilderness Labs</Copyright>
