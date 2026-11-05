@@ -39,9 +39,9 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
         if (TargetFileNames.Any() && Files.Count != TargetFileNames.Count)
         {
-            Logger?.LogError($"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).");
-
-            return;
+            throw new CommandException(
+                $"Number of files to write ({Files.Count}) does not match the number of target file names ({TargetFileNames.Count}).",
+                CommandExitCode.InvalidParameter);
         }
 
         connection.FileWriteProgress += (s, e) =>
@@ -57,11 +57,14 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
         Logger?.LogInformation($"Writing {Files.Count} file{(Files.Count > 1 ? "s" : "")} to device...");
 
+        var failedFiles = new List<string>();
+
         for (var i = 0; i < Files.Count; i++)
         {
             if (!File.Exists(Files[i]))
             {
                 Logger?.LogError($"Cannot find file '{Files[i]}'. Skippping");
+                failedFiles.Add(Files[i]);
             }
             else
             {
@@ -72,17 +75,29 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
 
                 try
                 {
-                    await device.WriteFile(Files[i], targetFileName, CancellationToken);
+                    if (!await device.WriteFile(Files[i], targetFileName, CancellationToken))
+                    {
+                        Console?.Output.WriteLine();
+                        Logger?.LogError($"Error writing file '{Files[i]}': the transfer did not complete");
+                        failedFiles.Add(Files[i]);
+                    }
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
+                    Console?.Output.WriteLine();
                     Logger?.LogError($"Error writing file: {ex.Message}");
+                    failedFiles.Add(Files[i]);
                 }
             }
         }
 
         //add a black line after writing the file write progress
         Logger?.LogInformation(string.Empty);
+
+        if (failedFiles.Count > 0)
+        {
+            throw new CommandException($"{failedFiles.Count} of {Files.Count} file{(Files.Count > 1 ? "s" : "")} could not be written to the device");
+        }
     }
 
     private string GetTargetFileName(int i)
