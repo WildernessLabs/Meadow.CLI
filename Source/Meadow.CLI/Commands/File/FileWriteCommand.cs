@@ -106,7 +106,14 @@ public class FileWriteCommand : BaseDeviceCommand<FileWriteCommand>
          && TargetFileNames.Count >= i
          && string.IsNullOrWhiteSpace(TargetFileNames[i]) == false)
         {
-            return TargetFileNames[i];
+            var target = TargetFileNames[i];
+
+            if (target.EndsWith('/') || target.EndsWith('\\'))
+            {
+                return target + new FileInfo(Files[i]).Name;
+            }
+
+            return target;
         }
 
         return new FileInfo(Files[i]).Name;
