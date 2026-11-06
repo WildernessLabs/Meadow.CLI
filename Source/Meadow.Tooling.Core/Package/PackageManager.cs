@@ -68,8 +68,11 @@ public class PackageManager : BuildManager, IPackageManager
         };
 
         var infoJson = JsonSerializer.Serialize(info);
-        File.WriteAllText(PackageMetadataFileName, infoJson);
-        CreateEntry(archive, PackageMetadataFileName, Path.GetFileName(PackageMetadataFileName));
+        var infoEntry = archive.CreateEntry(PackageMetadataFileName);
+        using (var infoWriter = new StreamWriter(infoEntry.Open()))
+        {
+            infoWriter.Write(infoJson);
+        }
 
         return Task.FromResult(mpakName);
     }

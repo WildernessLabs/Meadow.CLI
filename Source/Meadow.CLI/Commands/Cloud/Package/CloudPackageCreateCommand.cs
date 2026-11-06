@@ -150,8 +150,9 @@ public class CloudPackageCreateCommand : BaseCommand<CloudPackageCreateCommand>
 
         if (candidates.Length == 0)
         {
-            Logger?.LogError($"Cannot find a compiled application at '{path}'");
-            return path;
+            throw new CommandException(
+                $"Cannot find a compiled App.dll under '{path}'. A Meadow app project must build App.dll (<AssemblyName>App</AssemblyName>).",
+                CommandExitCode.FileNotFound);
         }
 
         var file = candidates.OrderByDescending(c => c.LastWriteTime).First();
