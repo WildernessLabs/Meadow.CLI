@@ -300,6 +300,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             };
         }
 
+        _lastError = null;
+
         _commandQueue.Enqueue(command);
         _commandEvent.Set();
     }
