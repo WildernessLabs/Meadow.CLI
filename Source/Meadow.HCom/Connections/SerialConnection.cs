@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.IO.Ports;
 using System.Security.Cryptography;
@@ -1032,6 +1033,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         var accepted = false;
         Exception? ex = null;
         var needsRetry = false;
+        string? deviceError = null;
+        var isFileTransfer = endRequestType == RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER;
 
         void OnFileWriteAccepted(object? sender, EventArgs a)
         {
@@ -1041,93 +1044,163 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             ex = exception;
         }
+        var dataTransferStarted = false;
+
         void OnFileRetry(object? sender, EventArgs e)
         {
+            if (!dataTransferStarted)
+            {
+                return;
+            }
             needsRetry = true;
+        }
+        void OnDeviceMessage(object? sender, (string message, string? source) e)
+        {
+            if (e.source == "error")
+            {
+                deviceError ??= e.message;
+            }
         }
 
         FileWriteAccepted += OnFileWriteAccepted;
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
-
-        EnqueueRequest(command);
-
-        // this will wait for a "file write accepted" from the target
-        if (!await WaitForResult(
-                () =>
-                {
-                    if (ex != null) throw ex;
-                    return accepted;
-                },
-                cancellationToken))
-        {
-            return false;
-        }
-
-        // now send the file data
-        // The maximum data bytes is max packet size - 2 bytes for the sequence number
-        byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
-        ushort sequenceNumber = 0;
-
-        var progress = 0;
-        var expected = fileBytes.Length;
-
-        var fileName = Path.GetFileName(localFileName);
-
-        base.RaiseFileWriteProgress(fileName, progress, expected);
+        DeviceMessageReceived += OnDeviceMessage;
 
         var oldTimeout = _port.ReadTimeout;
-        _port.ReadTimeout = 60000;
 
-        while (true && !needsRetry)
+        try
         {
-            if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+            return await TransferFile();
+        }
+        finally
+        {
+            _port.ReadTimeout = oldTimeout;
+
+            FileWriteAccepted -= OnFileWriteAccepted;
+            FileException -= OnFileError;
+            FileWriteFailed -= OnFileRetry;
+            DeviceMessageReceived -= OnDeviceMessage;
+
+            if (deviceError != null && _lastError == deviceError)
+            {
+                _lastError = null;
+            }
+        }
+
+        async Task<bool> TransferFile()
+        {
+            EnqueueRequest(command);
+
+            // this will wait for a "file write accepted" from the target
+            if (!await WaitForResult(
+                    () =>
+                    {
+                        if (ex != null) throw ex;
+                        return accepted;
+                    },
+                    cancellationToken))
             {
                 return false;
             }
 
-            sequenceNumber++;
+            // now send the file data
+            // The maximum data bytes is max packet size - 2 bytes for the sequence number
+            byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
+            ushort sequenceNumber = 0;
 
-            Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+            var progress = 0;
+            var expected = fileBytes.Length;
 
-            var toRead = fileBytes.Length - progress;
-            if (toRead > packet.Length - 2)
-            {
-                toRead = packet.Length - 2;
-            }
-            Array.Copy(fileBytes, progress, packet, 2, toRead);
-            try
-            {
-                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
-            }
-            catch (Exception)
-            {
-                break;
-            }
+            var fileName = Path.GetFileName(localFileName);
 
-            progress += toRead;
             base.RaiseFileWriteProgress(fileName, progress, expected);
-            if (progress >= fileBytes.Length) break;
-        }
 
-        if (!needsRetry)
+            _port.ReadTimeout = 60000;
+
+            dataTransferStarted = true;
+
+            while (true && !needsRetry)
+            {
+                if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+                {
+                    return false;
+                }
+
+                if (isFileTransfer && deviceError != null)
+                {
+                    break;
+                }
+
+                sequenceNumber++;
+
+                Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+
+                var toRead = fileBytes.Length - progress;
+                if (toRead > packet.Length - 2)
+                {
+                    toRead = packet.Length - 2;
+                }
+                Array.Copy(fileBytes, progress, packet, 2, toRead);
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+
+                progress += toRead;
+                base.RaiseFileWriteProgress(fileName, progress, expected);
+                if (progress >= fileBytes.Length) break;
+            }
+
+            if (!needsRetry)
+            {
+                _port.ReadTimeout = oldTimeout;
+
+                if (deviceError == null)
+                {
+                    base.RaiseFileWriteProgress(fileName, expected, expected);
+                }
+
+                if (isFileTransfer)
+                {
+                    _lastRequestConcluded = null;
+                }
+
+                // finish with an "end" message - not enqued because this is all a serial operation
+                var request = RequestBuilder.Build<EndFileWriteRequest>();
+                request.SetRequestType(endRequestType);
+                var p = request.Serialize();
+                EncodeAndSendPacket(p, cancellationToken);
+
+                if (isFileTransfer)
+                {
+                    // the device verifies the written file, reports any error, then sends Concluded (even on error)
+                    await WaitForFileTransferConcluded(fileBytes.Length, cancellationToken);
+
+                    if (deviceError != null)
+                    {
+                        throw new DeviceFileWriteException(meadowFileName ?? fileName, deviceError);
+                    }
+                }
+            }
+
+            return !needsRetry;
+        }
+    }
+
+    private async Task WaitForFileTransferConcluded(int fileLength, CancellationToken? cancellationToken)
+    {
+        var timeout = TimeSpan.FromSeconds(Math.Max(CommandTimeoutSeconds, 60 + fileLength / 1000));
+        var stopwatch = Stopwatch.StartNew();
+
+        while (_lastRequestConcluded == null)
         {
-            _port.ReadTimeout = oldTimeout;
+            cancellationToken?.ThrowIfCancellationRequested();
 
-            base.RaiseFileWriteProgress(fileName, expected, expected);
+            if (stopwatch.Elapsed > timeout)
+            {
+                throw new TimeoutException("Timed out waiting for the device to confirm the file write");
+            }
 
-            // finish with an "end" message - not enqued because this is all a serial operation
-            var request = RequestBuilder.Build<EndFileWriteRequest>();
-            request.SetRequestType(endRequestType);
-            var p = request.Serialize();
-            EncodeAndSendPacket(p, cancellationToken);
+            await Task.Delay(20);
         }
-
-        FileWriteAccepted -= OnFileWriteAccepted;
-        FileException -= OnFileError;
-        FileWriteFailed -= OnFileRetry;
-
-        return !needsRetry;
     }
 
     public override async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)

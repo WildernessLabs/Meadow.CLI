@@ -850,6 +850,8 @@ public partial class SocketConnection : ConnectionBase, IDisposable
         var accepted = false;
         Exception? ex = null;
         var needsRetry = false;
+        string? deviceError = null;
+        var isFileTransfer = endRequestType == RequestType.HCOM_MDOW_REQUEST_END_FILE_TRANSFER;
 
         void OnFileWriteAccepted(object? sender, EventArgs a)
         {
@@ -873,115 +875,171 @@ public partial class SocketConnection : ConnectionBase, IDisposable
             Debug.WriteLine($"WriteFile: FileWriteFailed event fired (needsRetry)");
             needsRetry = true;
         }
+        void OnDeviceMessage(object? sender, (string message, string? source) e)
+        {
+            if (e.source == "error")
+            {
+                deviceError ??= e.message;
+            }
+        }
 
         FileWriteAccepted += OnFileWriteAccepted;
         FileException += OnFileError;
         FileWriteFailed += OnFileRetry;
+        DeviceMessageReceived += OnDeviceMessage;
 
-        Debug.WriteLine($"WriteFile: EnqueueRequest for '{meadowFileName ?? Path.GetFileName(localFileName)}'");
-        EnqueueRequest(command);
-
-        if (!await WaitForResult(
-                () =>
-                {
-                    if (ex != null) throw ex;
-                    return accepted;
-                },
-                cancellationToken))
+        try
         {
-            Debug.WriteLine($"WriteFile: WaitForResult returned false (accepted={accepted}, needsRetry={needsRetry})");
-            return false;
+            return await TransferFile();
+        }
+        finally
+        {
+            FileWriteAccepted -= OnFileWriteAccepted;
+            FileException -= OnFileError;
+            FileWriteFailed -= OnFileRetry;
+            DeviceMessageReceived -= OnDeviceMessage;
+
+            if (deviceError != null && _lastError == deviceError)
+            {
+                _lastError = null;
+            }
         }
 
-        Debug.WriteLine($"WriteFile: WaitForResult returned true (accepted={accepted}, needsRetry={needsRetry})");
-
-        byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
-        ushort sequenceNumber = 0;
-
-        var progress = 0;
-        var expected = fileBytes.Length;
-
-        var fileName = Path.GetFileName(localFileName);
-
-        base.RaiseFileWriteProgress(fileName, progress, expected);
-
-        dataTransferStarted = true;
-        Debug.WriteLine($"WriteFile: entering data loop, needsRetry={needsRetry}, fileSize={expected}");
-        while (true && !needsRetry)
+        async Task<bool> TransferFile()
         {
-            if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+
+            Debug.WriteLine($"WriteFile: EnqueueRequest for '{meadowFileName ?? Path.GetFileName(localFileName)}'");
+            EnqueueRequest(command);
+
+            if (!await WaitForResult(
+                    () =>
+                    {
+                        if (ex != null) throw ex;
+                        return accepted;
+                    },
+                    cancellationToken))
             {
+                Debug.WriteLine($"WriteFile: WaitForResult returned false (accepted={accepted}, needsRetry={needsRetry})");
                 return false;
             }
 
-            sequenceNumber++;
+            Debug.WriteLine($"WriteFile: WaitForResult returned true (accepted={accepted}, needsRetry={needsRetry})");
 
-            Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+            byte[] packet = new byte[Protocol.HCOM_PROTOCOL_PACKET_MAX_SIZE - 2];
+            ushort sequenceNumber = 0;
 
-            var toRead = fileBytes.Length - progress;
-            if (toRead > packet.Length - 2)
-            {
-                toRead = packet.Length - 2;
-            }
-            Array.Copy(fileBytes, progress, packet, 2, toRead);
-            try
-            {
-                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
-            }
-            catch (Exception)
-            {
-                break;
-            }
+            var progress = 0;
+            var expected = fileBytes.Length;
 
-            progress += toRead;
+            var fileName = Path.GetFileName(localFileName);
+
             base.RaiseFileWriteProgress(fileName, progress, expected);
-            if (progress >= fileBytes.Length) break;
-        }
 
-        if (!needsRetry)
+            dataTransferStarted = true;
+            Debug.WriteLine($"WriteFile: entering data loop, needsRetry={needsRetry}, fileSize={expected}");
+            while (true && !needsRetry)
+            {
+                if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+                {
+                    return false;
+                }
+
+                if (isFileTransfer && deviceError != null)
+                {
+                    break;
+                }
+
+                sequenceNumber++;
+
+                Array.Copy(BitConverter.GetBytes(sequenceNumber), packet, 2);
+
+                var toRead = fileBytes.Length - progress;
+                if (toRead > packet.Length - 2)
+                {
+                    toRead = packet.Length - 2;
+                }
+                Array.Copy(fileBytes, progress, packet, 2, toRead);
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
+
+                progress += toRead;
+                base.RaiseFileWriteProgress(fileName, progress, expected);
+                if (progress >= fileBytes.Length) break;
+            }
+
+            if (!needsRetry)
+            {
+                if (deviceError == null)
+                {
+                    base.RaiseFileWriteProgress(fileName, expected, expected);
+                }
+
+                var request = RequestBuilder.Build<EndFileWriteRequest>();
+                request.SetRequestType(endRequestType);
+                var p = request.Serialize();
+
+                // Scale timeout to file size: the firmware must process every data packet
+                // sequentially (each triggers a flash write), then do a CRC readback.
+                // Under emulation, each ~512B packet takes ~0.3-0.5s wall time to process
+                // through the LittleFS/QSPI path, so a 300KB file needs ~300s.
+                var savedTimeout = CommandTimeoutSeconds;
+                CommandTimeoutSeconds = Math.Max(CommandTimeoutSeconds, 60 + fileBytes.Length / 1000);
+
+                _lastRequestConcluded = null;
+                EncodeAndSendPacket(p, cancellationToken);
+
+                // Wait for firmware to finish processing the file. After END_FILE_TRANSFER,
+                // the firmware must process all buffered data packets (each written to flash
+                // via LittleFS/QSPI), then close the file, read it back for CRC verification,
+                // and send TEXT_ERROR/TEXT_INFORMATION + TEXT_CONCLUDED. Under emulation, the
+                // data packets queue up in the UART RX FIFO and are processed at virtual-time
+                // speed, so this can take much longer than wall time suggests.
+                var endWaitStart = Environment.TickCount;
+                if (isFileTransfer)
+                {
+                    await WaitForFileTransferConcluded(cancellationToken);
+                }
+                else
+                {
+                    await WaitForConcluded(null, cancellationToken);
+                }
+                CommandTimeoutSeconds = savedTimeout;
+
+                if (deviceError != null)
+                {
+                    throw new DeviceFileWriteException(meadowFileName ?? fileName, deviceError);
+                }
+
+                // Brief pause between files to let the emulated UART drain any
+                // buffered duplicate bytes before the next file transfer starts.
+                // Without this, rapid multi-file sequences get CRC errors under
+                // emulation due to data duplication in the UART bypass path.
+                await Task.Delay(500);
+            }
+            else
+            {
+                Debug.WriteLine($"WriteFile: needsRetry=true, returning false");
+            }
+
+            return !needsRetry;
+        }
+    }
+
+    private async Task WaitForFileTransferConcluded(CancellationToken? cancellationToken)
+    {
+        var timeout = TimeSpan.FromSeconds(CommandTimeoutSeconds);
+        var stopwatch = Stopwatch.StartNew();
+
+        while (_lastRequestConcluded == null)
         {
-            base.RaiseFileWriteProgress(fileName, expected, expected);
+            cancellationToken?.ThrowIfCancellationRequested();
 
-            var request = RequestBuilder.Build<EndFileWriteRequest>();
-            request.SetRequestType(endRequestType);
-            var p = request.Serialize();
+            if (stopwatch.Elapsed > timeout)
+            {
+                throw new TimeoutException("Timed out waiting for the device to confirm the file write");
+            }
 
-            // Scale timeout to file size: the firmware must process every data packet
-            // sequentially (each triggers a flash write), then do a CRC readback.
-            // Under emulation, each ~512B packet takes ~0.3-0.5s wall time to process
-            // through the LittleFS/QSPI path, so a 300KB file needs ~300s.
-            var savedTimeout = CommandTimeoutSeconds;
-            CommandTimeoutSeconds = Math.Max(CommandTimeoutSeconds, 60 + fileBytes.Length / 1000);
-
-            _lastRequestConcluded = null;
-            EncodeAndSendPacket(p, cancellationToken);
-
-            // Wait for firmware to finish processing the file. After END_FILE_TRANSFER,
-            // the firmware must process all buffered data packets (each written to flash
-            // via LittleFS/QSPI), then close the file, read it back for CRC verification,
-            // and send TEXT_ERROR/TEXT_INFORMATION + TEXT_CONCLUDED. Under emulation, the
-            // data packets queue up in the UART RX FIFO and are processed at virtual-time
-            // speed, so this can take much longer than wall time suggests.
-            var endWaitStart = Environment.TickCount;
-            await WaitForConcluded(null, cancellationToken);
-            CommandTimeoutSeconds = savedTimeout;
-
-            // Brief pause between files to let the emulated UART drain any
-            // buffered duplicate bytes before the next file transfer starts.
-            // Without this, rapid multi-file sequences get CRC errors under
-            // emulation due to data duplication in the UART bypass path.
-            await Task.Delay(500);
+            await Task.Delay(20);
         }
-        else
-        {
-            Debug.WriteLine($"WriteFile: needsRetry=true, returning false");
-        }
-
-        FileWriteAccepted -= OnFileWriteAccepted;
-        FileException -= OnFileError;
-        FileWriteFailed -= OnFileRetry;
-
-        return !needsRetry;
     }
 
     public override async Task<bool> ReadFile(string meadowFileName, string? localFileName = null, CancellationToken? cancellationToken = null)
