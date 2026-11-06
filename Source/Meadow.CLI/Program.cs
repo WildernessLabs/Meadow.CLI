@@ -105,7 +105,10 @@ public class Program
             MeadowTelemetry.Current.Dispose();
         }
 
-        VersionChecker.CheckForUpdates(Log.Logger, serviceProvider.GetService<ISettingsManager>()).Wait();
+        var commandLine = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        var versionRequested = commandLine.Length == 1 && commandLine[0] == "--version";
+
+        VersionChecker.CheckForUpdates(Log.Logger, serviceProvider.GetService<ISettingsManager>(), versionRequested).Wait();
 
         return returnCode;
     }

@@ -11,16 +11,16 @@ public static class VersionChecker
     private static readonly TimeSpan CheckFrequency = TimeSpan.FromDays(1);
     private static readonly string LastCheckKey = "last_check_time";
 
-    public static async Task CheckForUpdates(ILogger? logger, ISettingsManager settingsManager)
+    public static async Task CheckForUpdates(ILogger? logger, ISettingsManager settingsManager, bool force = false)
     {
-        if (DateTime.UtcNow - GetLastCheckTime(settingsManager) < CheckFrequency)
+        if (!force && DateTime.UtcNow - GetLastCheckTime(settingsManager) < CheckFrequency)
         {
             return;
         }
 
         string currentVersion = GetCurrentVersion();
 
-        using var httpClient = new HttpClient();
+        using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
 
         try
         {
