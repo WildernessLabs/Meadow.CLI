@@ -91,7 +91,7 @@ public class DeviceProvisionCommand : BaseDeviceCommand<DeviceProvisionCommand>
             else if (userOrgs.Count() > 1 && string.IsNullOrEmpty(OrgId))
             {
                 throw new CommandException(
-                    Strings.MemberOfMoreThanOneOrg,
+                    Strings.MemberOfMoreThanOneOrg + Environment.NewLine + string.Join(Environment.NewLine, userOrgs.Select(o => $"  {o.Name} ({o.Id})")),
                     CommandExitCode.InvalidParameter);
             }
             else if (userOrgs.Count() == 1 && string.IsNullOrEmpty(OrgId))
