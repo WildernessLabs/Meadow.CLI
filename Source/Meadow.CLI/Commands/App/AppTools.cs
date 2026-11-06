@@ -27,6 +27,25 @@ internal static class AppTools
         return Path.GetFullPath(path);
     }
 
+    internal static void EnsureProjectFolder(string path, string commandName)
+    {
+        if (File.Exists(path))
+        {
+            return;
+        }
+
+        var hasProject = Directory.EnumerateFiles(path, "*.csproj").Any()
+            || Directory.EnumerateFiles(path, "*.fsproj").Any()
+            || Directory.EnumerateFiles(path, "*.vbproj").Any();
+
+        if (!hasProject)
+        {
+            throw new CommandException(
+                $"No project file found in '{path}'. Run '{commandName}' from your Meadow app's project folder, or pass the path to it.",
+                CommandExitCode.FileNotFound);
+        }
+    }
+
     internal static async Task DisableRuntimeIfEnabled(IMeadowConnection connection, ILogger? logger, CancellationToken cancellationToken)
     {
         var isRuntimeEnabled = await connection.IsRuntimeEnabled();

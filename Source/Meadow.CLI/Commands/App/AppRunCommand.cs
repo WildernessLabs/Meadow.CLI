@@ -46,6 +46,7 @@ public class AppRunCommand : BaseDeviceCommand<AppRunCommand>
         }
 
         var path = AppTools.ValidateAndSanitizeAppPath(Path);
+        AppTools.EnsureProjectFolder(path, "meadow app run");
 
         Configuration ??= "Release";
 
