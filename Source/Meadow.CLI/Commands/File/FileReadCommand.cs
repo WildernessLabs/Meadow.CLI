@@ -59,7 +59,7 @@ public class FileReadCommand : BaseDeviceCommand<FileReadCommand>
         }
         else
         {
-            Logger?.LogInformation($"Failed to retrieve file");
+            throw new CommandException($"Failed to retrieve '{MeadowFile}'");
         }
     }
 }

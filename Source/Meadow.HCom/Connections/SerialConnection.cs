@@ -506,7 +506,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
     public int CommandTimeoutSeconds { get; set; } = 30;
 
-    private async Task<bool> WaitForFileReadCompleted(CancellationToken? cancellationToken)
+    private async Task<bool> WaitForFileReadCompleted(CancellationToken? cancellationToken, Func<bool>? failed = null)
     {
         var timeout = CommandTimeoutSeconds * 2;
 
@@ -530,6 +530,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
             {
                 if (cancellationToken?.IsCancellationRequested ?? false) return false;
                 if (_lastException != null) return false;
+                if (failed?.Invoke() ?? false) return false;
 
                 if (timeout <= 0) throw new TimeoutException();
 
@@ -1209,13 +1210,15 @@ public partial class SerialConnection : ConnectionBase, IDisposable
     {
         var command = RequestBuilder.Build<InitFileReadRequest>();
         command.MeadowFileName = meadowFileName;
-        command.LocalFileName = localFileName;
+        command.LocalFileName = Path.GetFullPath(string.IsNullOrWhiteSpace(localFileName)
+            ? Path.GetFileName(meadowFileName)
+            : localFileName);
 
         Exception? ex = null;
 
         void OnFileError(object? sender, Exception exception)
         {
-            ex = exception;
+            ex ??= exception;
         }
 
         try
@@ -1225,16 +1228,19 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             EnqueueRequest(command);
 
-            if (!await WaitForFileReadCompleted(cancellationToken))
+            var completed = await WaitForFileReadCompleted(cancellationToken, () => ex != null);
+
+            if (ex != null)
             {
-                return false;
+                throw new IOException($"Failed to read '{meadowFileName}': {ex.Message}", ex);
             }
 
-            return ex == null;
+            return completed;
         }
         finally
         {
             FileException -= OnFileError;
+            ConnectionError -= OnFileError;
         }
     }
 
