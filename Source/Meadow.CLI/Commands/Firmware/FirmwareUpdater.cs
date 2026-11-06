@@ -233,6 +233,16 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     bool isLoggingEnabled = false;
 
+    private async Task<string?> GetRouteForHcomWrite()
+    {
+        if (string.IsNullOrWhiteSpace(serialNumber) && !string.IsNullOrWhiteSpace(settings.GetSetting(SettingsManager.PublicSettings.Route)))
+        {
+            return null;
+        }
+
+        return await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber);
+    }
+
     private async Task<IMeadowConnection> GetConnectionAndDisableRuntime(string? route = null)
     {
         IMeadowConnection connection;
@@ -367,7 +377,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private async Task<IMeadowConnection?> WriteRuntime(IMeadowConnection? connection, DeviceInfo? deviceInfo, string runtimePath, string destinationFilename)
     {
-        connection ??= await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
+        connection ??= await GetConnectionAndDisableRuntime(await GetRouteForHcomWrite());
 
         logger?.LogInformation($"{Environment.NewLine}{Strings.WritingRuntime}...");
 
@@ -413,7 +423,7 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
 
     private async Task WriteEspFiles(IMeadowConnection? connection, DeviceInfo? deviceInfo, FirmwarePackage package)
     {
-        connection ??= await GetConnectionAndDisableRuntime(await MeadowConnectionManager.GetRouteFromSerialNumber(serialNumber));
+        connection ??= await GetConnectionAndDisableRuntime(await GetRouteForHcomWrite());
 
         if (connection == null) { return; } // couldn't find a connected device
 
