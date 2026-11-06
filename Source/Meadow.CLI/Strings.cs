@@ -11,7 +11,7 @@ public static class Strings
     public const string GettingDevicePublicKey = "Getting device public key";
     public const string UnableToGetDeviceInfo = "Unable to get device info";
     public const string RetrievingUserAndOrgInfo = "Retrieving your user and organization information...";
-    public const string MemberOfMoreThanOneOrg = "You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.";
+    public const string MemberOfMoreThanOneOrg = "You are a member of more than 1 organization. Specify one with --orgId (name or ID):";
     public const string UnableToFindMatchingOrg = "Unable to find an organization with a Name or ID matching '{0}'";
     public const string MustBeSignedInRunMeadowLogin = "You must be signed into your Wilderness Labs account to execute this command. Run 'meadow login' to do so.";
     public const string RequestingDevicePublicKey = "Requesting device public key (this will take a minute)...";

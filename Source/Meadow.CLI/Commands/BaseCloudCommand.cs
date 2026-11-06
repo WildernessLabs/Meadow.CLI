@@ -110,7 +110,7 @@ Response: {(string.IsNullOrWhiteSpace(ex.Response) ? "None" : Environment.NewLin
         var orgs = await MeadowCloudClient.User.GetOrganizations(cancellationToken).ConfigureAwait(false);
         if (orgs.Count() > 1 && string.IsNullOrEmpty(orgNameOrId))
         {
-            Logger.LogInformation($"You are a member of more than 1 organization. Please specify the desired orgId for this device provisioning.");
+            Logger.LogInformation(Strings.MemberOfMoreThanOneOrg + Environment.NewLine + string.Join(Environment.NewLine, orgs.Select(o => $"  {o.Name} ({o.Id})")));
             return null;
         }
         else if (orgs.Count() == 1 && string.IsNullOrEmpty(orgNameOrId))
