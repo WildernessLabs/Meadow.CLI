@@ -71,6 +71,7 @@ public static class Strings
     public const string AppTrimFailed = "Application trimming failed";
     public const string WithConfiguration = "with configuration";
     public const string At = "at";
+    public const string DfuUsbDriverWindowsMessage = "On Windows this usually means the STM32 BOOTLOADER device does not have the WinUSB driver. Install it with Zadig: https://developer.wildernesslabs.co/Meadow/Getting_Started/Update_USB_Driver/";
     public const string DfuUsbErrorMessage = "Found a DFU device but couldn't identify it as Meadow hardware. \r\nEnsure your device is in DFU mode and is correctly recognized by the host development machine.";
 
     public static class Telemetry
