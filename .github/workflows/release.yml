@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check the tag matches the project version
+        shell: bash
+        run: |
+          version=$(dotnet msbuild Source/Meadow.CLI/Meadow.CLI.csproj -getProperty:Version)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match <Version>$version</Version> in Meadow.CLI.csproj"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: dotnet build -c Release Source/Meadow.CLI.sln
+
+      - name: Unit tests
+        run: dotnet test -c Release --no-build --filter "FullyQualifiedName~.Unit.Tests" Source/Meadow.CLI.sln
+
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish to NuGet
+        shell: bash
+        run: dotnet nuget push "Source/Meadow.CLI/bin/Release/WildernessLabs.Meadow.CLI.$VERSION.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" "Source/Meadow.CLI/bin/Release/WildernessLabs.Meadow.CLI.$VERSION.nupkg" --title "Meadow.CLI $VERSION" --generate-notes $prerelease
