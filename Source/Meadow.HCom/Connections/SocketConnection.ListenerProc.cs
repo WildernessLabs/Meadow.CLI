@@ -197,9 +197,9 @@ namespace Meadow.Hcom
                                     else if (response is FileReadInitOkResponse fri)
                                     {
                                         var folder = Path.GetDirectoryName(_readFileInfo!.LocalFileName);
-                                        if (!Directory.Exists(folder))
+                                        if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder))
                                         {
-                                            Directory.CreateDirectory(folder!);
+                                            Directory.CreateDirectory(folder);
                                         }
 
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
@@ -248,7 +248,7 @@ namespace Meadow.Hcom
                                     else if (response is FileReadInitFailedResponse frf)
                                     {
                                         _readFileInfo = null;
-                                        throw new Exception(_lastError ?? "unknown error");
+                                        FileException?.Invoke(this, new Exception(_lastError ?? "unknown error"));
                                     }
                                     else if (response is RequestErrorTextResponse ret)
                                     {

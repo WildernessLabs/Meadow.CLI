@@ -253,9 +253,9 @@ namespace Meadow.Hcom
                                         // HCOM_HOST_REQUEST_UPLOAD_FILE_COMPLETED message. When it is received
                                         // we then close the open file and the process is completed.
                                         var folder = Path.GetDirectoryName(_readFileInfo!.LocalFileName);
-                                        if (!Directory.Exists(folder))
+                                        if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder))
                                         {
-                                            Directory.CreateDirectory(folder!);
+                                            Directory.CreateDirectory(folder);
                                         }
 
                                         _readFileInfo.FileStream = File.Create(_readFileInfo.LocalFileName);
@@ -304,7 +304,7 @@ namespace Meadow.Hcom
                                     else if (response is FileReadInitFailedResponse frf)
                                     {
                                         _readFileInfo = null;
-                                        throw new Exception(_lastError ?? "unknown error");
+                                        FileException?.Invoke(this, new Exception(_lastError ?? "unknown error"));
                                     }
                                     else if (response is RequestErrorTextResponse ret) //HCOM_HOST_REQUEST_TEXT_ERROR
                                     {
