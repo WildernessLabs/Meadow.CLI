@@ -136,6 +136,10 @@ public class FirmwareUpdater<T> where T : BaseDeviceCommand<T>
                 if (ex.Message.Contains(DFU_USB_ERROR_MESSAGE))
                 {
                     var msg = "Exception: " + ex.Message + Environment.NewLine + Environment.NewLine + Strings.DfuUsbErrorMessage;
+                    if (OperatingSystem.IsWindows())
+                    {
+                        msg += Environment.NewLine + Environment.NewLine + Strings.DfuUsbDriverWindowsMessage;
+                    }
                     throw new CommandException(msg, ex);
                 }
             }
