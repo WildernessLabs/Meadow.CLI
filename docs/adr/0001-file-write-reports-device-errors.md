@@ -46,7 +46,7 @@ What the host did:
 - `meadow file write` exits non-zero and prints the device's error when a write fails. Scripts that relied on exit 0 after a partial failure will now see 1.
 - `meadow app deploy`, the VS Code extension and the Visual Studio extension (both call `AppManager.DeployApplication` with no catch) now fail the deploy with the device's message instead of starting an app with missing or corrupt files. Related: Meadow_Issues#786.
 - Firmware update steps that call `WriteFile` (`FirmwareUpdater`) and `MeadowSettingsManager` now surface write failures that were silent before.
-- Serial writes wait for the device's `TEXT_CONCLUDED` per file, which includes the device's CRC readback. Not measured on hardware. Waiting also consumes the `TEXT_CONCLUDED` that previously arrived late and could satisfy a later request's wait.
+- Serial writes wait for the device's `TEXT_CONCLUDED` per file, which includes the device's CRC readback. Measured on a Project Lab: about 0.2 s more per command for a 2 KB file, no measurable change for 1 MB. Waiting also consumes the `TEXT_CONCLUDED` that previously arrived late and could satisfy a later request's wait.
 - Any `TEXT_ERROR` the device sends during a transfer fails that transfer, including one unrelated to the file. `file write` and the CLI's deploy (`AppTools`) disable the runtime first. Whether the IDE extensions do was not checked.
 - The message says what the device says. "Write of '<file>', seq N failed" does not name the cause. A firmware change is needed for "file system full" (see below).
 
@@ -54,5 +54,6 @@ What the host did:
 
 - Done: `SerialConnection`, `SocketConnection`, `FileWriteCommand`, `DeviceFileWriteException`, on `fix/890-file-write-verdict` (based on `meadow-3.0`).
 - Verified on the socket path against a fake HCOM device (disk full mid-transfer, checksum mismatch at end, success): exit 1 with the device message for both failures, exit 0 for success. The unmodified CLI exits 0 in all three. A connection dropped mid-transfer hangs both the unmodified and the changed CLI (see Consequences).
-- Not verified: the serial path on hardware. Needs a run on an F7 with a full file system.
+- Verified on hardware (Project Lab, F7CoreComputeV2, OS 2.999.51.1, serial): 2 KB, 1 MB and five 8 MB files written with matching CRCs; a 16 MB write onto a nearly full file system stops at 51% and exits 1 with the device message, where 3.0.2 prints 100%, exits 0 and leaves a 0-byte file; `file list` after the failure succeeds; `app deploy` resends missing files and exits 0.
+- Not verified: `firmware write`.
 - Firmware follow-up (WildernessLabs/Meadow, not this repo): `hcom_file_write_to_active_file` returns `-1` instead of `-errno` on a failed `write()`, and treats a short write as success. Returning `-ENOSPC` for both and including the reason in the "Write of ..." message would let the CLI show "file system full" as the issue asks.
