@@ -30,6 +30,8 @@ What the host did:
 2. The watchdog retry path (`HCOM_HOST_REQUEST_DNLD_FAIL_RESEND`) still returns `false`, so `AppManager`'s existing retry is unchanged.
 3. `FileWriteCommand` prints each failure, continues with the remaining files, and exits with `GeneralError` (1) if any file failed. A mismatched `--files`/`--targetFiles` count exits with `InvalidParameter` (6) instead of 0.
 4. Runtime (`MONO_UPDATE_RUNTIME`) and coprocessor (`ESP_FILE_TRANSFER`) writes are unchanged. They have their own end handlers and waits.
+5. A failure to send a data packet propagates instead of breaking out of the loop. Before, the loop broke, the end message was still sent, and the write returned `true`.
+6. `SerialConnection` ignores a `DNLD_FAIL_RESEND` that arrives before data transfer starts. A stale watchdog message from an earlier transfer used to make the next write retry for no reason. `SocketConnection` already had this guard (3e85cf6).
 
 ## Alternatives
 
@@ -40,6 +42,7 @@ What the host did:
 
 ## Consequences
 
+- A lost connection during a write now surfaces as an exception (and exit 1 from `file write`) on the serial transport. On the socket transport, `EncodeAndSendPacket` waits for a reconnect with no limit, so a lost connection hangs. That was already true before this change and is tracked separately.
 - `meadow file write` exits non-zero and prints the device's error when a write fails. Scripts that relied on exit 0 after a partial failure will now see 1.
 - `meadow app deploy`, the VS Code extension and the Visual Studio extension (both call `AppManager.DeployApplication` with no catch) now fail the deploy with the device's message instead of starting an app with missing or corrupt files. Related: Meadow_Issues#786.
 - Firmware update steps that call `WriteFile` (`FirmwareUpdater`) and `MeadowSettingsManager` now surface write failures that were silent before.
@@ -50,6 +53,6 @@ What the host did:
 ## Implementation Status
 
 - Done: `SerialConnection`, `SocketConnection`, `FileWriteCommand`, `DeviceFileWriteException`, on `fix/890-file-write-verdict` (based on `meadow-3.0`).
-- Verified on the socket path against a fake HCOM device (disk full mid-transfer, checksum mismatch at end, success): exit 1 with the device message for both failures, exit 0 for success. The unmodified CLI exits 0 in all three.
+- Verified on the socket path against a fake HCOM device (disk full mid-transfer, checksum mismatch at end, success): exit 1 with the device message for both failures, exit 0 for success. The unmodified CLI exits 0 in all three. A connection dropped mid-transfer hangs both the unmodified and the changed CLI (see Consequences).
 - Not verified: the serial path on hardware. Needs a run on an F7 with a full file system.
 - Firmware follow-up (WildernessLabs/Meadow, not this repo): `hcom_file_write_to_active_file` returns `-1` instead of `-errno` on a failed `write()`, and treats a short write as success. Returning `-ENOSPC` for both and including the reason in the "Write of ..." message would let the CLI show "file system full" as the issue asks.

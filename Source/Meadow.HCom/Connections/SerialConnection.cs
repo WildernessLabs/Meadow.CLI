@@ -1044,8 +1044,14 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         {
             ex = exception;
         }
+        var dataTransferStarted = false;
+
         void OnFileRetry(object? sender, EventArgs e)
         {
+            if (!dataTransferStarted)
+            {
+                return;
+            }
             needsRetry = true;
         }
         void OnDeviceMessage(object? sender, (string message, string? source) e)
@@ -1112,6 +1118,8 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
             _port.ReadTimeout = 60000;
 
+            dataTransferStarted = true;
+
             while (true && !needsRetry)
             {
                 if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
@@ -1134,14 +1142,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
                     toRead = packet.Length - 2;
                 }
                 Array.Copy(fileBytes, progress, packet, 2, toRead);
-                try
-                {
-                    EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
-                }
-                catch (Exception)
-                {
-                    break;
-                }
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
 
                 progress += toRead;
                 base.RaiseFileWriteProgress(fileName, progress, expected);

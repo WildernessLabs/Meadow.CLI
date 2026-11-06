@@ -959,14 +959,7 @@ public partial class SocketConnection : ConnectionBase, IDisposable
                     toRead = packet.Length - 2;
                 }
                 Array.Copy(fileBytes, progress, packet, 2, toRead);
-                try
-                {
-                    EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
-                }
-                catch (Exception)
-                {
-                    break;
-                }
+                EncodeAndSendPacket(packet, toRead + 2, cancellationToken);
 
                 progress += toRead;
                 base.RaiseFileWriteProgress(fileName, progress, expected);
