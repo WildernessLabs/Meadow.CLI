@@ -25,6 +25,17 @@ public static class AppManager
         "cloud"
     };
 
+    public static readonly string[] PersistentDeviceFiles = new string[]
+    {
+        "meadow.config.yaml",
+        "wifi.config.yaml"
+    };
+
+    public static bool IsPersistentDeviceFile(string fileName)
+    {
+        return PersistentDeviceFiles.Contains(Path.GetFileName(fileName), StringComparer.OrdinalIgnoreCase);
+    }
+
     private static bool MatchingDllExists(string file)
     {
         return File.Exists(Path.ChangeExtension(file, ".dll"));
@@ -134,7 +145,7 @@ public static class AppManager
         // delete those files
         foreach (var file in removeFiles)
         {
-            if (PersistantFolders.Contains(file.Path))
+            if (PersistantFolders.Contains(file.Path) || IsPersistentDeviceFile(file.Name))
             {
                 continue;
             }

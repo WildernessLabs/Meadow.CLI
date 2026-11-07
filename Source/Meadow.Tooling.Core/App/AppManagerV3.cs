@@ -64,7 +64,7 @@ public static class AppManagerV3
 
         foreach (var file in removeFiles)
         {
-            if (AppManager.PersistantFolders.Contains(file.Path))
+            if (AppManager.PersistantFolders.Contains(file.Path) || AppManager.IsPersistentDeviceFile(file.Name))
             {
                 continue;
             }
