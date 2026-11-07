@@ -695,6 +695,33 @@ public partial class SerialConnection : ConnectionBase, IDisposable
         return false;
     }
 
+    private async Task WaitForRuntimeState(bool enabled, CancellationToken? cancellationToken)
+    {
+        try
+        {
+            await WaitForConcluded(null, cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            if (await TryGetRuntimeState(cancellationToken) != enabled)
+            {
+                throw;
+            }
+        }
+    }
+
+    private async Task<bool?> TryGetRuntimeState(CancellationToken? cancellationToken)
+    {
+        try
+        {
+            return await IsRuntimeEnabled(cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            return null;
+        }
+    }
+
     public override async Task RuntimeEnable(CancellationToken? cancellationToken = null)
     {
         var command = RequestBuilder.Build<RuntimeEnableRequest>();
@@ -705,7 +732,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForRuntimeState(true, cancellationToken);
     }
 
     public override async Task RuntimeDisable(CancellationToken? cancellationToken = null)
@@ -718,7 +745,7 @@ public partial class SerialConnection : ConnectionBase, IDisposable
 
         EnqueueRequest(command);
 
-        await WaitForConcluded(null, cancellationToken);
+        await WaitForRuntimeState(false, cancellationToken);
     }
 
     public override async Task NshEnable(CancellationToken? cancellationToken = null)
