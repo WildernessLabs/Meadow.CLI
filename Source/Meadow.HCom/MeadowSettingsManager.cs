@@ -40,7 +40,7 @@ public class MeadowSettingsManager : IMeadowSettingsManager
 
     public async Task WriteAppSetting(IEnumerable<KeyValuePair<string, string>> values)
     {
-        var current = await ReadDeviceSettings();
+        var current = await ReadAppSettings();
 
         await WriteDeviceSettingFile(current, values, "app.config.yaml");
     }
